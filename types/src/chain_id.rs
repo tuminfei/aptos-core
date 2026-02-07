@@ -14,13 +14,13 @@ pub enum NamedChain {
     /// Users might accidentally initialize the ChainId field to 0, hence reserving ChainId 0 for accidental
     /// initialization.
     /// MAINNET is the Aptos mainnet production chain and is reserved for 1
-    MAINNET = 1,
+    MAINNET = 161,
     // Even though these CHAIN IDs do not correspond to MAINNET, changing them should be avoided since they
     // can break test environments for various organisations.
-    TESTNET = 2,
-    DEVNET = 3,
-    TESTING = 4,
-    PREMAINNET = 5,
+    TESTNET = 162,
+    DEVNET = 163,
+    TESTING = 164,
+    PREMAINNET = 165,
 }
 
 const MAINNET: &str = "mainnet";
