@@ -1,0 +1,153 @@
+---
+storage:
+  enable_indexer: true
+
+indexer_table_info:
+  table_info_service_mode: IndexingOnly
+  parser_task_count: 20
+  parser_batch_size: 1000
+
+indexer_grpc:
+  enabled: true
+  use_data_service_interface: true
+  address: 0.0.0.0:50051
+  processor_task_count: 10
+  processor_batch_size: 100
+  output_batch_size: 100
+
+api:
+  address: "0.0.0.0:8080"
+base:
+  data_dir: /private/var/folders/v0/d8xhxsw17f32bsj790x8_0hr0000gn/T/21f4c263a4b350bcd59c7fc7f769b947/0
+  waypoint:
+    from_config: "0:b5b5ca2e49053ea3f27b62cb134fe895b5ad19f0e698e9bc33e13c28089758d4"
+consensus:
+  safety_rules:
+    backend:
+      type: on_disk_storage
+      path: secure_storage.json
+      namespace: ~
+    service:
+      type: thread
+    initial_safety_rules_config:
+      from_file:
+        identity_blob_path: /private/var/folders/v0/d8xhxsw17f32bsj790x8_0hr0000gn/T/21f4c263a4b350bcd59c7fc7f769b947/0/validator-identity.yaml
+        waypoint:
+          from_config: "0:b5b5ca2e49053ea3f27b62cb134fe895b5ad19f0e698e9bc33e13c28089758d4"
+  quorum_store_poll_time_ms: 1000
+  quorum_store:
+    num_workers_for_remote_batches: 1
+execution:
+  genesis_file_location: /private/var/folders/v0/d8xhxsw17f32bsj790x8_0hr0000gn/T/21f4c263a4b350bcd59c7fc7f769b947/0/genesis.blob
+  concurrency_level: 1
+  num_proof_reading_threads: 1
+  paranoid_type_verification: false
+  paranoid_hot_potato_verification: false
+full_node_networks:
+  - max_connection_delay_ms: 60000
+    connection_backoff_base: 2
+    connectivity_check_interval_ms: 5000
+    network_channel_size: 1024
+    discovery_method: onchain
+    discovery_methods: []
+    identity:
+      type: from_file
+      path: /private/var/folders/v0/d8xhxsw17f32bsj790x8_0hr0000gn/T/21f4c263a4b350bcd59c7fc7f769b947/0/vfn-identity.yaml
+    listen_address: /ip4/0.0.0.0/tcp/6181
+    mutual_authentication: false
+    network_id: public
+    runtime_threads: ~
+    inbound_rx_buffer_size_bytes: ~
+    inbound_tx_buffer_size_bytes: ~
+    outbound_rx_buffer_size_bytes: ~
+    outbound_tx_buffer_size_bytes: ~
+    seed_addrs: {}
+    seeds: {}
+    max_frame_size: 4194304
+    enable_proxy_protocol: false
+    ping_interval_ms: 10000
+    ping_timeout_ms: 20000
+    ping_failures_tolerated: 3
+    max_outbound_connections: 0
+    max_inbound_connections: 100
+    max_message_size: 67108864
+    max_parallel_deserialization_tasks: 10
+    enable_latency_aware_dialing: true
+    access_control_policy: ~
+  - max_connection_delay_ms: 60000
+    connection_backoff_base: 2
+    connectivity_check_interval_ms: 5000
+    network_channel_size: 1024
+    discovery_method: none
+    discovery_methods: []
+    identity:
+      type: from_file
+      path: /private/var/folders/v0/d8xhxsw17f32bsj790x8_0hr0000gn/T/21f4c263a4b350bcd59c7fc7f769b947/0/vfn-identity.yaml
+    listen_address: /ip4/0.0.0.0/tcp/51485
+    mutual_authentication: false
+    network_id:
+      private: vfn
+    runtime_threads: ~
+    inbound_rx_buffer_size_bytes: ~
+    inbound_tx_buffer_size_bytes: ~
+    outbound_rx_buffer_size_bytes: ~
+    outbound_tx_buffer_size_bytes: ~
+    seed_addrs: {}
+    seeds: {}
+    max_frame_size: 4194304
+    enable_proxy_protocol: false
+    ping_interval_ms: 10000
+    ping_timeout_ms: 20000
+    ping_failures_tolerated: 3
+    max_outbound_connections: 0
+    max_inbound_connections: 100
+    max_message_size: 67108864
+    max_parallel_deserialization_tasks: 10
+    enable_latency_aware_dialing: true
+    access_control_policy: ~
+logger:
+  level: DEBUG
+mempool:
+  max_broadcasts_per_peer: 1
+  shared_mempool_max_concurrent_inbound_syncs: 1
+peer_monitoring_service:
+  enable_peer_monitoring_client: false
+  max_concurrent_requests: 1
+state_sync:
+  data_streaming_service:
+    progress_check_interval_ms: 10000
+  state_sync_driver:
+    enable_auto_bootstrapping: true
+    progress_check_interval_ms: 10000
+    max_connection_deadline_secs: 1
+validator_network:
+  max_connection_delay_ms: 10000
+  connection_backoff_base: 2
+  connectivity_check_interval_ms: 10000
+  network_channel_size: 1024
+  discovery_method: onchain
+  discovery_methods: []
+  identity:
+    type: from_file
+    path: /private/var/folders/v0/d8xhxsw17f32bsj790x8_0hr0000gn/T/21f4c263a4b350bcd59c7fc7f769b947/0/validator-identity.yaml
+  listen_address: /ip4/0.0.0.0/tcp/6180
+  mutual_authentication: true
+  network_id: validator
+  runtime_threads: 1
+  inbound_rx_buffer_size_bytes: ~
+  inbound_tx_buffer_size_bytes: ~
+  outbound_rx_buffer_size_bytes: ~
+  outbound_tx_buffer_size_bytes: ~
+  seed_addrs: {}
+  seeds: {}
+  max_frame_size: 4194304
+  enable_proxy_protocol: false
+  ping_interval_ms: 10000
+  ping_timeout_ms: 20000
+  ping_failures_tolerated: 3
+  max_outbound_connections: 6
+  max_inbound_connections: 100
+  max_message_size: 67108864
+  max_parallel_deserialization_tasks: 10
+  enable_latency_aware_dialing: true
+  access_control_policy: ~
