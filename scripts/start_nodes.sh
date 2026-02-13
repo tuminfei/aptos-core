@@ -20,32 +20,59 @@ fi
 echo "Using aptos-node binary: $APTOS_NODE_BIN"
 echo "Using chain directory: $CHAIN_DIR"
 
-# start nodes
-for i in $(ls -d "$CHAIN_DIR"/*/ 2>/dev/null | grep -E "[0-9]+/$" | sort -n); do
-    i=$(basename "$i")
-    NODE_DIR="$CHAIN_DIR/$i"
-    CONFIG_FILE="$NODE_DIR/node.yaml"
+# start specific node
+start_node() {
+    local node_id=$1
+    local NODE_DIR="$CHAIN_DIR/$node_id"
+    local CONFIG_FILE="$NODE_DIR/node.yaml"
     
     if [ -f "$CONFIG_FILE" ]; then
-        echo "Starting validator $i..."
+        echo "Starting validator $node_id..."
         cd "$NODE_DIR"
         nohup $APTOS_NODE_BIN --config "$CONFIG_FILE" > validator.log 2>&1 &
         PID=$!
-        echo "Validator $i started with PID $PID"
+        echo "Validator $node_id started with PID $PID"
         # save PID to file
         echo $PID > validator.pid
     else
-        echo "Warning: Config file not found for validator $i"
+        echo "Error: Config file not found for validator $node_id"
+        exit 1
     fi
-done
+}
 
-echo "All validators started. Check logs for details."
-echo "To check node health: curl http://localhost:8080/v1/health"
-echo "To view logs: tail -f $CHAIN_DIR/{0,1,2,3}/validator.log"
-echo "To stop all validators: pkill -f 'aptos-node --config'"
-echo "To stop specific validator: kill $(cat $CHAIN_DIR/{0,1,2,3}/validator.pid)"
+# stop specific node
+stop_node() {
+    local node_id=$1
+    local NODE_DIR="$CHAIN_DIR/$node_id"
+    local PID_FILE="$NODE_DIR/validator.pid"
+    
+    if [ -f "$PID_FILE" ]; then
+        local PID=$(cat "$PID_FILE")
+        if ps -p $PID > /dev/null 2>&1; then
+            echo "Stopping validator $node_id with PID $PID..."
+            kill $PID
+            rm "$PID_FILE"
+            echo "Validator $node_id stopped"
+        else
+            echo "Validator $node_id (PID $PID) is not running"
+            rm "$PID_FILE"
+        fi
+    else
+        echo "Error: PID file not found for validator $node_id"
+    fi
+}
 
-# stop nodes
+# restart specific node
+restart_node() {
+    local node_id=$1
+    echo "Restarting validator $node_id..."
+    stop_node $node_id
+    sleep 2
+    start_node $node_id
+    echo "Validator $node_id restarted"
+}
+
+# stop all nodes
 stop_validators() {
     echo "Stopping all validators..."
     for i in $(ls -d "$CHAIN_DIR"/*/ 2>/dev/null | grep -E "[0-9]+/$" | sort -n); do
@@ -68,8 +95,44 @@ stop_validators() {
     echo "All validators stopped"
 }
 
+# start all nodes
+start_all_nodes() {
+    for i in $(ls -d "$CHAIN_DIR"/*/ 2>/dev/null | grep -E "[0-9]+/$" | sort -n); do
+        i=$(basename "$i")
+        NODE_DIR="$CHAIN_DIR/$i"
+        CONFIG_FILE="$NODE_DIR/node.yaml"
+        
+        if [ -f "$CONFIG_FILE" ]; then
+            echo "Starting validator $i..."
+            cd "$NODE_DIR"
+            nohup $APTOS_NODE_BIN --config "$CONFIG_FILE" > validator.log 2>&1 &
+            PID=$!
+            echo "Validator $i started with PID $PID"
+            # save PID to file
+            echo $PID > validator.pid
+        else
+            echo "Warning: Config file not found for validator $i"
+        fi
+    done
+    
+    echo "All validators started. Check logs for details."
+echo "To check node health: curl http://localhost:8080/v1/health"
+echo "To view logs: tail -f $CHAIN_DIR/{0,1,2,3}/validator.log"
+echo "To stop all validators: pkill -f 'aptos-node --config'"
+echo "To stop specific validator: ./scripts/start_nodes.sh stop-node <node_id>"
+echo "To restart specific validator: ./scripts/start_nodes.sh restart-node <node_id>"
+}
+
 # stop_validators 
 if [ "$1" == "stop" ]; then
     stop_validators
     exit 0
+elif [ "$1" == "stop-node" ] && [ -n "$2" ]; then
+    stop_node $2
+    exit 0
+elif [ "$1" == "restart-node" ] && [ -n "$2" ]; then
+    restart_node $2
+    exit 0
+else
+    start_all_nodes
 fi
