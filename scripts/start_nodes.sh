@@ -72,6 +72,54 @@ restart_node() {
     echo "Validator $node_id restarted"
 }
 
+# check status of specific node
+status_node() {
+    local node_id=$1
+    local NODE_DIR="$CHAIN_DIR/$node_id"
+    local PID_FILE="$NODE_DIR/validator.pid"
+    
+    echo "Checking status of validator $node_id..."
+    
+    if [ -f "$PID_FILE" ]; then
+        local PID=$(cat "$PID_FILE")
+        if ps -p $PID > /dev/null 2>&1; then
+            echo "Validator $node_id: RUNNING"
+            echo "PID: $PID"
+            echo "Log file: $NODE_DIR/validator.log"
+            
+            # Try to check health status via HTTP
+            local health_url="http://localhost:808$node_id/v1/health"
+            if curl -s -o /dev/null -w "%{http_code}" $health_url | grep -q "200"; then
+                echo "Health status: HEALTHY"
+            else
+                echo "Health status: UNKNOWN (HTTP check failed)"
+            fi
+        else
+            echo "Validator $node_id: STOPPED"
+            echo "Note: PID file exists but process is not running"
+            rm "$PID_FILE"
+        fi
+    else
+        echo "Validator $node_id: STOPPED"
+        echo "Note: No PID file found"
+    fi
+    echo
+}
+
+# check status of all nodes
+status_nodes() {
+    echo "Checking status of all validators..."
+    echo "----------------------------------"
+    
+    for i in $(ls -d "$CHAIN_DIR"/*/ 2>/dev/null | grep -E "[0-9]+/$" | sort -n); do
+        i=$(basename "$i")
+        status_node $i
+    done
+    
+    echo "----------------------------------"
+    echo "Status check completed"
+}
+
 # stop all nodes
 stop_validators() {
     echo "Stopping all validators..."
@@ -121,6 +169,8 @@ echo "To view logs: tail -f $CHAIN_DIR/{0,1,2,3}/validator.log"
 echo "To stop all validators: pkill -f 'aptos-node --config'"
 echo "To stop specific validator: ./scripts/start_nodes.sh stop-node <node_id>"
 echo "To restart specific validator: ./scripts/start_nodes.sh restart-node <node_id>"
+echo "To check status of specific validator: ./scripts/start_nodes.sh status-node <node_id>"
+echo "To check status of all validators: ./scripts/start_nodes.sh status"
 }
 
 # stop_validators 
@@ -132,6 +182,12 @@ elif [ "$1" == "stop-node" ] && [ -n "$2" ]; then
     exit 0
 elif [ "$1" == "restart-node" ] && [ -n "$2" ]; then
     restart_node $2
+    exit 0
+elif [ "$1" == "status" ]; then
+    status_nodes
+    exit 0
+elif [ "$1" == "status-node" ] && [ -n "$2" ]; then
+    status_node $2
     exit 0
 else
     start_all_nodes
