@@ -23,3 +23,25 @@ services:
 volumes:
   postgres_data:
     name: aptos-postgres-data
+
+# How to access PostgreSQL container and query database:
+# 1. Enter the container:
+#    docker exec -it aptos-postgres bash
+#
+# 2. Connect to PostgreSQL:
+#    psql -U aptos -d aptos_indexer
+#
+# 3. List all tables:
+#    \dt
+#
+# 4. Query data (example):
+#    SELECT * FROM your_table LIMIT 10;
+#
+# 5. Exit psql:
+#    \q
+#
+# 6. Exit container:
+#    exit
+
+# Alternatively, run psql directly without entering the container:
+# docker exec -it aptos-postgres psql -U aptos -d aptos_indexer -c "SELECT * FROM your_table LIMIT 10;"
