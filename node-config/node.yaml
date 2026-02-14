@@ -1,6 +1,16 @@
 ---
 storage:
   enable_indexer: true
+  rocksdb_configs:
+    enable_storage_sharding: true
+
+indexer_db_config:
+  enable_transaction: false
+  enable_event: false
+  enable_event_v2_translation: false
+  event_v2_translation_ignores_below_version: 0
+  enable_statekeys: true
+  batch_size: 10000
 
 indexer_table_info:
   table_info_service_mode: IndexingOnly
