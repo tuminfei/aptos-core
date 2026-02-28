@@ -1667,8 +1667,8 @@ module aptos_framework::vesting {
         commission = with_rewards(commission) + commission_on_staker_rewards;
         distribute(contract_address);
         // Rounding error leads to a dust amount of 1 transferred to the staker.
-        assert!(coin::balance<AptosCoin>(shareholder_address) == staker_rewards + 1, 0);
-        assert!(coin::balance<AptosCoin>(operator_address) == commission - 1, 1);
+        assert!(coin::balance<TopoCoin>(shareholder_address) == staker_rewards + 1, 0);
+        assert!(coin::balance<TopoCoin>(operator_address) == commission - 1, 1);
     }
 
     #[test(aptos_framework = @0x1, admin = @0x123, operator = @0x345)]
@@ -1749,7 +1749,7 @@ module aptos_framework::vesting {
         distribute(contract_address);
 
         // Assert that the operator receives the expected commission.
-        assert!(coin::balance<AptosCoin>(operator_address) == expected_commission, 1);
+        assert!(coin::balance<TopoCoin>(operator_address) == expected_commission, 1);
     }
 
     #[test(
@@ -1809,9 +1809,9 @@ module aptos_framework::vesting {
         distribute(contract_address);
 
         // Assert that the beneficiary receives the expected commission.
-        assert!(coin::balance<AptosCoin>(operator_address1) == 0, 1);
-        assert!(coin::balance<AptosCoin>(beneficiary_address) == expected_commission, 1);
-        let old_beneficiay_balance = coin::balance<AptosCoin>(beneficiary_address);
+        assert!(coin::balance<TopoCoin>(operator_address1) == 0, 1);
+        assert!(coin::balance<TopoCoin>(beneficiary_address) == expected_commission, 1);
+        let old_beneficiay_balance = coin::balance<TopoCoin>(beneficiary_address);
 
         // switch operator to operator2. The rewards should go to operator2 not to the beneficiay of operator1.
         update_operator(admin, contract_address, operator_address2, 10);
@@ -1833,8 +1833,8 @@ module aptos_framework::vesting {
         distribute(contract_address);
 
         // Assert that the rewards go to operator2, and the balance of the operator1's beneficiay remains the same.
-        assert!(coin::balance<AptosCoin>(operator_address2) >= expected_commission, 1);
-        assert!(coin::balance<AptosCoin>(beneficiary_address) == old_beneficiay_balance, 1);
+        assert!(coin::balance<TopoCoin>(operator_address2) >= expected_commission, 1);
+        assert!(coin::balance<TopoCoin>(beneficiary_address) == old_beneficiay_balance, 1);
     }
 
     #[test(aptos_framework = @0x1, admin = @0x123, shareholder = @0x234)]
@@ -2047,7 +2047,7 @@ module aptos_framework::vesting {
         // No rewards as validator never joined the validator set.
         let vested_amount = fraction(GRANT_AMOUNT, 3, 48);
         distribute(contract_address);
-        let balance = coin::balance<AptosCoin>(@11);
+        let balance = coin::balance<TopoCoin>(@11);
         assert!(balance == vested_amount, balance);
     }
 
@@ -2091,8 +2091,8 @@ module aptos_framework::vesting {
         // No rewards as validator never joined the validator set.
         let vested_amount = fraction(GRANT_AMOUNT, 3, 48);
         distribute(contract_address);
-        assert!(coin::balance<AptosCoin>(@11) == vested_amount, 0);
-        assert!(coin::balance<AptosCoin>(@12) == 0, 1);
+        assert!(coin::balance<TopoCoin>(@11) == vested_amount, 0);
+        assert!(coin::balance<TopoCoin>(@12) == 0, 1);
     }
 
     #[test(aptos_framework = @0x1, admin = @0x123, resetter = @0x234)]
