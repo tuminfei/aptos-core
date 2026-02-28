@@ -8,7 +8,7 @@ module aptos_framework::genesis {
     use aptos_framework::account;
     use aptos_framework::aggregator_factory;
     use aptos_framework::aptos_account;
-    use aptos_framework::aptos_coin::{Self, AptosCoin};
+    use aptos_framework::topo_coin::{Self, TopoCoin};
     use aptos_framework::aptos_governance;
     use aptos_framework::block;
     use aptos_framework::chain_id;
@@ -139,13 +139,13 @@ module aptos_framework::genesis {
         let (burn_cap, mint_cap) = aptos_coin::initialize(aptos_framework);
 
         coin::create_coin_conversion_map(aptos_framework);
-        coin::create_pairing<AptosCoin>(aptos_framework);
+        coin::create_pairing<TopoCoin>(aptos_framework);
 
-        // Give stake module MintCapability<AptosCoin> so it can mint rewards.
+        // Give stake module MintCapability<TopoCoin> so it can mint rewards.
         stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
-        // Give transaction_fee module BurnCapability<AptosCoin> so it can burn gas.
+        // Give transaction_fee module BurnCapability<TopoCoin> so it can burn gas.
         transaction_fee::store_aptos_coin_burn_cap(aptos_framework, burn_cap);
-        // Give transaction_fee module MintCapability<AptosCoin> so it can mint refunds.
+        // Give transaction_fee module MintCapability<TopoCoin> so it can mint refunds.
         transaction_fee::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
     }
 
@@ -157,13 +157,13 @@ module aptos_framework::genesis {
         let (burn_cap, mint_cap) = aptos_coin::initialize(aptos_framework);
 
         coin::create_coin_conversion_map(aptos_framework);
-        coin::create_pairing<AptosCoin>(aptos_framework);
+        coin::create_pairing<TopoCoin>(aptos_framework);
 
-        // Give stake module MintCapability<AptosCoin> so it can mint rewards.
+        // Give stake module MintCapability<TopoCoin> so it can mint rewards.
         stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
-        // Give transaction_fee module BurnCapability<AptosCoin> so it can burn gas.
+        // Give transaction_fee module BurnCapability<TopoCoin> so it can burn gas.
         transaction_fee::store_aptos_coin_burn_cap(aptos_framework, burn_cap);
-        // Give transaction_fee module MintCapability<AptosCoin> so it can mint refunds.
+        // Give transaction_fee module MintCapability<TopoCoin> so it can mint refunds.
         transaction_fee::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
 
         let core_resources = account::create_account(@core_resources);
@@ -199,8 +199,8 @@ module aptos_framework::genesis {
             account::create_account(account_address)
         };
 
-        if (coin::balance<AptosCoin>(account_address) == 0) {
-            coin::register<AptosCoin>(&account);
+        if (coin::balance<TopoCoin>(account_address) == 0) {
+            coin::register<TopoCoin>(&account);
             aptos_coin::mint(aptos_framework, account_address, balance);
         };
         account
@@ -229,8 +229,8 @@ module aptos_framework::genesis {
                 vector::push_back(&mut unique_accounts, *account);
 
                 let employee = create_signer(*account);
-                let total = coin::balance<AptosCoin>(*account);
-                let coins = coin::withdraw<AptosCoin>(&employee, total);
+                let total = coin::balance<TopoCoin>(*account);
+                let coins = coin::withdraw<TopoCoin>(&employee, total);
                 simple_map::add(&mut buy_ins, *account, coins);
 
                 j += 1;
@@ -495,7 +495,7 @@ module aptos_framework::genesis {
         let test_signer_before = create_account(aptos_framework, addr, 15);
         let test_signer_after = create_account(aptos_framework, addr, 500);
         assert!(test_signer_before == test_signer_after, 0);
-        assert!(coin::balance<AptosCoin>(addr) == 15, 1);
+        assert!(coin::balance<TopoCoin>(addr) == 15, 1);
     }
 
     #[test(aptos_framework = @0x1)]
@@ -519,11 +519,11 @@ module aptos_framework::genesis {
         ];
 
         create_accounts(aptos_framework, accounts);
-        assert!(coin::balance<AptosCoin>(addr0) == 12345, 0);
-        assert!(coin::balance<AptosCoin>(addr1) == 67890, 1);
+        assert!(coin::balance<TopoCoin>(addr0) == 12345, 0);
+        assert!(coin::balance<TopoCoin>(addr1) == 67890, 1);
 
         create_account(aptos_framework, addr0, 23456);
-        assert!(coin::balance<AptosCoin>(addr0) == 12345, 2);
+        assert!(coin::balance<TopoCoin>(addr0) == 12345, 2);
     }
 
     #[test(aptos_framework = @0x1, root = @0xabcd)]

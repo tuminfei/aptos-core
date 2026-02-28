@@ -319,7 +319,7 @@ module aptos_framework::coin {
     }
 
     inline fun is_apt<CoinType>(): bool {
-        type_info::type_name<CoinType>() == string::utf8(b"0x1::aptos_coin::AptosCoin")
+        type_info::type_name<CoinType>() == string::utf8(b"0x1::topo_coin::TopoCoin")
     }
 
     inline fun create_and_return_paired_metadata_if_not_exist<CoinType>(
