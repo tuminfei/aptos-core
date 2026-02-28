@@ -106,7 +106,7 @@ module aptos_framework::transaction_fee {
     }
 
     /// Only called during genesis.
-    public(friend) fun store_aptos_coin_burn_cap(
+    public(friend) fun store_topo_coin_burn_cap(
         aptos_framework: &signer, burn_cap: BurnCapability<TopoCoin>
     ) {
         system_addresses::assert_aptos_framework(aptos_framework);
@@ -133,7 +133,7 @@ module aptos_framework::transaction_fee {
     }
 
     /// Only called during genesis.
-    public(friend) fun store_aptos_coin_mint_cap(
+    public(friend) fun store_topo_coin_mint_cap(
         aptos_framework: &signer, mint_cap: MintCapability<TopoCoin>
     ) {
         system_addresses::assert_aptos_framework(aptos_framework);

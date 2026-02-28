@@ -134,42 +134,42 @@ module aptos_framework::genesis {
         nonce_validation::initialize(&aptos_framework_account);
     }
 
-    /// Genesis step 2: Initialize Aptos coin.
-    fun initialize_aptos_coin(aptos_framework: &signer) {
-        let (burn_cap, mint_cap) = aptos_coin::initialize(aptos_framework);
+    /// Genesis step 2: Initialize Topo coin.
+    fun initialize_topo_coin(aptos_framework: &signer) {
+        let (burn_cap, mint_cap) = topo_coin::initialize(aptos_framework);
 
         coin::create_coin_conversion_map(aptos_framework);
         coin::create_pairing<TopoCoin>(aptos_framework);
 
         // Give stake module MintCapability<TopoCoin> so it can mint rewards.
-        stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
+        stake::store_topo_coin_mint_cap(aptos_framework, mint_cap);
         // Give transaction_fee module BurnCapability<TopoCoin> so it can burn gas.
-        transaction_fee::store_aptos_coin_burn_cap(aptos_framework, burn_cap);
+        transaction_fee::store_topo_coin_burn_cap(aptos_framework, burn_cap);
         // Give transaction_fee module MintCapability<TopoCoin> so it can mint refunds.
-        transaction_fee::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
+        transaction_fee::store_topo_coin_mint_cap(aptos_framework, mint_cap);
     }
 
     /// Only called for testnets and e2e tests.
-    fun initialize_core_resources_and_aptos_coin(
+    fun initialize_core_resources_and_topo_coin(
         aptos_framework: &signer,
         core_resources_auth_key: vector<u8>,
     ) {
-        let (burn_cap, mint_cap) = aptos_coin::initialize(aptos_framework);
+        let (burn_cap, mint_cap) = topo_coin::initialize(aptos_framework);
 
         coin::create_coin_conversion_map(aptos_framework);
         coin::create_pairing<TopoCoin>(aptos_framework);
 
         // Give stake module MintCapability<TopoCoin> so it can mint rewards.
-        stake::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
+        stake::store_topo_coin_mint_cap(aptos_framework, mint_cap);
         // Give transaction_fee module BurnCapability<TopoCoin> so it can burn gas.
-        transaction_fee::store_aptos_coin_burn_cap(aptos_framework, burn_cap);
+        transaction_fee::store_topo_coin_burn_cap(aptos_framework, burn_cap);
         // Give transaction_fee module MintCapability<TopoCoin> so it can mint refunds.
-        transaction_fee::store_aptos_coin_mint_cap(aptos_framework, mint_cap);
+        transaction_fee::store_topo_coin_mint_cap(aptos_framework, mint_cap);
 
         let core_resources = account::create_account(@core_resources);
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
         aptos_account::register_apt(&core_resources); // registers APT store
-        aptos_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
+        topo_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
     }
 
     fun create_accounts(aptos_framework: &signer, accounts: vector<AccountMap>) {
@@ -201,7 +201,7 @@ module aptos_framework::genesis {
 
         if (coin::balance<TopoCoin>(account_address) == 0) {
             coin::register<TopoCoin>(&account);
-            aptos_coin::mint(aptos_framework, account_address, balance);
+            topo_coin::mint(aptos_framework, account_address, balance);
         };
         account
     }
@@ -306,7 +306,7 @@ module aptos_framework::genesis {
 
         // Destroy the aptos framework account's ability to mint coins now that we're done with setting up the initial
         // validators.
-        aptos_coin::destroy_mint_cap(aptos_framework);
+        topo_coin::destroy_mint_cap(aptos_framework);
 
         stake::on_new_epoch();
     }
@@ -439,7 +439,7 @@ module aptos_framework::genesis {
             voting_power_increase_limit
         );
         features::change_feature_flags_for_verification(aptos_framework, vector[1, 2], vector[]);
-        initialize_aptos_coin(aptos_framework);
+        initialize_topo_coin(aptos_framework);
         aptos_governance::initialize_for_verification(
             aptos_framework,
             min_voting_threshold,
@@ -489,7 +489,7 @@ module aptos_framework::genesis {
     #[test(aptos_framework = @0x1)]
     fun test_create_account(aptos_framework: &signer) {
         setup();
-        initialize_aptos_coin(aptos_framework);
+        initialize_topo_coin(aptos_framework);
 
         let addr = @0x121341; // 01 -> 0a are taken
         let test_signer_before = create_account(aptos_framework, addr, 15);
@@ -501,7 +501,7 @@ module aptos_framework::genesis {
     #[test(aptos_framework = @0x1)]
     fun test_create_accounts(aptos_framework: &signer) {
         setup();
-        initialize_aptos_coin(aptos_framework);
+        initialize_topo_coin(aptos_framework);
 
         // 01 -> 0a are taken
         let addr0 = @0x121341;
@@ -539,8 +539,8 @@ module aptos_framework::genesis {
 
         aggregator_factory::initialize_aggregator_factory_for_test(aptos_framework);
 
-        let (burn_cap, mint_cap) = aptos_coin::initialize(aptos_framework);
-        aptos_coin::ensure_initialized_with_apt_fa_metadata_for_test();
+        let (burn_cap, mint_cap) = topo_coin::initialize(aptos_framework);
+        topo_coin::ensure_initialized_with_apt_fa_metadata_for_test();
 
         let core_resources = account::create_account(@core_resources);
         aptos_account::register_apt(&core_resources); // registers APT store
@@ -548,7 +548,7 @@ module aptos_framework::genesis {
         let apt_metadata = object::address_to_object<Metadata>(@aptos_fungible_asset);
         assert!(primary_fungible_store::primary_store_exists(@core_resources, apt_metadata), 2);
 
-        aptos_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
+        topo_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);

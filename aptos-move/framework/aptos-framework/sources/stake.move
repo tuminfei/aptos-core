@@ -534,7 +534,7 @@ module aptos_framework::stake {
 
     /// This is only called during Genesis, which is where MintCapability<TopoCoin> can be created.
     /// Beyond genesis, no one can create TopoCoin mint/burn capabilities.
-    public(friend) fun store_aptos_coin_mint_cap(aptos_framework: &signer, mint_cap: MintCapability<TopoCoin>) {
+    public(friend) fun store_topo_coin_mint_cap(aptos_framework: &signer, mint_cap: MintCapability<TopoCoin>) {
         system_addresses::assert_aptos_framework(aptos_framework);
         move_to(aptos_framework, TopoCoinCapabilities { mint_cap })
     }
@@ -1981,8 +1981,8 @@ module aptos_framework::stake {
         );
 
         if (!exists<TopoCoinCapabilities>(@aptos_framework)) {
-            let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(aptos_framework);
-            store_aptos_coin_mint_cap(aptos_framework, mint_cap);
+            let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
+            store_topo_coin_mint_cap(aptos_framework, mint_cap);
             coin::destroy_burn_cap<TopoCoin>(burn_cap);
         };
 
