@@ -30,6 +30,7 @@ module aptos_framework::coin {
     use aptos_framework::create_signer;
 
     friend aptos_framework::aptos_coin;
+    friend aptos_framework::topo_coin;
     friend aptos_framework::genesis;
     friend aptos_framework::transaction_fee;
 
