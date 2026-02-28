@@ -1,0 +1,15 @@
+[package]
+name = "Explorer"
+version = "1.0.0"
+authors = []
+upgrade_policy = "immutable"
+
+[addresses]
+explorer = "_"
+
+[dev-addresses]
+explorer = "0x123"
+
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", rev = "mainnet", subdir = "aptos-move/framework/aptos-framework" }
+AptosStdlib = { git = "https://github.com/aptos-labs/aptos-core.git", rev = "mainnet", subdir = "aptos-move/framework/aptos-stdlib" }
