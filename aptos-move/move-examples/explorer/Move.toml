@@ -5,7 +5,7 @@ authors = []
 upgrade_policy = "immutable"
 
 [addresses]
-explorer = "_"
+explorer = "0x7f1bb834cc9495a6fccd689478ed22b5c46ff2a0eb2ddda842f4f31f83778191"
 
 [dev-addresses]
 explorer = "0x123"
