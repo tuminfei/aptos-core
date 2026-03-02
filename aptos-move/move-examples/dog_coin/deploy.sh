@@ -6,7 +6,7 @@ echo "=== 部署 Dog Coin 代币 ==="
 
 # 1. 编译 Move 模块
 echo "1. 编译 Move 模块..."
-aptos move compile --package-dir .
+aptos move compile --package-dir . --dev
 
 if [ $? -ne 0 ]; then
     echo "编译失败！"
@@ -17,7 +17,7 @@ echo "编译成功！"
 
 # 2. 发布 Move 模块
 echo "\n2. 发布 Move 模块..."
-aptos move publish --package-dir .
+aptos move publish --package-dir . --dev
 
 if [ $? -ne 0 ]; then
     echo "发布失败！"
@@ -28,7 +28,7 @@ echo "发布成功！"
 
 # 3. 注册代币
 echo "\n3. 注册代币..."
-aptos move run --package-dir . --script-path scripts/register.move
+aptos move run --package-dir . --script-path scripts/register.move --dev
 
 if [ $? -ne 0 ]; then
     echo "注册失败！"
