@@ -15,11 +15,11 @@ module MyCoins::cat_coin {
         aptos_framework::coin::transfer<CatCoin>(sender, recipient, amount)
     }
 
-    public fun mint(sender: &signer, recipient: address, amount: u64) {
+    public entry fun mint(sender: &signer, recipient: address, amount: u64) {
         aptos_framework::managed_coin::mint<CatCoin>(sender, recipient, amount)
     }
 
-    public fun burn(sender: &signer, amount: u64) {
+    public entry fun burn(sender: &signer, amount: u64) {
         aptos_framework::managed_coin::burn<CatCoin>(sender, amount)
     }
 }
