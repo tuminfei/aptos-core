@@ -6,7 +6,7 @@ echo "=== 部署 MyCoins 项目 ==="
 
 # 1. 编译 Move 模块
 echo "1. 编译 Move 模块..."
-aptos move compile --dev
+aptos move compile --dev --skip-fetch-latest-git-deps
 
 if [ $? -ne 0 ]; then
     echo "编译失败！"
@@ -17,7 +17,7 @@ echo "编译成功！"
 
 # 2. 发布 Move 模块
 echo "\n2. 发布 Move 模块..."
-aptos move publish --dev
+aptos move publish --dev --skip-fetch-latest-git-deps --profile coin-admin
 
 if [ $? -ne 0 ]; then
     echo "发布失败！"
