@@ -12,7 +12,7 @@ module MyCoins::bird_coin {
     }
 
     public fun transfer(sender: &signer, recipient: address, amount: u64) {
-        aptos_framework::managed_coin::transfer<BirdCoin>(sender, recipient, amount)
+        aptos_framework::coin::transfer<BirdCoin>(sender, recipient, amount)
     }
 
     public fun mint(sender: &signer, recipient: address, amount: u64) {
