@@ -6,7 +6,7 @@ echo "=== 部署 MyCoins 项目 ==="
 
 # 1. 编译 Move 模块
 echo "1. 编译 Move 模块..."
-aptos move compile --package-dir . --dev
+aptos move compile --dev
 
 if [ $? -ne 0 ]; then
     echo "编译失败！"
@@ -17,7 +17,7 @@ echo "编译成功！"
 
 # 2. 发布 Move 模块
 echo "\n2. 发布 Move 模块..."
-aptos move publish --package-dir . --dev
+aptos move publish --dev
 
 if [ $? -ne 0 ]; then
     echo "发布失败！"
@@ -31,7 +31,7 @@ echo "\n3. 注册代币..."
 
 # 注册 DogCoin
 echo "注册 DogCoin..."
-aptos move run --package-dir . --script-path scripts/register_dog_coin.move --function register_dog_coin --dev
+aptos move run --function-id "0x1::managed_coin::register" --type-args "0x0c0084b96923d3281d39c5a6561ac957fb9af07cc65132fc8806a89ec071b28b::dog_coin::DogCoin" --profile coin-admin
 
 if [ $? -ne 0 ]; then
     echo "注册 DogCoin 失败！"
@@ -40,7 +40,7 @@ fi
 
 # 注册 CatCoin
 echo "注册 CatCoin..."
-aptos move run --package-dir . --script-path scripts/register_cat_coin.move --function register_cat_coin --dev
+aptos move run --function-id "0x1::managed_coin::register" --type-args "0x0c0084b96923d3281d39c5a6561ac957fb9af07cc65132fc8806a89ec071b28b::cat_coin::CatCoin" --profile coin-admin
 
 if [ $? -ne 0 ]; then
     echo "注册 CatCoin 失败！"
@@ -49,7 +49,7 @@ fi
 
 # 注册 BirdCoin
 echo "注册 BirdCoin..."
-aptos move run --package-dir . --script-path scripts/register_bird_coin.move --function register_bird_coin --dev
+aptos move run --function-id "0x1::managed_coin::register" --type-args "0x0c0084b96923d3281d39c5a6561ac957fb9af07cc65132fc8806a89ec071b28b::bird_coin::BirdCoin" --profile coin-admin
 
 if [ $? -ne 0 ]; then
     echo "注册 BirdCoin 失败！"
