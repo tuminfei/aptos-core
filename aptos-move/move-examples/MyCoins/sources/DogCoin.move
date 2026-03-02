@@ -12,7 +12,7 @@ module MyCoins::dog_coin {
     }
 
     public fun transfer(sender: &signer, recipient: address, amount: u64) {
-        aptos_framework::managed_coin::transfer<DogCoin>(sender, recipient, amount)
+        aptos_framework::coin::transfer<DogCoin>(sender, recipient, amount)
     }
 
     public fun mint(sender: &signer, recipient: address, amount: u64) {
