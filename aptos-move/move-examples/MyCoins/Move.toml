@@ -3,7 +3,7 @@ name = "MyCoins"
 version = "0.0.0"
 
 [addresses]
-MyCoins = "0x2"
+MyCoins = "0x0c0084b96923d3281d39c5a6561ac957fb9af07cc65132fc8806a89ec071b28b"
 
 [dependencies]
 AptosFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "aptos-framework", rev = "mainnet" }
