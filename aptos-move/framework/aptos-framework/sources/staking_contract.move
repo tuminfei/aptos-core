@@ -1231,7 +1231,7 @@ module aptos_framework::staking_contract {
             0
         );
         distribute(staker_address, operator_address);
-        let operator_balance = coin::balance<AptosCoin>(operator_address);
+        let operator_balance = coin::balance<TopoCoin>(operator_address);
         let expected_operator_balance = INITIAL_BALANCE + expected_commission_1;
         assert!(operator_balance == expected_operator_balance, operator_balance);
         stake::assert_stake_pool(pool_address, new_balance, 0, 0, 0);
@@ -1277,7 +1277,7 @@ module aptos_framework::staking_contract {
         stake::fast_forward_to_unlock(pool_address);
         expected_commission_2 = with_rewards(expected_commission_2);
         distribute(staker_address, operator_address);
-        operator_balance = coin::balance<AptosCoin>(operator_address);
+        operator_balance = coin::balance<TopoCoin>(operator_address);
         expected_operator_balance += expected_commission_2;
         assert!(operator_balance == expected_operator_balance, operator_balance);
         assert_no_pending_distributions(staker_address, operator_address);
@@ -1328,12 +1328,12 @@ module aptos_framework::staking_contract {
         // Distribute and verify balances.
         distribute(staker_address, operator_address);
         assert_no_pending_distributions(staker_address, operator_address);
-        operator_balance = coin::balance<AptosCoin>(operator_address);
+        operator_balance = coin::balance<TopoCoin>(operator_address);
         assert!(
             operator_balance == expected_operator_balance + unpaid_commission,
             operator_balance
         );
-        let staker_balance = coin::balance<AptosCoin>(staker_address);
+        let staker_balance = coin::balance<TopoCoin>(staker_address);
         // Staker receives the extra dust due to rounding error.
         assert!(
             staker_balance == withdrawn_amount + 1,
@@ -1617,7 +1617,7 @@ module aptos_framework::staking_contract {
             operator_2_address,
             commission_for_operator_2
         );
-        let operator_1_balance = coin::balance<AptosCoin>(operator_1_address);
+        let operator_1_balance = coin::balance<TopoCoin>(operator_1_address);
         assert!(
             operator_1_balance == INITIAL_BALANCE + commission_for_operator_1,
             operator_1_balance
@@ -1637,7 +1637,7 @@ module aptos_framework::staking_contract {
 
         // Operator 2's commission is distributed.
         distribute(staker_address, operator_2_address);
-        let operator_2_balance = coin::balance<AptosCoin>(operator_2_address);
+        let operator_2_balance = coin::balance<TopoCoin>(operator_2_address);
         new_balance = with_rewards(new_balance);
         commission_for_operator_2 = with_rewards(commission_for_operator_2);
         assert!(
@@ -1782,8 +1782,8 @@ module aptos_framework::staking_contract {
             0
         );
         distribute(staker_address, operator1_address);
-        let operator_balance = coin::balance<AptosCoin>(operator1_address);
-        let beneficiary_balance = coin::balance<AptosCoin>(beneficiary_address);
+        let operator_balance = coin::balance<TopoCoin>(operator1_address);
+        let beneficiary_balance = coin::balance<TopoCoin>(beneficiary_address);
         let expected_operator_balance = INITIAL_BALANCE;
         let expected_beneficiary_balance = expected_commission_1;
         assert!(operator_balance == expected_operator_balance, operator_balance);
@@ -1816,9 +1816,9 @@ module aptos_framework::staking_contract {
         distribute(staker_address, operator2_address);
 
         // Assert that the rewards go to operator2, and the balance of the operator1's beneficiay remains the same.
-        assert!(coin::balance<AptosCoin>(operator2_address) >= expected_commission, 1);
+        assert!(coin::balance<TopoCoin>(operator2_address) >= expected_commission, 1);
         assert!(
-            coin::balance<AptosCoin>(beneficiary_address) == old_beneficiay_balance, 1
+            coin::balance<TopoCoin>(beneficiary_address) == old_beneficiay_balance, 1
         );
     }
 
@@ -1898,12 +1898,12 @@ module aptos_framework::staking_contract {
         // Distribute and verify balances.
         distribute(staker_address, operator_address);
         assert_no_pending_distributions(staker_address, operator_address);
-        let operator_balance = coin::balance<AptosCoin>(operator_address);
+        let operator_balance = coin::balance<TopoCoin>(operator_address);
         assert!(
             operator_balance == initial_balance + unpaid_commission,
             operator_balance
         );
-        let staker_balance = coin::balance<AptosCoin>(staker_address);
+        let staker_balance = coin::balance<TopoCoin>(staker_address);
         assert!(staker_balance == withdrawn_stake, staker_balance);
     }
 
@@ -1958,10 +1958,10 @@ module aptos_framework::staking_contract {
         distribute(staker_address, operator_address);
         assert_no_pending_distributions(staker_address, operator_address);
         // Operator's balance shouldn't change as there are no rewards.
-        let operator_balance = coin::balance<AptosCoin>(operator_address);
+        let operator_balance = coin::balance<TopoCoin>(operator_address);
         assert!(operator_balance == initial_balance, operator_balance);
         // Staker receives back the withdrawn amount (no rewards).
-        let staker_balance = coin::balance<AptosCoin>(staker_address);
+        let staker_balance = coin::balance<TopoCoin>(staker_address);
         assert!(staker_balance == withdrawn_stake, staker_balance);
     }
 

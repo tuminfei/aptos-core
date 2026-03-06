@@ -151,7 +151,7 @@ module aptos_framework::transaction_fee {
     /// DEPRECATED: Stores information about the block proposer and the amount of fees
     /// collected when executing the block.
     struct CollectedFeesPerBlock has key {
-        amount: AggregatableCoin<AptosCoin>,
+        amount: AggregatableCoin<TopoCoin>,
         proposer: Option<address>,
         burn_percentage: u8
     }

@@ -445,7 +445,7 @@ module aptos_framework::aptos_governance {
         // has voted. This doesn't take into subsequent inflation/deflation (rewards are issued every epoch and gas fees
         // are burnt after every transaction), but inflation/delation is very unlikely to have a major impact on total
         // supply during the voting period.
-        let total_voting_token_supply = coin::supply<AptosCoin>();
+        let total_voting_token_supply = coin::supply<TopoCoin>();
         let early_resolution_vote_threshold = option::none<u128>();
         if (total_voting_token_supply.is_some()) {
             let total_supply = *total_voting_token_supply.borrow();
