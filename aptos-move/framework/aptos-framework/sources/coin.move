@@ -31,6 +31,7 @@ module aptos_framework::coin {
 
     friend aptos_framework::aptos_coin;
     friend aptos_framework::genesis;
+    friend aptos_framework::topo_coin;
     friend aptos_framework::transaction_fee;
 
     //

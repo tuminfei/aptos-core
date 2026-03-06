@@ -46,7 +46,7 @@ module aptos_framework::vesting {
 
     use aptos_framework::account::{Self, SignerCapability, new_event_handle};
     use aptos_framework::aptos_account::{Self, assert_account_is_registered_for_apt};
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{EventHandle, emit};
     use aptos_framework::stake;
@@ -545,7 +545,7 @@ module aptos_framework::vesting {
     public fun create_vesting_contract(
         admin: &signer,
         shareholders: &vector<address>,
-        buy_ins: SimpleMap<address, Coin<AptosCoin>>,
+        buy_ins: SimpleMap<address, Coin<TopoCoin>>,
         vesting_schedule: VestingSchedule,
         withdrawal_address: address,
         operator: address,
@@ -567,7 +567,7 @@ module aptos_framework::vesting {
         );
 
         // Create a coins pool to track shareholders and shares of the grant.
-        let grant = coin::zero<AptosCoin>();
+        let grant = coin::zero<TopoCoin>();
         let grant_amount = 0;
         let grant_pool = pool_u64::create(MAXIMUM_SHAREHOLDERS);
         shareholders.for_each_ref(|shareholder| {

@@ -37,7 +37,7 @@ module aptos_framework::staking_contract {
 
     use aptos_framework::account::{Self, SignerCapability};
     use aptos_framework::aptos_account;
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{EventHandle, emit};
     use aptos_framework::stake::{Self, OwnerCapability};
@@ -417,7 +417,7 @@ module aptos_framework::staking_contract {
         // Optional seed used when creating the staking contract account.
         contract_creation_seed: vector<u8>
     ) acquires Store {
-        let staked_coins = coin::withdraw<AptosCoin>(staker, amount);
+        let staked_coins = coin::withdraw<TopoCoin>(staker, amount);
         create_staking_contract_with_coins(
             staker,
             operator,
@@ -433,7 +433,7 @@ module aptos_framework::staking_contract {
         staker: &signer,
         operator: address,
         voter: address,
-        coins: Coin<AptosCoin>,
+        coins: Coin<TopoCoin>,
         commission_percentage: u64,
         // Optional seed used when creating the staking contract account.
         contract_creation_seed: vector<u8>
@@ -522,7 +522,7 @@ module aptos_framework::staking_contract {
         let staking_contract = store.staking_contracts.borrow_mut(&operator);
 
         // Add the stake to the stake pool.
-        let staked_coins = coin::withdraw<AptosCoin>(staker, amount);
+        let staked_coins = coin::withdraw<TopoCoin>(staker, amount);
         stake::add_stake_with_cap(&staking_contract.owner_cap, staked_coins);
 
         staking_contract.principal += amount;

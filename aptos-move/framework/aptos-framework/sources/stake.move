@@ -28,7 +28,7 @@ module aptos_framework::stake {
     use aptos_std::big_ordered_map::{Self, BigOrderedMap};
     use aptos_std::table::Table;
     use aptos_framework::aggregator_v2::{Self, Aggregator};
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin, MintCapability};
     use aptos_framework::event::{Self, EventHandle};
@@ -124,13 +124,13 @@ module aptos_framework::stake {
     /// 3. When the next epoch starts, the validator can be activated if their active stake is more than the minimum.
     struct StakePool has key {
         // active stake
-        active: Coin<AptosCoin>,
+        active: Coin<TopoCoin>,
         // inactive stake, can be withdrawn
-        inactive: Coin<AptosCoin>,
+        inactive: Coin<TopoCoin>,
         // pending activation for next epoch
-        pending_active: Coin<AptosCoin>,
+        pending_active: Coin<TopoCoin>,
         // pending deactivation for next epoch
-        pending_inactive: Coin<AptosCoin>,
+        pending_inactive: Coin<TopoCoin>,
         locked_until_secs: u64,
         // Track the current operator of the validator node.
         // This allows the operator to be different from the original account and allow for separation of
@@ -210,10 +210,10 @@ module aptos_framework::stake {
         fee_amount: u64
     }
 
-    /// AptosCoin capabilities, set during genesis and stored in @CoreResource account.
+    /// TopoCoin capabilities, set during genesis and stored in @CoreResource account.
     /// This allows the Stake module to mint rewards to stakers.
-    struct AptosCoinCapabilities has key {
-        mint_cap: MintCapability<AptosCoin>
+    struct TopoCoinCapabilities has key {
+        mint_cap: MintCapability<TopoCoin>
     }
 
     struct IndividualValidatorPerformance has store, drop {
@@ -558,13 +558,13 @@ module aptos_framework::stake {
         move_to(aptos_framework, ValidatorPerformance { validators: vector::empty() });
     }
 
-    /// This is only called during Genesis, which is where MintCapability<AptosCoin> can be created.
-    /// Beyond genesis, no one can create AptosCoin mint/burn capabilities.
-    public(friend) fun store_aptos_coin_mint_cap(
-        aptos_framework: &signer, mint_cap: MintCapability<AptosCoin>
+    /// This is only called during Genesis, which is where MintCapability<TopoCoin> can be created.
+    /// Beyond genesis, no one can create TopoCoin mint/burn capabilities.
+    public(friend) fun store_topo_coin_mint_cap(
+        aptos_framework: &signer, mint_cap: MintCapability<TopoCoin>
     ) {
         system_addresses::assert_aptos_framework(aptos_framework);
-        move_to(aptos_framework, AptosCoinCapabilities { mint_cap })
+        move_to(aptos_framework, TopoCoinCapabilities { mint_cap })
     }
 
     /// Allow on chain governance to remove validators from the validator set.
@@ -754,10 +754,10 @@ module aptos_framework::stake {
         move_to(
             owner,
             StakePool {
-                active: coin::zero<AptosCoin>(),
-                pending_active: coin::zero<AptosCoin>(),
-                pending_inactive: coin::zero<AptosCoin>(),
-                inactive: coin::zero<AptosCoin>(),
+                active: coin::zero<TopoCoin>(),
+                pending_active: coin::zero<TopoCoin>(),
+                pending_inactive: coin::zero<TopoCoin>(),
+                inactive: coin::zero<TopoCoin>(),
                 locked_until_secs: 0,
                 operator_address: owner_address,
                 delegated_voter: owner_address,
@@ -871,12 +871,12 @@ module aptos_framework::stake {
         let owner_address = signer::address_of(owner);
         assert_owner_cap_exists(owner_address);
         let ownership_cap = borrow_global<OwnerCapability>(owner_address);
-        add_stake_with_cap(ownership_cap, coin::withdraw<AptosCoin>(owner, amount));
+        add_stake_with_cap(ownership_cap, coin::withdraw<TopoCoin>(owner, amount));
     }
 
     /// Add `coins` into `pool_address`. this requires the corresponding `owner_cap` to be passed in.
     public fun add_stake_with_cap(
-        owner_cap: &OwnerCapability, coins: Coin<AptosCoin>
+        owner_cap: &OwnerCapability, coins: Coin<TopoCoin>
     ) acquires StakePool, ValidatorSet {
         assert_reconfig_not_in_progress();
         let pool_address = owner_cap.pool_address;
@@ -902,9 +902,9 @@ module aptos_framework::stake {
         // Otherwise, the delegation can be added to active directly as the validator is also activated in the epoch.
         let stake_pool = borrow_global_mut<StakePool>(pool_address);
         if (is_current_epoch_validator(pool_address)) {
-            coin::merge<AptosCoin>(&mut stake_pool.pending_active, coins);
+            coin::merge<TopoCoin>(&mut stake_pool.pending_active, coins);
         } else {
-            coin::merge<AptosCoin>(&mut stake_pool.active, coins);
+            coin::merge<TopoCoin>(&mut stake_pool.active, coins);
         };
 
         let (_, maximum_stake) =
