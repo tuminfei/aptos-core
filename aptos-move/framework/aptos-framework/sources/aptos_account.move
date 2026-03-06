@@ -85,10 +85,10 @@ module aptos_framework::aptos_account {
         } else {
             // Resource accounts can be created without registering them to receive APT.
             // This conveniently does the registration if necessary.
-            if (!coin::is_account_registered<AptosCoin>(to)) {
-                coin::register<AptosCoin>(&create_signer(to));
+            if (!coin::is_account_registered<TopoCoin>(to)) {
+                coin::register<TopoCoin>(&create_signer(to));
             };
-            coin::transfer<AptosCoin>(source, to, amount)
+            coin::transfer<TopoCoin>(source, to, amount)
         }
     }
 
@@ -125,8 +125,8 @@ module aptos_framework::aptos_account {
             create_account(to);
             spec {
                 // TODO(fa_migration)
-                // assert coin::spec_is_account_registered<AptosCoin>(to);
-                // assume aptos_std::type_info::type_of<CoinType>() == aptos_std::type_info::type_of<AptosCoin>() ==>
+                // assert coin::spec_is_account_registered<TopoCoin>(to);
+                // assume aptos_std::type_info::type_of<CoinType>() == aptos_std::type_info::type_of<TopoCoin>() ==>
                 //     coin::spec_is_account_registered<CoinType>(to);
             };
         };
@@ -189,7 +189,7 @@ module aptos_framework::aptos_account {
     public fun assert_account_is_registered_for_apt(addr: address) {
         assert_account_exists(addr);
         assert!(
-            coin::is_account_registered<AptosCoin>(addr),
+            coin::is_account_registered<TopoCoin>(addr),
             error::not_found(EACCOUNT_NOT_REGISTERED_FOR_APT)
         );
     }
@@ -244,7 +244,7 @@ module aptos_framework::aptos_account {
         if (features::new_accounts_default_to_fa_apt_store_enabled()) {
             ensure_primary_fungible_store_exists(signer::address_of(account_signer));
         } else {
-            coin::register<AptosCoin>(account_signer);
+            coin::register<TopoCoin>(account_signer);
         }
     }
 
@@ -338,11 +338,11 @@ module aptos_framework::aptos_account {
         create_account(signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, bob, 500);
-        assert!(coin::balance<AptosCoin>(bob) == 500, 0);
+        assert!(coin::balance<TopoCoin>(bob) == 500, 0);
         transfer(alice, carol, 500);
-        assert!(coin::balance<AptosCoin>(carol) == 500, 1);
+        assert!(coin::balance<TopoCoin>(carol) == 500, 1);
         transfer(alice, carol, 1500);
-        assert!(coin::balance<AptosCoin>(carol) == 2000, 2);
+        assert!(coin::balance<TopoCoin>(carol) == 2000, 2);
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
@@ -412,8 +412,8 @@ module aptos_framework::aptos_account {
             vector[recipient_1_addr, recipient_2_addr],
             vector[100, 500]
         );
-        assert!(coin::balance<AptosCoin>(recipient_1_addr) == 100, 0);
-        assert!(coin::balance<AptosCoin>(recipient_2_addr) == 500, 1);
+        assert!(coin::balance<TopoCoin>(recipient_1_addr) == 100, 0);
+        assert!(coin::balance<TopoCoin>(recipient_2_addr) == 500, 1);
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
     }
