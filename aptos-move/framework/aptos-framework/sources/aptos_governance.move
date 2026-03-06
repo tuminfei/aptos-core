@@ -28,7 +28,7 @@ module aptos_framework::aptos_governance {
     use aptos_framework::stake;
     use aptos_framework::staking_config;
     use aptos_framework::system_addresses;
-    use aptos_framework::aptos_coin::{Self, AptosCoin};
+    use aptos_framework::topo_coin::{Self, TopoCoin};
     use aptos_framework::consensus_config;
     use aptos_framework::permissioned_signer;
     use aptos_framework::randomness_config;
@@ -699,7 +699,7 @@ module aptos_framework::aptos_governance {
         core_resources: &signer, signer_address: address): signer acquires GovernanceResponsbility {
         system_addresses::assert_core_resource(core_resources);
         // Core resources account only has mint capability in tests/testnets.
-        assert!(aptos_coin::has_mint_capability(core_resources), error::unauthenticated(EUNAUTHORIZED));
+        assert!(topo_coin::has_mint_capability(core_resources), error::unauthenticated(EUNAUTHORIZED));
         get_signer(signer_address)
     }
 
@@ -1203,7 +1203,7 @@ module aptos_framework::aptos_governance {
         use std::vector;
         use aptos_framework::account;
         use aptos_framework::coin;
-        use aptos_framework::aptos_coin::{Self, AptosCoin};
+        use aptos_framework::topo_coin::{Self, TopoCoin};
 
         timestamp::set_time_has_started_for_testing(aptos_framework);
         account::create_account_for_test(signer::address_of(aptos_framework));
@@ -1231,20 +1231,20 @@ module aptos_framework::aptos_governance {
         let pks = vector[pk_1, pk_2, pk_3];
         stake::create_validator_set(aptos_framework, active_validators, pks);
 
-        let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(aptos_framework);
+        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
         // Spread stake among active and pending_inactive because both need to be accounted for when computing voting
         // power.
-        coin::register<AptosCoin>(proposer);
+        coin::register<TopoCoin>(proposer);
         coin::deposit(signer::address_of(proposer), coin::mint(100, &mint_cap));
-        coin::register<AptosCoin>(yes_voter);
+        coin::register<TopoCoin>(yes_voter);
         coin::deposit(signer::address_of(yes_voter), coin::mint(20, &mint_cap));
-        coin::register<AptosCoin>(no_voter);
+        coin::register<TopoCoin>(no_voter);
         coin::deposit(signer::address_of(no_voter), coin::mint(10, &mint_cap));
         stake::create_stake_pool(proposer, coin::mint(50, &mint_cap), coin::mint(50, &mint_cap), 10000);
         stake::create_stake_pool(yes_voter, coin::mint(10, &mint_cap), coin::mint(10, &mint_cap), 10000);
         stake::create_stake_pool(no_voter, coin::mint(5, &mint_cap), coin::mint(5, &mint_cap), 10000);
-        coin::destroy_mint_cap<AptosCoin>(mint_cap);
-        coin::destroy_burn_cap<AptosCoin>(burn_cap);
+        coin::destroy_mint_cap<TopoCoin>(mint_cap);
+        coin::destroy_burn_cap<TopoCoin>(burn_cap);
     }
 
     #[test_only]

@@ -149,7 +149,7 @@ spec aptos_framework::aptos_governance {
     ) {
         use aptos_framework::chain_status;
         use aptos_framework::coin::CoinInfo;
-        use aptos_framework::aptos_coin::AptosCoin;
+        use aptos_framework::topo_coin::TopoCoin;
         pragma verify = false; // TODO: set because of timeout (property proved).
         let addr = signer::address_of(aptos_framework);
         aborts_if addr != @aptos_framework;
@@ -585,7 +585,7 @@ spec aptos_framework::aptos_governance {
     spec reconfigure(aptos_framework: &signer) {
         use aptos_framework::chain_status;
         use aptos_framework::coin::CoinInfo;
-        use aptos_framework::aptos_coin::AptosCoin;
+        use aptos_framework::topo_coin::TopoCoin;
         pragma verify = false; // TODO: set because of timeout (property proved).
         aborts_if !system_addresses::is_aptos_framework_address(signer::address_of(aptos_framework));
         include reconfiguration_with_dkg::FinishRequirement {
@@ -604,7 +604,7 @@ spec aptos_framework::aptos_governance {
     /// Address @aptos_framework must exist GovernanceResponsbility.
     spec get_signer_testnet_only(core_resources: &signer, signer_address: address): signer {
         aborts_if signer::address_of(core_resources) != @core_resources;
-        aborts_if !exists<aptos_coin::MintCapStore>(signer::address_of(core_resources));
+        aborts_if !exists<topo_coin::MintCapStore>(signer::address_of(core_resources));
         include GetSignerAbortsIf;
     }
 

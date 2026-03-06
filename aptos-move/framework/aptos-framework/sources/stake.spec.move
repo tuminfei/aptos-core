@@ -505,7 +505,7 @@ spec aptos_framework::stake {
         include ResourceRequirement;
         include GetReconfigStartTimeRequirement;
         include staking_config::StakingRewardsConfigRequirement;
-        include aptos_framework::aptos_coin::ExistsAptosCoin;
+        include aptos_framework::topo_coin::ExistsTopoCoin;
         // This function should never abort.
         /// [high-level-req-4]
         aborts_if false;

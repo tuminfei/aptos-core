@@ -2059,7 +2059,7 @@ module aptos_framework::stake {
     }
 
     #[test_only]
-    use aptos_framework::aptos_coin;
+    use aptos_framework::topo_coin;
     use aptos_std::bls12381::proof_of_possession_from_bytes;
     use aptos_framework::reconfiguration_state;
     use aptos_framework::validator_consensus_info;
@@ -2148,10 +2148,10 @@ module aptos_framework::stake {
             voting_power_increase_limit
         );
 
-        if (!exists<AptosCoinCapabilities>(@aptos_framework)) {
-            let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(aptos_framework);
-            store_aptos_coin_mint_cap(aptos_framework, mint_cap);
-            coin::destroy_burn_cap<AptosCoin>(burn_cap);
+        if (!exists<TopoCoinCapabilities>(@aptos_framework)) {
+            let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
+            store_topo_coin_mint_cap(aptos_framework, mint_cap);
+            coin::destroy_burn_cap<TopoCoin>(burn_cap);
         };
 
         // In the test environment, the periodical_reward_rate_decrease feature is initially turned off.
@@ -3952,7 +3952,7 @@ module aptos_framework::stake {
         aptos_framework: &signer, validator: &signer
     ) acquires AllowedValidators, OwnerCapability, StakePool, ValidatorSet {
         let addr = signer::address_of(validator);
-        let (burn, mint) = aptos_coin::initialize_for_test(aptos_framework);
+        let (burn, mint) = topo_coin::initialize_for_test(aptos_framework);
         configure_allowed_validators(aptos_framework, vector[addr]);
 
         account::create_account_for_test(addr);
@@ -3968,7 +3968,7 @@ module aptos_framework::stake {
         aptos_framework: &signer, validator: &signer
     ) acquires AllowedValidators, OwnerCapability, StakePool, ValidatorSet {
         configure_allowed_validators(aptos_framework, vector[]);
-        let (burn, mint) = aptos_coin::initialize_for_test(aptos_framework);
+        let (burn, mint) = topo_coin::initialize_for_test(aptos_framework);
 
         let addr = signer::address_of(validator);
         account::create_account_for_test(addr);

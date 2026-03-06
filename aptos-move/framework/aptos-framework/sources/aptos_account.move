@@ -1,6 +1,6 @@
 module aptos_framework::aptos_account {
     use aptos_framework::account::{Self, new_event_handle};
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::create_signer::create_signer;
     use aptos_framework::event::{EventHandle, emit};
@@ -334,7 +334,7 @@ module aptos_framework::aptos_account {
                 x"00000000000000000000000000000000000000000000000000000000000ca501"
             );
 
-        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = aptos_framework::topo_coin::initialize_for_test(core);
         create_account(signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, bob, 500);
@@ -357,7 +357,7 @@ module aptos_framework::aptos_account {
                 x"0000000000000000000000000000000000000000000000000000000000000b0b"
             );
 
-        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = aptos_framework::topo_coin::initialize_for_test(core);
         create_account(signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
 
@@ -379,13 +379,13 @@ module aptos_framework::aptos_account {
     ) {
         let (resource_account, _) = account::create_resource_account(alice, vector[]);
         let resource_acc_addr = signer::address_of(&resource_account);
-        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
-        assert!(coin::is_account_registered<AptosCoin>(resource_acc_addr), 0);
+        let (burn_cap, mint_cap) = aptos_framework::topo_coin::initialize_for_test(core);
+        assert!(coin::is_account_registered<TopoCoin>(resource_acc_addr), 0);
 
         create_account(signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, resource_acc_addr, 500);
-        assert!(coin::balance<AptosCoin>(resource_acc_addr) == 500, 1);
+        assert!(coin::balance<TopoCoin>(resource_acc_addr) == 500, 1);
 
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
@@ -400,7 +400,7 @@ module aptos_framework::aptos_account {
         recipient_1: &signer,
         recipient_2: &signer
     ) {
-        let (burn_cap, mint_cap) = aptos_framework::aptos_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = aptos_framework::topo_coin::initialize_for_test(core);
         create_account(signer::address_of(from));
         let recipient_1_addr = signer::address_of(recipient_1);
         let recipient_2_addr = signer::address_of(recipient_2);
@@ -498,9 +498,9 @@ module aptos_framework::aptos_account {
     #[test(user = @0xcafe)]
     fun test_primary_fungible_store_address(user: &signer) {
         use aptos_framework::fungible_asset::Metadata;
-        use aptos_framework::aptos_coin;
+        use aptos_framework::topo_coin;
 
-        aptos_coin::ensure_initialized_with_apt_fa_metadata_for_test();
+        topo_coin::ensure_initialized_with_topo_fa_metadata_for_test();
 
         let apt_metadata = object::address_to_object<Metadata>(@aptos_fungible_asset);
         let user_addr = signer::address_of(user);

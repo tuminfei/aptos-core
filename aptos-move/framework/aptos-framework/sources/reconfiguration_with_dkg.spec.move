@@ -33,7 +33,7 @@ spec aptos_framework::reconfiguration_with_dkg {
         use std::signer;
         use std::features;
         use aptos_framework::coin::CoinInfo;
-        use aptos_framework::aptos_coin::AptosCoin;
+        use aptos_framework::topo_coin::TopoCoin;
         use aptos_framework::staking_config;
         use aptos_framework::config_buffer;
         use aptos_framework::version;
