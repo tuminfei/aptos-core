@@ -225,6 +225,7 @@ impl BufferManager {
             signing_phase_rx,
 
             reliable_broadcast: ReliableBroadcast::new(
+                "buffer_manager",
                 author,
                 epoch_state.verifier.get_ordered_account_addresses(),
                 commit_msg_tx.clone(),
@@ -921,7 +922,7 @@ impl BufferManager {
                 let tx = verified_commit_msg_tx.clone();
                 let epoch_state_clone = epoch_state.clone();
                 bounded_executor
-                    .spawn(async move {
+                    .spawn_blocking(move || {
                         match commit_msg.req.verify(sender, &epoch_state_clone.verifier) {
                             Ok(_) => {
                                 let _ = tx.unbounded_send(commit_msg);

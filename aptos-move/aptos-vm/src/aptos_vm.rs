@@ -38,12 +38,11 @@ use aptos_block_executor::{
     txn_provider::{default::DefaultTxnProvider, TxnProvider},
 };
 use aptos_crypto::HashValue;
-use aptos_framework::natives::code::PublishRequest;
+use aptos_framework_natives::code::PublishRequest;
 use aptos_gas_algebra::{Gas, GasQuantity, NumBytes, Octa};
 use aptos_gas_meter::{AptosGasMeter, GasAlgebra, StandardGasAlgebra, StandardGasMeter};
 use aptos_gas_schedule::{
-    gas_feature_versions,
-    gas_feature_versions::{RELEASE_V1_10, RELEASE_V1_27, RELEASE_V1_38},
+    gas_feature_versions::{self, RELEASE_V1_10, RELEASE_V1_27, RELEASE_V1_38},
     AptosGasParameters, VMGasParameters,
 };
 use aptos_logger::{enabled, prelude::*, Level};
@@ -164,6 +163,7 @@ static NUM_EXECUTION_SHARD: OnceCell<usize> = OnceCell::new();
 static NUM_PROOF_READING_THREADS: OnceCell<usize> = OnceCell::new();
 static DISCARD_FAILED_BLOCKS: OnceCell<bool> = OnceCell::new();
 static PROCESSED_TRANSACTIONS_DETAILED_COUNTERS: OnceCell<bool> = OnceCell::new();
+static ENABLE_PRE_WRITE: OnceCell<bool> = OnceCell::new();
 
 macro_rules! deprecated_module_bundle {
     () => {
@@ -351,7 +351,7 @@ impl AptosVM {
     }
 
     #[inline(always)]
-    fn timed_features(&self) -> &TimedFeatures {
+    pub(crate) fn timed_features(&self) -> &TimedFeatures {
         self.move_vm.env.timed_features()
     }
 
@@ -415,11 +415,21 @@ impl AptosVM {
                     true
                 },
                 Ok(TransactionExecutableRef::EntryFunction(f)) => {
-                    // If entry function is defined at special address - it is part of trusted code
-                    // and so no need to delay any checks (as there are none).
+                    // Perform in-place checks for entry functions at special addresses (e.g.,
+                    // framework code at 0x1) and not asynchronously.
+                    //
+                    // Rationale:
+                    // Special addresses contain trusted code. With the trusted code optimization,
+                    // type checks are disabled entirely, so async replay would only add overhead
+                    // (recording and replaying) without providing validation benefits. This is a
+                    // heuristic: if the entrypoint is trusted, most called functions are likely
+                    // trusted. While closures may call untrusted code, being conservative here
+                    // avoids unnecessary overhead in the common case.
                     !f.module().address().is_special()
                 },
-                Ok(TransactionExecutableRef::Empty) | Err(_) => false,
+                Ok(TransactionExecutableRef::Empty)
+                | Ok(TransactionExecutableRef::Encrypted)
+                | Err(_) => false,
             }
     }
 
@@ -452,6 +462,20 @@ impl AptosVM {
         match BLOCKSTM_V2_ENABLED.get() {
             Some(blockstm_v2_enabled) => *blockstm_v2_enabled,
             None => false,
+        }
+    }
+
+    /// Sets enable_pre_write flag when invoked the first time.
+    pub fn set_enable_pre_write_once(enable_pre_write: bool) {
+        // Only the first call succeeds, due to OnceCell semantics.
+        ENABLE_PRE_WRITE.set(enable_pre_write).ok();
+    }
+
+    /// Get the enable_pre_write flag if already set, otherwise return default (true)
+    pub fn get_enable_pre_write() -> bool {
+        match ENABLE_PRE_WRITE.get() {
+            Some(enable_pre_write) => *enable_pre_write,
+            None => true,
         }
     }
 
@@ -1073,7 +1097,18 @@ impl AptosVM {
                     )
                 })?;
             },
-
+            TransactionExecutableRef::Encrypted => {
+                // If the executable is still `Encrypted` here, it means that decryption
+                // failed. Return an error so the caller runs the failure epilogue, which
+                // increments the sequence number and charges gas.
+                return Err(VMStatus::error(
+                    StatusCode::FAILED_TO_DESERIALIZE_ARGUMENT,
+                    Some(
+                        "Encrypted transaction decryption failed; payload not available"
+                            .to_string(),
+                    ),
+                ));
+            },
             // Not reachable as this function should only be invoked for entry or script
             // transaction payload.
             _ => unreachable!("Only scripts or entry functions are executed"),
@@ -1233,7 +1268,19 @@ impl AptosVM {
             TransactionExecutableRef::Script(_) => {
                 let s = VMStatus::error(
                     StatusCode::FEATURE_UNDER_GATING,
-                    Some("Multisig transaction does not support script payload".to_string()),
+                    Some(
+                        "Multisig transaction does not support script or encrypted payload"
+                            .to_string(),
+                    ),
+                );
+                return Ok((s, discarded_output(StatusCode::FEATURE_UNDER_GATING)));
+            },
+            TransactionExecutableRef::Encrypted => {
+                // TODO(ibalajiarun): Revisit this. I think this should lead to an abort due to failed
+                // decryption.
+                let s = VMStatus::error(
+                    StatusCode::FEATURE_UNDER_GATING,
+                    Some("Multisig transaction does not support encrypted payload".to_string()),
                 );
                 return Ok((s, discarded_output(StatusCode::FEATURE_UNDER_GATING)));
             },
@@ -1930,6 +1977,15 @@ impl AptosVM {
             }
         }
 
+        if transaction.payload().is_encrypted_variant()
+            && !self.features().is_encrypted_transactions_enabled()
+        {
+            return Err(VMStatus::error(
+                StatusCode::FEATURE_UNDER_GATING,
+                Some("Encrypted transactions are not yet supported".to_string()),
+            ));
+        }
+
         // The prologue MUST be run AFTER any validation. Otherwise you may run prologue and hit
         // SEQUENCE_NUMBER_TOO_NEW if there is more than one transaction from the same sender and
         // end up skipping validation.
@@ -2117,10 +2173,29 @@ impl AptosVM {
                 &mut traversal_context,
             )
         });
+        if txn.is_encrypted_txn() {
+            // Log the VM execution result for encrypted transactions.
+            info!(
+                "Encrypted user transaction executed. txn_hash={}, sender={}, status={:?}, gas_used={}, output_status={:?}, vm_status={:?}",
+                txn.committed_hash(),
+                txn.sender(),
+                vm_status,
+                gas_usage,
+                output.status(),
+                vm_status,
+            );
+        }
 
-        // Whether user transaction succeeded or failed (e.g., abort in Move code or running out
-        // of gas in epilogue), we record the trace of all executed instructions.
-        output.set_trace(trace_recorder.finish());
+        // Only if user transaction succeeded, record the trace of all executed instructions.
+        // If transaction did not succeed, its side effects are discarded and so there is no
+        // need to replay the trace for extra runtime checks.
+        if output
+            .status()
+            .as_kept_status()
+            .is_ok_and(|s| s.is_success())
+        {
+            output.set_trace(trace_recorder.finish());
+        }
 
         (vm_status, output)
     }
@@ -2141,7 +2216,7 @@ impl AptosVM {
         G: AptosGasMeter,
         F: FnOnce(u64, VMGasParameters, StorageGasParameters, bool, Gas, &'a C) -> G,
     {
-        let txn_metadata = TransactionMetadata::new(txn, auxiliary_info);
+        let txn_metadata = TransactionMetadata::new(txn, auxiliary_info, self.timed_features());
 
         let is_approved_gov_script = is_approved_gov_script(resolver, txn, &txn_metadata);
 
@@ -2650,6 +2725,88 @@ impl AptosVM {
         arguments: Vec<Vec<u8>>,
         max_gas_amount: u64,
     ) -> ViewFunctionOutput {
+        let (output, _) = Self::run_view_function(
+            state_view,
+            module_id,
+            func_name,
+            type_args,
+            arguments,
+            max_gas_amount,
+            |gas_feature_version, vm_gas_params, storage_gas_params| {
+                make_prod_gas_meter(
+                    gas_feature_version,
+                    vm_gas_params,
+                    storage_gas_params,
+                    /* is_approved_gov_script */ false,
+                    max_gas_amount.into(),
+                    &NoopBlockSynchronizationKillSwitch {},
+                )
+            },
+        );
+        output
+    }
+
+    /// Alternative entrypoint for view function execution that allows customization
+    /// based on the production gas meter.
+    ///
+    /// This can be useful for gas profiling while preserving the production gas behavior.
+    /// Returns the view function output along with the modified gas meter (or `None` if
+    /// gas parameter loading failed before the meter could be created).
+    pub fn execute_view_function_with_modified_gas_meter<G, M, F>(
+        state_view: &impl StateView,
+        module_id: ModuleId,
+        func_name: Identifier,
+        type_args: Vec<TypeTag>,
+        arguments: Vec<Vec<u8>>,
+        max_gas_amount: u64,
+        modify_gas_meter: F,
+    ) -> (ViewFunctionOutput, Option<G>)
+    where
+        F: FnOnce(
+            MemoryTrackedGasMeterImpl<
+                StandardGasMeter<StandardGasAlgebra<'static, NoopBlockSynchronizationKillSwitch>>,
+                M,
+            >,
+        ) -> G,
+        G: AptosGasMeter,
+        M: MemoryAlgebra,
+    {
+        Self::run_view_function(
+            state_view,
+            module_id,
+            func_name,
+            type_args,
+            arguments,
+            max_gas_amount,
+            |gas_feature_version, vm_gas_params, storage_gas_params| {
+                let gas_meter = make_prod_gas_meter_impl::<_, M>(
+                    gas_feature_version,
+                    vm_gas_params,
+                    storage_gas_params,
+                    /* is_approved_gov_script */ false,
+                    max_gas_amount.into(),
+                    &NoopBlockSynchronizationKillSwitch {},
+                );
+                modify_gas_meter(gas_meter)
+            },
+        )
+    }
+
+    /// Common execution logic for view functions: loads gas parameters, creates the gas
+    /// meter via the provided closure, runs the function, and processes the result into
+    /// a [`ViewFunctionOutput`].
+    ///
+    /// Returns the output along with the gas meter (or `None` if gas parameter loading
+    /// failed before the meter could be created).
+    fn run_view_function<G: AptosGasMeter>(
+        state_view: &impl StateView,
+        module_id: ModuleId,
+        func_name: Identifier,
+        type_args: Vec<TypeTag>,
+        arguments: Vec<Vec<u8>>,
+        max_gas_amount: u64,
+        make_gas_meter: impl FnOnce(u64, VMGasParameters, StorageGasParameters) -> G,
+    ) -> (ViewFunctionOutput, Option<G>) {
         let env = AptosEnvironment::new(state_view);
         let vm = AptosVM::new(&env);
 
@@ -2658,32 +2815,32 @@ impl AptosVM {
         let vm_gas_params = match vm.gas_params(&log_context) {
             Ok(gas_params) => gas_params.vm.clone(),
             Err(err) => {
-                return ViewFunctionOutput::new_error_message(
-                    format!("{}", err),
-                    Some(err.status_code()),
-                    0,
+                return (
+                    ViewFunctionOutput::new_error_message(
+                        format!("{}", err),
+                        Some(err.status_code()),
+                        0,
+                    ),
+                    None,
                 )
             },
         };
         let storage_gas_params = match vm.storage_gas_params(&log_context) {
             Ok(gas_params) => gas_params.clone(),
             Err(err) => {
-                return ViewFunctionOutput::new_error_message(
-                    format!("{}", err),
-                    Some(err.status_code()),
-                    0,
+                return (
+                    ViewFunctionOutput::new_error_message(
+                        format!("{}", err),
+                        Some(err.status_code()),
+                        0,
+                    ),
+                    None,
                 )
             },
         };
 
-        let mut gas_meter = make_prod_gas_meter(
-            vm.gas_feature_version(),
-            vm_gas_params,
-            storage_gas_params,
-            /* is_approved_gov_script */ false,
-            max_gas_amount.into(),
-            &NoopBlockSynchronizationKillSwitch {},
-        );
+        let mut gas_meter =
+            make_gas_meter(vm.gas_feature_version(), vm_gas_params, storage_gas_params);
 
         let resolver = state_view.as_move_resolver();
         let module_storage = state_view.as_aptos_code_storage(&env);
@@ -2704,7 +2861,7 @@ impl AptosVM {
             &module_storage,
         );
         let gas_used = Self::gas_used(max_gas_amount.into(), &gas_meter);
-        match execution_result {
+        let output = match execution_result {
             Ok(result) => ViewFunctionOutput::new(Ok(result), gas_used),
             Err(e) => {
                 let vm_status = e.clone().into_vm_status();
@@ -2715,10 +2872,13 @@ impl AptosVM {
                             .message()
                             .map(|m| m.to_string())
                             .unwrap_or_else(|| e.to_string());
-                        return ViewFunctionOutput::new_error_message(
-                            message,
-                            Some(vm_status.status_code()),
-                            gas_used,
+                        return (
+                            ViewFunctionOutput::new_error_message(
+                                message,
+                                Some(vm_status.status_code()),
+                                gas_used,
+                            ),
+                            Some(gas_meter),
                         );
                     },
                 }
@@ -2743,7 +2903,8 @@ impl AptosVM {
                     gas_used,
                 )
             },
-        }
+        };
+        (output, Some(gas_meter))
     }
 
     fn gas_used(max_gas_amount: Gas, gas_meter: &impl AptosGasMeter) -> u64 {
@@ -3131,6 +3292,7 @@ impl VMBlockExecutor for AptosVMBlockExecutor {
                 allow_fallback: true,
                 discard_failed_blocks: AptosVM::get_discard_failed_blocks(),
                 module_cache_config: BlockExecutorModuleCacheLocalConfig::default(),
+                enable_pre_write: AptosVM::get_enable_pre_write(),
             },
             onchain: onchain_config,
         };
@@ -3243,9 +3405,12 @@ impl VMValidator for AptosVM {
             }
         }
 
-        if transaction.payload().is_encrypted_variant() {
+        if transaction.payload().is_encrypted_variant()
+            && !self.features().is_encrypted_transactions_enabled()
+        {
             return VMValidatorResult::error(StatusCode::FEATURE_UNDER_GATING);
         }
+
         let txn = match transaction.check_signature() {
             Ok(t) => t,
             _ => {
@@ -3253,7 +3418,7 @@ impl VMValidator for AptosVM {
             },
         };
         let auxiliary_info = AuxiliaryInfo::new_timestamp_not_yet_assigned(0);
-        let txn_data = TransactionMetadata::new(&txn, &auxiliary_info);
+        let txn_data = TransactionMetadata::new(&txn, &auxiliary_info, self.timed_features());
 
         let resolver = self.as_move_resolver(&state_view);
         let is_approved_gov_script = is_approved_gov_script(&resolver, &txn, &txn_data);
@@ -3317,6 +3482,15 @@ impl VMValidator for AptosVM {
         };
 
         TRANSACTIONS_VALIDATED.inc_with(&[counter_label]);
+
+        if txn.is_encrypted_txn() {
+            info!(
+                "Encrypted transaction detected. txn_hash={}, sender={}, result={:?}",
+                txn.committed_hash(),
+                txn.sender(),
+                result,
+            );
+        }
 
         result
     }

@@ -46,7 +46,6 @@ This module defines a struct storing the metadata of the block and new block eve
 <pre><code><b>use</b> <a href="account.md#0x1_account">0x1::account</a>;
 <b>use</b> <a href="decryption.md#0x1_decryption">0x1::decryption</a>;
 <b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features">0x1::features</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="randomness.md#0x1_randomness">0x1::randomness</a>;
 <b>use</b> <a href="reconfiguration.md#0x1_reconfiguration">0x1::reconfiguration</a>;
@@ -518,14 +517,7 @@ Can only be called as part of the Aptos governance proposal process established 
     <b>let</b> old_epoch_interval = block_resource.epoch_interval;
     block_resource.epoch_interval = new_epoch_interval;
 
-    <b>if</b> (std::features::module_event_migration_enabled()) {
-        <a href="event.md#0x1_event_emit">event::emit</a>(<a href="block.md#0x1_block_UpdateEpochInterval">UpdateEpochInterval</a> { old_epoch_interval, new_epoch_interval });
-    } <b>else</b> {
-        <a href="event.md#0x1_event_emit_event">event::emit_event</a>&lt;<a href="block.md#0x1_block_UpdateEpochIntervalEvent">UpdateEpochIntervalEvent</a>&gt;(
-            &<b>mut</b> block_resource.update_epoch_interval_events,
-            <a href="block.md#0x1_block_UpdateEpochIntervalEvent">UpdateEpochIntervalEvent</a> { old_epoch_interval, new_epoch_interval }
-        );
-    };
+    <a href="event.md#0x1_event_emit">event::emit</a>(<a href="block.md#0x1_block_UpdateEpochInterval">UpdateEpochInterval</a> { old_epoch_interval, new_epoch_interval });
 }
 </code></pre>
 
@@ -774,7 +766,7 @@ reconfiguration with DKG and Chunky DKG after epoch timed out.
     <a href="decryption.md#0x1_decryption_on_new_block">decryption::on_new_block</a>(&vm, epoch, round, decryption_key);
 
     <b>if</b> (<a href="timestamp.md#0x1_timestamp">timestamp</a> - <a href="reconfiguration.md#0x1_reconfiguration_last_reconfiguration_time">reconfiguration::last_reconfiguration_time</a>() &gt;= epoch_interval) {
-        <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_try_start">reconfiguration_with_dkg::try_start</a>();
+        <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_try_start_with_chunky_dkg">reconfiguration_with_dkg::try_start_with_chunky_dkg</a>();
     };
 }
 </code></pre>

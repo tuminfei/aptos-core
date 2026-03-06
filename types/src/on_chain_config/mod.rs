@@ -23,7 +23,7 @@ mod approved_execution_hashes;
 mod aptos_features;
 mod aptos_version;
 mod chain_id;
-mod chunky_dkg_config;
+pub mod chunky_dkg_config;
 mod commit_history;
 mod consensus_config;
 mod execution_config;
@@ -58,7 +58,8 @@ pub use self::{
         ConfigV1 as JWKConsensusConfigV1, OIDCProvider, OnChainJWKConsensusConfig,
     },
     randomness_config::{
-        OnChainRandomnessConfig, RandomnessConfigMoveStruct, RandomnessConfigSeqNum,
+        ConfigV2 as RandomnessConfigV2, OnChainRandomnessConfig, RandomnessConfigMoveStruct,
+        RandomnessConfigSeqNum,
     },
     timed_features::{TimedFeatureFlag, TimedFeatureOverride, TimedFeatures, TimedFeaturesBuilder},
     timestamp::CurrentTimeMicroseconds,

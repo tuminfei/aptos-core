@@ -22,9 +22,8 @@ use aptos_dkg::pvss::{
         get_threshold_configs_for_benchmarking, get_weighted_configs_for_benchmarking,
         reconstruct_dealt_secret_key_randomly, NoAux,
     },
-    traits::{
-        transcript::{Aggregated, HasAggregatableSubtranscript, Transcript, WithMaxNumShares},
-        Subtranscript,
+    traits::transcript::{
+        Aggregated, HasAggregatableSubtranscript, Transcript, TranscriptCore, WithMaxNumShares,
     },
     GenericWeighting, ThresholdConfigBlstrs,
 };
@@ -185,7 +184,7 @@ fn print_transcript_size<T: Transcript>(size_type: &str, sc: &T::SecretSharingCo
 ///  3. Ensures the a sufficiently-large random subset of the players can recover the dealt secret
 #[cfg(test)]
 fn pvss_deal_verify_and_reconstruct<T: AggregatableTranscript>(
-    sc: &<T as Transcript>::SecretSharingConfig,
+    sc: &<T as TranscriptCore>::SecretSharingConfig,
     seed_bytes: [u8; 32],
 ) {
     // println!();
@@ -294,7 +293,7 @@ fn nonaggregatable_pvss_deal_verify_and_reconstruct<T: HasAggregatableSubtranscr
         &sc.get_player(0),
         &mut rng,
     );
-    trx.verify(&sc, &d.pp, &[d.spks[0].clone()], &d.eks, &NoAux)
+    trx.verify(&sc, &d.pp, &[d.spks[0].clone()], &d.eks, &NoAux, &mut rng)
         .expect("PVSS transcript failed verification");
 
     // Test transcript (de)serialization
@@ -335,7 +334,7 @@ fn nonaggregatable_weighted_pvss_deal_verify_and_reconstruct<E: Pairing, T>(
         &sc.get_player(0),
         &mut rng,
     );
-    trx.verify(&sc, &d.pp, &[d.spks[0].clone()], &d.eks, &NoAux)
+    trx.verify(&sc, &d.pp, &[d.spks[0].clone()], &d.eks, &NoAux, &mut rng)
         .expect("PVSS transcript failed verification");
 
     // Test transcript (de)serialization

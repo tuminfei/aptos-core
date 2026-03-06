@@ -40,7 +40,7 @@ use std::{
     sync::Arc,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct HotStateMetadata {
     latest: Option<StateKey>,
     oldest: Option<StateKey>,
@@ -140,6 +140,15 @@ impl State {
 
     pub fn is_descendant_of(&self, rhs: &State) -> bool {
         self.shards[0].is_descendant_of(&rhs.shards[0])
+    }
+
+    /// Returns true if `self` can serve as the base (older) side of a `StateDelta`
+    /// with `current` as the newer side.
+    pub fn can_be_delta_base_of(&self, current: &State) -> bool {
+        self.shards
+            .iter()
+            .zip(current.shards.iter())
+            .all(|(base_shard, top_shard)| top_shard.can_view_after(base_shard))
     }
 
     pub fn latest_hot_key(&self, shard_id: usize) -> Option<StateKey> {
@@ -399,7 +408,7 @@ pub struct LedgerState {
 
 impl LedgerState {
     pub fn new(latest: State, last_checkpoint: State) -> Self {
-        assert!(latest.is_descendant_of(&latest));
+        assert!(latest.is_descendant_of(&last_checkpoint));
 
         Self {
             latest,

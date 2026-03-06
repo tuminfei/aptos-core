@@ -3,11 +3,15 @@
 
 use crate::{chunky::types::MissingTranscriptRequest, network::NetworkSender, DKGMessage};
 use anyhow::{anyhow, Result};
-use aptos_dkg::pvss::traits::transcript::HasAggregatableSubtranscript;
+use aptos_dkg::pvss::traits::transcript::{HasAggregatableSubtranscript, Transcript};
 use aptos_logger::warn;
-use aptos_types::dkg::chunky_dkg::{ChunkyDKGConfig, ChunkyTranscript};
+use aptos_types::{
+    dkg::chunky_dkg::{ChunkyDKGConfig, ChunkyTranscript},
+    epoch_state::EpochState,
+};
 use futures_util::{stream::FuturesUnordered, StreamExt};
 use move_core_types::account_address::AccountAddress;
+use rand::thread_rng;
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
@@ -22,6 +26,7 @@ pub struct MissingTranscriptFetcher {
     missing_dealers: Vec<AccountAddress>,
     rpc_timeout: Duration,
     dkg_config: ChunkyDKGConfig,
+    epoch_state: Arc<EpochState>,
 }
 
 #[allow(dead_code)]
@@ -32,6 +37,7 @@ impl MissingTranscriptFetcher {
         missing_dealers: Vec<AccountAddress>,
         rpc_timeout: Duration,
         dkg_config: ChunkyDKGConfig,
+        epoch_state: Arc<EpochState>,
     ) -> Self {
         Self {
             sender,
@@ -39,6 +45,7 @@ impl MissingTranscriptFetcher {
             missing_dealers,
             rpc_timeout,
             dkg_config,
+            epoch_state,
         }
     }
 
@@ -137,6 +144,7 @@ impl MissingTranscriptFetcher {
                                             &transcript_response.transcript_bytes,
                                         ) {
                                             // TODO(ibalajiarun): There is indexing in verify method which can panic.
+                                            let mut rng = thread_rng();
                                             if transcript
                                                 .verify(
                                                     &self.dkg_config.threshold_config,
@@ -144,10 +152,38 @@ impl MissingTranscriptFetcher {
                                                     &signing_pubkeys,
                                                     &self.dkg_config.eks,
                                                     &self.dkg_config.session_metadata,
+                                                    &mut rng,
                                                 )
                                                 .is_ok()
                                             {
-                                                if missing_set.contains(&dealer_addr) {
+                                                // Verify dealer ID matches the expected
+                                                // dealer's validator index (same check as
+                                                // agg_subtrx_producer).
+                                                let dealers = transcript.get_dealers();
+                                                let expected_index = self
+                                                    .epoch_state
+                                                    .verifier
+                                                    .address_to_validator_index()
+                                                    .get(&dealer_addr)
+                                                    .copied();
+                                                if dealers.len() != 1
+                                                    || expected_index.is_none()
+                                                    || dealers[0].id != expected_index.unwrap()
+                                                {
+                                                    warn!(
+                                                        "[ChunkyDKG] Dealer ID check failed for dealer {}, retrying",
+                                                        dealer_addr
+                                                    );
+                                                    let future = create_request_future(
+                                                        dealer_addr,
+                                                        self.sender,
+                                                        self.epoch,
+                                                        network_sender.clone(),
+                                                        self.rpc_timeout,
+                                                        Some(RETRY_DELAY),
+                                                    );
+                                                    pending_requests.push(future);
+                                                } else if missing_set.contains(&dealer_addr) {
                                                     results.insert(dealer_addr, transcript);
                                                     missing_set.remove(&dealer_addr);
                                                 }

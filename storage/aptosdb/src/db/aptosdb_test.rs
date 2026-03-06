@@ -251,9 +251,9 @@ pub fn test_state_merkle_pruning_impl(
                 prune_window: 10,
                 batch_size: 1,
             },
+            ..Default::default()
         },
         RocksdbConfigs::default(),
-        false, /* enable_indexer */
         BUFFERED_STATE_TARGET_ITEMS_FOR_TEST,
         DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD,
         None,

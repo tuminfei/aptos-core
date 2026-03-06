@@ -2,17 +2,20 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use aptos_crypto::arkworks::{random::UniformRand, GroupGenerators};
-use ark_ec::pairing::Pairing;
+use ark_ec::pairing::{Pairing, PairingOutput};
+use ark_ff::AdditiveGroup;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use rand::{CryptoRng, RngCore};
 
+// TODO: split this into `BatchedRangeProof` and `PairingBatchedRangeProof: BatchedRangeProof`? Or only do PairingBatchedRangeProof for now?
 pub trait BatchedRangeProof<E: Pairing>: Clone + CanonicalSerialize + CanonicalDeserialize {
-    type PublicStatement: CanonicalSerialize;
+    type PublicStatement: CanonicalSerialize; // Serialization is needed because this is often appended to a Fiat-Shamir transcript
     type ProverKey;
-    type VerificationKey: Clone + CanonicalSerialize; // Serialization is needed because this key is often appended to a Fiat-Shamir transcript
-    type Input: From<u64>; // TODO: slightly hacky. It's used in `range_proof_random_instance()` to generate (chunks of) inputs that have a certain bit size
-    type Commitment;
-    type CommitmentRandomness: Clone + UniformRand;
+    type VerificationKey: Clone + CanonicalSerialize; // Serialization is needed because this is often appended to a Fiat-Shamir transcript
+    type Input: From<u64>; // Slightly hacky. It's used in `range_proof_random_instance()` to generate (chunks of) inputs that have a certain bit size
+    type Commitment: Clone + Into<Self::CommitmentNormalised>;
+    type CommitmentNormalised: Clone;
+    type CommitmentRandomness: UniformRand;
     type CommitmentKey;
 
     const DST: &[u8];
@@ -33,7 +36,7 @@ pub trait BatchedRangeProof<E: Pairing>: Clone + CanonicalSerialize + CanonicalD
         rng: &mut R,
     ) -> (Self::Commitment, Self::CommitmentRandomness) {
         let r = Self::CommitmentRandomness::rand(rng);
-        let comm = Self::commit_with_randomness(ck, values, &r.clone());
+        let comm = Self::commit_with_randomness(ck, values, &r);
         (comm, r)
     }
 
@@ -43,22 +46,38 @@ pub trait BatchedRangeProof<E: Pairing>: Clone + CanonicalSerialize + CanonicalD
         r: &Self::CommitmentRandomness,
     ) -> Self::Commitment;
 
-    fn prove<R: rand_core::RngCore + rand_core::CryptoRng>(
+    fn prove<R: RngCore + CryptoRng>(
         pk: &Self::ProverKey,
         values: &[Self::Input],
         ell: u8,
-        comm: &Self::Commitment,
+        comm: &Self::CommitmentNormalised,
         r: &Self::CommitmentRandomness,
         rng: &mut R,
     ) -> Self;
 
-    fn verify(
+    fn verify<R: RngCore + CryptoRng>(
+        &self,
+        vk: &Self::VerificationKey,
+        n: usize,
+        ell: u8,
+        comm: &Self::Commitment, // TODO: should make this CommitmentNormalised
+        rng: &mut R,
+    ) -> anyhow::Result<()> {
+        let (g1_terms, g2_terms) = self.pairing_for_verify(vk, n, ell, comm, rng)?;
+        let check = E::multi_pairing(g1_terms, g2_terms);
+        anyhow::ensure!(PairingOutput::<E>::ZERO == check);
+
+        Ok(())
+    }
+
+    fn pairing_for_verify<R: RngCore + CryptoRng>(
         &self,
         vk: &Self::VerificationKey,
         n: usize,
         ell: u8,
         comm: &Self::Commitment,
-    ) -> anyhow::Result<()>;
+        rng: &mut R,
+    ) -> anyhow::Result<(Vec<E::G1Affine>, Vec<E::G2Affine>)>;
 
     fn maul(&mut self);
 }

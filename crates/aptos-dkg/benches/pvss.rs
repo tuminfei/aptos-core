@@ -14,7 +14,7 @@ use aptos_dkg::pvss::{
     },
     traits::transcript::{
         Aggregatable, AggregatableTranscript, Aggregated, HasAggregatableSubtranscript,
-        MalleableTranscript, Transcript, WithMaxNumShares,
+        MalleableTranscript, Transcript, TranscriptCore, WithMaxNumShares,
     },
     WeightedConfigBlstrs,
 };
@@ -67,7 +67,7 @@ pub fn all_groups(c: &mut Criterion) {
 }
 
 pub fn aggregatable_pvss_group<T: AggregatableTranscript + MalleableTranscript>(
-    sc: &<T as Transcript>::SecretSharingConfig,
+    sc: &<T as TranscriptCore>::SecretSharingConfig,
     c: &mut Criterion,
 ) -> DealingArgs<T> {
     let name = T::scheme_name();
@@ -101,7 +101,7 @@ where
     T: MalleableTranscript
         + HasAggregatableSubtranscript<
             Subtranscript: Aggregatable<
-                SecretSharingConfig = <T as Transcript>::SecretSharingConfig,
+                SecretSharingConfig = <T as TranscriptCore>::SecretSharingConfig,
             >,
         >,
 {
@@ -133,7 +133,7 @@ where
 pub fn weighted_pvss_group<
     T: AggregatableTranscript + MalleableTranscript<SecretSharingConfig = WeightedConfigBlstrs>,
 >(
-    sc: &<T as Transcript>::SecretSharingConfig,
+    sc: &<T as TranscriptCore>::SecretSharingConfig,
     d: DealingArgs<T>,
     c: &mut Criterion,
 ) {
@@ -192,7 +192,7 @@ fn pvss_deal<T: Transcript, M: Measurement>(
 }
 
 fn pvss_aggregate<T: AggregatableTranscript, M: Measurement>(
-    sc: &<T as Transcript>::SecretSharingConfig,
+    sc: &<T as TranscriptCore>::SecretSharingConfig,
     g: &mut BenchmarkGroup<M>,
 ) {
     g.throughput(Throughput::Elements(sc.get_total_num_shares() as u64));
@@ -221,7 +221,9 @@ fn pvss_aggregate<T: AggregatableTranscript, M: Measurement>(
 fn pvss_subaggregate<T, M: Measurement>(sc: &T::SecretSharingConfig, g: &mut BenchmarkGroup<M>)
 where
     T: HasAggregatableSubtranscript<
-        Subtranscript: Aggregatable<SecretSharingConfig = <T as Transcript>::SecretSharingConfig>,
+        Subtranscript: Aggregatable<
+            SecretSharingConfig = <T as TranscriptCore>::SecretSharingConfig,
+        >,
     >,
 {
     g.throughput(Throughput::Elements(sc.get_total_num_shares() as u64));
@@ -249,7 +251,7 @@ where
 }
 
 fn pvss_verify<T: AggregatableTranscript, M: Measurement>(
-    sc: &<T as Transcript>::SecretSharingConfig,
+    sc: &<T as TranscriptCore>::SecretSharingConfig,
     pp: &T::PublicParameters,
     ssks: &[T::SigningSecretKey],
     spks: &[T::SigningPubKey],
@@ -350,6 +352,7 @@ fn pvss_nonaggregate_verify<T: HasAggregatableSubtranscript, M: Measurement>(
     g.throughput(Throughput::Elements(sc.get_total_num_shares() as u64));
 
     let mut rng = StdRng::seed_from_u64(42);
+    let mut rng2 = StdRng::seed_from_u64(43);
 
     g.bench_function(format!("verify/{}", sc), move |b| {
         b.iter_with_setup(
@@ -371,7 +374,7 @@ fn pvss_nonaggregate_verify<T: HasAggregatableSubtranscript, M: Measurement>(
                 // we have to serialize and deserialize because otherwise verify gets a transcript with "non-normalised" projective group elements
             },
             |trx| {
-                trx.verify(&sc, &pp, &[spks[0].clone()], &eks, &NoAux)
+                trx.verify(&sc, &pp, &[spks[0].clone()], &eks, &NoAux, &mut rng2)
                     .expect("PVSS transcript verification should succeed");
             },
         )
@@ -379,7 +382,7 @@ fn pvss_nonaggregate_verify<T: HasAggregatableSubtranscript, M: Measurement>(
 }
 
 fn pvss_aggregate_verify<T: AggregatableTranscript + MalleableTranscript, M: Measurement>(
-    sc: &<T as Transcript>::SecretSharingConfig,
+    sc: &<T as TranscriptCore>::SecretSharingConfig,
     pp: &T::PublicParameters,
     ssks: &[T::SigningSecretKey],
     spks: &Vec<T::SigningPubKey>,
@@ -463,11 +466,44 @@ fn pvss_decrypt_own_share<T: Transcript, M: Measurement>(
         &mut rng,
     );
 
+    // TODO: the following code is obviously messy. Easiest fix is to extend `get_player_weight()`
+    // to `SecretSharingConfig`
     g.bench_function(format!("decrypt-share/{}", sc), move |b| {
+        // Pre-compute valid player indices by checking if get_public_key_share
+        // returns non-empty results. For weighted transcripts, DealtPubKeyShare is Vec,
+        // for unweighted it's a single value. We can't check weight generically since
+        // get_player_weight is not (yet!) part of the SecretSharingConfig trait, so we
+        // check if the share is non-empty by attempting to use it.
+        let valid_players: Vec<usize> = (0..sc.get_total_num_players())
+            .filter(|&i| {
+                // Ensure player has a decryption key
+                if dks.get(i).is_none() {
+                    return false;
+                }
+                let player = sc.get_player(i);
+                let pk_share = trx.get_public_key_share(&sc, &player);
+                // For weighted configs, pk_share is Vec<...>, check if non-empty
+                // For unweighted, it's always valid (single value)
+                // We can't check this generically, so we use Debug formatting as a proxy
+                // If the Debug representation is meaningful (not empty/default), assume valid
+                let debug_str = format!("{:?}", pk_share);
+                // Empty Vec would show as "[]", single values would show their content
+                !debug_str.is_empty() && debug_str != "[]"
+            })
+            .collect();
+
+        assert!(
+            !valid_players.is_empty(),
+            "No valid players found for benchmark"
+        );
+
         b.iter_with_setup(
-            || rng.gen_range(0, sc.get_total_num_players()),
+            || {
+                let idx = rng.gen_range(0, valid_players.len());
+                valid_players[idx]
+            },
             |i| {
-                trx.decrypt_own_share(&sc, &sc.get_player(i), &dks[i], pp);
+                black_box(trx.decrypt_own_share(&sc, &sc.get_player(i), &dks[i], pp));
             },
         )
     });
