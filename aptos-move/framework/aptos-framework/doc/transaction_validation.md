@@ -610,7 +610,7 @@ Only called during genesis to initialize system resources for this module.
             );
         } <b>else</b> {
             <b>assert</b>!(
-                <a href="coin.md#0x1_coin_is_balance_at_least">coin::is_balance_at_least</a>&lt;AptosCoin&gt;(gas_payer_address, max_transaction_fee),
+                <a href="coin.md#0x1_coin_is_balance_at_least">coin::is_balance_at_least</a>&lt;TopoCoin&gt;(gas_payer_address, max_transaction_fee),
                 <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ECANT_PAY_GAS_DEPOSIT">PROLOGUE_ECANT_PAY_GAS_DEPOSIT</a>)
             );
         }
@@ -1262,7 +1262,7 @@ Called by the Adapter
             );
         } <b>else</b> {
             <b>assert</b>!(
-                <a href="coin.md#0x1_coin_is_balance_at_least">coin::is_balance_at_least</a>&lt;AptosCoin&gt;(gas_payer, transaction_fee_amount),
+                <a href="coin.md#0x1_coin_is_balance_at_least">coin::is_balance_at_least</a>&lt;TopoCoin&gt;(gas_payer, transaction_fee_amount),
                 <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ECANT_PAY_GAS_DEPOSIT">PROLOGUE_ECANT_PAY_GAS_DEPOSIT</a>),
             );
         };
@@ -1635,7 +1635,7 @@ If there is no fee_payer, fee_payer = sender
             );
         } <b>else</b> {
             <b>assert</b>!(
-                <a href="coin.md#0x1_coin_is_balance_at_least">coin::is_balance_at_least</a>&lt;AptosCoin&gt;(gas_payer_address, transaction_fee_amount),
+                <a href="coin.md#0x1_coin_is_balance_at_least">coin::is_balance_at_least</a>&lt;TopoCoin&gt;(gas_payer_address, transaction_fee_amount),
                 <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ECANT_PAY_GAS_DEPOSIT">PROLOGUE_ECANT_PAY_GAS_DEPOSIT</a>),
             );
         };
@@ -2056,7 +2056,7 @@ not equal the number of singers.
 
 
 Abort according to the conditions.
-<code>AptosCoinCapabilities</code> and <code>CoinInfo</code> should exists.
+<code>TopoCoinCapabilities</code> and <code>CoinInfo</code> should exists.
 Skip transaction_fee::burn_fee verification.
 
 
@@ -2092,7 +2092,7 @@ Skip transaction_fee::burn_fee verification.
 
 
 Abort according to the conditions.
-<code>AptosCoinCapabilities</code> and <code>CoinInfo</code> should exist.
+<code>TopoCoinCapabilities</code> and <code>CoinInfo</code> should exist.
 Skip transaction_fee::burn_fee verification.
 
 
@@ -2216,33 +2216,33 @@ Skip transaction_fee::burn_fee verification.
     <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
     <b>let</b> pre_account = <b>global</b>&lt;<a href="account.md#0x1_account_Account">account::Account</a>&gt;(addr);
     <b>let</b> <b>post</b> <a href="account.md#0x1_account">account</a> = <b>global</b>&lt;<a href="account.md#0x1_account_Account">account::Account</a>&gt;(addr);
-    <b>aborts_if</b> !<b>exists</b>&lt;CoinStore&lt;AptosCoin&gt;&gt;(gas_payer);
+    <b>aborts_if</b> !<b>exists</b>&lt;CoinStore&lt;TopoCoin&gt;&gt;(gas_payer);
     <b>aborts_if</b> !<b>exists</b>&lt;Account&gt;(addr);
     <b>aborts_if</b> !(<b>global</b>&lt;Account&gt;(addr).sequence_number &lt; <a href="transaction_validation.md#0x1_transaction_validation_MAX_U64">MAX_U64</a>);
     <b>ensures</b> <a href="account.md#0x1_account">account</a>.sequence_number == pre_account.sequence_number + 1;
     <b>let</b> amount_to_burn = transaction_fee_amount - storage_fee_refunded;
-    <b>let</b> apt_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;AptosCoin&gt;().account_address;
-    <b>let</b> maybe_apt_supply = <b>global</b>&lt;CoinInfo&lt;AptosCoin&gt;&gt;(apt_addr).supply;
+    <b>let</b> apt_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;().account_address;
+    <b>let</b> maybe_apt_supply = <b>global</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(apt_addr).supply;
     <b>let</b> total_supply_enabled = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(maybe_apt_supply);
     <b>let</b> apt_supply = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(maybe_apt_supply);
     <b>let</b> apt_supply_value = <a href="optional_aggregator.md#0x1_optional_aggregator_optional_aggregator_value">optional_aggregator::optional_aggregator_value</a>(apt_supply);
-    <b>let</b> <b>post</b> post_maybe_apt_supply = <b>global</b>&lt;CoinInfo&lt;AptosCoin&gt;&gt;(apt_addr).supply;
+    <b>let</b> <b>post</b> post_maybe_apt_supply = <b>global</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(apt_addr).supply;
     <b>let</b> <b>post</b> post_apt_supply = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(post_maybe_apt_supply);
     <b>let</b> <b>post</b> post_apt_supply_value = <a href="optional_aggregator.md#0x1_optional_aggregator_optional_aggregator_value">optional_aggregator::optional_aggregator_value</a>(post_apt_supply);
-    <b>aborts_if</b> amount_to_burn &gt; 0 && !<b>exists</b>&lt;AptosCoinCapabilities&gt;(@aptos_framework);
-    <b>aborts_if</b> amount_to_burn &gt; 0 && !<b>exists</b>&lt;CoinInfo&lt;AptosCoin&gt;&gt;(apt_addr);
+    <b>aborts_if</b> amount_to_burn &gt; 0 && !<b>exists</b>&lt;TopoCoinCapabilities&gt;(@aptos_framework);
+    <b>aborts_if</b> amount_to_burn &gt; 0 && !<b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(apt_addr);
     <b>aborts_if</b> amount_to_burn &gt; 0 && total_supply_enabled && apt_supply_value &lt; amount_to_burn;
     <b>ensures</b> total_supply_enabled ==&gt; apt_supply_value - amount_to_burn == post_apt_supply_value;
     <b>let</b> amount_to_mint = storage_fee_refunded - transaction_fee_amount;
-    <b>let</b> total_supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;AptosCoin&gt;;
-    <b>let</b> <b>post</b> post_total_supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;AptosCoin&gt;;
-    <b>aborts_if</b> amount_to_mint &gt; 0 && !<b>exists</b>&lt;CoinStore&lt;AptosCoin&gt;&gt;(addr);
-    <b>aborts_if</b> amount_to_mint &gt; 0 && !<b>exists</b>&lt;AptosCoinMintCapability&gt;(@aptos_framework);
+    <b>let</b> total_supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;TopoCoin&gt;;
+    <b>let</b> <b>post</b> post_total_supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;TopoCoin&gt;;
+    <b>aborts_if</b> amount_to_mint &gt; 0 && !<b>exists</b>&lt;CoinStore&lt;TopoCoin&gt;&gt;(addr);
+    <b>aborts_if</b> amount_to_mint &gt; 0 && !<b>exists</b>&lt;TopoCoinMintCapability&gt;(@aptos_framework);
     <b>aborts_if</b> amount_to_mint &gt; 0 && total_supply + amount_to_mint &gt; MAX_U128;
     <b>ensures</b> amount_to_mint &gt; 0 ==&gt; post_total_supply == total_supply + amount_to_mint;
-    <b>let</b> aptos_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;AptosCoin&gt;().account_address;
-    <b>aborts_if</b> (amount_to_mint != 0) && !<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;AptosCoin&gt;&gt;(aptos_addr);
-    <b>include</b> <a href="coin.md#0x1_coin_CoinAddAbortsIf">coin::CoinAddAbortsIf</a>&lt;AptosCoin&gt; { amount: amount_to_mint };
+    <b>let</b> aptos_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;().account_address;
+    <b>aborts_if</b> (amount_to_mint != 0) && !<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;TopoCoin&gt;&gt;(aptos_addr);
+    <b>include</b> <a href="coin.md#0x1_coin_CoinAddAbortsIf">coin::CoinAddAbortsIf</a>&lt;TopoCoin&gt; { amount: amount_to_mint };
 }
 </code></pre>
 

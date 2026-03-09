@@ -158,7 +158,7 @@ spec aptos_framework::aptos_governance {
         };
         include stake::GetReconfigStartTimeRequirement;
         requires chain_status::is_operating();
-        requires exists<CoinInfo<AptosCoin>>(@aptos_framework);
+        requires exists<CoinInfo<TopoCoin>>(@aptos_framework);
         requires exists<staking_config::StakingRewardsConfig>(@aptos_framework);
         include staking_config::StakingRewardsConfigRequirement;
     }
@@ -266,9 +266,9 @@ spec aptos_framework::aptos_governance {
         // verify create_proposal_metadata
         include CreateProposalMetadataAbortsIf;
 
-        let addr = aptos_std::type_info::type_of<AptosCoin>().account_address;
-        aborts_if !exists<coin::CoinInfo<AptosCoin>>(addr);
-        let maybe_supply = global<coin::CoinInfo<AptosCoin>>(addr).supply;
+        let addr = aptos_std::type_info::type_of<TopoCoin>().account_address;
+        aborts_if !exists<coin::CoinInfo<TopoCoin>>(addr);
+        let maybe_supply = global<coin::CoinInfo<TopoCoin>>(addr).supply;
         let supply = option::borrow(maybe_supply);
         let total_supply = aptos_framework::optional_aggregator::optional_aggregator_value(supply);
         let early_resolution_vote_threshold_value = total_supply / 2 + 1;
@@ -594,7 +594,7 @@ spec aptos_framework::aptos_governance {
         include stake::GetReconfigStartTimeRequirement;
 
         requires chain_status::is_operating();
-        requires exists<CoinInfo<AptosCoin>>(@aptos_framework);
+        requires exists<CoinInfo<TopoCoin>>(@aptos_framework);
         requires exists<staking_config::StakingRewardsConfig>(@aptos_framework);
         include staking_config::StakingRewardsConfigRequirement;
     }

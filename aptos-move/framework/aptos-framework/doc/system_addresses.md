@@ -40,12 +40,12 @@
 ## Constants
 
 
-<a id="0x1_system_addresses_ENOT_APTOS_FRAMEWORK_ADDRESS"></a>
+<a id="0x1_system_addresses_ENOT_TOPOOS_FRAMEWORK_ADDRESS"></a>
 
 The address/account did not correspond to the core framework address
 
 
-<pre><code><b>const</b> <a href="system_addresses.md#0x1_system_addresses_ENOT_APTOS_FRAMEWORK_ADDRESS">ENOT_APTOS_FRAMEWORK_ADDRESS</a>: u64 = 3;
+<pre><code><b>const</b> <a href="system_addresses.md#0x1_system_addresses_ENOT_TOPOOS_FRAMEWORK_ADDRESS">ENOT_TOPOOS_FRAMEWORK_ADDRESS</a>: u64 = 3;
 </code></pre>
 
 
@@ -170,7 +170,7 @@ The operation can only be performed by the VM
 <pre><code><b>public</b> <b>fun</b> <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">assert_aptos_framework</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <b>assert</b>!(
         <a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">is_aptos_framework_address</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>)),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="system_addresses.md#0x1_system_addresses_ENOT_APTOS_FRAMEWORK_ADDRESS">ENOT_APTOS_FRAMEWORK_ADDRESS</a>),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="system_addresses.md#0x1_system_addresses_ENOT_TOPOOS_FRAMEWORK_ADDRESS">ENOT_TOPOOS_FRAMEWORK_ADDRESS</a>),
     )
 }
 </code></pre>

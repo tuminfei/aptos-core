@@ -1253,10 +1253,10 @@ module aptos_framework::multisig_account {
         let owner_nonce = account::get_sequence_number(address_of(owner));
         let (multisig_signer, multisig_signer_cap) =
             account::create_resource_account(owner, create_multisig_account_seed(to_bytes(&owner_nonce)));
-        // Register the account to receive APT as this is not done by default as part of the resource account creation
+        // Register the account to receive TOPO as this is not done by default as part of the resource account creation
         // flow.
-        if (!coin::is_account_registered<AptosCoin>(address_of(&multisig_signer))) {
-            coin::register<AptosCoin>(&multisig_signer);
+        if (!coin::is_account_registered<TopoCoin>(address_of(&multisig_signer))) {
+            coin::register<TopoCoin>(&multisig_signer);
         };
 
         (multisig_signer, multisig_signer_cap)

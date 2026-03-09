@@ -30,6 +30,7 @@ module aptos_framework::coin {
     use aptos_framework::create_signer;
 
     friend aptos_framework::topo_coin;
+    friend aptos_framework::aptos_coin;
     friend aptos_framework::genesis;
     friend aptos_framework::transaction_fee;
 
@@ -112,8 +113,8 @@ module aptos_framework::coin {
     /// The coin converison map is not created yet.
     const ECOIN_CONVERSION_MAP_NOT_FOUND: u64 = 27;
 
-    /// APT pairing is not eanbled yet.
-    const EAPT_PAIRING_IS_NOT_ENABLED: u64 = 28;
+    /// TOPO pairing is not eanbled yet.
+    const ETOPO_PAIRING_IS_NOT_ENABLED: u64 = 28;
 
     /// The decimals of the coin is too large.
     const ECOIN_DECIMALS_TOO_LARGE: u64 = 29;
@@ -310,7 +311,7 @@ module aptos_framework::coin {
         };
     }
 
-    /// Create APT pairing by passing `AptosCoin`.
+    /// Create TOPO pairing by passing `TopoCoin`.
     public entry fun create_pairing<CoinType>(
         aptos_framework: &signer
     ) acquires CoinConversionMap, CoinInfo {
@@ -335,7 +336,7 @@ module aptos_framework::coin {
             let is_apt = is_apt<CoinType>();
             assert!(
                 !is_apt || allow_apt_creation,
-                error::invalid_state(EAPT_PAIRING_IS_NOT_ENABLED)
+                error::invalid_state(ETOPO_PAIRING_IS_NOT_ENABLED)
             );
             let metadata_object_cref =
                 if (is_apt) {

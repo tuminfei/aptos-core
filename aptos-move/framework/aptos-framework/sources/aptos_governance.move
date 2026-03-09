@@ -1256,7 +1256,7 @@ module aptos_framework::aptos_governance {
     ) acquires GovernanceResponsbility {
         use aptos_framework::account;
         use aptos_framework::coin;
-        use aptos_framework::aptos_coin::AptosCoin;
+        use aptos_framework::topo_coin::TopoCoin;
 
         timestamp::set_time_has_started_for_testing(aptos_framework);
         account::create_account_for_test(signer::address_of(aptos_framework));
@@ -1276,11 +1276,11 @@ module aptos_framework::aptos_governance {
         // Initialize the stake pools for proposer and voters.
         // Spread stake among active and pending_inactive because both need to be accounted for when computing voting
         // power.
-        coin::register<AptosCoin>(proposer);
+        coin::register<TopoCoin>(proposer);
         coin::deposit(signer::address_of(proposer), stake::mint_coins(100));
-        coin::register<AptosCoin>(yes_voter);
+        coin::register<TopoCoin>(yes_voter);
         coin::deposit(signer::address_of(yes_voter), stake::mint_coins(20));
-        coin::register<AptosCoin>(no_voter);
+        coin::register<TopoCoin>(no_voter);
         coin::deposit(signer::address_of(no_voter), stake::mint_coins(10));
 
         let (_sk_1, pk_1, pop_1) = stake::generate_identity();

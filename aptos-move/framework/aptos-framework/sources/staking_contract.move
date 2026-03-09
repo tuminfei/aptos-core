@@ -1083,10 +1083,10 @@ module aptos_framework::staking_contract {
     use aptos_framework::stake::with_rewards;
 
     #[test_only]
-    const INITIAL_BALANCE: u64 = 100000000000000; // 1M APT coins with 8 decimals.
+    const INITIAL_BALANCE: u64 = 100000000000000; // 1M TOPO coins with 8 decimals.
 
     #[test_only]
-    const MAXIMUM_STAKE: u64 = 100000000000000000; // 1B APT coins with 8 decimals.
+    const MAXIMUM_STAKE: u64 = 100000000000000000; // 1B TOPO coins with 8 decimals.
 
     #[test_only]
     public fun setup(

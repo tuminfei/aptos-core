@@ -7,7 +7,7 @@ This module defines a minimal and generic Coin and Balance.
 modified from https://github.com/move-language/move/tree/main/language/documentation/tutorial
 
 
--  [Resource `AptosCoin`](#0x1_aptos_coin_AptosCoin)
+-  [Resource `TopoCoin`](#0x1_aptos_coin_TopoCoin)
 -  [Resource `MintCapStore`](#0x1_aptos_coin_MintCapStore)
 -  [Struct `DelegatedMintCapability`](#0x1_aptos_coin_DelegatedMintCapability)
 -  [Resource `Delegations`](#0x1_aptos_coin_Delegations)
@@ -46,13 +46,13 @@ modified from https://github.com/move-language/move/tree/main/language/documenta
 
 
 
-<a id="0x1_aptos_coin_AptosCoin"></a>
+<a id="0x1_aptos_coin_TopoCoin"></a>
 
-## Resource `AptosCoin`
+## Resource `TopoCoin`
 
 
 
-<pre><code><b>struct</b> <a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a> <b>has</b> key
+<pre><code><b>struct</b> <a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a> <b>has</b> key
 </code></pre>
 
 
@@ -90,7 +90,7 @@ modified from https://github.com/move-language/move/tree/main/language/documenta
 
 <dl>
 <dt>
-<code>mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;</code>
+<code>mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">aptos_coin::TopoCoin</a>&gt;</code>
 </dt>
 <dd>
 
@@ -198,7 +198,7 @@ Account does not have mint capability
 Can only called during genesis to initialize the Aptos coin.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;, <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">aptos_coin::TopoCoin</a>&gt;, <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">aptos_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -207,13 +207,13 @@ Can only called during genesis to initialize the Aptos coin.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (BurnCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;, MintCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;) {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (BurnCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;, MintCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
 
-    <b>let</b> (burn_cap, freeze_cap, mint_cap) = <a href="coin.md#0x1_coin_initialize_with_parallelizable_supply">coin::initialize_with_parallelizable_supply</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;(
+    <b>let</b> (burn_cap, freeze_cap, mint_cap) = <a href="coin.md#0x1_coin_initialize_with_parallelizable_supply">coin::initialize_with_parallelizable_supply</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;(
         aptos_framework,
         <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"Aptos Coin"),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"APT"),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"TOPO"),
         8, // decimals
         <b>true</b>, // monitor_supply
     );
@@ -289,10 +289,10 @@ and accounts have been initialized during genesis.
 
 Can only be called during genesis for tests to grant mint capability to aptos framework and core resources
 accounts.
-Expects account and APT store to be registered before calling.
+Expects account and TOPO store to be registered before calling.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_configure_accounts_for_test">configure_accounts_for_test</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_configure_accounts_for_test">configure_accounts_for_test</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">aptos_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -304,16 +304,16 @@ Expects account and APT store to be registered before calling.
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_configure_accounts_for_test">configure_accounts_for_test</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    mint_cap: MintCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;,
+    mint_cap: MintCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;,
 ) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
 
-    // Mint the core resource <a href="account.md#0x1_account">account</a> <a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a> for gas so it can execute system transactions.
-    <b>let</b> coins = <a href="coin.md#0x1_coin_mint">coin::mint</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;(
+    // Mint the core resource <a href="account.md#0x1_account">account</a> <a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a> for gas so it can execute system transactions.
+    <b>let</b> coins = <a href="coin.md#0x1_coin_mint">coin::mint</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;(
         18446744073709551615,
         &mint_cap,
     );
-    <a href="coin.md#0x1_coin_deposit">coin::deposit</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(core_resources), coins);
+    <a href="coin.md#0x1_coin_deposit">coin::deposit</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(core_resources), coins);
 
     <b>move_to</b>(core_resources, <a href="aptos_coin.md#0x1_aptos_coin_MintCapStore">MintCapStore</a> { mint_cap });
     <b>move_to</b>(core_resources, <a href="aptos_coin.md#0x1_aptos_coin_Delegations">Delegations</a> { inner: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>() });
@@ -354,8 +354,8 @@ Create new coins and deposit them into dst_addr's account.
     );
 
     <b>let</b> mint_cap = &<b>borrow_global</b>&lt;<a href="aptos_coin.md#0x1_aptos_coin_MintCapStore">MintCapStore</a>&gt;(account_addr).mint_cap;
-    <b>let</b> coins_minted = <a href="coin.md#0x1_coin_mint">coin::mint</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;(amount, mint_cap);
-    <a href="coin.md#0x1_coin_deposit">coin::deposit</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;(dst_addr, coins_minted);
+    <b>let</b> coins_minted = <a href="coin.md#0x1_coin_mint">coin::mint</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;(amount, mint_cap);
+    <a href="coin.md#0x1_coin_deposit">coin::deposit</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;(dst_addr, coins_minted);
 }
 </code></pre>
 
@@ -483,7 +483,7 @@ Claim the delegated mint capability and destroy the delegated token.
 
 <tr>
 <td>1</td>
-<td>The native token, APT, must be initialized during genesis.</td>
+<td>The native token, TOPO, must be initialized during genesis.</td>
 <td>Medium</td>
 <td>The initialize function is only called once, during genesis.</td>
 <td>Formally verified via <a href="#high-level-req-1">initialize</a>.</td>
@@ -491,7 +491,7 @@ Claim the delegated mint capability and destroy the delegated token.
 
 <tr>
 <td>2</td>
-<td>The APT coin may only be created exactly once.</td>
+<td>The TOPO coin may only be created exactly once.</td>
 <td>Medium</td>
 <td>The initialization function may only be called once.</td>
 <td>Enforced through the <a href="https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-framework/sources/coin.move">coin</a> module, which has been audited.</td>
@@ -499,7 +499,7 @@ Claim the delegated mint capability and destroy the delegated token.
 
 <tr>
 <td>4</td>
-<td>Any type of operation on the APT coin should fail if the user has not registered for the coin.</td>
+<td>Any type of operation on the TOPO coin should fail if the user has not registered for the coin.</td>
 <td>Medium</td>
 <td>Coin operations may succeed only on valid user coin registration.</td>
 <td>Enforced through the <a href="https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-framework/sources/coin.move">coin</a> module, which has been audited.</td>
@@ -526,7 +526,7 @@ Claim the delegated mint capability and destroy the delegated token.
 ### Function `initialize`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;, <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">aptos_coin::TopoCoin</a>&gt;, <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">aptos_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -537,17 +537,17 @@ Claim the delegated mint capability and destroy the delegated token.
 <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
 <b>aborts_if</b> addr != @aptos_framework;
 <b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"Aptos Coin");
-<b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"APT");
+<b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"TOPO");
 <b>aborts_if</b> <b>exists</b>&lt;<a href="aptos_coin.md#0x1_aptos_coin_MintCapStore">MintCapStore</a>&gt;(addr);
-<b>aborts_if</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;&gt;(addr);
+<b>aborts_if</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;&gt;(addr);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="aggregator_factory.md#0x1_aggregator_factory_AggregatorFactory">aggregator_factory::AggregatorFactory</a>&gt;(addr);
 // This enforces <a id="high-level-req-1" href="#high-level-req">high-level requirement 1</a>:
 <b>ensures</b> <b>exists</b>&lt;<a href="aptos_coin.md#0x1_aptos_coin_MintCapStore">MintCapStore</a>&gt;(addr);
 // This enforces <a id="high-level-req-3" href="#high-level-req">high-level requirement 3</a>:
-<b>ensures</b> <b>global</b>&lt;<a href="aptos_coin.md#0x1_aptos_coin_MintCapStore">MintCapStore</a>&gt;(addr).mint_cap ==  MintCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt; {};
-<b>ensures</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;&gt;(addr);
-<b>ensures</b> result_1 == BurnCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt; {};
-<b>ensures</b> result_2 == MintCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt; {};
+<b>ensures</b> <b>global</b>&lt;<a href="aptos_coin.md#0x1_aptos_coin_MintCapStore">MintCapStore</a>&gt;(addr).mint_cap ==  MintCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt; {};
+<b>ensures</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;&gt;(addr);
+<b>ensures</b> result_1 == BurnCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt; {};
+<b>ensures</b> result_2 == MintCapability&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt; {};
 </code></pre>
 
 
@@ -575,7 +575,7 @@ Claim the delegated mint capability and destroy the delegated token.
 ### Function `configure_accounts_for_test`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_configure_accounts_for_test">configure_accounts_for_test</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_coin.md#0x1_aptos_coin_configure_accounts_for_test">configure_accounts_for_test</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">aptos_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -651,11 +651,11 @@ Claim the delegated mint capability and destroy the delegated token.
 
 
 
-<a id="0x1_aptos_coin_ExistsAptosCoin"></a>
+<a id="0x1_aptos_coin_ExistsTopoCoin"></a>
 
 
-<pre><code><b>schema</b> <a href="aptos_coin.md#0x1_aptos_coin_ExistsAptosCoin">ExistsAptosCoin</a> {
-    <b>requires</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">AptosCoin</a>&gt;&gt;(@aptos_framework);
+<pre><code><b>schema</b> <a href="aptos_coin.md#0x1_aptos_coin_ExistsTopoCoin">ExistsTopoCoin</a> {
+    <b>requires</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">TopoCoin</a>&gt;&gt;(@aptos_framework);
 }
 </code></pre>
 

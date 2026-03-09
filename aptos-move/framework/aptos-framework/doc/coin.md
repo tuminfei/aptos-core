@@ -1075,12 +1075,12 @@ The value of aggregatable coin used for transaction fees redistribution does not
 
 
 
-<a id="0x1_coin_EAPT_PAIRING_IS_NOT_ENABLED"></a>
+<a id="0x1_coin_ETOPO_PAIRING_IS_NOT_ENABLED"></a>
 
-APT pairing is not eanbled yet.
+TOPO pairing is not eanbled yet.
 
 
-<pre><code><b>const</b> <a href="coin.md#0x1_coin_EAPT_PAIRING_IS_NOT_ENABLED">EAPT_PAIRING_IS_NOT_ENABLED</a>: u64 = 28;
+<pre><code><b>const</b> <a href="coin.md#0x1_coin_ETOPO_PAIRING_IS_NOT_ENABLED">ETOPO_PAIRING_IS_NOT_ENABLED</a>: u64 = 28;
 </code></pre>
 
 
@@ -1411,7 +1411,7 @@ Get the paired fungible asset metadata object of a coin type. If not exist, retu
 
 ## Function `create_pairing`
 
-Create APT pairing by passing <code>AptosCoin</code>.
+Create TOPO pairing by passing <code>TopoCoin</code>.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="coin.md#0x1_coin_create_pairing">create_pairing</a>&lt;CoinType&gt;(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
@@ -1451,7 +1451,7 @@ Create APT pairing by passing <code>AptosCoin</code>.
 
 
 <pre><code>inline <b>fun</b> <a href="coin.md#0x1_coin_is_apt">is_apt</a>&lt;CoinType&gt;(): bool {
-    <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_name">type_info::type_name</a>&lt;CoinType&gt;() == <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">0x1::aptos_coin::AptosCoin</a>")
+    <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_name">type_info::type_name</a>&lt;CoinType&gt;() == <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"<a href="aptos_coin.md#0x1_aptos_coin_TopoCoin">0x1::aptos_coin::TopoCoin</a>")
 }
 </code></pre>
 
@@ -1487,7 +1487,7 @@ Create APT pairing by passing <code>AptosCoin</code>.
         <b>let</b> is_apt = <a href="coin.md#0x1_coin_is_apt">is_apt</a>&lt;CoinType&gt;();
         <b>assert</b>!(
             !is_apt || allow_apt_creation,
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="coin.md#0x1_coin_EAPT_PAIRING_IS_NOT_ENABLED">EAPT_PAIRING_IS_NOT_ENABLED</a>)
+            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="coin.md#0x1_coin_ETOPO_PAIRING_IS_NOT_ENABLED">ETOPO_PAIRING_IS_NOT_ENABLED</a>)
         );
         <b>let</b> metadata_object_cref =
             <b>if</b> (is_apt) {

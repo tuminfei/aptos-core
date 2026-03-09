@@ -20,8 +20,8 @@ module aptos_framework::aptos_account {
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;
-    /// Account is not registered to receive APT.
-    const EACCOUNT_NOT_REGISTERED_FOR_APT: u64 = 2;
+    /// Account is not registered to receive TOPO.
+    const EACCOUNT_NOT_REGISTERED_FOR_TOPO: u64 = 2;
     /// Account opted out of receiving coins that they did not register to receive.
     const EACCOUNT_DOES_NOT_ACCEPT_DIRECT_COIN_TRANSFERS: u64 = 3;
     /// Account opted out of directly receiving NFT tokens.
@@ -54,10 +54,10 @@ module aptos_framework::aptos_account {
 
     public entry fun create_account(auth_key: address) {
         let account_signer = account::create_account(auth_key);
-        register_apt(&account_signer);
+        register_topo(&account_signer);
     }
 
-    /// Batch version of APT transfer.
+    /// Batch version of TOPO transfer.
     public entry fun batch_transfer(
         source: &signer, recipients: vector<address>, amounts: vector<u64>
     ) {
@@ -73,8 +73,8 @@ module aptos_framework::aptos_account {
             });
     }
 
-    /// Convenient function to transfer APT to a recipient account that might not exist.
-    /// This would create the recipient account first, which also registers it to receive APT, before transferring.
+    /// Convenient function to transfer TOPO to a recipient account that might not exist.
+    /// This would create the recipient account first, which also registers it to receive TOPO, before transferring.
     public entry fun transfer(source: &signer, to: address, amount: u64) {
         if (!account::exists_at(to)) {
             create_account(to)
@@ -83,7 +83,7 @@ module aptos_framework::aptos_account {
         if (features::operations_default_to_fa_apt_store_enabled()) {
             fungible_transfer_only(source, to, amount)
         } else {
-            // Resource accounts can be created without registering them to receive APT.
+            // Resource accounts can be created without registering them to receive TOPO.
             // This conveniently does the registration if necessary.
             if (!coin::is_account_registered<TopoCoin>(to)) {
                 coin::register<TopoCoin>(&create_signer(to));
@@ -186,11 +186,11 @@ module aptos_framework::aptos_account {
         assert!(account::exists_at(addr), error::not_found(EACCOUNT_NOT_FOUND));
     }
 
-    public fun assert_account_is_registered_for_apt(addr: address) {
+    public fun assert_account_is_registered_for_topo(addr: address) {
         assert_account_exists(addr);
         assert!(
             coin::is_account_registered<TopoCoin>(addr),
-            error::not_found(EACCOUNT_NOT_REGISTERED_FOR_APT)
+            error::not_found(EACCOUNT_NOT_REGISTERED_FOR_TOPO)
         );
     }
 
@@ -240,7 +240,7 @@ module aptos_framework::aptos_account {
             || borrow_global<DirectTransferConfig>(account).allow_arbitrary_coin_transfers
     }
 
-    public(friend) fun register_apt(account_signer: &signer) {
+    public(friend) fun register_topo(account_signer: &signer) {
         if (features::new_accounts_default_to_fa_apt_store_enabled()) {
             ensure_primary_fungible_store_exists(signer::address_of(account_signer));
         } else {
@@ -248,13 +248,13 @@ module aptos_framework::aptos_account {
         }
     }
 
-    /// APT Primary Fungible Store specific specialized functions,
-    /// Utilized internally once migration of APT to FungibleAsset is complete.
+    /// TOPO Primary Fungible Store specific specialized functions,
+    /// Utilized internally once migration of TOPO to FungibleAsset is complete.
 
-    /// Convenient function to transfer APT to a recipient account that might not exist.
-    /// This would create the recipient APT PFS first, which also registers it to receive APT, before transferring.
+    /// Convenient function to transfer TOPO to a recipient account that might not exist.
+    /// This would create the recipient TOPO PFS first, which also registers it to receive TOPO, before transferring.
     /// TODO: once migration is complete, rename to just "transfer_only" and make it an entry function (for cheapest way
-    /// to transfer APT) - if we want to allow APT PFS without account itself
+    /// to transfer TOPO) - if we want to allow TOPO PFS without account itself
     public(friend) entry fun fungible_transfer_only(
         source: &signer, to: address, amount: u64
     ) {
@@ -264,7 +264,7 @@ module aptos_framework::aptos_account {
 
         // use internal APIs, as they skip:
         // - owner, frozen and dispatchable checks
-        // as APT cannot be frozen or have dispatch, and PFS cannot be transfered
+        // as TOPO cannot be frozen or have dispatch, and PFS cannot be transfered
         // (PFS could potentially be burned. regular transfer would permanently unburn the store.
         // Ignoring the check here has the equivalent of unburning, transfers, and then burning again)
         fungible_asset::withdraw_permission_check_by_address(
@@ -275,7 +275,7 @@ module aptos_framework::aptos_account {
         );
     }
 
-    /// Is balance from APT Primary FungibleStore at least the given amount
+    /// Is balance from TOPO Primary FungibleStore at least the given amount
     public(friend) fun is_fungible_balance_at_least(
         account: address, amount: u64
     ): bool {
@@ -283,7 +283,7 @@ module aptos_framework::aptos_account {
         fungible_asset::is_address_balance_at_least(store_addr, amount)
     }
 
-    /// Burn from APT Primary FungibleStore for gas charge
+    /// Burn from TOPO Primary FungibleStore for gas charge
     public(friend) fun burn_from_fungible_store_for_gas(
         ref: &BurnRef, account: address, amount: u64
     ) {
@@ -294,7 +294,7 @@ module aptos_framework::aptos_account {
         };
     }
 
-    /// Ensure that APT Primary FungibleStore exists (and create if it doesn't)
+    /// Ensure that TOPO Primary FungibleStore exists (and create if it doesn't)
     inline fun ensure_primary_fungible_store_exists(owner: address): address {
         let store_addr = primary_fungible_store_address(owner);
         if (fungible_asset::store_exists(store_addr)) {
@@ -306,7 +306,7 @@ module aptos_framework::aptos_account {
         }
     }
 
-    /// Address of APT Primary Fungible Store
+    /// Address of TOPO Primary Fungible Store
     inline fun primary_fungible_store_address(account: address): address {
         object::create_user_derived_object_address(account, @aptos_fungible_asset)
     }

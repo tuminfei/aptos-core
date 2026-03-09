@@ -161,7 +161,7 @@ spec aptos_framework::staking_contract {
         pragma aborts_if_is_partial;
         pragma verify_duration_estimate = 120;
         include PreconditionsInCreateContract;
-        include WithdrawAbortsIf<AptosCoin> { account: staker };
+        include WithdrawAbortsIf<TopoCoin> { account: staker };
         include CreateStakingContractWithCoinsAbortsIfAndEnsures;
     }
 
@@ -172,7 +172,7 @@ spec aptos_framework::staking_contract {
         staker: &signer,
         operator: address,
         voter: address,
-        coins: Coin<AptosCoin>,
+        coins: Coin<TopoCoin>,
         commission_percentage: u64,
         contract_creation_seed: vector<u8>
     ): address {
@@ -206,9 +206,9 @@ spec aptos_framework::staking_contract {
         let store = global<Store>(staker_address);
         let staking_contract = simple_map::spec_get(store.staking_contracts, operator);
 
-        include WithdrawAbortsIf<AptosCoin> { account: staker };
-        let balance = global<coin::CoinStore<AptosCoin>>(staker_address).coin.value;
-        let post post_coin = global<coin::CoinStore<AptosCoin>>(staker_address).coin.value;
+        include WithdrawAbortsIf<TopoCoin> { account: staker };
+        let balance = global<coin::CoinStore<TopoCoin>>(staker_address).coin.value;
+        let post post_coin = global<coin::CoinStore<TopoCoin>>(staker_address).coin.value;
         ensures post_coin == balance - amount;
 
         // postconditions stake::add_stake_with_cap()
@@ -617,7 +617,7 @@ spec aptos_framework::staking_contract {
         requires exists<aptos_framework::timestamp::CurrentTimeMicroseconds>(
             @aptos_framework
         );
-        requires exists<stake::AptosCoinCapabilities>(@aptos_framework);
+        requires exists<stake::TopoCoinCapabilities>(@aptos_framework);
     }
 
     spec schema CreateStakePoolAbortsIf {

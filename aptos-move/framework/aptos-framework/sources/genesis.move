@@ -168,7 +168,7 @@ module aptos_framework::genesis {
 
         let core_resources = account::create_account(@core_resources);
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
-        aptos_account::register_apt(&core_resources); // registers APT store
+        aptos_account::register_topo(&core_resources); // registers TOPO store
         topo_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
     }
 
@@ -543,7 +543,7 @@ module aptos_framework::genesis {
         topo_coin::ensure_initialized_with_topo_fa_metadata_for_test();
 
         let core_resources = account::create_account(@core_resources);
-        aptos_account::register_apt(&core_resources); // registers APT store
+        aptos_account::register_topo(&core_resources); // registers TOPO store
 
         let apt_metadata = object::address_to_object<Metadata>(@aptos_fungible_asset);
         assert!(primary_fungible_store::primary_store_exists(@core_resources, apt_metadata), 2);

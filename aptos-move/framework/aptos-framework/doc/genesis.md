@@ -395,13 +395,13 @@ Genesis step 2: Initialize Aptos coin.
     <b>let</b> (burn_cap, mint_cap) = <a href="aptos_coin.md#0x1_aptos_coin_initialize">aptos_coin::initialize</a>(aptos_framework);
 
     <a href="coin.md#0x1_coin_create_coin_conversion_map">coin::create_coin_conversion_map</a>(aptos_framework);
-    <a href="coin.md#0x1_coin_create_pairing">coin::create_pairing</a>&lt;AptosCoin&gt;(aptos_framework);
+    <a href="coin.md#0x1_coin_create_pairing">coin::create_pairing</a>&lt;TopoCoin&gt;(aptos_framework);
 
-    // Give <a href="stake.md#0x1_stake">stake</a> <b>module</b> MintCapability&lt;AptosCoin&gt; so it can mint rewards.
+    // Give <a href="stake.md#0x1_stake">stake</a> <b>module</b> MintCapability&lt;TopoCoin&gt; so it can mint rewards.
     <a href="stake.md#0x1_stake_store_aptos_coin_mint_cap">stake::store_aptos_coin_mint_cap</a>(aptos_framework, mint_cap);
-    // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> BurnCapability&lt;AptosCoin&gt; so it can burn gas.
+    // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> BurnCapability&lt;TopoCoin&gt; so it can burn gas.
     <a href="transaction_fee.md#0x1_transaction_fee_store_aptos_coin_burn_cap">transaction_fee::store_aptos_coin_burn_cap</a>(aptos_framework, burn_cap);
-    // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> MintCapability&lt;AptosCoin&gt; so it can mint refunds.
+    // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> MintCapability&lt;TopoCoin&gt; so it can mint refunds.
     <a href="transaction_fee.md#0x1_transaction_fee_store_aptos_coin_mint_cap">transaction_fee::store_aptos_coin_mint_cap</a>(aptos_framework, mint_cap);
 }
 </code></pre>
@@ -433,18 +433,18 @@ Only called for testnets and e2e tests.
     <b>let</b> (burn_cap, mint_cap) = <a href="aptos_coin.md#0x1_aptos_coin_initialize">aptos_coin::initialize</a>(aptos_framework);
 
     <a href="coin.md#0x1_coin_create_coin_conversion_map">coin::create_coin_conversion_map</a>(aptos_framework);
-    <a href="coin.md#0x1_coin_create_pairing">coin::create_pairing</a>&lt;AptosCoin&gt;(aptos_framework);
+    <a href="coin.md#0x1_coin_create_pairing">coin::create_pairing</a>&lt;TopoCoin&gt;(aptos_framework);
 
-    // Give <a href="stake.md#0x1_stake">stake</a> <b>module</b> MintCapability&lt;AptosCoin&gt; so it can mint rewards.
+    // Give <a href="stake.md#0x1_stake">stake</a> <b>module</b> MintCapability&lt;TopoCoin&gt; so it can mint rewards.
     <a href="stake.md#0x1_stake_store_aptos_coin_mint_cap">stake::store_aptos_coin_mint_cap</a>(aptos_framework, mint_cap);
-    // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> BurnCapability&lt;AptosCoin&gt; so it can burn gas.
+    // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> BurnCapability&lt;TopoCoin&gt; so it can burn gas.
     <a href="transaction_fee.md#0x1_transaction_fee_store_aptos_coin_burn_cap">transaction_fee::store_aptos_coin_burn_cap</a>(aptos_framework, burn_cap);
-    // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> MintCapability&lt;AptosCoin&gt; so it can mint refunds.
+    // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> MintCapability&lt;TopoCoin&gt; so it can mint refunds.
     <a href="transaction_fee.md#0x1_transaction_fee_store_aptos_coin_mint_cap">transaction_fee::store_aptos_coin_mint_cap</a>(aptos_framework, mint_cap);
 
     <b>let</b> core_resources = <a href="account.md#0x1_account_create_account">account::create_account</a>(@core_resources);
     <a href="account.md#0x1_account_rotate_authentication_key_internal">account::rotate_authentication_key_internal</a>(&core_resources, core_resources_auth_key);
-    <a href="aptos_account.md#0x1_aptos_account_register_apt">aptos_account::register_apt</a>(&core_resources); // registers APT store
+    <a href="aptos_account.md#0x1_aptos_account_register_apt">aptos_account::register_apt</a>(&core_resources); // registers TOPO store
     <a href="aptos_coin.md#0x1_aptos_coin_configure_accounts_for_test">aptos_coin::configure_accounts_for_test</a>(aptos_framework, &core_resources, mint_cap);
 }
 </code></pre>
@@ -515,8 +515,8 @@ If it exists, it just returns the signer.
         <a href="account.md#0x1_account_create_account">account::create_account</a>(account_address)
     };
 
-    <b>if</b> (<a href="coin.md#0x1_coin_balance">coin::balance</a>&lt;AptosCoin&gt;(account_address) == 0) {
-        <a href="coin.md#0x1_coin_register">coin::register</a>&lt;AptosCoin&gt;(&<a href="account.md#0x1_account">account</a>);
+    <b>if</b> (<a href="coin.md#0x1_coin_balance">coin::balance</a>&lt;TopoCoin&gt;(account_address) == 0) {
+        <a href="coin.md#0x1_coin_register">coin::register</a>&lt;TopoCoin&gt;(&<a href="account.md#0x1_account">account</a>);
         <a href="aptos_coin.md#0x1_aptos_coin_mint">aptos_coin::mint</a>(aptos_framework, account_address, balance);
     };
     <a href="account.md#0x1_account">account</a>
@@ -565,8 +565,8 @@ If it exists, it just returns the signer.
             <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> unique_accounts, *<a href="account.md#0x1_account">account</a>);
 
             <b>let</b> employee = <a href="create_signer.md#0x1_create_signer">create_signer</a>(*<a href="account.md#0x1_account">account</a>);
-            <b>let</b> total = <a href="coin.md#0x1_coin_balance">coin::balance</a>&lt;AptosCoin&gt;(*<a href="account.md#0x1_account">account</a>);
-            <b>let</b> coins = <a href="coin.md#0x1_coin_withdraw">coin::withdraw</a>&lt;AptosCoin&gt;(&employee, total);
+            <b>let</b> total = <a href="coin.md#0x1_coin_balance">coin::balance</a>&lt;TopoCoin&gt;(*<a href="account.md#0x1_account">account</a>);
+            <b>let</b> coins = <a href="coin.md#0x1_coin_withdraw">coin::withdraw</a>&lt;TopoCoin&gt;(&employee, total);
             <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_add">simple_map::add</a>(&<b>mut</b> buy_ins, *<a href="account.md#0x1_account">account</a>, coins);
 
             j += 1;
@@ -870,9 +870,9 @@ The last step of genesis.
 
 <tr>
 <td>3</td>
-<td>The Aptos coin should be initialized during genesis and only the Aptos framework account should own the mint and burn capabilities for the APT token.</td>
+<td>The Aptos coin should be initialized during genesis and only the Aptos framework account should own the mint and burn capabilities for the TOPO token.</td>
 <td>Critical</td>
-<td>Both mint and burn capabilities are wrapped inside the stake::AptosCoinCapabilities and transaction_fee::AptosCoinCapabilities resources which are stored under the aptos framework account.</td>
+<td>Both mint and burn capabilities are wrapped inside the stake::TopoCoinCapabilities and transaction_fee::TopoCoinCapabilities resources which are stored under the aptos framework account.</td>
 <td>Formally verified via <a href="#high-level-req-3">initialize_aptos_coin</a>.</td>
 </tr>
 
@@ -976,10 +976,10 @@ The last step of genesis.
 
 
 <pre><code>// This enforces <a id="high-level-req-3" href="#high-level-req">high-level requirement 3</a>:
-<b>requires</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_AptosCoinCapabilities">stake::AptosCoinCapabilities</a>&gt;(@aptos_framework);
-<b>ensures</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_AptosCoinCapabilities">stake::AptosCoinCapabilities</a>&gt;(@aptos_framework);
-<b>requires</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosCoinCapabilities">transaction_fee::AptosCoinCapabilities</a>&gt;(@aptos_framework);
-<b>ensures</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosCoinCapabilities">transaction_fee::AptosCoinCapabilities</a>&gt;(@aptos_framework);
+<b>requires</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_TopoCoinCapabilities">stake::TopoCoinCapabilities</a>&gt;(@aptos_framework);
+<b>ensures</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_TopoCoinCapabilities">stake::TopoCoinCapabilities</a>&gt;(@aptos_framework);
+<b>requires</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_TopoCoinCapabilities">transaction_fee::TopoCoinCapabilities</a>&gt;(@aptos_framework);
+<b>ensures</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_TopoCoinCapabilities">transaction_fee::TopoCoinCapabilities</a>&gt;(@aptos_framework);
 </code></pre>
 
 
@@ -999,7 +999,7 @@ The last step of genesis.
 <b>include</b> <a href="stake.md#0x1_stake_ResourceRequirement">stake::ResourceRequirement</a>;
 <b>include</b> <a href="stake.md#0x1_stake_GetReconfigStartTimeRequirement">stake::GetReconfigStartTimeRequirement</a>;
 <b>include</b> <a href="genesis.md#0x1_genesis_CompareTimeRequires">CompareTimeRequires</a>;
-<b>include</b> <a href="aptos_coin.md#0x1_aptos_coin_ExistsAptosCoin">aptos_coin::ExistsAptosCoin</a>;
+<b>include</b> <a href="aptos_coin.md#0x1_aptos_coin_ExistsTopoCoin">aptos_coin::ExistsTopoCoin</a>;
 </code></pre>
 
 
@@ -1019,7 +1019,7 @@ The last step of genesis.
 <b>include</b> <a href="stake.md#0x1_stake_ResourceRequirement">stake::ResourceRequirement</a>;
 <b>include</b> <a href="stake.md#0x1_stake_GetReconfigStartTimeRequirement">stake::GetReconfigStartTimeRequirement</a>;
 <b>include</b> <a href="genesis.md#0x1_genesis_CompareTimeRequires">CompareTimeRequires</a>;
-<b>include</b> <a href="aptos_coin.md#0x1_aptos_coin_ExistsAptosCoin">aptos_coin::ExistsAptosCoin</a>;
+<b>include</b> <a href="aptos_coin.md#0x1_aptos_coin_ExistsTopoCoin">aptos_coin::ExistsTopoCoin</a>;
 </code></pre>
 
 
@@ -1090,7 +1090,7 @@ The last step of genesis.
     <b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
     <b>requires</b> len(<a href="execution_config.md#0x1_execution_config">execution_config</a>) &gt; 0;
     <b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@aptos_framework);
-    <b>requires</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;AptosCoin&gt;&gt;(@aptos_framework);
+    <b>requires</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;TopoCoin&gt;&gt;(@aptos_framework);
     <b>include</b> <a href="genesis.md#0x1_genesis_CompareTimeRequires">CompareTimeRequires</a>;
 }
 </code></pre>

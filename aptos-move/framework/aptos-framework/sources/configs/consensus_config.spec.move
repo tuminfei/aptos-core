@@ -48,7 +48,7 @@ spec aptos_framework::consensus_config {
         use aptos_framework::timestamp;
         use std::signer;
         use aptos_framework::coin::CoinInfo;
-        use aptos_framework::aptos_coin::AptosCoin;
+        use aptos_framework::topo_coin::TopoCoin;
         use aptos_framework::staking_config;
 
         // TODO: set because of timeout (property proved)
@@ -63,7 +63,7 @@ spec aptos_framework::consensus_config {
 
         requires chain_status::is_genesis();
         requires timestamp::spec_now_microseconds() >= reconfiguration::last_reconfiguration_time();
-        requires exists<CoinInfo<AptosCoin>>(@aptos_framework);
+        requires exists<CoinInfo<TopoCoin>>(@aptos_framework);
         ensures global<ConsensusConfig>(@aptos_framework).config == config;
     }
 

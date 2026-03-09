@@ -46,7 +46,7 @@ spec aptos_framework::reconfiguration_with_dkg {
         framework: signer;
         requires signer::address_of(framework) == @aptos_framework;
         requires chain_status::is_operating();
-        requires exists<CoinInfo<AptosCoin>>(@aptos_framework);
+        requires exists<CoinInfo<TopoCoin>>(@aptos_framework);
         include staking_config::StakingRewardsConfigRequirement;
         requires exists<features::Features>(@std);
         include config_buffer::OnNewEpochRequirement<version::Version>;
