@@ -8,7 +8,7 @@ module aptos_framework::delegation_pool_integration_tests {
     use aptos_std::vector;
 
     use aptos_framework::account;
-    use aptos_framework::aptos_coin::TopoCoin;
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin;
     use aptos_framework::reconfiguration;
     use aptos_framework::delegation_pool as dp;

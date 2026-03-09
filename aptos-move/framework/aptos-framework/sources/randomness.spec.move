@@ -40,7 +40,7 @@ spec aptos_framework::randomness {
     spec next_32_bytes(): vector<u8> {
         use std::hash;
         include NextBlobAbortsIf;
-        let input = b"TOPOOS_RANDOMNESS";
+        let input = b"APTOS_RANDOMNESS";
         let randomness = global<PerBlockRandomness>(@aptos_framework);
         let seed = option::borrow(randomness.seed);
         let txn_hash = transaction_context::spec_get_txn_hash();

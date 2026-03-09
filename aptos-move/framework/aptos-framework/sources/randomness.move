@@ -19,7 +19,7 @@ module aptos_framework::randomness {
 
     friend aptos_framework::block;
 
-    const DST: vector<u8> = b"TOPOOS_RANDOMNESS";
+    const DST: vector<u8> = b"APTOS_RANDOMNESS";
 
     /// Randomness APIs calls must originate from a private entry function with
     /// `#[randomness]` annotation. Otherwise, malicious users can bias randomness result.

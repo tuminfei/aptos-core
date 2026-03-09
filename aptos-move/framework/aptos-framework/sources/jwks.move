@@ -38,7 +38,7 @@ module aptos_framework::jwks {
     const EUNKNOWN_JWK_VARIANT: u64 = 4;
     const EISSUER_NOT_FOUND: u64 = 5;
     const EJWK_ID_NOT_FOUND: u64 = 6;
-    const EINSTALL_FEDERATED_JWKS_AT_TOPOOS_FRAMEWORK: u64 = 7;
+    const EINSTALL_FEDERATED_JWKS_AT_APTOS_FRAMEWORK: u64 = 7;
     const EFEDERATED_JWKS_TOO_LARGE: u64 = 8;
     const EINVALID_FEDERATED_JWK_SET: u64 = 9;
 
@@ -183,7 +183,7 @@ module aptos_framework::jwks {
     public fun patch_federated_jwks(jwk_owner: &signer, patches: vector<Patch>) acquires FederatedJWKs {
         // Prevents accidental calls in 0x1::jwks that install federated JWKs at the Aptos framework address.
         assert!(!system_addresses::is_aptos_framework_address(signer::address_of(jwk_owner)),
-            error::invalid_argument(EINSTALL_FEDERATED_JWKS_AT_TOPOOS_FRAMEWORK)
+            error::invalid_argument(EINSTALL_FEDERATED_JWKS_AT_APTOS_FRAMEWORK)
         );
 
         let jwk_addr = signer::address_of(jwk_owner);
