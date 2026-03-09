@@ -176,7 +176,7 @@ pub struct Currency {
 
 #[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct CurrencyMetadata {
-    /// Move coin type e.g. 0x1::aptos_coin::AptosCoin
+    /// Move coin type e.g. 0x1::topo_coin::TopoCoin
     #[serde(skip_serializing_if = "Option::is_none")]
     pub move_type: Option<String>,
     /// Fungible Asset Address e.g. 0xA

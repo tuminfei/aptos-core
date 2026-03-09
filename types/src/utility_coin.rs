@@ -17,21 +17,21 @@ pub trait CoinType {
     fn coin_info_address() -> AccountAddress;
 }
 
-static APTOS_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
+static TOPO_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
     TypeTag::Struct(Box::new(StructTag {
         address: AccountAddress::ONE,
-        module: ident_str!("aptos_coin").to_owned(),
-        name: ident_str!("AptosCoin").to_owned(),
+        module: ident_str!("topo_coin").to_owned(),
+        name: ident_str!("TopoCoin").to_owned(),
         type_args: vec![],
     }))
 });
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AptosCoinType;
+pub struct TopoCoinType;
 
-impl CoinType for AptosCoinType {
+impl CoinType for TopoCoinType {
     fn type_tag() -> TypeTag {
-        APTOS_COIN_TYPE.clone()
+        TOPO_COIN_TYPE.clone()
     }
 
     fn coin_info_address() -> AccountAddress {
@@ -39,10 +39,13 @@ impl CoinType for AptosCoinType {
     }
 }
 
-impl MoveStructType for AptosCoinType {
-    const MODULE_NAME: &'static IdentStr = ident_str!("aptos_coin");
-    const STRUCT_NAME: &'static IdentStr = ident_str!("AptosCoin");
+impl MoveStructType for TopoCoinType {
+    const MODULE_NAME: &'static IdentStr = ident_str!("topo_coin");
+    const STRUCT_NAME: &'static IdentStr = ident_str!("TopoCoin");
 }
+
+/// Backward-compatible alias for TopoCoinType.
+pub type AptosCoinType = TopoCoinType;
 
 pub static DUMMY_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
     TypeTag::Struct(Box::new(StructTag {

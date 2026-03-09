@@ -24,7 +24,7 @@ pub struct Balance {
     #[clap(long, value_parser = crate::common::types::load_account_arg)]
     pub(crate) account: Option<AccountAddress>,
 
-    /// Coin type to lookup.  Defaults to 0x1::aptos_coin::AptosCoin
+    /// Coin type to lookup.  Defaults to 0x1::topo_coin::TopoCoin
     #[clap(long)]
     pub(crate) coin_type: Option<String>,
 

@@ -317,7 +317,7 @@ impl Client {
 
     /// Gets the balance of a specific asset type for an account.
     /// The `asset_type` parameter can be either:
-    /// * A coin type (e.g. "0x1::aptos_coin::AptosCoin")
+    /// * A coin type (e.g. "0x1::topo_coin::TopoCoin")
     /// * A fungible asset metadata address (e.g. "0xa")
     /// For more details, see: https://aptos.dev/en/build/apis/fullnode-rest-api-reference#tag/accounts/GET/accounts/{address}/balance/{asset_type}
     pub async fn get_account_balance(
@@ -371,7 +371,7 @@ impl Client {
         address: AccountAddress,
         version: u64,
     ) -> AptosResult<Response<u64>> {
-        self.view_account_balance_bcs_impl(address, "0x1::aptos_coin::AptosCoin", Some(version))
+        self.view_account_balance_bcs_impl(address, "0x1::topo_coin::TopoCoin", Some(version))
             .await
     }
 
@@ -379,7 +379,7 @@ impl Client {
         &self,
         address: AccountAddress,
     ) -> AptosResult<Response<u64>> {
-        self.view_account_balance_bcs_impl(address, "0x1::aptos_coin::AptosCoin", None)
+        self.view_account_balance_bcs_impl(address, "0x1::topo_coin::TopoCoin", None)
             .await
     }
 
