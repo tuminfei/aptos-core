@@ -46,6 +46,11 @@ members = [
     "aptos-move/framework/natives",
     "aptos-move/framework/release-bundle",
     "aptos-move/framework/table-natives",
+    "aptos-move/topo-framework",
+    "aptos-move/topo-framework/cached-packages",
+    "aptos-move/topo-framework/natives",
+    "aptos-move/topo-framework/release-bundle",
+    "aptos-move/topo-framework/table-natives",
     "aptos-move/move-examples",
     "aptos-move/mvhashmap",
     "aptos-move/package-builder",
@@ -354,6 +359,11 @@ aptos-forge = { path = "testsuite/forge" }
 aptos-framework = { path = "aptos-move/framework" }
 aptos-framework-natives = { path = "aptos-move/framework/natives" }
 aptos-release-bundle = { path = "aptos-move/framework/release-bundle" }
+topo-framework = { path = "aptos-move/topo-framework" }
+topo-framework-natives = { path = "aptos-move/topo-framework/natives" }
+topo-release-bundle = { path = "aptos-move/topo-framework/release-bundle" }
+topo-cached-packages = { path = "aptos-move/topo-framework/cached-packages" }
+topo-table-natives = { path = "aptos-move/topo-framework/table-natives" }
 fuzzer = { path = "testsuite/fuzzer" }
 aptos-abstract-gas-usage = { path = "aptos-move/aptos-abstract-gas-usage" }
 aptos-gas-meter = { path = "aptos-move/aptos-gas-meter" }

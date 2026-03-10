@@ -1,0 +1,30 @@
+#[test_only]
+module poto_framework::nil_op_token_tests {
+    use poto_framework::fungible_asset::{Self, Metadata, TestToken};
+    use poto_framework::dispatchable_fungible_asset;
+    use 0xcafe::nil_op_token;
+    use std::option;
+
+    #[test(creator = @0xcafe)]
+    fun test_nil_op_token(
+        creator: &signer,
+    ) {
+        let (creator_ref, token_object) = fungible_asset::create_test_token(creator);
+        let (mint, _, _, _) = fungible_asset::init_test_metadata(&creator_ref);
+        let metadata = token_object.convert<TestToken, Metadata>();
+
+        let creator_store = fungible_asset::create_test_store(creator, metadata);
+
+        nil_op_token::initialize(creator, &creator_ref);
+
+        assert!(fungible_asset::supply(metadata) == option::some(0), 1);
+        // Mint
+        let fa = mint.mint(100);
+        assert!(fungible_asset::supply(metadata) == option::some(100), 2);
+        // Deposit will cause an re-entrant call into dispatchable_fungible_asset
+        dispatchable_fungible_asset::deposit(creator_store, fa);
+
+        let fa = dispatchable_fungible_asset::withdraw(creator, creator_store, 10);
+        dispatchable_fungible_asset::deposit(creator_store, fa);
+    }
+}

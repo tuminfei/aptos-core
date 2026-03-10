@@ -1,0 +1,16 @@
+[package]
+name = "TopoFramework"
+version = "1.0.0"
+
+[addresses]
+std = "0x1"
+poto_std = "0x1"
+poto_framework = "0x1"
+poto_fungible_asset = "0xA"
+poto_token = "0x3"
+core_resources = "0xA550C18"
+vm_reserved = "0x0"
+
+[dependencies]
+TopoStdlib = { local = "../topo-stdlib" }
+MoveStdlib = { local = "../move-stdlib" }

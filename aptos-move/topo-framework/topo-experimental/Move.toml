@@ -1,0 +1,10 @@
+[package]
+name = "TopoExperimental"
+version = "1.0.0"
+
+[addresses]
+poto_experimental = "0x7"
+
+[dependencies]
+TopoFramework = { local = "../topo-framework" }
+TopoTrading = { local = "../topo-trading" }
