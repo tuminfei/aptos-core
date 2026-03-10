@@ -96,11 +96,13 @@ impl RunConfig {
             .map(|v| Arc::new(Semaphore::new(v)));
 
         // Build Funder.
+        info!("[Faucet] Building Funder...");
         let funder = self
             .funder_config
             .build()
             .await
             .context("Failed to build Funder")?;
+        info!("[Faucet] Funder built successfully!");
 
         // Build basic API.
         let basic_api = BasicApi {
@@ -192,15 +194,18 @@ impl RunConfig {
             }));
         }
 
+        info!("[Faucet] Binding TCP listener to {}:{}", self.server_config.listen_address, self.server_config.listen_port);
         let listener = TcpListener::bind((
             self.server_config.listen_address.clone(),
             self.server_config.listen_port,
         ))
         .await?;
         let port = listener.local_addr()?.port();
+        info!("[Faucet] TCP listener bound successfully to port {}", port);
 
         if let Some(tx) = port_tx {
             tx.send(port).map_err(|_| anyhow!("failed to send port"))?;
+            info!("[Faucet] Sent port {} to channel", port);
         }
 
         // Create a future for the API server.
@@ -219,11 +224,15 @@ impl RunConfig {
                 .around(middleware_log),
         );
 
+        info!("[Faucet] Starting API server...");
         main_futures.push(Box::pin(async move {
-            api_server_future
-                .await
-                .context("API server ended unexpectedly")
+            info!("[Faucet] API server future created, waiting for server to start...");
+            let result = api_server_future.await;
+            info!("[Faucet] API server ended with result: {:?}", result);
+            result.context("API server ended unexpectedly")
         }));
+
+        info!("[Faucet] Main futures collected, waiting for futures to complete...");
 
         // If there are any periodic tasks, create a future for retrieving
         // one so we know if any of them unexpectedly end.

@@ -121,6 +121,8 @@ pub struct MintFunderConfig {
 
 impl MintFunderConfig {
     pub async fn build_funder(self) -> Result<MintFunder> {
+        info!("[Faucet] Starting build_funder...");
+
         // Validate we have at least one asset
         if self.assets.is_empty() {
             return Err(anyhow::anyhow!("No assets configured"));
@@ -169,6 +171,7 @@ impl MintFunderConfig {
                 .with_context(|| format!("Asset '{}' not found", asset_name))?;
 
             if !asset_config.do_not_delegate {
+                info!("[Faucet] Delegating permissions for asset: {}", asset_name);
                 // Delegate permissions to a new account
                 let delegated_account = minter
                     .use_delegated_account(&asset_name)
@@ -176,6 +179,7 @@ impl MintFunderConfig {
                     .with_context(|| {
                         format!("Failed to delegate account for asset '{}'", asset_name)
                     })?;
+                info!("[Faucet] Delegation completed for asset: {}", asset_name);
 
                 // Update the account in the assets map
                 minter
@@ -275,13 +279,17 @@ impl MintFunder {
     /// used in the MintFunder expects the caller to have the MintCapability.
     /// So we need to create a new account and delegate the MintCapability to it.
     pub async fn use_delegated_account(&self, asset_name: &str) -> Result<LocalAccount> {
+        info!("[Faucet] Starting use_delegated_account for asset: {}", asset_name);
+
         // Build a client.
         let client = self.get_api_client();
 
         // Create a new random account, then delegate to it
         let delegated_account = LocalAccount::generate(&mut rand::rngs::OsRng);
+        info!("[Faucet] Generated delegated account: {:?}", delegated_account.address());
 
         // Create the account, wait for the response.
+        info!("[Faucet] Creating new account with authentication key: {:?}", delegated_account.authentication_key());
         self.process(
             &client,
             100_000_000_000,
@@ -295,6 +303,7 @@ impl MintFunder {
         )
         .await
         .context("Failed to create new account")?;
+        info!("[Faucet] Account created successfully for asset: {}", asset_name);
 
         // Build a transaction factory using the gas unit price from the
         // GasUnitPriceManager. This mostly ensures that we will build a
