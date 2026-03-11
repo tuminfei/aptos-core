@@ -7,10 +7,10 @@ pub use crate::{
     topo_framework_sdk_builder::*, topo_token_objects_sdk_builder as poto_token_objects_stdlib,
     topo_token_sdk_builder as poto_token_stdlib,
 };
-use poto_types::{
+use aptos_types::{
     account_address::AccountAddress,
     transaction::{EntryFunction, TransactionPayload},
-    TopoCoinType, CoinType,
+    CoinType, TopoCoinType,
 };
 use move_core_types::{ident_str, language_storage::ModuleId};
 

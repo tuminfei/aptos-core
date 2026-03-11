@@ -1,11 +1,11 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use poto_release_bundle::ReleaseBundle;
+use topo_release_bundle::ReleaseBundle;
 use once_cell::sync::Lazy;
 
 pub mod topo_framework_sdk_builder;
-pub mod poto_stdlib;
+pub mod topo_stdlib;
 pub mod topo_token_objects_sdk_builder;
 pub mod topo_token_sdk_builder;
 
