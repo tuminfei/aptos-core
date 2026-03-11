@@ -2,17 +2,12 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 #![forbid(unsafe_code)]
-#![allow(dead_code)]
 
 use crate::{
     db_options::{
-        event_db_column_families, gen_event_cfds, gen_ledger_cfds, gen_ledger_metadata_cfds,
-        gen_persisted_auxiliary_info_cfds, gen_transaction_accumulator_cfds,
-        gen_transaction_auxiliary_data_cfds, gen_transaction_cfds, gen_transaction_info_cfds,
-        gen_write_set_cfds, ledger_db_column_families, ledger_metadata_db_column_families,
-        persisted_auxiliary_info_db_column_families, transaction_accumulator_db_column_families,
-        transaction_auxiliary_data_db_column_families, transaction_db_column_families,
-        transaction_info_db_column_families, write_set_db_column_families,
+        gen_event_cfds, gen_ledger_metadata_cfds, gen_persisted_auxiliary_info_cfds,
+        gen_transaction_accumulator_cfds, gen_transaction_auxiliary_data_cfds,
+        gen_transaction_cfds, gen_transaction_info_cfds, gen_write_set_cfds,
     },
     event_store::EventStore,
     ledger_db::{
@@ -22,15 +17,12 @@ use crate::{
         transaction_auxiliary_data_db::TransactionAuxiliaryDataDb, transaction_db::TransactionDb,
         transaction_info_db::TransactionInfoDb, write_set_db::WriteSetDb,
     },
-    schema::db_metadata::{DbMetadataKey, DbMetadataSchema},
 };
 use aptos_config::config::RocksdbConfig;
 use aptos_experimental_runtimes::thread_manager::THREAD_MANAGER;
 use aptos_logger::prelude::info;
 use aptos_rocksdb_options::gen_rocksdb_options;
-use aptos_schemadb::{
-    batch::SchemaBatch, Cache, ColumnFamilyDescriptor, ColumnFamilyName, Env, DB,
-};
+use aptos_schemadb::{batch::SchemaBatch, Cache, ColumnFamilyDescriptor, Env, DB};
 use aptos_storage_interface::Result;
 use aptos_types::transaction::Version;
 use std::{
@@ -62,7 +54,6 @@ pub(crate) mod write_set_db;
 mod write_set_db_test;
 
 pub const LEDGER_DB_FOLDER_NAME: &str = "ledger_db";
-pub const LEDGER_DB_NAME: &str = "ledger_db";
 pub const LEDGER_METADATA_DB_NAME: &str = "ledger_metadata_db";
 pub const EVENT_DB_NAME: &str = "event_db";
 pub const PERSISTED_AUXILIARY_INFO_DB_NAME: &str = "persisted_auxiliary_info_db";
@@ -261,17 +252,6 @@ impl LedgerDb {
         })
     }
 
-    pub(crate) fn get_in_progress_state_kv_snapshot_version(&self) -> Result<Option<Version>> {
-        let mut iter = self.ledger_metadata_db.db().iter::<DbMetadataSchema>()?;
-        iter.seek_to_first();
-        while let Some((k, _v)) = iter.next().transpose()? {
-            if let DbMetadataKey::StateSnapshotKvRestoreProgress(version) = k {
-                return Ok(Some(version));
-            }
-        }
-        Ok(None)
-    }
-
     pub(crate) fn create_checkpoint(
         db_root_path: impl AsRef<Path>,
         cp_root_path: impl AsRef<Path>,
@@ -437,28 +417,12 @@ impl LedgerDb {
         Ok(db)
     }
 
-    fn get_column_families_by_name(name: &str) -> Vec<ColumnFamilyName> {
-        match name {
-            LEDGER_DB_NAME => ledger_db_column_families(),
-            LEDGER_METADATA_DB_NAME => ledger_metadata_db_column_families(),
-            EVENT_DB_NAME => event_db_column_families(),
-            PERSISTED_AUXILIARY_INFO_DB_NAME => persisted_auxiliary_info_db_column_families(),
-            TRANSACTION_ACCUMULATOR_DB_NAME => transaction_accumulator_db_column_families(),
-            TRANSACTION_AUXILIARY_DATA_DB_NAME => transaction_auxiliary_data_db_column_families(),
-            TRANSACTION_DB_NAME => transaction_db_column_families(),
-            TRANSACTION_INFO_DB_NAME => transaction_info_db_column_families(),
-            WRITE_SET_DB_NAME => write_set_db_column_families(),
-            _ => unreachable!(),
-        }
-    }
-
     fn gen_cfds_by_name(
         db_config: &RocksdbConfig,
         cache: Option<&Cache>,
         name: &str,
     ) -> Vec<ColumnFamilyDescriptor> {
         match name {
-            LEDGER_DB_NAME => gen_ledger_cfds(db_config, cache),
             LEDGER_METADATA_DB_NAME => gen_ledger_metadata_cfds(db_config, cache),
             EVENT_DB_NAME => gen_event_cfds(db_config, cache),
             PERSISTED_AUXILIARY_INFO_DB_NAME => gen_persisted_auxiliary_info_cfds(db_config, cache),
