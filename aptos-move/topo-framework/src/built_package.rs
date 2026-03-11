@@ -8,11 +8,11 @@ use crate::{
     zip_metadata, zip_metadata_str,
 };
 use anyhow::bail;
-use poto_types::{
+use aptos_types::{
     account_address::AccountAddress,
     transaction::EntryABI,
     vm::module_metadata::{
-        RuntimeModuleMetadataV1, TOPOOS_METADATA_KEY, TOPOOS_METADATA_KEY_V1,
+        RuntimeModuleMetadataV1, APTOS_METADATA_KEY, APTOS_METADATA_KEY_V1,
         METADATA_V1_MIN_FILE_FORMAT_VERSION,
     },
 };
@@ -725,7 +725,7 @@ fn inject_runtime_metadata(
                             let serialized_metadata = bcs::to_bytes(&module_metadata)
                                 .expect("BCS for RuntimeModuleMetadata");
                             named_module.module.metadata.push(Metadata {
-                                key: TOPOOS_METADATA_KEY_V1.to_vec(),
+                                key: APTOS_METADATA_KEY_V1.to_vec(),
                                 value: serialized_metadata,
                             });
                         } else {
@@ -733,7 +733,7 @@ fn inject_runtime_metadata(
                                 bcs::to_bytes(&module_metadata.clone().downgrade())
                                     .expect("BCS for RuntimeModuleMetadata");
                             named_module.module.metadata.push(Metadata {
-                                key: TOPOOS_METADATA_KEY.to_vec(),
+                                key: APTOS_METADATA_KEY.to_vec(),
                                 value: serialized_metadata,
                             });
                         }

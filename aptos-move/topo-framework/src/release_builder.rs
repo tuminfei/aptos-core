@@ -7,9 +7,9 @@ use crate::{
     release_bundle::new_release_package,
 };
 use anyhow::{anyhow, Context};
-use poto_release_bundle::ReleaseBundle;
-use poto_sdk_builder::rust;
-use poto_types::transaction::EntryABI;
+use topo_release_bundle::ReleaseBundle;
+use aptos_sdk_builder::rust;
+use aptos_types::transaction::EntryABI;
 use clap::Parser;
 use std::path::{Path, PathBuf};
 

@@ -3,9 +3,9 @@
 
 #![forbid(unsafe_code)]
 
-use poto_framework::{ReleaseOptions, ReleaseTarget};
 use clap::Parser;
 use std::path::PathBuf;
+use topo_framework::{ReleaseOptions, ReleaseTarget};
 
 #[derive(Parser)]
 #[clap(name = "topo-framework", author, version, propagate_version = true)]

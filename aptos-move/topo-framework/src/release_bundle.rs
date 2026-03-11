@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{built_package::BuiltPackage, path_in_crate};
-use poto_release_bundle::{ReleaseBundle, ReleasePackage};
+use topo_release_bundle::{ReleaseBundle, ReleasePackage};
 use move_command_line_common::files::{extension_equals, find_filenames, MOVE_EXTENSION};
 
 /// Creates a new released package from a built package.

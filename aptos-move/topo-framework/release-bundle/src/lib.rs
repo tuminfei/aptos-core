@@ -2,10 +2,10 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use anyhow::Context;
-use poto_crypto::HashValue;
-pub use poto_framework_natives as natives;
-use poto_framework_natives::code::PackageMetadata;
-use poto_types::account_address::AccountAddress;
+use aptos_crypto::HashValue;
+pub use topo_framework_natives as natives;
+use topo_framework_natives::code::PackageMetadata;
+use aptos_types::account_address::AccountAddress;
 use move_binary_format::{access::ModuleAccess, errors::PartialVMError, CompiledModule};
 use move_core_types::language_storage::ModuleId;
 use move_model::{code_writer::CodeWriter, emit, emitln, model::Loc};
@@ -184,15 +184,15 @@ impl ReleasePackage {
         emitln!(writer, "script {");
         writer.indent();
         emitln!(writer, "use std::vector;");
-        emitln!(writer, "use poto_framework::poto_governance;");
-        emitln!(writer, "use poto_framework::code;\n");
+        emitln!(writer, "use aptos_framework::aptos_governance;");
+        emitln!(writer, "use aptos_framework::code;\n");
 
         if is_testnet && !is_multi_step {
             emitln!(writer, "fun main(core_resources: &signer){");
             writer.indent();
             emitln!(
                 writer,
-                "let framework_signer = poto_governance::get_signer_testnet_only(core_resources, @{});",
+                "let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @{});",
                 for_address
             );
         } else if !is_multi_step {
@@ -200,7 +200,7 @@ impl ReleasePackage {
             writer.indent();
             emitln!(
                 writer,
-                "let framework_signer = poto_governance::resolve(proposal_id, @{});",
+                "let framework_signer = aptos_governance::resolve(proposal_id, @{});",
                 for_address
             );
         } else {
@@ -272,7 +272,7 @@ pub fn generate_next_execution_hash_blob(
         None => {
             emitln!(
             writer,
-            "let framework_signer = poto_governance::resolve_multi_step_proposal(proposal_id, @{}, {});\n",
+            "let framework_signer = aptos_governance::resolve_multi_step_proposal(proposal_id, @{}, {});\n",
             for_address,
             "x\"\"",
         );
@@ -280,7 +280,7 @@ pub fn generate_next_execution_hash_blob(
         Some(next_execution_hash) => {
             emitln!(
                 writer,
-                "let framework_signer = poto_governance::resolve_multi_step_proposal("
+                "let framework_signer = aptos_governance::resolve_multi_step_proposal("
             );
             writer.indent();
             emitln!(writer, "proposal_id,");

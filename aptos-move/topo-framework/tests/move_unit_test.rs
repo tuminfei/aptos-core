@@ -1,12 +1,12 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use poto_framework::{extended_checks, path_in_crate, BuildOptions};
-use poto_gas_schedule::{MiscGasParameters, NativeGasParameters, LATEST_GAS_FEATURE_VERSION};
-use poto_types::on_chain_config::{
-    poto_test_feature_flags_genesis, Features, TimedFeaturesBuilder,
+use topo_framework::{extended_checks, path_in_crate, BuildOptions};
+use aptos_gas_schedule::{MiscGasParameters, NativeGasParameters, LATEST_GAS_FEATURE_VERSION};
+use aptos_types::on_chain_config::{
+    aptos_test_feature_flags_genesis, Features, TimedFeaturesBuilder,
 };
-use poto_vm::natives;
+use aptos_vm::natives;
 use move_model::model::GlobalEnv;
 use move_package::CompilerConfig;
 use move_unit_test::{
@@ -56,7 +56,7 @@ fn run_tests_for_pkg(path_to_pkg: impl Into<String>, use_latest_language: bool) 
         // TODO(Gas): double check if this is correct
         utc,
         poto_test_natives(),
-        poto_test_feature_flags_genesis(),
+        aptos_test_feature_flags_genesis(),
         /* gas limit */ Some(100_000),
         /* cost_table */ None,
         /* compute_coverage */ false,
@@ -81,7 +81,7 @@ pub fn poto_test_natives() -> NativeFunctionTable {
     natives::configure_for_unit_test();
     configure_extended_checks_for_unit_test();
     // move_stdlib has the testing feature enabled to include debug native functions
-    natives::poto_natives(
+    natives::aptos_natives(
         LATEST_GAS_FEATURE_VERSION,
         NativeGasParameters::zeros(),
         MiscGasParameters::zeros(),
