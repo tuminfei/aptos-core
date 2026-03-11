@@ -10,12 +10,12 @@
 //! See [`Table.move`](../sources/Table.move) for language use.
 //! See [`README.md`](../README.md) for integration into an adapter.
 
-use poto_gas_schedule::gas_params::natives::table::*;
-use poto_native_interface::{
+use aptos_gas_schedule::gas_params::natives::table::*;
+use aptos_native_interface::{
     safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError,
     SafeNativeResult,
 };
-use poto_types::on_chain_config::TimedFeatureFlag;
+use aptos_types::on_chain_config::TimedFeatureFlag;
 use better_any::{Tid, TidAble};
 use bytes::Bytes;
 use move_binary_format::errors::{PartialVMError, PartialVMResult};
