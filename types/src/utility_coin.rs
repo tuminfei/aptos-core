@@ -44,6 +44,33 @@ impl MoveStructType for AptosCoinType {
     const STRUCT_NAME: &'static IdentStr = ident_str!("AptosCoin");
 }
 
+static TOPO_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
+    TypeTag::Struct(Box::new(StructTag {
+        address: AccountAddress::ONE,
+        module: ident_str!("topo_coin").to_owned(),
+        name: ident_str!("TopoCoin").to_owned(),
+        type_args: vec![],
+    }))
+});
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TopoCoinType;
+
+impl CoinType for TopoCoinType {
+    fn type_tag() -> TypeTag {
+        TOPO_COIN_TYPE.clone()
+    }
+
+    fn coin_info_address() -> AccountAddress {
+        AccountAddress::ONE
+    }
+}
+
+impl MoveStructType for TopoCoinType {
+    const MODULE_NAME: &'static IdentStr = ident_str!("topo_coin");
+    const STRUCT_NAME: &'static IdentStr = ident_str!("TopoCoin");
+}
+
 pub static DUMMY_COIN_TYPE: Lazy<TypeTag> = Lazy::new(|| {
     TypeTag::Struct(Box::new(StructTag {
         address: AccountAddress::ONE,

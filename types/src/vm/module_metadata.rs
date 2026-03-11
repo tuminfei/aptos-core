@@ -53,6 +53,8 @@ const COMPLEXITY_BUDGET: usize = 200000000;
 /// Aptos specific metadata (`aptos::` here).
 pub static APTOS_METADATA_KEY: &[u8] = "aptos::metadata_v0".as_bytes();
 pub static APTOS_METADATA_KEY_V1: &[u8] = "aptos::metadata_v1".as_bytes();
+pub static TOPO_METADATA_KEY: &[u8] = "topo::metadata_v0".as_bytes();
+pub static TOPO_METADATA_KEY_V1: &[u8] = "topo::metadata_v1".as_bytes();
 
 /// Aptos specific metadata attached to the metadata section of file_format.
 #[derive(Debug, Clone, Serialize, Deserialize)]
