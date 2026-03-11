@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::string_utils::native_format_debug;
-use poto_native_interface::{
+use aptos_native_interface::{
     safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError,
     SafeNativeResult,
 };

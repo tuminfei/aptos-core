@@ -1,8 +1,8 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use poto_aggregator::aggregator_v1_extension::{extension_error, AggregatorID};
-use poto_types::{account_address::AccountAddress, state_store::table::TableHandle};
+use aptos_aggregator::aggregator_v1_extension::{extension_error, AggregatorID};
+use aptos_types::{account_address::AccountAddress, state_store::table::TableHandle};
 use move_binary_format::errors::PartialVMResult;
 use move_vm_types::values::{Reference, Struct, StructRef, Value};
 

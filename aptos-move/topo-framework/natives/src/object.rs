@@ -1,12 +1,12 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
-use poto_native_interface::{
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_native_interface::{
     safely_assert_eq, safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext,
     SafeNativeResult,
 };
-use poto_types::transaction::authenticator::AuthenticationKey;
+use aptos_types::transaction::authenticator::AuthenticationKey;
 use better_any::{Tid, TidAble};
 use move_core_types::{
     account_address::AccountAddress,

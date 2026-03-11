@@ -16,8 +16,8 @@ use crate::cryptography::algebra::{
     pairing::{multi_pairing_internal, pairing_internal},
     serialization::{deserialize_internal, serialize_internal},
 };
-use poto_native_interface::{RawSafeNative, SafeNativeBuilder};
-use poto_types::on_chain_config::FeatureFlag;
+use aptos_native_interface::{RawSafeNative, SafeNativeBuilder};
+use aptos_types::on_chain_config::FeatureFlag;
 use arithmetics::{
     div::div_internal,
     inv::inv_internal,
@@ -324,7 +324,7 @@ macro_rules! abort_unless_feature_flag_enabled {
 
 fn abort_invariant_violated() -> PartialVMError {
     PartialVMError::new(StatusCode::UNKNOWN_INVARIANT_VIOLATION_ERROR)
-        .with_message("poto_std::crypto_algebra native abort".to_string())
+        .with_message("aptos_std::crypto_algebra native abort".to_string())
 }
 
 static BLS12381_GT_GENERATOR: Lazy<Option<ark_bls12_381::Fq12>> = Lazy::new(|| {

@@ -9,11 +9,11 @@ use crate::{
     },
     safe_borrow_element, structure_from_ty_arg,
 };
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
-use poto_native_interface::{
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_native_interface::{
     safely_pop_arg, SafeNativeContext, SafeNativeError, SafeNativeResult,
 };
-use poto_types::on_chain_config::FeatureFlag;
+use aptos_types::on_chain_config::FeatureFlag;
 use ark_ff::Field;
 use move_vm_types::{loaded_data::runtime_types::Type, values::Value};
 use num_traits::One;

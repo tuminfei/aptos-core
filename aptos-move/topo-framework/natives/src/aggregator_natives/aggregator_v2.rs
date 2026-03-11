@@ -2,18 +2,18 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::aggregator_natives::{helpers_v2::*, NativeAggregatorContext};
-use poto_aggregator::{
+use aptos_aggregator::{
     bounded_math::{BoundedMath, SignedU128},
     delayed_field_extension::DelayedFieldData,
     resolver::DelayedFieldResolver,
 };
-use poto_gas_algebra::NumBytes;
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
-use poto_native_interface::{
+use aptos_gas_algebra::NumBytes;
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_native_interface::{
     safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError,
     SafeNativeResult,
 };
-use poto_types::{
+use aptos_types::{
     delayed_fields::{
         calculate_width_for_constant_string, calculate_width_for_integer_embedded_string,
         SnapshotToStringFormula,

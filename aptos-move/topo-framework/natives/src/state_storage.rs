@@ -1,12 +1,12 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
-use poto_native_interface::{
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_native_interface::{
     RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeResult,
 };
-use poto_types::{state_store::state_key::StateKey, vm_status::StatusCode};
-use poto_vm_types::resolver::StateStorageView;
+use aptos_types::{state_store::state_key::StateKey, vm_status::StatusCode};
+use aptos_vm_types::resolver::StateStorageView;
 use better_any::{Tid, TidAble};
 use move_binary_format::errors::PartialVMError;
 use move_vm_runtime::{

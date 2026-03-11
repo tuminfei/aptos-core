@@ -2,13 +2,13 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::cryptography::{ristretto255_point, ristretto255_scalar};
-use poto_gas_algebra::GasExpression;
-use poto_gas_schedule::{gas_params::natives::poto_framework::*, NativeGasParameters};
-use poto_native_interface::{
+use aptos_gas_algebra::GasExpression;
+use aptos_gas_schedule::{gas_params::natives::aptos_framework::*, NativeGasParameters};
+use aptos_native_interface::{
     safely_assert_eq, safely_pop_arg, safely_pop_vec_arg, RawSafeNative, SafeNativeBuilder,
     SafeNativeError, SafeNativeResult,
 };
-use poto_types::vm_status::StatusCode;
+use aptos_types::vm_status::StatusCode;
 use curve25519_dalek::scalar::Scalar;
 use move_binary_format::errors::PartialVMError;
 use move_core_types::gas_algebra::{InternalGasUnit, NumArgs};

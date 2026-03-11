@@ -2,16 +2,16 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 #[cfg(feature = "testing")]
-use poto_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
+use aptos_crypto::ed25519::{Ed25519PrivateKey, Ed25519PublicKey};
 #[cfg(feature = "testing")]
-use poto_crypto::test_utils::KeyPair;
-use poto_crypto::{ed25519, ed25519::ED25519_PUBLIC_KEY_LENGTH, traits::*};
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
-use poto_native_interface::{
+use aptos_crypto::test_utils::KeyPair;
+use aptos_crypto::{ed25519, ed25519::ED25519_PUBLIC_KEY_LENGTH, traits::*};
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_native_interface::{
     safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError,
     SafeNativeResult,
 };
-use poto_types::on_chain_config::FeatureFlag;
+use aptos_types::on_chain_config::FeatureFlag;
 use curve25519_dalek::edwards::CompressedEdwardsY;
 use move_core_types::gas_algebra::{
     InternalGas, InternalGasPerArg, InternalGasPerByte, NumArgs, NumBytes,

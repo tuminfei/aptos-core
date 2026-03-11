@@ -28,7 +28,7 @@ pub mod util;
 
 use crate::cryptography::multi_ed25519;
 use aggregator_natives::{aggregator, aggregator_factory, aggregator_v2};
-use poto_native_interface::{RawSafeNative, SafeNativeBuilder};
+use aptos_native_interface::{RawSafeNative, SafeNativeBuilder};
 use cryptography::ed25519;
 use flate2::read::GzDecoder;
 use move_core_types::account_address::AccountAddress;
@@ -65,7 +65,7 @@ pub fn all_natives(
     add_natives_from_module!("multi_ed25519", multi_ed25519::make_all(builder));
     add_natives_from_module!("bls12381", cryptography::bls12381::make_all(builder));
     add_natives_from_module!("secp256k1", cryptography::secp256k1::make_all(builder));
-    add_natives_from_module!("poto_hash", hash::make_all(builder));
+    add_natives_from_module!("aptos_hash", hash::make_all(builder));
     add_natives_from_module!(
         "ristretto255",
         cryptography::ristretto255::make_all(builder)
@@ -108,7 +108,7 @@ pub fn all_natives(
 
     if inject_create_signer_for_gov_sim {
         add_natives_from_module!(
-            "poto_governance",
+            "aptos_governance",
             builder.make_named_natives([(
                 "create_signer",
                 create_signer::native_create_signer as RawSafeNative

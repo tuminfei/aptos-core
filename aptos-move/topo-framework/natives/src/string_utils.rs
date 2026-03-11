@@ -1,13 +1,13 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use poto_gas_algebra::NumBytes;
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
-use poto_native_interface::{
+use aptos_gas_algebra::NumBytes;
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_native_interface::{
     safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError,
     SafeNativeResult,
 };
-use poto_types::on_chain_config::FeatureFlag;
+use aptos_types::on_chain_config::FeatureFlag;
 use ark_std::iterable::Iterable;
 use itertools::Itertools;
 use move_binary_format::errors::PartialVMError;
@@ -338,7 +338,7 @@ fn native_format_impl(
             if let MoveTypeLayout::U8 = ty.as_ref() {
                 let bytes = val.value_as::<Vec<u8>>()?;
                 if context.context.timed_feature_enabled(
-                    poto_types::on_chain_config::TimedFeatureFlag::ChargeBytesForPrints,
+                    aptos_types::on_chain_config::TimedFeatureFlag::ChargeBytesForPrints,
                 ) {
                     context
                         .context

@@ -5,8 +5,8 @@ use crate::cryptography::{
     ristretto255::{pop_32_byte_slice, pop_64_byte_slice, pop_scalar_from_bytes, SCALAR_NUM_BYTES},
     ristretto255_point::E_RISTRETTO255_SCALAR_INVALID_BYTES_LENGTH,
 };
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
-use poto_native_interface::{
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_native_interface::{
     safely_assert_eq, safely_pop_arg, SafeNativeContext, SafeNativeError, SafeNativeResult,
 };
 use curve25519_dalek::scalar::Scalar;

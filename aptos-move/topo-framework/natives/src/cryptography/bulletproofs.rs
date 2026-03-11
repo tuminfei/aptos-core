@@ -4,9 +4,9 @@
 #[cfg(feature = "testing")]
 use crate::cryptography::ristretto255::{pop_scalar_from_bytes, pop_scalars_from_bytes};
 use crate::cryptography::ristretto255_point::{get_point_handle, NativeRistrettoPointContext};
-use poto_crypto::bulletproofs::MAX_RANGE_BITS;
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
-use poto_native_interface::{
+use aptos_crypto::bulletproofs::MAX_RANGE_BITS;
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_native_interface::{
     safely_pop_arg, safely_pop_vec_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext,
     SafeNativeError, SafeNativeResult,
 };

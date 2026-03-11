@@ -5,9 +5,9 @@ use crate::aggregator_natives::{
     helpers_v1::{aggregator_info, unpack_aggregator_struct},
     NativeAggregatorContext,
 };
-use poto_aggregator::aggregator_v1_extension::AggregatorID;
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
-use poto_native_interface::{
+use aptos_aggregator::aggregator_v1_extension::AggregatorID;
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_native_interface::{
     safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeResult,
 };
 use move_vm_runtime::native_functions::NativeFunction;

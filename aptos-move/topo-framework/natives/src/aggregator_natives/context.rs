@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use poto_aggregator::{
+use aptos_aggregator::{
     aggregator_v1_extension::{AggregatorData, AggregatorState},
     bounded_math::SignedU128,
     delayed_change::DelayedChange,
@@ -9,7 +9,7 @@ use poto_aggregator::{
     delta_change_set::DeltaOp,
     resolver::{AggregatorV1Resolver, DelayedFieldResolver},
 };
-use poto_types::state_store::{state_key::StateKey, state_value::StateValueMetadata};
+use aptos_types::state_store::{state_key::StateKey, state_value::StateValueMetadata};
 use better_any::{Tid, TidAble};
 use move_binary_format::errors::PartialVMResult;
 use move_core_types::value::MoveTypeLayout;
@@ -176,13 +176,13 @@ impl<'a> NativeAggregatorContext<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use poto_aggregator::{
+    use aptos_aggregator::{
         aggregator_v1_id_for_test, aggregator_v1_state_key_for_test, bounded_math::SignedU128,
         delayed_change::DelayedApplyChange, delta_change_set::DeltaWithMax,
         delta_math::DeltaHistory, tests::types::FAKE_AGGREGATOR_VIEW_GEN_ID_START,
         types::DelayedFieldValue, FakeAggregatorView,
     };
-    use poto_types::delayed_fields::{
+    use aptos_types::delayed_fields::{
         calculate_width_for_integer_embedded_string, SnapshotToStringFormula,
     };
     use claims::{assert_matches, assert_ok, assert_ok_eq, assert_some_eq};

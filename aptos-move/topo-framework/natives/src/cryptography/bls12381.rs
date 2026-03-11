@@ -1,17 +1,17 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use poto_crypto::{bls12381, traits};
+use aptos_crypto::{bls12381, traits};
 #[cfg(feature = "testing")]
-use poto_crypto::{
+use aptos_crypto::{
     bls12381::{PrivateKey, ProofOfPossession, PublicKey},
     test_utils::KeyPair,
     SigningKey, Uniform,
 };
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
 #[cfg(feature = "testing")]
-use poto_native_interface::SafeNativeError;
-use poto_native_interface::{
+use aptos_native_interface::SafeNativeError;
+use aptos_native_interface::{
     safely_pop_arg, safely_pop_vec_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext,
     SafeNativeResult,
 };

@@ -10,7 +10,7 @@ use crate::{
     },
     structure_from_ty_arg,
 };
-use poto_native_interface::{SafeNativeContext, SafeNativeError, SafeNativeResult};
+use aptos_native_interface::{SafeNativeContext, SafeNativeError, SafeNativeResult};
 #[cfg(feature = "testing")]
 use ark_ff::Field;
 #[cfg(feature = "testing")]

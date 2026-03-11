@@ -60,6 +60,7 @@ triomphe = { workspace = true }
 
 [dev-dependencies]
 claims = { workspace = true }
+aptos-aggregator = { workspace = true, features = ["testing"] }
 
 [features]
 default = []

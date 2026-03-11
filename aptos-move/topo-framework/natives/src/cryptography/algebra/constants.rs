@@ -15,8 +15,8 @@ use crate::{
     },
     store_element, structure_from_ty_arg,
 };
-use poto_gas_schedule::gas_params::natives::poto_framework::*;
-use poto_native_interface::{SafeNativeContext, SafeNativeError, SafeNativeResult};
+use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_native_interface::{SafeNativeContext, SafeNativeError, SafeNativeResult};
 use ark_ec::PrimeGroup;
 use move_vm_types::{loaded_data::runtime_types::Type, values::Value};
 use num_traits::{One, Zero};

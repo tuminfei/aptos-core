@@ -2,8 +2,8 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use super::function_info::extract_function_info;
-use poto_gas_schedule::gas_params::natives::poto_framework::DISPATCHABLE_FUNGIBLE_ASSET_DISPATCH_BASE;
-use poto_native_interface::{
+use aptos_gas_schedule::gas_params::natives::aptos_framework::DISPATCHABLE_FUNGIBLE_ASSET_DISPATCH_BASE;
+use aptos_native_interface::{
     RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError, SafeNativeResult,
 };
 use move_vm_runtime::native_functions::NativeFunction;
