@@ -37,7 +37,7 @@
 /// and implement the governance voting logic on top.
 module aptos_framework::multisig_account {
     use aptos_framework::account::{Self, SignerCapability, new_event_handle, create_resource_address};
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::chain_id;
     use aptos_framework::create_signer::create_signer;
     use aptos_framework::coin;
@@ -1253,10 +1253,10 @@ module aptos_framework::multisig_account {
         let owner_nonce = account::get_sequence_number(address_of(owner));
         let (multisig_signer, multisig_signer_cap) =
             account::create_resource_account(owner, create_multisig_account_seed(to_bytes(&owner_nonce)));
-        // Register the account to receive APT as this is not done by default as part of the resource account creation
+        // Register the account to receive TOPO as this is not done by default as part of the resource account creation
         // flow.
-        if (!coin::is_account_registered<AptosCoin>(address_of(&multisig_signer))) {
-            coin::register<AptosCoin>(&multisig_signer);
+        if (!coin::is_account_registered<TopoCoin>(address_of(&multisig_signer))) {
+            coin::register<TopoCoin>(&multisig_signer);
         };
 
         (multisig_signer, multisig_signer_cap)
@@ -1440,7 +1440,7 @@ module aptos_framework::multisig_account {
     use std::string::utf8;
     use std::features;
     #[test_only]
-    use aptos_framework::aptos_coin;
+    use aptos_framework::topo_coin;
     #[test_only]
     use aptos_framework::coin::{destroy_mint_cap, destroy_burn_cap};
 
@@ -1469,7 +1469,7 @@ module aptos_framework::multisig_account {
             framework_signer, vector[features::get_multisig_accounts_feature(), features::get_multisig_v2_enhancement_feature(), features::get_abort_if_multisig_payload_mismatch_feature()], vector[]);
         timestamp::set_time_has_started_for_testing(framework_signer);
         chain_id::initialize_for_test(framework_signer, 1);
-        let (burn, mint) = aptos_coin::initialize_for_test(framework_signer);
+        let (burn, mint) = topo_coin::initialize_for_test(framework_signer);
         destroy_mint_cap(mint);
         destroy_burn_cap(burn);
     }
@@ -1481,7 +1481,7 @@ module aptos_framework::multisig_account {
             framework_signer, vector[], vector[features::get_multisig_accounts_feature()]);
         timestamp::set_time_has_started_for_testing(framework_signer);
         chain_id::initialize_for_test(framework_signer, 1);
-        let (burn, mint) = aptos_coin::initialize_for_test(framework_signer);
+        let (burn, mint) = topo_coin::initialize_for_test(framework_signer);
         destroy_mint_cap(mint);
         destroy_burn_cap(burn);
     }

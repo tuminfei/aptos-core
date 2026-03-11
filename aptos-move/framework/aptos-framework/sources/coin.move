@@ -27,7 +27,7 @@ module aptos_framework::coin {
     use aptos_std::type_info::{Self, TypeInfo};
     use aptos_framework::create_signer;
 
-    friend aptos_framework::aptos_coin;
+    friend aptos_framework::topo_coin;
     friend aptos_framework::genesis;
     friend aptos_framework::transaction_fee;
 
@@ -110,7 +110,7 @@ module aptos_framework::coin {
     /// The coin converison map is not created yet.
     const ECOIN_CONVERSION_MAP_NOT_FOUND: u64 = 27;
 
-    /// APT pairing is not eanbled yet.
+    /// TOPO pairing is not eanbled yet.
     const EAPT_PAIRING_IS_NOT_ENABLED: u64 = 28;
 
     /// The decimals of the coin is too large.
@@ -308,7 +308,7 @@ module aptos_framework::coin {
         };
     }
 
-    /// Create APT pairing by passing `AptosCoin`.
+    /// Create TOPO pairing by passing `TopoCoin`.
     public entry fun create_pairing<CoinType>(
         aptos_framework: &signer
     ) acquires CoinConversionMap, CoinInfo {
@@ -317,7 +317,7 @@ module aptos_framework::coin {
     }
 
     inline fun is_apt<CoinType>(): bool {
-        type_info::type_name<CoinType>() == string::utf8(b"0x1::aptos_coin::AptosCoin")
+        type_info::type_name<CoinType>() == string::utf8(b"0x1::topo_coin::TopoCoin")
     }
 
     inline fun create_and_return_paired_metadata_if_not_exist<CoinType>(

@@ -292,7 +292,7 @@ spec aptos_framework::transaction_validation {
     }
 
     /// Abort according to the conditions.
-    /// `AptosCoinCapabilities` and `CoinInfo` should exists.
+    /// `TopoCoinCapabilities` and `CoinInfo` should exists.
     /// Skip transaction_fee::burn_fee verification.
     spec epilogue_extended(
         account: signer,
@@ -319,7 +319,7 @@ spec aptos_framework::transaction_validation {
     }
 
     /// Abort according to the conditions.
-    /// `AptosCoinCapabilities` and `CoinInfo` should exist.
+    /// `TopoCoinCapabilities` and `CoinInfo` should exist.
     /// Skip transaction_fee::burn_fee verification.
     spec epilogue_gas_payer_extended(
         account: signer,
@@ -447,11 +447,11 @@ spec aptos_framework::transaction_validation {
         use std::option;
         use aptos_std::type_info;
         use aptos_framework::account::{Account};
-        use aptos_framework::aptos_coin::{AptosCoin};
+        use aptos_framework::topo_coin::{TopoCoin};
         use aptos_framework::coin;
         use aptos_framework::coin::{CoinStore, CoinInfo};
         use aptos_framework::optional_aggregator;
-        use aptos_framework::transaction_fee::{AptosCoinCapabilities, AptosCoinMintCapability};
+        use aptos_framework::transaction_fee::{TopoCoinCapabilities, TopoCoinMintCapability};
 
         account: signer;
         gas_payer: address;
@@ -469,12 +469,12 @@ spec aptos_framework::transaction_validation {
         // Check account invariants.
         let addr = signer::address_of(account);
         // TODO(fa_migration)
-        // let pre_balance = global<coin::CoinStore<AptosCoin>>(gas_payer).coin.value;
-        // let post balance = global<coin::CoinStore<AptosCoin>>(gas_payer).coin.value;
+        // let pre_balance = global<coin::CoinStore<TopoCoin>>(gas_payer).coin.value;
+        // let post balance = global<coin::CoinStore<TopoCoin>>(gas_payer).coin.value;
         let pre_account = global<account::Account>(addr);
         let post account = global<account::Account>(addr);
 
-        aborts_if !exists<CoinStore<AptosCoin>>(gas_payer);
+        aborts_if !exists<CoinStore<TopoCoin>>(gas_payer);
         aborts_if !exists<Account>(addr);
         aborts_if !(global<Account>(addr).sequence_number < MAX_U64);
         // aborts_if pre_balance < transaction_fee_amount;
@@ -484,32 +484,32 @@ spec aptos_framework::transaction_validation {
         // Check burning.
         //   (Check the total supply aggregator when enabled.)
         let amount_to_burn = transaction_fee_amount - storage_fee_refunded;
-        let apt_addr = type_info::type_of<AptosCoin>().account_address;
-        let maybe_apt_supply = global<CoinInfo<AptosCoin>>(apt_addr).supply;
-        let total_supply_enabled = option::is_some(maybe_apt_supply);
-        let apt_supply = option::borrow(maybe_apt_supply);
-        let apt_supply_value = optional_aggregator::optional_aggregator_value(apt_supply);
-        let post post_maybe_apt_supply = global<CoinInfo<AptosCoin>>(apt_addr).supply;
-        let post post_apt_supply = option::borrow(post_maybe_apt_supply);
-        let post post_apt_supply_value = optional_aggregator::optional_aggregator_value(post_apt_supply);
+        let topo_addr = type_info::type_of<TopoCoin>().account_address;
+        let maybe_topo_supply = global<CoinInfo<TopoCoin>>(topo_addr).supply;
+        let total_supply_enabled = option::is_some(maybe_topo_supply);
+        let topo_supply = option::borrow(maybe_topo_supply);
+        let topo_supply_value = optional_aggregator::optional_aggregator_value(topo_supply);
+        let post post_maybe_topo_supply = global<CoinInfo<TopoCoin>>(topo_addr).supply;
+        let post post_topo_supply = option::borrow(post_maybe_topo_supply);
+        let post post_topo_supply_value = optional_aggregator::optional_aggregator_value(post_topo_supply);
 
-        aborts_if amount_to_burn > 0 && !exists<AptosCoinCapabilities>(@aptos_framework);
-        aborts_if amount_to_burn > 0 && !exists<CoinInfo<AptosCoin>>(apt_addr);
-        aborts_if amount_to_burn > 0 && total_supply_enabled && apt_supply_value < amount_to_burn;
-        ensures total_supply_enabled ==> apt_supply_value - amount_to_burn == post_apt_supply_value;
+        aborts_if amount_to_burn > 0 && !exists<TopoCoinCapabilities>(@aptos_framework);
+        aborts_if amount_to_burn > 0 && !exists<CoinInfo<TopoCoin>>(topo_addr);
+        aborts_if amount_to_burn > 0 && total_supply_enabled && topo_supply_value < amount_to_burn;
+        ensures total_supply_enabled ==> topo_supply_value - amount_to_burn == post_topo_supply_value;
 
         // Check minting.
         let amount_to_mint = storage_fee_refunded - transaction_fee_amount;
-        let total_supply = coin::supply<AptosCoin>;
-        let post post_total_supply = coin::supply<AptosCoin>;
+        let total_supply = coin::supply<TopoCoin>;
+        let post post_total_supply = coin::supply<TopoCoin>;
 
-        aborts_if amount_to_mint > 0 && !exists<CoinStore<AptosCoin>>(addr);
-        aborts_if amount_to_mint > 0 && !exists<AptosCoinMintCapability>(@aptos_framework);
+        aborts_if amount_to_mint > 0 && !exists<CoinStore<TopoCoin>>(addr);
+        aborts_if amount_to_mint > 0 && !exists<TopoCoinMintCapability>(@aptos_framework);
         aborts_if amount_to_mint > 0 && total_supply + amount_to_mint > MAX_U128;
         ensures amount_to_mint > 0 ==> post_total_supply == total_supply + amount_to_mint;
 
-        let aptos_addr = type_info::type_of<AptosCoin>().account_address;
-        aborts_if (amount_to_mint != 0) && !exists<coin::CoinInfo<AptosCoin>>(aptos_addr);
-        include coin::CoinAddAbortsIf<AptosCoin> { amount: amount_to_mint };
+        let aptos_addr = type_info::type_of<TopoCoin>().account_address;
+        aborts_if (amount_to_mint != 0) && !exists<coin::CoinInfo<TopoCoin>>(aptos_addr);
+        include coin::CoinAddAbortsIf<TopoCoin> { amount: amount_to_mint };
     }
 }

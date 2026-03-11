@@ -8,7 +8,7 @@ module aptos_framework::delegation_pool_integration_tests {
     use aptos_std::vector;
 
     use aptos_framework::account;
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin;
     use aptos_framework::reconfiguration;
     use aptos_framework::delegation_pool as dp;
@@ -288,7 +288,7 @@ module aptos_framework::delegation_pool_integration_tests {
         stake::mint(validator, 900 * ONE_APT);
         dp::add_stake(validator, pool_address, 100 * ONE_APT);
         assert!(
-            coin::balance<AptosCoin>(validator_address) == 800 * ONE_APT,
+            coin::balance<TopoCoin>(validator_address) == 800 * ONE_APT,
             2
         );
         stake::assert_validator_state(pool_address, 100 * ONE_APT, 0, 100 * ONE_APT, 0, 0);
@@ -319,10 +319,10 @@ module aptos_framework::delegation_pool_integration_tests {
 
         // Validator withdraws from inactive stake multiple times.
         dp::withdraw(validator, pool_address, 50 * ONE_APT);
-        assert!(coin::balance<AptosCoin>(validator_address) == 84999999999, 6);
+        assert!(coin::balance<TopoCoin>(validator_address) == 84999999999, 6);
         stake::assert_validator_state(pool_address, 10201000001, 5099999999, 0, 0, 0);
         dp::withdraw(validator, pool_address, 51 * ONE_APT);
-        assert!(coin::balance<AptosCoin>(validator_address) == 90099999998, 7);
+        assert!(coin::balance<TopoCoin>(validator_address) == 90099999998, 7);
         stake::assert_validator_state(pool_address, 10201000001, 0, 0, 0, 0);
 
         // Enough time has passed again and the validator's lockup is renewed once more. Validator is still active.
@@ -713,7 +713,7 @@ module aptos_framework::delegation_pool_integration_tests {
 
         // Receive back all coins with an extra 1 for rewards.
         assert!(
-            coin::balance<AptosCoin>(signer::address_of(validator)) == 100100000000,
+            coin::balance<TopoCoin>(signer::address_of(validator)) == 100100000000,
             2
         );
         stake::assert_validator_state(validator_address, 0, 0, 0, 0, 0);
@@ -1207,7 +1207,7 @@ module aptos_framework::delegation_pool_integration_tests {
         stake::assert_validator_state(pool_address, 0, 101 * ONE_APT, 0, 0, 0);
         dp::withdraw(validator, pool_address, 101 * ONE_APT);
         assert!(
-            coin::balance<AptosCoin>(signer::address_of(validator)) == 101 * ONE_APT,
+            coin::balance<TopoCoin>(signer::address_of(validator)) == 101 * ONE_APT,
             1
         );
         stake::assert_validator_state(pool_address, 0, 0, 0, 0, 0);

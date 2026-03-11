@@ -1,5 +1,5 @@
 ///
-/// Simple vesting contract that allows specifying how much APT coins should be vesting in each fixed-size period. The
+/// Simple vesting contract that allows specifying how much TOPO coins should be vesting in each fixed-size period. The
 /// vesting contract also comes with staking and allows shareholders to withdraw rewards anytime.
 ///
 /// Vesting schedule is represented as a vector of distributions. For example, a vesting schedule of
@@ -45,8 +45,8 @@ module aptos_framework::vesting {
     use aptos_std::simple_map::{Self, SimpleMap};
 
     use aptos_framework::account::{Self, SignerCapability, new_event_handle};
-    use aptos_framework::aptos_account::{Self, assert_account_is_registered_for_apt};
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::aptos_account::{Self, assert_account_is_registered_for_topo};
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{EventHandle, emit};
     use aptos_framework::stake;
@@ -545,7 +545,7 @@ module aptos_framework::vesting {
     public fun create_vesting_contract(
         admin: &signer,
         shareholders: &vector<address>,
-        buy_ins: SimpleMap<address, Coin<AptosCoin>>,
+        buy_ins: SimpleMap<address, Coin<TopoCoin>>,
         vesting_schedule: VestingSchedule,
         withdrawal_address: address,
         operator: address,
@@ -559,7 +559,7 @@ module aptos_framework::vesting {
             !system_addresses::is_reserved_address(withdrawal_address),
             error::invalid_argument(EINVALID_WITHDRAWAL_ADDRESS),
         );
-        assert_account_is_registered_for_apt(withdrawal_address);
+        assert_account_is_registered_for_topo(withdrawal_address);
         assert!(shareholders.length() > 0, error::invalid_argument(ENO_SHAREHOLDERS));
         assert!(
             buy_ins.length() == shareholders.length(),
@@ -567,7 +567,7 @@ module aptos_framework::vesting {
         );
 
         // Create a coins pool to track shareholders and shares of the grant.
-        let grant = coin::zero<AptosCoin>();
+        let grant = coin::zero<TopoCoin>();
         let grant_amount = 0;
         let grant_pool = pool_u64::create(MAXIMUM_SHAREHOLDERS);
         shareholders.for_each_ref(|shareholder| {
@@ -927,9 +927,9 @@ module aptos_framework::vesting {
         shareholder: address,
         new_beneficiary: address,
     ) acquires VestingContract {
-        // Verify that the beneficiary account is set up to receive APT. This is a requirement so distribute() wouldn't
-        // fail and block all other accounts from receiving APT if one beneficiary is not registered.
-        assert_account_is_registered_for_apt(new_beneficiary);
+        // Verify that the beneficiary account is set up to receive TOPO. This is a requirement so distribute() wouldn't
+        // fail and block all other accounts from receiving TOPO if one beneficiary is not registered.
+        assert_account_is_registered_for_topo(new_beneficiary);
 
         let vesting_contract = borrow_global_mut<VestingContract>(contract_address);
         verify_admin(admin, vesting_contract);
@@ -1053,9 +1053,9 @@ module aptos_framework::vesting {
         seed.append(contract_creation_seed);
 
         let (account_signer, signer_cap) = account::create_resource_account(admin, seed);
-        // Register the vesting contract account to receive APT as it'll be sent to it when claiming unlocked stake from
+        // Register the vesting contract account to receive TOPO as it'll be sent to it when claiming unlocked stake from
         // the underlying staking contract.
-        coin::register<AptosCoin>(&account_signer);
+        coin::register<TopoCoin>(&account_signer);
 
         (account_signer, signer_cap)
     }
@@ -1080,13 +1080,13 @@ module aptos_framework::vesting {
         staking_contract::unlock_stake(contract_signer, vesting_contract.staking.operator, amount);
     }
 
-    fun withdraw_stake(vesting_contract: &VestingContract, contract_address: address): Coin<AptosCoin> {
+    fun withdraw_stake(vesting_contract: &VestingContract, contract_address: address): Coin<TopoCoin> {
         // Claim any withdrawable distribution from the staking contract. The withdrawn coins will be sent directly to
         // the vesting contract's account.
         staking_contract::distribute(contract_address, vesting_contract.staking.operator);
-        let withdrawn_coins = coin::balance<AptosCoin>(contract_address);
+        let withdrawn_coins = coin::balance<TopoCoin>(contract_address);
         let contract_signer = &get_vesting_account_signer_internal(vesting_contract);
-        coin::withdraw<AptosCoin>(contract_signer, withdrawn_coins)
+        coin::withdraw<TopoCoin>(contract_signer, withdrawn_coins)
     }
 
     fun get_beneficiary(contract: &VestingContract, shareholder: address): address {
@@ -1105,10 +1105,10 @@ module aptos_framework::vesting {
     use aptos_std::math64::min;
 
     #[test_only]
-    const MIN_STAKE: u64 = 100000000000000; // 1M APT coins with 8 decimals.
+    const MIN_STAKE: u64 = 100000000000000; // 1M TOPO coins with 8 decimals.
 
     #[test_only]
-    const GRANT_AMOUNT: u64 = 20000000000000000; // 200M APT coins with 8 decimals.
+    const GRANT_AMOUNT: u64 = 20000000000000000; // 200M TOPO coins with 8 decimals.
 
     #[test_only]
     const VESTING_SCHEDULE_CLIFF: u64 = 31536000; // 1 year
@@ -1187,7 +1187,7 @@ module aptos_framework::vesting {
         );
 
         let admin_address = signer::address_of(admin);
-        let buy_ins = simple_map::create<address, Coin<AptosCoin>>();
+        let buy_ins = simple_map::create<address, Coin<TopoCoin>>();
         shares.enumerate_ref(|i, share| {
             let shareholder = shareholders[i];
             simple_map::add(&mut buy_ins, shareholder, stake::mint_coins(*share));
@@ -1268,8 +1268,8 @@ module aptos_framework::vesting {
         stake::fast_forward_to_unlock(stake_pool_address);
         rewards = with_rewards(rewards);
         distribute(contract_address);
-        let shareholder_1_bal = coin::balance<AptosCoin>(shareholder_1_address);
-        let shareholder_2_bal = coin::balance<AptosCoin>(shareholder_2_address);
+        let shareholder_1_bal = coin::balance<TopoCoin>(shareholder_1_address);
+        let shareholder_2_bal = coin::balance<TopoCoin>(shareholder_2_address);
         // Distribution goes by the shares of the vesting contract.
         assert!(shareholder_1_bal == rewards / 4, shareholder_1_bal);
         assert!(shareholder_2_bal == rewards * 3 / 4, shareholder_2_bal);
@@ -1315,10 +1315,10 @@ module aptos_framework::vesting {
         pending_distribution = with_rewards(pending_distribution);
         distribute(contract_address);
         stake::assert_stake_pool(stake_pool_address, total_active, 0, 0, 0);
-        assert!(coin::balance<AptosCoin>(shareholder_1_address) == shareholder_1_bal + pending_distribution / 4, 0);
-        assert!(coin::balance<AptosCoin>(shareholder_2_address) == shareholder_2_bal + pending_distribution * 3 / 4, 1);
+        assert!(coin::balance<TopoCoin>(shareholder_1_address) == shareholder_1_bal + pending_distribution / 4, 0);
+        assert!(coin::balance<TopoCoin>(shareholder_2_address) == shareholder_2_bal + pending_distribution * 3 / 4, 1);
         // Withdrawal address receives the left-over dust of 1 coin due to rounding error.
-        assert!(coin::balance<AptosCoin>(withdrawal_address) == 1, 0);
+        assert!(coin::balance<TopoCoin>(withdrawal_address) == 1, 0);
 
         // Admin terminates the vesting contract.
         terminate_vesting_contract(admin, contract_address);
@@ -1327,9 +1327,9 @@ module aptos_framework::vesting {
         stake::fast_forward_to_unlock(stake_pool_address);
         let withdrawn_amount = with_rewards(total_active);
         stake::assert_stake_pool(stake_pool_address, 0, withdrawn_amount, 0, 0);
-        let previous_bal = coin::balance<AptosCoin>(withdrawal_address);
+        let previous_bal = coin::balance<TopoCoin>(withdrawal_address);
         admin_withdraw(admin, contract_address);
-        assert!(coin::balance<AptosCoin>(withdrawal_address) == previous_bal + withdrawn_amount, 0);
+        assert!(coin::balance<TopoCoin>(withdrawal_address) == previous_bal + withdrawn_amount, 0);
     }
 
     #[test(aptos_framework = @0x1, admin = @0x123)]
@@ -1498,8 +1498,8 @@ module aptos_framework::vesting {
         commission = with_rewards(commission) + commission_on_staker_rewards;
         distribute(contract_address);
         // Rounding error leads to a dust amount of 1 transferred to the staker.
-        assert!(coin::balance<AptosCoin>(shareholder_address) == staker_rewards + 1, 0);
-        assert!(coin::balance<AptosCoin>(operator_address) == commission - 1, 1);
+        assert!(coin::balance<TopoCoin>(shareholder_address) == staker_rewards + 1, 0);
+        assert!(coin::balance<TopoCoin>(operator_address) == commission - 1, 1);
     }
 
     #[test(aptos_framework = @0x1, admin = @0x123, shareholder = @0x234, operator = @0x345)]
@@ -1555,8 +1555,8 @@ module aptos_framework::vesting {
         commission = with_rewards(commission) + commission_on_staker_rewards;
         distribute(contract_address);
         // Rounding error leads to a dust amount of 1 transferred to the staker.
-        assert!(coin::balance<AptosCoin>(shareholder_address) == staker_rewards + 1, 0);
-        assert!(coin::balance<AptosCoin>(operator_address) == commission - 1, 1);
+        assert!(coin::balance<TopoCoin>(shareholder_address) == staker_rewards + 1, 0);
+        assert!(coin::balance<TopoCoin>(operator_address) == commission - 1, 1);
     }
 
     #[test(aptos_framework = @0x1, admin = @0x123, operator = @0x345)]
@@ -1637,7 +1637,7 @@ module aptos_framework::vesting {
         distribute(contract_address);
 
         // Assert that the operator receives the expected commission.
-        assert!(coin::balance<AptosCoin>(operator_address) == expected_commission, 1);
+        assert!(coin::balance<TopoCoin>(operator_address) == expected_commission, 1);
     }
 
     #[test(
@@ -1697,9 +1697,9 @@ module aptos_framework::vesting {
         distribute(contract_address);
 
         // Assert that the beneficiary receives the expected commission.
-        assert!(coin::balance<AptosCoin>(operator_address1) == 0, 1);
-        assert!(coin::balance<AptosCoin>(beneficiary_address) == expected_commission, 1);
-        let old_beneficiay_balance = coin::balance<AptosCoin>(beneficiary_address);
+        assert!(coin::balance<TopoCoin>(operator_address1) == 0, 1);
+        assert!(coin::balance<TopoCoin>(beneficiary_address) == expected_commission, 1);
+        let old_beneficiay_balance = coin::balance<TopoCoin>(beneficiary_address);
 
         // switch operator to operator2. The rewards should go to operator2 not to the beneficiay of operator1.
         update_operator(admin, contract_address, operator_address2, 10);
@@ -1721,8 +1721,8 @@ module aptos_framework::vesting {
         distribute(contract_address);
 
         // Assert that the rewards go to operator2, and the balance of the operator1's beneficiay remains the same.
-        assert!(coin::balance<AptosCoin>(operator_address2) >= expected_commission, 1);
-        assert!(coin::balance<AptosCoin>(beneficiary_address) == old_beneficiay_balance, 1);
+        assert!(coin::balance<TopoCoin>(operator_address2) >= expected_commission, 1);
+        assert!(coin::balance<TopoCoin>(beneficiary_address) == old_beneficiay_balance, 1);
     }
 
     #[test(aptos_framework = @0x1, admin = @0x123, shareholder = @0x234)]
@@ -1933,7 +1933,7 @@ module aptos_framework::vesting {
         // No rewards as validator never joined the validator set.
         let vested_amount = fraction(GRANT_AMOUNT, 3, 48);
         distribute(contract_address);
-        let balance = coin::balance<AptosCoin>(@11);
+        let balance = coin::balance<TopoCoin>(@11);
         assert!(balance == vested_amount, balance);
     }
 
@@ -1977,8 +1977,8 @@ module aptos_framework::vesting {
         // No rewards as validator never joined the validator set.
         let vested_amount = fraction(GRANT_AMOUNT, 3, 48);
         distribute(contract_address);
-        assert!(coin::balance<AptosCoin>(@11) == vested_amount, 0);
-        assert!(coin::balance<AptosCoin>(@12) == 0, 1);
+        assert!(coin::balance<TopoCoin>(@11) == vested_amount, 0);
+        assert!(coin::balance<TopoCoin>(@12) == 0, 1);
     }
 
     #[test(aptos_framework = @0x1, admin = @0x123, resetter = @0x234)]

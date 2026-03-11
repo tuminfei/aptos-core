@@ -12,7 +12,7 @@ spec aptos_framework::execution_config {
         use std::features;
         use aptos_framework::chain_status;
         use aptos_framework::staking_config;
-        use aptos_framework::aptos_coin;
+        use aptos_framework::topo_coin;
 
         // TODO: set because of timeout (property proved)
         pragma verify_duration_estimate = 600;
@@ -21,7 +21,7 @@ spec aptos_framework::execution_config {
         requires exists<staking_config::StakingRewardsConfig>(@aptos_framework);
         requires len(config) > 0;
         include features::spec_periodical_reward_rate_decrease_enabled() ==> staking_config::StakingRewardsConfigEnabledRequirement;
-        include aptos_coin::ExistsAptosCoin;
+        include topo_coin::ExistsTopoCoin;
         requires system_addresses::is_aptos_framework_address(addr);
         requires timestamp::spec_now_microseconds() >= reconfiguration::last_reconfiguration_time();
 

@@ -2,7 +2,7 @@
 module aptos_framework::transaction_fee {
     use aptos_framework::coin::{Self, AggregatableCoin, BurnCapability, MintCapability};
     use aptos_framework::aptos_account;
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::fungible_asset::BurnRef;
     use aptos_framework::system_addresses;
     use std::error;
@@ -26,8 +26,8 @@ module aptos_framework::transaction_fee {
 
     #[deprecated]
     /// Stores burn capability to burn the gas fees.
-    struct AptosCoinCapabilities has key {
-        burn_cap: BurnCapability<AptosCoin>
+    struct TopoCoinCapabilities has key {
+        burn_cap: BurnCapability<TopoCoin>
     }
 
     /// Stores burn capability to burn the gas fees.
@@ -36,8 +36,8 @@ module aptos_framework::transaction_fee {
     }
 
     /// Stores mint capability to mint the refunds.
-    struct AptosCoinMintCapability has key {
-        mint_cap: MintCapability<AptosCoin>
+    struct TopoCoinMintCapability has key {
+        mint_cap: MintCapability<TopoCoin>
     }
 
     #[event]
@@ -85,15 +85,15 @@ module aptos_framework::transaction_fee {
     /// Mint refund in epilogue.
     public(friend) fun mint_and_refund(
         account: address, refund: u64
-    ) acquires AptosCoinMintCapability {
-        let mint_cap = &borrow_global<AptosCoinMintCapability>(@aptos_framework).mint_cap;
+    ) acquires TopoCoinMintCapability {
+        let mint_cap = &borrow_global<TopoCoinMintCapability>(@aptos_framework).mint_cap;
         let refund_coin = coin::mint(refund, mint_cap);
         coin::deposit_for_gas_fee(account, refund_coin);
     }
 
     /// Only called during genesis.
-    public(friend) fun store_aptos_coin_burn_cap(
-        aptos_framework: &signer, burn_cap: BurnCapability<AptosCoin>
+    public(friend) fun store_topo_coin_burn_cap(
+        aptos_framework: &signer, burn_cap: BurnCapability<TopoCoin>
     ) {
         system_addresses::assert_aptos_framework(aptos_framework);
 
@@ -102,11 +102,11 @@ module aptos_framework::transaction_fee {
     }
 
     /// Only called during genesis.
-    public(friend) fun store_aptos_coin_mint_cap(
-        aptos_framework: &signer, mint_cap: MintCapability<AptosCoin>
+    public(friend) fun store_topo_coin_mint_cap(
+        aptos_framework: &signer, mint_cap: MintCapability<TopoCoin>
     ) {
         system_addresses::assert_aptos_framework(aptos_framework);
-        move_to(aptos_framework, AptosCoinMintCapability { mint_cap })
+        move_to(aptos_framework, TopoCoinMintCapability { mint_cap })
     }
 
     // Called by the VM after epilogue.
@@ -120,7 +120,7 @@ module aptos_framework::transaction_fee {
     /// DEPRECATED: Stores information about the block proposer and the amount of fees
     /// collected when executing the block.
     struct CollectedFeesPerBlock has key {
-        amount: AggregatableCoin<AptosCoin>,
+        amount: AggregatableCoin<TopoCoin>,
         proposer: Option<address>,
         burn_percentage: u8
     }

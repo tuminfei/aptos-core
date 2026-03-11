@@ -1,6 +1,6 @@
 /// This module defines a minimal and generic Coin and Balance.
 /// modified from https://github.com/move-language/move/tree/main/language/documentation/tutorial
-module aptos_framework::aptos_coin {
+module aptos_framework::topo_coin {
     use std::error;
     use std::signer;
     use std::string;
@@ -19,10 +19,10 @@ module aptos_framework::aptos_coin {
     /// Cannot find delegation of mint capability to this account
     const EDELEGATION_NOT_FOUND: u64 = 3;
 
-    struct AptosCoin has key {}
+    struct TopoCoin has key {}
 
     struct MintCapStore has key {
-        mint_cap: MintCapability<AptosCoin>,
+        mint_cap: MintCapability<TopoCoin>,
     }
 
     /// Delegation token created by delegator and can be claimed by the delegatee as MintCapability.
@@ -35,14 +35,14 @@ module aptos_framework::aptos_coin {
         inner: vector<DelegatedMintCapability>,
     }
 
-    /// Can only called during genesis to initialize the Aptos coin.
-    public(friend) fun initialize(aptos_framework: &signer): (BurnCapability<AptosCoin>, MintCapability<AptosCoin>) {
+    /// Can only called during genesis to initialize the Topo coin.
+    public(friend) fun initialize(aptos_framework: &signer): (BurnCapability<TopoCoin>, MintCapability<TopoCoin>) {
         system_addresses::assert_aptos_framework(aptos_framework);
 
-        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<AptosCoin>(
+        let (burn_cap, freeze_cap, mint_cap) = coin::initialize_with_parallelizable_supply<TopoCoin>(
             aptos_framework,
-            string::utf8(b"Aptos Coin"),
-            string::utf8(b"APT"),
+            string::utf8(b"Topo Coin"),
+            string::utf8(b"TOPO"),
             8, // decimals
             true, // monitor_supply
         );
@@ -69,20 +69,20 @@ module aptos_framework::aptos_coin {
 
     /// Can only be called during genesis for tests to grant mint capability to aptos framework and core resources
     /// accounts.
-    /// Expects account and APT store to be registered before calling.
+    /// Expects account and TOPO store to be registered before calling.
     public(friend) fun configure_accounts_for_test(
         aptos_framework: &signer,
         core_resources: &signer,
-        mint_cap: MintCapability<AptosCoin>,
+        mint_cap: MintCapability<TopoCoin>,
     ) {
         system_addresses::assert_aptos_framework(aptos_framework);
 
-        // Mint the core resource account AptosCoin for gas so it can execute system transactions.
-        let coins = coin::mint<AptosCoin>(
+        // Mint the core resource account TopoCoin for gas so it can execute system transactions.
+        let coins = coin::mint<TopoCoin>(
             18446744073709551615,
             &mint_cap,
         );
-        coin::deposit<AptosCoin>(signer::address_of(core_resources), coins);
+        coin::deposit<TopoCoin>(signer::address_of(core_resources), coins);
 
         move_to(core_resources, MintCapStore { mint_cap });
         move_to(core_resources, Delegations { inner: vector::empty() });
@@ -103,8 +103,8 @@ module aptos_framework::aptos_coin {
         );
 
         let mint_cap = &borrow_global<MintCapStore>(account_addr).mint_cap;
-        let coins_minted = coin::mint<AptosCoin>(amount, mint_cap);
-        coin::deposit<AptosCoin>(dst_addr, coins_minted);
+        let coins_minted = coin::mint<TopoCoin>(amount, mint_cap);
+        coin::deposit<TopoCoin>(dst_addr, coins_minted);
     }
 
     /// Only callable in tests and testnets where the core resources account exists.
@@ -157,8 +157,8 @@ module aptos_framework::aptos_coin {
     use aptos_framework::fungible_asset::FungibleAsset;
 
     #[test_only]
-    public fun mint_apt_fa_for_test(amount: u64): FungibleAsset acquires MintCapStore {
-        ensure_initialized_with_apt_fa_metadata_for_test();
+    public fun mint_topo_fa_for_test(amount: u64): FungibleAsset acquires MintCapStore {
+        ensure_initialized_with_topo_fa_metadata_for_test();
         coin::coin_to_fungible_asset(
             coin::mint(
                 amount,
@@ -168,7 +168,7 @@ module aptos_framework::aptos_coin {
     }
 
     #[test_only]
-    public fun ensure_initialized_with_apt_fa_metadata_for_test() {
+    public fun ensure_initialized_with_topo_fa_metadata_for_test() {
         let aptos_framework = account::create_signer_for_test(@aptos_framework);
         if (!exists<MintCapStore>(@aptos_framework)) {
             if (!aggregator_factory::aggregator_factory_exists_for_testing()) {
@@ -179,15 +179,15 @@ module aptos_framework::aptos_coin {
             coin::destroy_mint_cap(mint_cap);
         };
         coin::create_coin_conversion_map(&aptos_framework);
-        coin::create_pairing<AptosCoin>(&aptos_framework);
+        coin::create_pairing<TopoCoin>(&aptos_framework);
     }
 
     #[test_only]
-    public fun initialize_for_test(aptos_framework: &signer): (BurnCapability<AptosCoin>, MintCapability<AptosCoin>) {
+    public fun initialize_for_test(aptos_framework: &signer): (BurnCapability<TopoCoin>, MintCapability<TopoCoin>) {
         aggregator_factory::initialize_aggregator_factory_for_test(aptos_framework);
         let (burn_cap, mint_cap) = initialize(aptos_framework);
         coin::create_coin_conversion_map(aptos_framework);
-        coin::create_pairing<AptosCoin>(aptos_framework);
+        coin::create_pairing<TopoCoin>(aptos_framework);
         (burn_cap, mint_cap)
     }
 
@@ -195,10 +195,10 @@ module aptos_framework::aptos_coin {
     #[test_only]
     public fun initialize_for_test_without_aggregator_factory(
         aptos_framework: &signer
-    ): (BurnCapability<AptosCoin>, MintCapability<AptosCoin>) {
+    ): (BurnCapability<TopoCoin>, MintCapability<TopoCoin>) {
         let (burn_cap, mint_cap) = initialize(aptos_framework);
         coin::create_coin_conversion_map(aptos_framework);
-        coin::create_pairing<AptosCoin>(aptos_framework);
+        coin::create_pairing<TopoCoin>(aptos_framework);
         (burn_cap, mint_cap)
     }
 }

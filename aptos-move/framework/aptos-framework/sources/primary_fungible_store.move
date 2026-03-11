@@ -141,7 +141,7 @@ module aptos_framework::primary_fungible_store {
         );
     }
 
-    public fun grant_apt_permission(
+    public fun grant_topo_permission(
         master: &signer,
         permissioned: &signer,
         amount: u64

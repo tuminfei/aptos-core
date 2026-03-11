@@ -257,7 +257,7 @@ spec aptos_framework::vesting {
         /// [high-level-req-10]
         aborts_if withdrawal_address == @aptos_framework || withdrawal_address == @vm_reserved;
         aborts_if !exists<account::Account>(withdrawal_address);
-        aborts_if !exists<coin::CoinStore<AptosCoin>>(withdrawal_address);
+        aborts_if !exists<coin::CoinStore<TopoCoin>>(withdrawal_address);
         aborts_if len(shareholders) == 0;
         // property 2: The vesting pool should not exceed a maximum of 30 shareholders.
         aborts_if simple_map::spec_len(buy_ins) != len(shareholders);
@@ -434,7 +434,7 @@ spec aptos_framework::vesting {
         pragma aborts_if_is_partial;
         aborts_if !account::spec_exists_at(new_beneficiary);
         // TODO(fa_migration)
-        // aborts_if !coin::spec_is_account_registered<AptosCoin>(new_beneficiary);
+        // aborts_if !coin::spec_is_account_registered<TopoCoin>(new_beneficiary);
         include VerifyAdminAbortsIf;
         let post vesting_contract = global<VestingContract>(contract_address);
         ensures simple_map::spec_contains_key(vesting_contract.beneficiaries,shareholder);
@@ -529,11 +529,11 @@ spec aptos_framework::vesting {
 
         let acc = global<account::Account>(resource_addr);
         let post post_acc = global<account::Account>(resource_addr);
-        aborts_if !exists<coin::CoinStore<AptosCoin>>(resource_addr) && !aptos_std::type_info::spec_is_struct<AptosCoin>();
-        aborts_if !exists<coin::CoinStore<AptosCoin>>(resource_addr) && ea && acc.guid_creation_num + 2 > MAX_U64;
-        aborts_if !exists<coin::CoinStore<AptosCoin>>(resource_addr) && ea && acc.guid_creation_num + 2 >= account::MAX_GUID_CREATION_NUM;
+        aborts_if !exists<coin::CoinStore<TopoCoin>>(resource_addr) && !aptos_std::type_info::spec_is_struct<TopoCoin>();
+        aborts_if !exists<coin::CoinStore<TopoCoin>>(resource_addr) && ea && acc.guid_creation_num + 2 > MAX_U64;
+        aborts_if !exists<coin::CoinStore<TopoCoin>>(resource_addr) && ea && acc.guid_creation_num + 2 >= account::MAX_GUID_CREATION_NUM;
         ensures exists<account::Account>(resource_addr) && post_acc.authentication_key == account::ZERO_AUTH_KEY &&
-                exists<coin::CoinStore<AptosCoin>>(resource_addr);
+                exists<coin::CoinStore<TopoCoin>>(resource_addr);
         ensures signer::address_of(result_1) == resource_addr;
         ensures result_2.account == resource_addr;
     }
@@ -576,7 +576,7 @@ spec aptos_framework::vesting {
         include amount != 0 ==> DistributeInternalAbortsIf { staker: acc, operator, staking_contract };
     }
 
-    spec withdraw_stake(vesting_contract: &VestingContract, contract_address: address): Coin<AptosCoin> {
+    spec withdraw_stake(vesting_contract: &VestingContract, contract_address: address): Coin<TopoCoin> {
         // TODO: Calls `staking_contract::distribute` which is not verified.
         pragma verify = false;
         include WithdrawStakeAbortsIf;

@@ -5,16 +5,16 @@
 
 
 
--  [Resource `AptosCoinCapabilities`](#0x1_transaction_fee_AptosCoinCapabilities)
+-  [Resource `TopoCoinCapabilities`](#0x1_transaction_fee_TopoCoinCapabilities)
 -  [Resource `AptosFABurnCapabilities`](#0x1_transaction_fee_AptosFABurnCapabilities)
--  [Resource `AptosCoinMintCapability`](#0x1_transaction_fee_AptosCoinMintCapability)
+-  [Resource `TopoCoinMintCapability`](#0x1_transaction_fee_TopoCoinMintCapability)
 -  [Struct `FeeStatement`](#0x1_transaction_fee_FeeStatement)
 -  [Resource `CollectedFeesPerBlock`](#0x1_transaction_fee_CollectedFeesPerBlock)
 -  [Constants](#@Constants_0)
 -  [Function `burn_fee`](#0x1_transaction_fee_burn_fee)
 -  [Function `mint_and_refund`](#0x1_transaction_fee_mint_and_refund)
--  [Function `store_aptos_coin_burn_cap`](#0x1_transaction_fee_store_aptos_coin_burn_cap)
--  [Function `store_aptos_coin_mint_cap`](#0x1_transaction_fee_store_aptos_coin_mint_cap)
+-  [Function `store_topo_coin_burn_cap`](#0x1_transaction_fee_store_topo_coin_burn_cap)
+-  [Function `store_topo_coin_mint_cap`](#0x1_transaction_fee_store_topo_coin_mint_cap)
 -  [Function `emit_fee_statement`](#0x1_transaction_fee_emit_fee_statement)
 -  [Function `initialize_fee_collection_and_distribution`](#0x1_transaction_fee_initialize_fee_collection_and_distribution)
 -  [Function `upgrade_burn_percentage`](#0x1_transaction_fee_upgrade_burn_percentage)
@@ -26,15 +26,15 @@
     -  [Resource `CollectedFeesPerBlock`](#@Specification_1_CollectedFeesPerBlock)
     -  [Function `burn_fee`](#@Specification_1_burn_fee)
     -  [Function `mint_and_refund`](#@Specification_1_mint_and_refund)
-    -  [Function `store_aptos_coin_burn_cap`](#@Specification_1_store_aptos_coin_burn_cap)
-    -  [Function `store_aptos_coin_mint_cap`](#@Specification_1_store_aptos_coin_mint_cap)
+    -  [Function `store_topo_coin_burn_cap`](#@Specification_1_store_topo_coin_burn_cap)
+    -  [Function `store_topo_coin_mint_cap`](#@Specification_1_store_topo_coin_mint_cap)
     -  [Function `emit_fee_statement`](#@Specification_1_emit_fee_statement)
     -  [Function `initialize_fee_collection_and_distribution`](#@Specification_1_initialize_fee_collection_and_distribution)
     -  [Function `initialize_storage_refund`](#@Specification_1_initialize_storage_refund)
 
 
 <pre><code><b>use</b> <a href="aptos_account.md#0x1_aptos_account">0x1::aptos_account</a>;
-<b>use</b> <a href="aptos_coin.md#0x1_aptos_coin">0x1::aptos_coin</a>;
+<b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 <b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
 <b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
 <b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
@@ -44,15 +44,15 @@
 
 
 
-<a id="0x1_transaction_fee_AptosCoinCapabilities"></a>
+<a id="0x1_transaction_fee_TopoCoinCapabilities"></a>
 
-## Resource `AptosCoinCapabilities`
+## Resource `TopoCoinCapabilities`
 
 Stores burn capability to burn the gas fees.
 
 
 <pre><code>#[deprecated]
-<b>struct</b> <a href="transaction_fee.md#0x1_transaction_fee_AptosCoinCapabilities">AptosCoinCapabilities</a> <b>has</b> key
+<b>struct</b> <a href="transaction_fee.md#0x1_transaction_fee_TopoCoinCapabilities">TopoCoinCapabilities</a> <b>has</b> key
 </code></pre>
 
 
@@ -63,7 +63,7 @@ Stores burn capability to burn the gas fees.
 
 <dl>
 <dt>
-<code>burn_cap: <a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;</code>
+<code>burn_cap: <a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;</code>
 </dt>
 <dd>
 
@@ -101,14 +101,14 @@ Stores burn capability to burn the gas fees.
 
 </details>
 
-<a id="0x1_transaction_fee_AptosCoinMintCapability"></a>
+<a id="0x1_transaction_fee_TopoCoinMintCapability"></a>
 
-## Resource `AptosCoinMintCapability`
+## Resource `TopoCoinMintCapability`
 
 Stores mint capability to mint the refunds.
 
 
-<pre><code><b>struct</b> <a href="transaction_fee.md#0x1_transaction_fee_AptosCoinMintCapability">AptosCoinMintCapability</a> <b>has</b> key
+<pre><code><b>struct</b> <a href="transaction_fee.md#0x1_transaction_fee_TopoCoinMintCapability">TopoCoinMintCapability</a> <b>has</b> key
 </code></pre>
 
 
@@ -119,7 +119,7 @@ Stores mint capability to mint the refunds.
 
 <dl>
 <dt>
-<code>mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;</code>
+<code>mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;</code>
 </dt>
 <dd>
 
@@ -220,7 +220,7 @@ collected when executing the block.
 
 <dl>
 <dt>
-<code>amount: <a href="coin.md#0x1_coin_AggregatableCoin">coin::AggregatableCoin</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;</code>
+<code>amount: <a href="coin.md#0x1_coin_AggregatableCoin">coin::AggregatableCoin</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;</code>
 </dt>
 <dd>
 
@@ -325,8 +325,8 @@ Mint refund in epilogue.
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_mint_and_refund">mint_and_refund</a>(
     <a href="account.md#0x1_account">account</a>: <b>address</b>, refund: u64
-) <b>acquires</b> <a href="transaction_fee.md#0x1_transaction_fee_AptosCoinMintCapability">AptosCoinMintCapability</a> {
-    <b>let</b> mint_cap = &<b>borrow_global</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosCoinMintCapability">AptosCoinMintCapability</a>&gt;(@aptos_framework).mint_cap;
+) <b>acquires</b> <a href="transaction_fee.md#0x1_transaction_fee_TopoCoinMintCapability">TopoCoinMintCapability</a> {
+    <b>let</b> mint_cap = &<b>borrow_global</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_TopoCoinMintCapability">TopoCoinMintCapability</a>&gt;(@aptos_framework).mint_cap;
     <b>let</b> refund_coin = <a href="coin.md#0x1_coin_mint">coin::mint</a>(refund, mint_cap);
     <a href="coin.md#0x1_coin_deposit_for_gas_fee">coin::deposit_for_gas_fee</a>(<a href="account.md#0x1_account">account</a>, refund_coin);
 }
@@ -336,14 +336,14 @@ Mint refund in epilogue.
 
 </details>
 
-<a id="0x1_transaction_fee_store_aptos_coin_burn_cap"></a>
+<a id="0x1_transaction_fee_store_topo_coin_burn_cap"></a>
 
-## Function `store_aptos_coin_burn_cap`
+## Function `store_topo_coin_burn_cap`
 
 Only called during genesis.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_aptos_coin_burn_cap">store_aptos_coin_burn_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, burn_cap: <a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_topo_coin_burn_cap">store_topo_coin_burn_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, burn_cap: <a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -352,8 +352,8 @@ Only called during genesis.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_aptos_coin_burn_cap">store_aptos_coin_burn_cap</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, burn_cap: BurnCapability&lt;AptosCoin&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_topo_coin_burn_cap">store_topo_coin_burn_cap</a>(
+    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, burn_cap: BurnCapability&lt;TopoCoin&gt;
 ) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
 
@@ -366,14 +366,14 @@ Only called during genesis.
 
 </details>
 
-<a id="0x1_transaction_fee_store_aptos_coin_mint_cap"></a>
+<a id="0x1_transaction_fee_store_topo_coin_mint_cap"></a>
 
-## Function `store_aptos_coin_mint_cap`
+## Function `store_topo_coin_mint_cap`
 
 Only called during genesis.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_aptos_coin_mint_cap">store_aptos_coin_mint_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -382,11 +382,11 @@ Only called during genesis.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_aptos_coin_mint_cap">store_aptos_coin_mint_cap</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: MintCapability&lt;AptosCoin&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(
+    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: MintCapability&lt;TopoCoin&gt;
 ) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <b>move_to</b>(aptos_framework, <a href="transaction_fee.md#0x1_transaction_fee_AptosCoinMintCapability">AptosCoinMintCapability</a> { mint_cap })
+    <b>move_to</b>(aptos_framework, <a href="transaction_fee.md#0x1_transaction_fee_TopoCoinMintCapability">TopoCoinMintCapability</a> { mint_cap })
 }
 </code></pre>
 
@@ -546,7 +546,7 @@ DEPRECATED
 <td>1</td>
 <td>Given the blockchain is in an operating state, it guarantees that the Aptos framework signer may burn Aptos coins.</td>
 <td>Critical</td>
-<td>The AptosCoinCapabilities structure is defined in this module and it stores burn capability to burn the gas fees.</td>
+<td>The TopoCoinCapabilities structure is defined in this module and it stores burn capability to burn the gas fees.</td>
 <td>Formally Verified via <a href="#high-level-req-1">module</a>.</td>
 </tr>
 
@@ -603,7 +603,7 @@ DEPRECATED
 <pre><code><b>pragma</b> verify = <b>false</b>;
 <b>pragma</b> aborts_if_is_strict;
 // This enforces <a id="high-level-req-1" href="#high-level-req">high-level requirement 1</a>:
-<b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt; <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosCoinCapabilities">AptosCoinCapabilities</a>&gt;(@aptos_framework) || <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosFABurnCapabilities">AptosFABurnCapabilities</a>&gt;(@aptos_framework);
+<b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt; <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_TopoCoinCapabilities">TopoCoinCapabilities</a>&gt;(@aptos_framework) || <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosFABurnCapabilities">AptosFABurnCapabilities</a>&gt;(@aptos_framework);
 </code></pre>
 
 
@@ -621,7 +621,7 @@ DEPRECATED
 
 <dl>
 <dt>
-<code>amount: <a href="coin.md#0x1_coin_AggregatableCoin">coin::AggregatableCoin</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;</code>
+<code>amount: <a href="coin.md#0x1_coin_AggregatableCoin">coin::AggregatableCoin</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;</code>
 </dt>
 <dd>
 
@@ -657,23 +657,23 @@ DEPRECATED
 </code></pre>
 
 
-<code><a href="transaction_fee.md#0x1_transaction_fee_AptosCoinCapabilities">AptosCoinCapabilities</a></code> should be exists.
+<code><a href="transaction_fee.md#0x1_transaction_fee_TopoCoinCapabilities">TopoCoinCapabilities</a></code> should be exists.
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosCoinCapabilities">AptosCoinCapabilities</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_TopoCoinCapabilities">TopoCoinCapabilities</a>&gt;(@aptos_framework);
 <b>let</b> account_addr = <a href="account.md#0x1_account">account</a>;
 <b>let</b> amount = fee;
-<b>let</b> aptos_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;AptosCoin&gt;().account_address;
-<b>let</b> coin_store = <b>global</b>&lt;CoinStore&lt;AptosCoin&gt;&gt;(account_addr);
-<b>let</b> <b>post</b> post_coin_store = <b>global</b>&lt;CoinStore&lt;AptosCoin&gt;&gt;(account_addr);
-<b>aborts_if</b> amount != 0 && !(<b>exists</b>&lt;CoinInfo&lt;AptosCoin&gt;&gt;(aptos_addr)
-    && <b>exists</b>&lt;CoinStore&lt;AptosCoin&gt;&gt;(account_addr));
+<b>let</b> aptos_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;().account_address;
+<b>let</b> coin_store = <b>global</b>&lt;CoinStore&lt;TopoCoin&gt;&gt;(account_addr);
+<b>let</b> <b>post</b> post_coin_store = <b>global</b>&lt;CoinStore&lt;TopoCoin&gt;&gt;(account_addr);
+<b>aborts_if</b> amount != 0 && !(<b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(aptos_addr)
+    && <b>exists</b>&lt;CoinStore&lt;TopoCoin&gt;&gt;(account_addr));
 <b>aborts_if</b> coin_store.<a href="coin.md#0x1_coin">coin</a>.value &lt; amount;
-<b>let</b> maybe_supply = <b>global</b>&lt;CoinInfo&lt;AptosCoin&gt;&gt;(aptos_addr).supply;
+<b>let</b> maybe_supply = <b>global</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(aptos_addr).supply;
 <b>let</b> supply_aggr = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(maybe_supply);
 <b>let</b> value = <a href="optional_aggregator.md#0x1_optional_aggregator_optional_aggregator_value">optional_aggregator::optional_aggregator_value</a>(supply_aggr);
-<b>let</b> <b>post</b> post_maybe_supply = <b>global</b>&lt;CoinInfo&lt;AptosCoin&gt;&gt;(aptos_addr).supply;
+<b>let</b> <b>post</b> post_maybe_supply = <b>global</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(aptos_addr).supply;
 <b>let</b> <b>post</b> post_supply = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(post_maybe_supply);
 <b>let</b> <b>post</b> post_value = <a href="optional_aggregator.md#0x1_optional_aggregator_optional_aggregator_value">optional_aggregator::optional_aggregator_value</a>(post_supply);
 <b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(maybe_supply) && value &lt; amount;
@@ -683,7 +683,7 @@ DEPRECATED
 } <b>else</b> {
     <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_none">option::is_none</a>(post_maybe_supply)
 };
-<b>ensures</b> <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;AptosCoin&gt; == <b>old</b>(<a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;AptosCoin&gt;) - amount;
+<b>ensures</b> <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;TopoCoin&gt; == <b>old</b>(<a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;TopoCoin&gt;) - amount;
 </code></pre>
 
 
@@ -700,59 +700,59 @@ DEPRECATED
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>let</b> aptos_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;AptosCoin&gt;().account_address;
-<b>aborts_if</b> (refund != 0) && !<b>exists</b>&lt;CoinInfo&lt;AptosCoin&gt;&gt;(aptos_addr);
-<b>include</b> <a href="coin.md#0x1_coin_CoinAddAbortsIf">coin::CoinAddAbortsIf</a>&lt;AptosCoin&gt; { amount: refund };
-<b>aborts_if</b> !<b>exists</b>&lt;CoinStore&lt;AptosCoin&gt;&gt;(<a href="account.md#0x1_account">account</a>);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosCoinMintCapability">AptosCoinMintCapability</a>&gt;(@aptos_framework);
-<b>let</b> supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;AptosCoin&gt;;
-<b>let</b> <b>post</b> post_supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;AptosCoin&gt;;
+<b>let</b> aptos_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;().account_address;
+<b>aborts_if</b> (refund != 0) && !<b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(aptos_addr);
+<b>include</b> <a href="coin.md#0x1_coin_CoinAddAbortsIf">coin::CoinAddAbortsIf</a>&lt;TopoCoin&gt; { amount: refund };
+<b>aborts_if</b> !<b>exists</b>&lt;CoinStore&lt;TopoCoin&gt;&gt;(<a href="account.md#0x1_account">account</a>);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_TopoCoinMintCapability">TopoCoinMintCapability</a>&gt;(@aptos_framework);
+<b>let</b> supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;TopoCoin&gt;;
+<b>let</b> <b>post</b> post_supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;TopoCoin&gt;;
 <b>aborts_if</b> [abstract] supply + refund &gt; MAX_U128;
 <b>ensures</b> post_supply == supply + refund;
 </code></pre>
 
 
 
-<a id="@Specification_1_store_aptos_coin_burn_cap"></a>
+<a id="@Specification_1_store_topo_coin_burn_cap"></a>
 
-### Function `store_aptos_coin_burn_cap`
+### Function `store_topo_coin_burn_cap`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_aptos_coin_burn_cap">store_aptos_coin_burn_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, burn_cap: <a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_topo_coin_burn_cap">store_topo_coin_burn_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, burn_cap: <a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
 Ensure caller is admin.
-Aborts if <code><a href="transaction_fee.md#0x1_transaction_fee_AptosCoinCapabilities">AptosCoinCapabilities</a></code> already exists.
+Aborts if <code><a href="transaction_fee.md#0x1_transaction_fee_TopoCoinCapabilities">TopoCoinCapabilities</a></code> already exists.
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
 <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(addr);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosFABurnCapabilities">AptosFABurnCapabilities</a>&gt;(addr);
-<b>aborts_if</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosCoinCapabilities">AptosCoinCapabilities</a>&gt;(addr);
-<b>ensures</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosFABurnCapabilities">AptosFABurnCapabilities</a>&gt;(addr) || <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosCoinCapabilities">AptosCoinCapabilities</a>&gt;(addr);
+<b>aborts_if</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_TopoCoinCapabilities">TopoCoinCapabilities</a>&gt;(addr);
+<b>ensures</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosFABurnCapabilities">AptosFABurnCapabilities</a>&gt;(addr) || <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_TopoCoinCapabilities">TopoCoinCapabilities</a>&gt;(addr);
 </code></pre>
 
 
 
-<a id="@Specification_1_store_aptos_coin_mint_cap"></a>
+<a id="@Specification_1_store_topo_coin_mint_cap"></a>
 
-### Function `store_aptos_coin_mint_cap`
+### Function `store_topo_coin_mint_cap`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_aptos_coin_mint_cap">store_aptos_coin_mint_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="aptos_coin.md#0x1_aptos_coin_AptosCoin">aptos_coin::AptosCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_fee.md#0x1_transaction_fee_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
 Ensure caller is admin.
-Aborts if <code><a href="transaction_fee.md#0x1_transaction_fee_AptosCoinMintCapability">AptosCoinMintCapability</a></code> already exists.
+Aborts if <code><a href="transaction_fee.md#0x1_transaction_fee_TopoCoinMintCapability">TopoCoinMintCapability</a></code> already exists.
 
 
 <pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(addr);
-<b>aborts_if</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosCoinMintCapability">AptosCoinMintCapability</a>&gt;(addr);
-<b>ensures</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosCoinMintCapability">AptosCoinMintCapability</a>&gt;(addr);
+<b>aborts_if</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_TopoCoinMintCapability">TopoCoinMintCapability</a>&gt;(addr);
+<b>ensures</b> <b>exists</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_TopoCoinMintCapability">TopoCoinMintCapability</a>&gt;(addr);
 </code></pre>
 
 

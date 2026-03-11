@@ -149,7 +149,7 @@ spec aptos_framework::aptos_governance {
     ) {
         use aptos_framework::chain_status;
         use aptos_framework::coin::CoinInfo;
-        use aptos_framework::aptos_coin::AptosCoin;
+        use aptos_framework::topo_coin::TopoCoin;
         pragma verify = false; // TODO: set because of timeout (property proved).
         let addr = signer::address_of(aptos_framework);
         aborts_if addr != @aptos_framework;
@@ -158,7 +158,7 @@ spec aptos_framework::aptos_governance {
         };
         include stake::GetReconfigStartTimeRequirement;
         requires chain_status::is_operating();
-        requires exists<CoinInfo<AptosCoin>>(@aptos_framework);
+        requires exists<CoinInfo<TopoCoin>>(@aptos_framework);
         requires exists<staking_config::StakingRewardsConfig>(@aptos_framework);
         include staking_config::StakingRewardsConfigRequirement;
     }
@@ -266,9 +266,9 @@ spec aptos_framework::aptos_governance {
         // verify create_proposal_metadata
         include CreateProposalMetadataAbortsIf;
 
-        let addr = aptos_std::type_info::type_of<AptosCoin>().account_address;
-        aborts_if !exists<coin::CoinInfo<AptosCoin>>(addr);
-        let maybe_supply = global<coin::CoinInfo<AptosCoin>>(addr).supply;
+        let addr = aptos_std::type_info::type_of<TopoCoin>().account_address;
+        aborts_if !exists<coin::CoinInfo<TopoCoin>>(addr);
+        let maybe_supply = global<coin::CoinInfo<TopoCoin>>(addr).supply;
         let supply = option::borrow(maybe_supply);
         let total_supply = aptos_framework::optional_aggregator::optional_aggregator_value(supply);
         let early_resolution_vote_threshold_value = total_supply / 2 + 1;
@@ -585,7 +585,7 @@ spec aptos_framework::aptos_governance {
     spec reconfigure(aptos_framework: &signer) {
         use aptos_framework::chain_status;
         use aptos_framework::coin::CoinInfo;
-        use aptos_framework::aptos_coin::AptosCoin;
+        use aptos_framework::topo_coin::TopoCoin;
         pragma verify = false; // TODO: set because of timeout (property proved).
         aborts_if !system_addresses::is_aptos_framework_address(signer::address_of(aptos_framework));
         include reconfiguration_with_dkg::FinishRequirement {
@@ -594,7 +594,7 @@ spec aptos_framework::aptos_governance {
         include stake::GetReconfigStartTimeRequirement;
 
         requires chain_status::is_operating();
-        requires exists<CoinInfo<AptosCoin>>(@aptos_framework);
+        requires exists<CoinInfo<TopoCoin>>(@aptos_framework);
         requires exists<staking_config::StakingRewardsConfig>(@aptos_framework);
         include staking_config::StakingRewardsConfigRequirement;
     }
@@ -604,7 +604,7 @@ spec aptos_framework::aptos_governance {
     /// Address @aptos_framework must exist GovernanceResponsbility.
     spec get_signer_testnet_only(core_resources: &signer, signer_address: address): signer {
         aborts_if signer::address_of(core_resources) != @core_resources;
-        aborts_if !exists<aptos_coin::MintCapStore>(signer::address_of(core_resources));
+        aborts_if !exists<topo_coin::MintCapStore>(signer::address_of(core_resources));
         include GetSignerAbortsIf;
     }
 

@@ -127,7 +127,7 @@ spec aptos_framework::block {
     spec schema BlockRequirement {
         use aptos_framework::chain_status;
         use aptos_framework::coin::CoinInfo;
-        use aptos_framework::aptos_coin::AptosCoin;
+        use aptos_framework::topo_coin::TopoCoin;
         use aptos_framework::staking_config;
 
         vm: signer;
@@ -145,7 +145,7 @@ spec aptos_framework::block {
         requires proposer == @vm_reserved || stake::spec_is_current_epoch_validator(proposer);
         requires (proposer == @vm_reserved) ==> (timestamp::spec_now_microseconds() == timestamp);
         requires (proposer != @vm_reserved) ==> (timestamp::spec_now_microseconds() < timestamp);
-        requires exists<CoinInfo<AptosCoin>>(@aptos_framework);
+        requires exists<CoinInfo<TopoCoin>>(@aptos_framework);
         include staking_config::StakingRewardsConfigRequirement;
     }
 

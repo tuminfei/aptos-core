@@ -21,7 +21,7 @@ spec aptos_framework::stake {
     /// Requirement: The total staked value in the stake pool should remain constant, excluding operations related to
     /// adding and withdrawing.
     /// Criticality: Low
-    /// Implementation: The total staked value (AptosCoin) of a stake pool is grouped by: active, inactive,
+    /// Implementation: The total staked value (TopoCoin) of a stake pool is grouped by: active, inactive,
     /// pending_active, and pending_inactive. The stake value remains constant except during the execution of the
     /// add_stake_with_cap or withdraw_with_cap functions or on_new_epoch (which distributes the reward).
     /// Enforcement: Formally specified in the schema [high-level-req-3](StakedValueNoChange).
@@ -46,9 +46,9 @@ spec aptos_framework::stake {
         // The validator set should satisfy its desired invariant.
         invariant [suspendable] exists<ValidatorSet>(@aptos_framework) ==>
             validator_set_is_valid();
-        // After genesis, `AptosCoinCapabilities`, `ValidatorPerformance` and `ValidatorSet` exist.
+        // After genesis, `TopoCoinCapabilities`, `ValidatorPerformance` and `ValidatorSet` exist.
         invariant [suspendable] chain_status::is_operating() ==>
-            exists<AptosCoinCapabilities>(@aptos_framework);
+            exists<TopoCoinCapabilities>(@aptos_framework);
         invariant [suspendable] chain_status::is_operating() ==>
             exists<ValidatorPerformance>(@aptos_framework);
         invariant [suspendable] chain_status::is_operating() ==>
@@ -292,22 +292,22 @@ spec aptos_framework::stake {
         )
             && new_withdraw_amount_2 > 0
             && stake_pool.inactive.value < new_withdraw_amount_2;
-        aborts_if !exists<coin::CoinStore<AptosCoin>>(addr);
-        include coin::DepositAbortsIf<AptosCoin> { account_addr: addr };
+        aborts_if !exists<coin::CoinStore<TopoCoin>>(addr);
+        include coin::DepositAbortsIf<TopoCoin> { account_addr: addr };
 
-        let coin_store = global<coin::CoinStore<AptosCoin>>(addr);
-        let post p_coin_store = global<coin::CoinStore<AptosCoin>>(addr);
+        let coin_store = global<coin::CoinStore<TopoCoin>>(addr);
+        let post p_coin_store = global<coin::CoinStore<TopoCoin>>(addr);
         ensures bool_find_validator
             && timestamp::now_seconds() > stake_pool.locked_until_secs
             && exists<account::Account>(addr)
-            && exists<coin::CoinStore<AptosCoin>>(addr) ==>
+            && exists<coin::CoinStore<TopoCoin>>(addr) ==>
             coin_store.coin.value + new_withdraw_amount_1 == p_coin_store.coin.value;
         ensures !(
             bool_find_validator
                 && exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework)
         )
             && exists<account::Account>(addr)
-            && exists<coin::CoinStore<AptosCoin>>(addr) ==>
+            && exists<coin::CoinStore<TopoCoin>>(addr) ==>
             coin_store.coin.value + new_withdraw_amount_2 == p_coin_store.coin.value;
     }
 
@@ -505,7 +505,7 @@ spec aptos_framework::stake {
         include ResourceRequirement;
         include GetReconfigStartTimeRequirement;
         include staking_config::StakingRewardsConfigRequirement;
-        include aptos_framework::aptos_coin::ExistsAptosCoin;
+        include aptos_framework::topo_coin::ExistsTopoCoin;
         // This function should never abort.
         /// [high-level-req-4]
         aborts_if false;
@@ -635,7 +635,7 @@ spec aptos_framework::stake {
         aborts_if global<ValidatorConfig>(pool_address).validator_index
             >= len(validator_perf.validators);
 
-        let aptos_addr = type_info::type_of<AptosCoin>().account_address;
+        let aptos_addr = type_info::type_of<TopoCoin>().account_address;
 
         let stake_pool = global<StakePool>(pool_address);
 
@@ -680,7 +680,7 @@ spec aptos_framework::stake {
     spec schema DistributeRewardsAbortsIf {
         use aptos_std::type_info;
 
-        stake: Coin<AptosCoin>;
+        stake: Coin<TopoCoin>;
         num_successful_proposals: num;
         num_total_proposals: num;
         rewards_rate: num;
@@ -697,11 +697,11 @@ spec aptos_framework::stake {
             )
         } else { 0 };
         let amount = rewards_amount;
-        let addr = type_info::type_of<AptosCoin>().account_address;
-        aborts_if (rewards_amount > 0) && !exists<coin::CoinInfo<AptosCoin>>(addr);
-        modifies global<coin::CoinInfo<AptosCoin>>(addr);
+        let addr = type_info::type_of<TopoCoin>().account_address;
+        aborts_if (rewards_amount > 0) && !exists<coin::CoinInfo<TopoCoin>>(addr);
+        modifies global<coin::CoinInfo<TopoCoin>>(addr);
         include (rewards_amount > 0) ==>
-            coin::CoinAddAbortsIf<AptosCoin> { amount: amount };
+            coin::CoinAddAbortsIf<TopoCoin> { amount: amount };
     }
 
     spec get_reconfig_start_time_secs(): u64 {
@@ -1073,7 +1073,7 @@ spec aptos_framework::stake {
     // These resources are required to successfully execute `on_new_epoch`, which cannot
     // be discharged by the global invariants because `on_new_epoch` is called in genesis.
     spec schema ResourceRequirement {
-        requires exists<AptosCoinCapabilities>(@aptos_framework);
+        requires exists<TopoCoinCapabilities>(@aptos_framework);
         requires exists<ValidatorPerformance>(@aptos_framework);
         requires exists<ValidatorSet>(@aptos_framework);
         requires exists<StakingConfig>(@aptos_framework);

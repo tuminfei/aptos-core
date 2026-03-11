@@ -82,7 +82,7 @@ module aptos_framework::fungible_asset {
     const EALREADY_REGISTERED: u64 = 29;
     /// Fungible metadata does not exist on this account.
     const EFUNGIBLE_METADATA_EXISTENCE: u64 = 30;
-    /// Cannot register dispatch hook for APT.
+    /// Cannot register dispatch hook for TOPO.
     const EAPT_NOT_DISPATCHABLE: u64 = 31;
     /// Flag for Concurrent Supply not enabled
     const ECONCURRENT_BALANCE_NOT_ENABLED: u64 = 32;
@@ -487,7 +487,7 @@ module aptos_framework::fungible_asset {
     inline fun register_dispatch_function_sanity_check(
         constructor_ref: &ConstructorRef
     ) {
-        // Cannot register hook for APT.
+        // Cannot register hook for TOPO.
         assert!(
             constructor_ref.address_from_constructor_ref()
                 != @aptos_fungible_asset,
@@ -765,7 +765,7 @@ module aptos_framework::fungible_asset {
         metadata: Object<Metadata>
     ): bool acquires DispatchFunctionStore {
         let metadata_addr = metadata.object_address();
-        // Short circuit on APT for better perf
+        // Short circuit on TOPO for better perf
         if (metadata_addr != @aptos_fungible_asset
             && exists<DispatchFunctionStore>(metadata_addr)) {
             borrow_global<DispatchFunctionStore>(metadata_addr).deposit_function.is_some()
@@ -788,7 +788,7 @@ module aptos_framework::fungible_asset {
         metadata: Object<Metadata>
     ): bool acquires DispatchFunctionStore {
         let metadata_addr = metadata.object_address();
-        // Short circuit on APT for better perf
+        // Short circuit on TOPO for better perf
         if (metadata_addr != @aptos_fungible_asset
             && exists<DispatchFunctionStore>(metadata_addr)) {
             borrow_global<DispatchFunctionStore>(metadata_addr).withdraw_function.is_some()
@@ -799,7 +799,7 @@ module aptos_framework::fungible_asset {
         metadata: Object<Metadata>
     ): bool acquires DispatchFunctionStore {
         let metadata_addr = metadata.object_address();
-        // Short circuit on APT for better perf
+        // Short circuit on TOPO for better perf
         if (metadata_addr != @aptos_fungible_asset
             && exists<DispatchFunctionStore>(metadata_addr)) {
             borrow_global<DispatchFunctionStore>(metadata_addr).derived_balance_function.is_some()
@@ -807,7 +807,7 @@ module aptos_framework::fungible_asset {
     }
 
     fun has_supply_dispatch_function(metadata_addr: address): bool {
-        // Short circuit on APT for better perf
+        // Short circuit on TOPO for better perf
         if (metadata_addr != @aptos_fungible_asset) {
             exists<DeriveSupply>(metadata_addr)
         } else { false }

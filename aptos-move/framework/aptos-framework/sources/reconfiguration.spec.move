@@ -126,7 +126,7 @@ spec aptos_framework::reconfiguration {
     }
 
     spec reconfigure {
-        use aptos_framework::aptos_coin;
+        use aptos_framework::topo_coin;
         use aptos_framework::staking_config;
         use std::features;
 
@@ -143,7 +143,7 @@ spec aptos_framework::reconfiguration {
                 != global<Configuration>(@aptos_framework).last_reconfiguration_time;
         include features::spec_periodical_reward_rate_decrease_enabled() ==>
             staking_config::StakingRewardsConfigEnabledRequirement;
-        include success ==> aptos_coin::ExistsAptosCoin;
+        include success ==> topo_coin::ExistsTopoCoin;
         aborts_if false;
         // The ensure conditions of the reconfigure function are not fully written, because there is a new cycle in it,
         // but its existing ensure conditions satisfy hp.
