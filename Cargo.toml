@@ -283,6 +283,7 @@ default-members = [
     "crates/aptos-rosetta",
     "crates/transaction-emitter",
     "aptos-move/framework",
+    "aptos-move/topo-framework",
     "storage/backup/backup-cli",
 ]
 
