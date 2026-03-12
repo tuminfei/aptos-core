@@ -289,7 +289,7 @@ async fn test_get_events_by_struct_type_has_generic_type_parameter() {
     let path = format!(
         "/accounts/0x1/events/{}/coin",
         utf8_percent_encode(
-            "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
+            "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>",
             NON_ALPHANUMERIC,
         )
     );
