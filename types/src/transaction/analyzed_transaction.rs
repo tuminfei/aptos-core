@@ -10,7 +10,7 @@ use crate::{
         signature_verified_transaction::SignatureVerifiedTransaction, EntryFunction, Transaction,
         TransactionExecutableRef,
     },
-    AptosCoinType, CoinType,
+    CoinType, TopoCoinType,
 };
 use aptos_crypto::HashValue;
 pub use move_core_types::abi::{
@@ -163,7 +163,7 @@ pub fn account_resource_location(address: AccountAddress) -> StorageLocation {
 
 pub fn coin_store_location(address: AccountAddress) -> StorageLocation {
     StorageLocation::Specific(
-        StateKey::resource_typed::<CoinStoreResource<AptosCoinType>>(&address).unwrap(),
+        StateKey::resource_typed::<CoinStoreResource<TopoCoinType>>(&address).unwrap(),
     )
 }
 
@@ -175,10 +175,10 @@ pub fn features_location() -> StorageLocation {
     StorageLocation::Specific(StateKey::on_chain_config::<Features>().unwrap())
 }
 
-pub fn aptos_coin_info_location() -> StorageLocation {
+pub fn topo_coin_info_location() -> StorageLocation {
     StorageLocation::Specific(
-        StateKey::resource_typed::<CoinInfoResource<AptosCoinType>>(
-            &AptosCoinType::coin_info_address(),
+        StateKey::resource_typed::<CoinInfoResource<TopoCoinType>>(
+            &TopoCoinType::coin_info_address(),
         )
         .unwrap(),
     )
@@ -213,7 +213,7 @@ pub fn rw_set_for_coin_transfer(
     let read_hints = vec![
         current_ts_location(),
         features_location(),
-        aptos_coin_info_location(),
+        topo_coin_info_location(),
         chain_id_location(),
         transaction_fee_burn_cap_location(),
     ];
