@@ -47,7 +47,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-pub const APTOS_COIN_TYPE_STR: &str = "0x1::aptos_coin::AptosCoin";
+pub const TOPO_COIN_TYPE_STR: &str = "0x1::topo_coin::TopoCoin";
 lazy_static! {
     pub static ref APT_METADATA_ADDRESS: AccountAddress = {
         let mut addr = [0u8; 32];
@@ -148,7 +148,7 @@ pub fn get_paired_fa_primary_store_address(
 
 pub fn get_paired_fa_metadata_address(coin_type_name: &MoveStructTag) -> AccountAddress {
     let coin_type_name = coin_type_name.to_string();
-    if coin_type_name == APTOS_COIN_TYPE_STR {
+    if coin_type_name == TOPO_COIN_TYPE_STR {
         *APT_METADATA_ADDRESS
     } else {
         let mut preimage = APT_METADATA_ADDRESS.to_vec();
