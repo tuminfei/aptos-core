@@ -10,12 +10,12 @@ pub use crate::{
 use aptos_types::{
     account_address::AccountAddress,
     transaction::{EntryFunction, TransactionPayload},
-    AptosCoinType, CoinType,
+    TopoCoinType, CoinType,
 };
 use move_core_types::{ident_str, language_storage::ModuleId};
 
 pub fn aptos_coin_transfer(to: AccountAddress, amount: u64) -> TransactionPayload {
-    coin_transfer(AptosCoinType::type_tag(), to, amount)
+    coin_transfer(TopoCoinType::type_tag(), to, amount)
 }
 
 #[cfg(feature = "testing")]
