@@ -5,7 +5,7 @@ use crate::common::types::{
     CliCommand, CliConfig, CliError, CliTypedResult, ConfigSearchMode, ProfileOptions, RestOptions,
 };
 use aptos_api_types::ViewFunction;
-use aptos_types::{account_address::AccountAddress, AptosCoinType, CoinType};
+use aptos_types::{account_address::AccountAddress, TopoCoinType, CoinType};
 use async_trait::async_trait;
 use clap::Parser;
 use move_core_types::{
@@ -24,7 +24,7 @@ pub struct Balance {
     #[clap(long, value_parser = crate::common::types::load_account_arg)]
     pub(crate) account: Option<AccountAddress>,
 
-    /// Coin type to lookup.  Defaults to 0x1::aptos_coin::AptosCoin
+    /// Coin type to lookup.  Defaults to 0x1::topo_coin::TopoCoin
     #[clap(long)]
     pub(crate) coin_type: Option<String>,
 
@@ -83,7 +83,7 @@ impl Balance {
             })?
         } else {
             // If nothing is given, use the default APT
-            AptosCoinType::type_tag()
+            TopoCoinType::type_tag()
         };
 
         let client = self.rest_options.client(&self.profile_options)?;
