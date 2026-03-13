@@ -95,11 +95,11 @@ module.resource_signer_cap = option::some(resource_signer_cap);
 
 
 <pre><code><b>use</b> <a href="account.md#0x1_account">0x1::account</a>;
-<b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 <b>use</b> <a href="code.md#0x1_code">0x1::code</a>;
 <b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 <b>use</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map">0x1::simple_map</a>;
+<b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 </code></pre>
 
 

@@ -4,7 +4,7 @@
 # Module `0x1::vesting`
 
 
-Simple vesting contract that allows specifying how much APT coins should be vesting in each fixed-size period. The
+Simple vesting contract that allows specifying how much TOPO coins should be vesting in each fixed-size period. The
 vesting contract also comes with staking and allows shareholders to withdraw rewards anytime.
 
 Vesting schedule is represented as a vector of distributions. For example, a vesting schedule of
@@ -164,7 +164,6 @@ withdrawable, admin can call admin_withdraw to withdraw all funds to the vesting
 
 <pre><code><b>use</b> <a href="account.md#0x1_account">0x1::account</a>;
 <b>use</b> <a href="aptos_account.md#0x1_aptos_account">0x1::aptos_account</a>;
-<b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/bcs.md#0x1_bcs">0x1::bcs</a>;
 <b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
 <b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
@@ -177,6 +176,7 @@ withdrawable, admin can call admin_withdraw to withdraw all funds to the vesting
 <b>use</b> <a href="staking_contract.md#0x1_staking_contract">0x1::staking_contract</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 <b>use</b> <a href="timestamp.md#0x1_timestamp">0x1::timestamp</a>;
+<b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 </code></pre>
 
@@ -2258,7 +2258,7 @@ Create a vesting contract with a given configurations.
         !<a href="system_addresses.md#0x1_system_addresses_is_reserved_address">system_addresses::is_reserved_address</a>(withdrawal_address),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="vesting.md#0x1_vesting_EINVALID_WITHDRAWAL_ADDRESS">EINVALID_WITHDRAWAL_ADDRESS</a>),
     );
-    assert_account_is_registered_for_apt(withdrawal_address);
+    assert_account_is_registered_for_topo(withdrawal_address);
     <b>assert</b>!(shareholders.length() &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="vesting.md#0x1_vesting_ENO_SHAREHOLDERS">ENO_SHAREHOLDERS</a>));
     <b>assert</b>!(
         buy_ins.length() == shareholders.length(),
@@ -2906,9 +2906,9 @@ has already been terminated.
     shareholder: <b>address</b>,
     new_beneficiary: <b>address</b>,
 ) <b>acquires</b> <a href="vesting.md#0x1_vesting_VestingContract">VestingContract</a> {
-    // Verify that the beneficiary <a href="account.md#0x1_account">account</a> is set up <b>to</b> receive APT. This is a requirement so <a href="vesting.md#0x1_vesting_distribute">distribute</a>() wouldn't
-    // fail and <a href="block.md#0x1_block">block</a> all other accounts from receiving APT <b>if</b> one beneficiary is not registered.
-    assert_account_is_registered_for_apt(new_beneficiary);
+    // Verify that the beneficiary <a href="account.md#0x1_account">account</a> is set up <b>to</b> receive TOPO. This is a requirement so <a href="vesting.md#0x1_vesting_distribute">distribute</a>() wouldn't
+    // fail and <a href="block.md#0x1_block">block</a> all other accounts from receiving TOPO <b>if</b> one beneficiary is not registered.
+    assert_account_is_registered_for_topo(new_beneficiary);
 
     <b>let</b> vesting_contract = <b>borrow_global_mut</b>&lt;<a href="vesting.md#0x1_vesting_VestingContract">VestingContract</a>&gt;(contract_address);
     <a href="vesting.md#0x1_vesting_verify_admin">verify_admin</a>(admin, vesting_contract);
@@ -3192,7 +3192,7 @@ This address should be deterministic for the same admin and vesting contract cre
     seed.append(contract_creation_seed);
 
     <b>let</b> (account_signer, signer_cap) = <a href="account.md#0x1_account_create_resource_account">account::create_resource_account</a>(admin, seed);
-    // Register the <a href="vesting.md#0x1_vesting">vesting</a> contract <a href="account.md#0x1_account">account</a> <b>to</b> receive APT <b>as</b> it'll be sent <b>to</b> it when claiming unlocked <a href="stake.md#0x1_stake">stake</a> from
+    // Register the <a href="vesting.md#0x1_vesting">vesting</a> contract <a href="account.md#0x1_account">account</a> <b>to</b> receive TOPO <b>as</b> it'll be sent <b>to</b> it when claiming unlocked <a href="stake.md#0x1_stake">stake</a> from
     // the underlying staking contract.
     <a href="coin.md#0x1_coin_register">coin::register</a>&lt;TopoCoin&gt;(&account_signer);
 

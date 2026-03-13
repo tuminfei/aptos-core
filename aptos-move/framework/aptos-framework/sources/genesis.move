@@ -150,7 +150,7 @@ module aptos_framework::genesis {
     }
 
     /// Only called for testnets and e2e tests.
-    fun initialize_core_resources_and_topo_coin(
+    public fun initialize_core_resources_and_topo_coin(
         aptos_framework: &signer,
         core_resources_auth_key: vector<u8>,
     ) {

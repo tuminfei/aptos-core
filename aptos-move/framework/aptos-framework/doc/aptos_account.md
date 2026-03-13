@@ -19,10 +19,10 @@
 -  [Function `transfer_fungible_assets`](#0x1_aptos_account_transfer_fungible_assets)
 -  [Function `deposit_fungible_assets`](#0x1_aptos_account_deposit_fungible_assets)
 -  [Function `assert_account_exists`](#0x1_aptos_account_assert_account_exists)
--  [Function `assert_account_is_registered_for_apt`](#0x1_aptos_account_assert_account_is_registered_for_apt)
+-  [Function `assert_account_is_registered_for_topo`](#0x1_aptos_account_assert_account_is_registered_for_topo)
 -  [Function `set_allow_direct_coin_transfers`](#0x1_aptos_account_set_allow_direct_coin_transfers)
 -  [Function `can_receive_direct_coin_transfers`](#0x1_aptos_account_can_receive_direct_coin_transfers)
--  [Function `register_apt`](#0x1_aptos_account_register_apt)
+-  [Function `register_topo`](#0x1_aptos_account_register_topo)
 -  [Function `fungible_transfer_only`](#0x1_aptos_account_fungible_transfer_only)
 -  [Function `is_fungible_balance_at_least`](#0x1_aptos_account_is_fungible_balance_at_least)
 -  [Function `burn_from_fungible_store_for_gas`](#0x1_aptos_account_burn_from_fungible_store_for_gas)
@@ -41,17 +41,16 @@
     -  [Function `transfer_fungible_assets`](#@Specification_1_transfer_fungible_assets)
     -  [Function `deposit_fungible_assets`](#@Specification_1_deposit_fungible_assets)
     -  [Function `assert_account_exists`](#@Specification_1_assert_account_exists)
-    -  [Function `assert_account_is_registered_for_apt`](#@Specification_1_assert_account_is_registered_for_apt)
+    -  [Function `assert_account_is_registered_for_topo`](#@Specification_1_assert_account_is_registered_for_topo)
     -  [Function `set_allow_direct_coin_transfers`](#@Specification_1_set_allow_direct_coin_transfers)
     -  [Function `can_receive_direct_coin_transfers`](#@Specification_1_can_receive_direct_coin_transfers)
-    -  [Function `register_apt`](#@Specification_1_register_apt)
+    -  [Function `register_topo`](#@Specification_1_register_topo)
     -  [Function `fungible_transfer_only`](#@Specification_1_fungible_transfer_only)
     -  [Function `is_fungible_balance_at_least`](#@Specification_1_is_fungible_balance_at_least)
     -  [Function `burn_from_fungible_store_for_gas`](#@Specification_1_burn_from_fungible_store_for_gas)
 
 
 <pre><code><b>use</b> <a href="account.md#0x1_account">0x1::account</a>;
-<b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 <b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
 <b>use</b> <a href="create_signer.md#0x1_create_signer">0x1::create_signer</a>;
 <b>use</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">0x1::dispatchable_fungible_asset</a>;
@@ -60,6 +59,7 @@
 <b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
 <b>use</b> <a href="primary_fungible_store.md#0x1_primary_fungible_store">0x1::primary_fungible_store</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 </code></pre>
 
 
@@ -197,12 +197,12 @@ Account does not exist.
 
 
 
-<a id="0x1_aptos_account_EACCOUNT_NOT_REGISTERED_FOR_APT"></a>
+<a id="0x1_aptos_account_EACCOUNT_NOT_REGISTERED_FOR_TOPO"></a>
 
-Account is not registered to receive APT.
+Account is not registered to receive TOPO.
 
 
-<pre><code><b>const</b> <a href="aptos_account.md#0x1_aptos_account_EACCOUNT_NOT_REGISTERED_FOR_APT">EACCOUNT_NOT_REGISTERED_FOR_APT</a>: u64 = 2;
+<pre><code><b>const</b> <a href="aptos_account.md#0x1_aptos_account_EACCOUNT_NOT_REGISTERED_FOR_TOPO">EACCOUNT_NOT_REGISTERED_FOR_TOPO</a>: u64 = 2;
 </code></pre>
 
 
@@ -235,7 +235,7 @@ Basic account creation methods.
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_create_account">create_account</a>(auth_key: <b>address</b>) {
     <b>let</b> account_signer = <a href="account.md#0x1_account_create_account">account::create_account</a>(auth_key);
-    <a href="aptos_account.md#0x1_aptos_account_register_apt">register_apt</a>(&account_signer);
+    <a href="aptos_account.md#0x1_aptos_account_register_topo">register_topo</a>(&account_signer);
 }
 </code></pre>
 
@@ -247,7 +247,7 @@ Basic account creation methods.
 
 ## Function `batch_transfer`
 
-Batch version of APT transfer.
+Batch version of TOPO transfer.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_batch_transfer">batch_transfer</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
@@ -283,8 +283,8 @@ Batch version of APT transfer.
 
 ## Function `transfer`
 
-Convenient function to transfer APT to a recipient account that might not exist.
-This would create the recipient account first, which also registers it to receive APT, before transferring.
+Convenient function to transfer TOPO to a recipient account that might not exist.
+This would create the recipient account first, which also registers it to receive TOPO, before transferring.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_transfer">transfer</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
@@ -543,13 +543,13 @@ This would create the recipient account first to receive the fungible assets.
 
 </details>
 
-<a id="0x1_aptos_account_assert_account_is_registered_for_apt"></a>
+<a id="0x1_aptos_account_assert_account_is_registered_for_topo"></a>
 
-## Function `assert_account_is_registered_for_apt`
+## Function `assert_account_is_registered_for_topo`
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_assert_account_is_registered_for_apt">assert_account_is_registered_for_apt</a>(addr: <b>address</b>)
+<pre><code><b>public</b> <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_assert_account_is_registered_for_topo">assert_account_is_registered_for_topo</a>(addr: <b>address</b>)
 </code></pre>
 
 
@@ -558,11 +558,11 @@ This would create the recipient account first to receive the fungible assets.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_assert_account_is_registered_for_apt">assert_account_is_registered_for_apt</a>(addr: <b>address</b>) {
+<pre><code><b>public</b> <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_assert_account_is_registered_for_topo">assert_account_is_registered_for_topo</a>(addr: <b>address</b>) {
     <a href="aptos_account.md#0x1_aptos_account_assert_account_exists">assert_account_exists</a>(addr);
     <b>assert</b>!(
         <a href="coin.md#0x1_coin_is_account_registered">coin::is_account_registered</a>&lt;TopoCoin&gt;(addr),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="aptos_account.md#0x1_aptos_account_EACCOUNT_NOT_REGISTERED_FOR_APT">EACCOUNT_NOT_REGISTERED_FOR_APT</a>)
+        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="aptos_account.md#0x1_aptos_account_EACCOUNT_NOT_REGISTERED_FOR_TOPO">EACCOUNT_NOT_REGISTERED_FOR_TOPO</a>)
     );
 }
 </code></pre>
@@ -657,13 +657,13 @@ By default, this returns true if an account has not explicitly set whether the c
 
 </details>
 
-<a id="0x1_aptos_account_register_apt"></a>
+<a id="0x1_aptos_account_register_topo"></a>
 
-## Function `register_apt`
+## Function `register_topo`
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_register_apt">register_apt</a>(account_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_register_topo">register_topo</a>(account_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -672,7 +672,7 @@ By default, this returns true if an account has not explicitly set whether the c
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_register_apt">register_apt</a>(account_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_register_topo">register_topo</a>(account_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="aptos_account.md#0x1_aptos_account_ensure_primary_fungible_store_exists">ensure_primary_fungible_store_exists</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(account_signer));
 }
 </code></pre>
@@ -685,12 +685,12 @@ By default, this returns true if an account has not explicitly set whether the c
 
 ## Function `fungible_transfer_only`
 
-APT Primary Fungible Store specific specialized functions,
-Utilized internally once migration of APT to FungibleAsset is complete.
-Convenient function to transfer APT to a recipient account that might not exist.
-This would create the recipient APT PFS first, which also registers it to receive APT, before transferring.
+TOPO Primary Fungible Store specific specialized functions,
+Utilized internally once migration of TOPO to FungibleAsset is complete.
+Convenient function to transfer TOPO to a recipient account that might not exist.
+This would create the recipient TOPO PFS first, which also registers it to receive TOPO, before transferring.
 TODO: once migration is complete, rename to just "transfer_only" and make it an entry function (for cheapest way
-to transfer APT) - if we want to allow APT PFS without account itself
+to transfer TOPO) - if we want to allow TOPO PFS without account itself
 
 
 <pre><code><b>public</b>(<b>friend</b>) entry <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_fungible_transfer_only">fungible_transfer_only</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
@@ -711,7 +711,7 @@ to transfer APT) - if we want to allow APT PFS without account itself
 
     // <b>use</b> <b>internal</b> APIs, <b>as</b> they skip:
     // - owner, frozen and dispatchable checks
-    // <b>as</b> APT cannot be frozen or have dispatch, and PFS cannot be transfered
+    // <b>as</b> TOPO cannot be frozen or have dispatch, and PFS cannot be transfered
     // (PFS could potentially be burned. regular transfer would permanently unburn the store.
     // Ignoring the check here <b>has</b> the equivalent of unburning, transfers, and then burning again)
     <a href="fungible_asset.md#0x1_fungible_asset_withdraw_permission_check_by_address">fungible_asset::withdraw_permission_check_by_address</a>(
@@ -731,7 +731,7 @@ to transfer APT) - if we want to allow APT PFS without account itself
 
 ## Function `is_fungible_balance_at_least`
 
-Is balance from APT Primary FungibleStore at least the given amount
+Is balance from TOPO Primary FungibleStore at least the given amount
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_is_fungible_balance_at_least">is_fungible_balance_at_least</a>(<a href="account.md#0x1_account">account</a>: <b>address</b>, amount: u64): bool
@@ -759,7 +759,7 @@ Is balance from APT Primary FungibleStore at least the given amount
 
 ## Function `burn_from_fungible_store_for_gas`
 
-Burn from APT Primary FungibleStore for gas charge
+Burn from TOPO Primary FungibleStore for gas charge
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_burn_from_fungible_store_for_gas">burn_from_fungible_store_for_gas</a>(ref: &<a href="fungible_asset.md#0x1_fungible_asset_BurnRef">fungible_asset::BurnRef</a>, <a href="account.md#0x1_account">account</a>: <b>address</b>, amount: u64)
@@ -790,7 +790,7 @@ Burn from APT Primary FungibleStore for gas charge
 
 ## Function `ensure_primary_fungible_store_exists`
 
-Ensure that APT Primary FungibleStore exists (and create if it doesn't)
+Ensure that TOPO Primary FungibleStore exists (and create if it doesn't)
 
 
 <pre><code><b>fun</b> <a href="aptos_account.md#0x1_aptos_account_ensure_primary_fungible_store_exists">ensure_primary_fungible_store_exists</a>(owner: <b>address</b>): <b>address</b>
@@ -822,7 +822,7 @@ Ensure that APT Primary FungibleStore exists (and create if it doesn't)
 
 ## Function `primary_fungible_store_address`
 
-Address of APT Primary Fungible Store
+Address of TOPO Primary Fungible Store
 
 
 <pre><code><b>fun</b> <a href="aptos_account.md#0x1_aptos_account_primary_fungible_store_address">primary_fungible_store_address</a>(<a href="account.md#0x1_account">account</a>: <b>address</b>): <b>address</b>
@@ -1198,12 +1198,12 @@ Limit the address of auth_key is not @vm_reserved / @aptos_framework / @aptos_to
 
 
 
-<a id="@Specification_1_assert_account_is_registered_for_apt"></a>
+<a id="@Specification_1_assert_account_is_registered_for_topo"></a>
 
-### Function `assert_account_is_registered_for_apt`
+### Function `assert_account_is_registered_for_topo`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_assert_account_is_registered_for_apt">assert_account_is_registered_for_apt</a>(addr: <b>address</b>)
+<pre><code><b>public</b> <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_assert_account_is_registered_for_topo">assert_account_is_registered_for_topo</a>(addr: <b>address</b>)
 </code></pre>
 
 
@@ -1254,12 +1254,12 @@ Check if the TopoCoin under the address existed.
 
 
 
-<a id="@Specification_1_register_apt"></a>
+<a id="@Specification_1_register_topo"></a>
 
-### Function `register_apt`
+### Function `register_topo`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_register_apt">register_apt</a>(account_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="aptos_account.md#0x1_aptos_account_register_topo">register_topo</a>(account_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 

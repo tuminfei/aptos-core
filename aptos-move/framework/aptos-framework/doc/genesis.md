@@ -35,7 +35,6 @@
 
 <pre><code><b>use</b> <a href="account.md#0x1_account">0x1::account</a>;
 <b>use</b> <a href="aggregator_factory.md#0x1_aggregator_factory">0x1::aggregator_factory</a>;
-<b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 <b>use</b> <a href="aptos_governance.md#0x1_aptos_governance">0x1::aptos_governance</a>;
 <b>use</b> <a href="block.md#0x1_block">0x1::block</a>;
 <b>use</b> <a href="chain_id.md#0x1_chain_id">0x1::chain_id</a>;
@@ -60,6 +59,7 @@
 <b>use</b> <a href="storage_gas.md#0x1_storage_gas">0x1::storage_gas</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 <b>use</b> <a href="timestamp.md#0x1_timestamp">0x1::timestamp</a>;
+<b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 <b>use</b> <a href="transaction_fee.md#0x1_transaction_fee">0x1::transaction_fee</a>;
 <b>use</b> <a href="transaction_validation.md#0x1_transaction_validation">0x1::transaction_validation</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
@@ -378,7 +378,7 @@ Genesis step 1: Initialize aptos framework account and core modules on chain.
 
 ## Function `initialize_topo_coin`
 
-Genesis step 2: Initialize Aptos coin.
+Genesis step 2: Initialize Topo coin.
 
 
 <pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize_topo_coin">initialize_topo_coin</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
@@ -416,7 +416,7 @@ Genesis step 2: Initialize Aptos coin.
 Only called for testnets and e2e tests.
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize_core_resources_and_topo_coin">initialize_core_resources_and_topo_coin</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="genesis.md#0x1_genesis_initialize_core_resources_and_topo_coin">initialize_core_resources_and_topo_coin</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -425,7 +425,7 @@ Only called for testnets and e2e tests.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize_core_resources_and_topo_coin">initialize_core_resources_and_topo_coin</a>(
+<pre><code><b>public</b> <b>fun</b> <a href="genesis.md#0x1_genesis_initialize_core_resources_and_topo_coin">initialize_core_resources_and_topo_coin</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     core_resources_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
 ) {
@@ -443,7 +443,7 @@ Only called for testnets and e2e tests.
 
     <b>let</b> core_resources = <a href="account.md#0x1_account_create_account">account::create_account</a>(@core_resources);
     <a href="account.md#0x1_account_rotate_authentication_key_internal">account::rotate_authentication_key_internal</a>(&core_resources, core_resources_auth_key);
-    <a href="aptos_account.md#0x1_aptos_account_register_apt">aptos_account::register_apt</a>(&core_resources); // registers APT store
+    <a href="aptos_account.md#0x1_aptos_account_register_topo">aptos_account::register_topo</a>(&core_resources); // registers TOPO store
     <a href="topo_coin.md#0x1_topo_coin_configure_accounts_for_test">topo_coin::configure_accounts_for_test</a>(aptos_framework, &core_resources, mint_cap);
 }
 </code></pre>
@@ -869,7 +869,7 @@ The last step of genesis.
 
 <tr>
 <td>3</td>
-<td>The Aptos coin should be initialized during genesis and only the Aptos framework account should own the mint and burn capabilities for the APT token.</td>
+<td>The Aptos coin should be initialized during genesis and only the Aptos framework account should own the mint and burn capabilities for the TOPO token.</td>
 <td>Critical</td>
 <td>Both mint and burn capabilities are wrapped inside the stake::TopoCoinCapabilities and transaction_fee::TopoCoinCapabilities resources which are stored under the aptos framework account.</td>
 <td>Formally verified via <a href="#high-level-req-3">initialize_topo_coin</a>.</td>

@@ -1066,7 +1066,7 @@ Cannot destroy non-empty fungible assets.
 
 <a id="0x1_fungible_asset_EAPT_NOT_DISPATCHABLE"></a>
 
-Cannot register dispatch hook for APT.
+Cannot register dispatch hook for TOPO.
 
 
 <pre><code><b>const</b> <a href="fungible_asset.md#0x1_fungible_asset_EAPT_NOT_DISPATCHABLE">EAPT_NOT_DISPATCHABLE</a>: u64 = 31;
@@ -1835,7 +1835,7 @@ Check the requirements for registering a dispatchable function.
 <pre><code>inline <b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_register_dispatch_function_sanity_check">register_dispatch_function_sanity_check</a>(
     constructor_ref: &ConstructorRef
 ) {
-    // Cannot register hook for APT.
+    // Cannot register hook for TOPO.
     <b>assert</b>!(
         constructor_ref.address_from_constructor_ref()
             != @aptos_fungible_asset,
@@ -2713,7 +2713,7 @@ Return whether a fungible asset type is dispatchable.
     metadata: Object&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">Metadata</a>&gt;
 ): bool <b>acquires</b> <a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
     <b>let</b> metadata_addr = metadata.object_address();
-    // Short circuit on APT for better perf
+    // Short circuit on TOPO for better perf
     <b>if</b> (metadata_addr != @aptos_fungible_asset
         && <b>exists</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr)) {
         <b>borrow_global</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr).deposit_function.is_some()
@@ -2776,7 +2776,7 @@ Return whether a fungible asset type is dispatchable.
     metadata: Object&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">Metadata</a>&gt;
 ): bool <b>acquires</b> <a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
     <b>let</b> metadata_addr = metadata.object_address();
-    // Short circuit on APT for better perf
+    // Short circuit on TOPO for better perf
     <b>if</b> (metadata_addr != @aptos_fungible_asset
         && <b>exists</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr)) {
         <b>borrow_global</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr).withdraw_function.is_some()
@@ -2807,7 +2807,7 @@ Return whether a fungible asset type is dispatchable.
     metadata: Object&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">Metadata</a>&gt;
 ): bool <b>acquires</b> <a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a> {
     <b>let</b> metadata_addr = metadata.object_address();
-    // Short circuit on APT for better perf
+    // Short circuit on TOPO for better perf
     <b>if</b> (metadata_addr != @aptos_fungible_asset
         && <b>exists</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr)) {
         <b>borrow_global</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DispatchFunctionStore">DispatchFunctionStore</a>&gt;(metadata_addr).derived_balance_function.is_some()
@@ -2835,7 +2835,7 @@ Return whether a fungible asset type is dispatchable.
 
 
 <pre><code><b>fun</b> <a href="fungible_asset.md#0x1_fungible_asset_has_supply_dispatch_function">has_supply_dispatch_function</a>(metadata_addr: <b>address</b>): bool {
-    // Short circuit on APT for better perf
+    // Short circuit on TOPO for better perf
     <b>if</b> (metadata_addr != @aptos_fungible_asset) {
         <b>exists</b>&lt;<a href="fungible_asset.md#0x1_fungible_asset_DeriveSupply">DeriveSupply</a>&gt;(metadata_addr)
     } <b>else</b> { <b>false</b> }

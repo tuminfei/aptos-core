@@ -415,7 +415,7 @@ impl TransactionFactory {
     }
 
     pub fn mint(&self, to: AccountAddress, amount: u64) -> TransactionBuilder {
-        self.payload(aptos_stdlib::aptos_coin_mint(to, amount))
+        self.payload(aptos_stdlib::topo_coin_mint(to, amount))
     }
 
     //

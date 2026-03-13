@@ -36,7 +36,7 @@ This module provides the foundation for typesafe Coins.
 -  [Function `paired_metadata`](#0x1_coin_paired_metadata)
 -  [Function `create_coin_conversion_map`](#0x1_coin_create_coin_conversion_map)
 -  [Function `create_pairing`](#0x1_coin_create_pairing)
--  [Function `is_apt`](#0x1_coin_is_apt)
+-  [Function `is_topo`](#0x1_coin_is_topo)
 -  [Function `create_and_return_paired_metadata_if_not_exist`](#0x1_coin_create_and_return_paired_metadata_if_not_exist)
 -  [Function `ensure_paired_metadata`](#0x1_coin_ensure_paired_metadata)
 -  [Function `paired_coin`](#0x1_coin_paired_coin)
@@ -1074,16 +1074,6 @@ The value of aggregatable coin used for transaction fees redistribution does not
 
 
 
-<a id="0x1_coin_EAPT_PAIRING_IS_NOT_ENABLED"></a>
-
-APT pairing is not eanbled yet.
-
-
-<pre><code><b>const</b> <a href="coin.md#0x1_coin_EAPT_PAIRING_IS_NOT_ENABLED">EAPT_PAIRING_IS_NOT_ENABLED</a>: u64 = 28;
-</code></pre>
-
-
-
 <a id="0x1_coin_EBURN_REF_NOT_FOUND"></a>
 
 The BurnRef does not exist.
@@ -1304,6 +1294,16 @@ PairedFungibleAssetRefs resource does not exist.
 
 
 
+<a id="0x1_coin_ETOPO_PAIRING_IS_NOT_ENABLED"></a>
+
+TOPO pairing is not enabled yet.
+
+
+<pre><code><b>const</b> <a href="coin.md#0x1_coin_ETOPO_PAIRING_IS_NOT_ENABLED">ETOPO_PAIRING_IS_NOT_ENABLED</a>: u64 = 28;
+</code></pre>
+
+
+
 <a id="0x1_coin_ETRANSFER_REF_NOT_FOUND"></a>
 
 The TransferRef does not exist.
@@ -1410,7 +1410,7 @@ Get the paired fungible asset metadata object of a coin type. If not exist, retu
 
 ## Function `create_pairing`
 
-Create APT pairing by passing <code>TopoCoin</code>.
+Create TOPO pairing by passing <code>TopoCoin</code>.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="coin.md#0x1_coin_create_pairing">create_pairing</a>&lt;CoinType&gt;(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
@@ -1434,13 +1434,13 @@ Create APT pairing by passing <code>TopoCoin</code>.
 
 </details>
 
-<a id="0x1_coin_is_apt"></a>
+<a id="0x1_coin_is_topo"></a>
 
-## Function `is_apt`
+## Function `is_topo`
 
 
 
-<pre><code><b>fun</b> <a href="coin.md#0x1_coin_is_apt">is_apt</a>&lt;CoinType&gt;(): bool
+<pre><code><b>fun</b> <a href="coin.md#0x1_coin_is_topo">is_topo</a>&lt;CoinType&gt;(): bool
 </code></pre>
 
 
@@ -1449,7 +1449,7 @@ Create APT pairing by passing <code>TopoCoin</code>.
 <summary>Implementation</summary>
 
 
-<pre><code>inline <b>fun</b> <a href="coin.md#0x1_coin_is_apt">is_apt</a>&lt;CoinType&gt;(): bool {
+<pre><code>inline <b>fun</b> <a href="coin.md#0x1_coin_is_topo">is_topo</a>&lt;CoinType&gt;(): bool {
     <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_name">type_info::type_name</a>&lt;CoinType&gt;() == <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"<a href="topo_coin.md#0x1_topo_coin_TopoCoin">0x1::topo_coin::TopoCoin</a>")
 }
 </code></pre>
@@ -1464,7 +1464,7 @@ Create APT pairing by passing <code>TopoCoin</code>.
 
 
 
-<pre><code><b>fun</b> <a href="coin.md#0x1_coin_create_and_return_paired_metadata_if_not_exist">create_and_return_paired_metadata_if_not_exist</a>&lt;CoinType&gt;(allow_apt_creation: bool): <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;
+<pre><code><b>fun</b> <a href="coin.md#0x1_coin_create_and_return_paired_metadata_if_not_exist">create_and_return_paired_metadata_if_not_exist</a>&lt;CoinType&gt;(allow_topo_creation: bool): <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;
 </code></pre>
 
 
@@ -1474,7 +1474,7 @@ Create APT pairing by passing <code>TopoCoin</code>.
 
 
 <pre><code>inline <b>fun</b> <a href="coin.md#0x1_coin_create_and_return_paired_metadata_if_not_exist">create_and_return_paired_metadata_if_not_exist</a>&lt;CoinType&gt;(
-    allow_apt_creation: bool
+    allow_topo_creation: bool
 ): Object&lt;Metadata&gt; {
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@aptos_framework),
@@ -1483,13 +1483,13 @@ Create APT pairing by passing <code>TopoCoin</code>.
     <b>let</b> map = <b>borrow_global_mut</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@aptos_framework);
     <b>let</b> type = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;CoinType&gt;();
     <b>if</b> (!map.coin_to_fungible_asset_map.contains(type)) {
-        <b>let</b> is_apt = <a href="coin.md#0x1_coin_is_apt">is_apt</a>&lt;CoinType&gt;();
+        <b>let</b> is_topo = <a href="coin.md#0x1_coin_is_topo">is_topo</a>&lt;CoinType&gt;();
         <b>assert</b>!(
-            !is_apt || allow_apt_creation,
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="coin.md#0x1_coin_EAPT_PAIRING_IS_NOT_ENABLED">EAPT_PAIRING_IS_NOT_ENABLED</a>)
+            !is_topo || allow_topo_creation,
+            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="coin.md#0x1_coin_ETOPO_PAIRING_IS_NOT_ENABLED">ETOPO_PAIRING_IS_NOT_ENABLED</a>)
         );
         <b>let</b> metadata_object_cref =
-            <b>if</b> (is_apt) {
+            <b>if</b> (is_topo) {
                 <a href="object.md#0x1_object_create_sticky_object_at_address">object::create_sticky_object_at_address</a>(
                     @aptos_framework, @aptos_fungible_asset
                 )

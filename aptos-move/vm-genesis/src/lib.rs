@@ -315,7 +315,7 @@ pub fn encode_genesis_change_set(
             .map(Features::into_flag_vec),
     );
     if genesis_config.is_test {
-        initialize_core_resources_and_aptos_coin(
+        initialize_core_resources_and_topo_coin(
             &mut session,
             &module_storage,
             &mut traversal_context,
@@ -930,7 +930,7 @@ fn set_genesis_end(
     );
 }
 
-fn initialize_core_resources_and_aptos_coin(
+fn initialize_core_resources_and_topo_coin(
     session: &mut SessionExt<impl AptosMoveResolver>,
     module_storage: &impl AptosModuleStorage,
     traversal_context: &mut TraversalContext,
@@ -942,7 +942,7 @@ fn initialize_core_resources_and_aptos_coin(
         module_storage,
         traversal_context,
         GENESIS_MODULE_NAME,
-        "initialize_core_resources_and_aptos_coin",
+        "initialize_core_resources_and_topo_coin",
         vec![],
         serialize_values(&vec![
             MoveValue::Signer(CORE_CODE_ADDRESS),
