@@ -110,8 +110,8 @@ module aptos_framework::coin {
     /// The coin converison map is not created yet.
     const ECOIN_CONVERSION_MAP_NOT_FOUND: u64 = 27;
 
-    /// TOPO pairing is not eanbled yet.
-    const EAPT_PAIRING_IS_NOT_ENABLED: u64 = 28;
+    /// TOPO pairing is not enabled yet.
+    const ETOPO_PAIRING_IS_NOT_ENABLED: u64 = 28;
 
     /// The decimals of the coin is too large.
     const ECOIN_DECIMALS_TOO_LARGE: u64 = 29;
@@ -316,12 +316,12 @@ module aptos_framework::coin {
         create_and_return_paired_metadata_if_not_exist<CoinType>(true);
     }
 
-    inline fun is_apt<CoinType>(): bool {
+    inline fun is_topo<CoinType>(): bool {
         type_info::type_name<CoinType>() == string::utf8(b"0x1::topo_coin::TopoCoin")
     }
 
     inline fun create_and_return_paired_metadata_if_not_exist<CoinType>(
-        allow_apt_creation: bool
+        allow_topo_creation: bool
     ): Object<Metadata> {
         assert!(
             exists<CoinConversionMap>(@aptos_framework),
@@ -330,13 +330,13 @@ module aptos_framework::coin {
         let map = borrow_global_mut<CoinConversionMap>(@aptos_framework);
         let type = type_info::type_of<CoinType>();
         if (!map.coin_to_fungible_asset_map.contains(type)) {
-            let is_apt = is_apt<CoinType>();
+            let is_topo = is_topo<CoinType>();
             assert!(
-                !is_apt || allow_apt_creation,
-                error::invalid_state(EAPT_PAIRING_IS_NOT_ENABLED)
+                !is_topo || allow_topo_creation,
+                error::invalid_state(ETOPO_PAIRING_IS_NOT_ENABLED)
             );
             let metadata_object_cref =
-                if (is_apt) {
+                if (is_topo) {
                     object::create_sticky_object_at_address(
                         @aptos_framework, @aptos_fungible_asset
                     )
