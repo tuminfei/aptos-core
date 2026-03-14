@@ -255,7 +255,7 @@ pub enum EntryFunctionCall {
 
     AccountAbstractionRemoveDispatchableAuthenticator {},
 
-    /// Batch version of APT transfer.
+    /// Batch version of TOPO transfer.
     AptosAccountBatchTransfer {
         recipients: Vec<AccountAddress>,
         amounts: Vec<u64>,
@@ -273,12 +273,12 @@ pub enum EntryFunctionCall {
         auth_key: AccountAddress,
     },
 
-    /// APT Primary Fungible Store specific specialized functions,
-    /// Utilized internally once migration of APT to FungibleAsset is complete.
-    /// Convenient function to transfer APT to a recipient account that might not exist.
-    /// This would create the recipient APT PFS first, which also registers it to receive APT, before transferring.
+    /// TOPO Primary Fungible Store specific specialized functions,
+    /// Utilized internally once migration of TOPO to FungibleAsset is complete.
+    /// Convenient function to transfer TOPO to a recipient account that might not exist.
+    /// This would create the recipient TOPO PFS first, which also registers it to receive TOPO, before transferring.
     /// TODO: once migration is complete, rename to just "transfer_only" and make it an entry function (for cheapest way
-    /// to transfer APT) - if we want to allow APT PFS without account itself
+    /// to transfer TOPO) - if we want to allow TOPO PFS without account itself
     AptosAccountFungibleTransferOnly {
         to: AccountAddress,
         amount: u64,
@@ -289,8 +289,8 @@ pub enum EntryFunctionCall {
         allow: bool,
     },
 
-    /// Convenient function to transfer APT to a recipient account that might not exist.
-    /// This would create the recipient account first, which also registers it to receive APT, before transferring.
+    /// Convenient function to transfer TOPO to a recipient account that might not exist.
+    /// This would create the recipient account first, which also registers it to receive TOPO, before transferring.
     AptosAccountTransfer {
         to: AccountAddress,
         amount: u64,
@@ -301,23 +301,6 @@ pub enum EntryFunctionCall {
     AptosAccountTransferCoins {
         coin_type: TypeTag,
         to: AccountAddress,
-        amount: u64,
-    },
-
-    /// Only callable in tests and testnets where the core resources account exists.
-    /// Claim the delegated mint capability and destroy the delegated token.
-    AptosCoinClaimMintCapability {},
-
-    /// Only callable in tests and testnets where the core resources account exists.
-    /// Create delegated token for the address so the account could claim MintCapability later.
-    AptosCoinDelegateMintCapability {
-        to: AccountAddress,
-    },
-
-    /// Only callable in tests and testnets where the core resources account exists.
-    /// Create new coins and deposit them into dst_addr's account.
-    AptosCoinMint {
-        dst_addr: AccountAddress,
         amount: u64,
     },
 
@@ -408,7 +391,7 @@ pub enum EntryFunctionCall {
 
     CoinCreateCoinConversionMap {},
 
-    /// Create APT pairing by passing `AptosCoin`.
+    /// Create TOPO pairing by passing `TopoCoin`.
     CoinCreatePairing {
         coin_type: TypeTag,
     },
@@ -927,7 +910,7 @@ pub enum EntryFunctionCall {
     /// account, and rotates the authentication key to either the optional auth key if it is
     /// non-empty (though auth keys are 32-bytes) or the source accounts current auth key. Note,
     /// this function adds additional resource ownership to the resource account and should only be
-    /// used for resource accounts that need access to `Coin<AptosCoin>`.
+    /// used for resource accounts that need access to `Coin<TopoCoin>`.
     ResourceAccountCreateResourceAccountAndFund {
         seed: Vec<u8>,
         optional_auth_key: Vec<u8>,
@@ -1139,6 +1122,23 @@ pub enum EntryFunctionCall {
     StakingProxySetVoter {
         operator: AccountAddress,
         new_voter: AccountAddress,
+    },
+
+    /// Only callable in tests and testnets where the core resources account exists.
+    /// Claim the delegated mint capability and destroy the delegated token.
+    TopoCoinClaimMintCapability {},
+
+    /// Only callable in tests and testnets where the core resources account exists.
+    /// Create delegated token for the address so the account could claim MintCapability later.
+    TopoCoinDelegateMintCapability {
+        to: AccountAddress,
+    },
+
+    /// Only callable in tests and testnets where the core resources account exists.
+    /// Create new coins and deposit them into dst_addr's account.
+    TopoCoinMint {
+        dst_addr: AccountAddress,
+        amount: u64,
     },
 
     TransactionFeeConvertToAptosFaBurnRef {},
@@ -1406,9 +1406,6 @@ impl EntryFunctionCall {
                 to,
                 amount,
             } => aptos_account_transfer_coins(coin_type, to, amount),
-            AptosCoinClaimMintCapability {} => aptos_coin_claim_mint_capability(),
-            AptosCoinDelegateMintCapability { to } => aptos_coin_delegate_mint_capability(to),
-            AptosCoinMint { dst_addr, amount } => aptos_coin_mint(dst_addr, amount),
             AptosGovernanceAddApprovedScriptHashScript { proposal_id } => {
                 aptos_governance_add_approved_script_hash_script(proposal_id)
             },
@@ -1911,6 +1908,9 @@ impl EntryFunctionCall {
                 operator,
                 new_voter,
             } => staking_proxy_set_voter(operator, new_voter),
+            TopoCoinClaimMintCapability {} => topo_coin_claim_mint_capability(),
+            TopoCoinDelegateMintCapability { to } => topo_coin_delegate_mint_capability(to),
+            TopoCoinMint { dst_addr, amount } => topo_coin_mint(dst_addr, amount),
             TransactionFeeConvertToAptosFaBurnRef {} => {
                 transaction_fee_convert_to_aptos_fa_burn_ref()
             },
@@ -2514,7 +2514,7 @@ pub fn account_abstraction_remove_dispatchable_authenticator() -> TransactionPay
     ))
 }
 
-/// Batch version of APT transfer.
+/// Batch version of TOPO transfer.
 pub fn aptos_account_batch_transfer(
     recipients: Vec<AccountAddress>,
     amounts: Vec<u64>,
@@ -2575,12 +2575,12 @@ pub fn aptos_account_create_account(auth_key: AccountAddress) -> TransactionPayl
     ))
 }
 
-/// APT Primary Fungible Store specific specialized functions,
-/// Utilized internally once migration of APT to FungibleAsset is complete.
-/// Convenient function to transfer APT to a recipient account that might not exist.
-/// This would create the recipient APT PFS first, which also registers it to receive APT, before transferring.
+/// TOPO Primary Fungible Store specific specialized functions,
+/// Utilized internally once migration of TOPO to FungibleAsset is complete.
+/// Convenient function to transfer TOPO to a recipient account that might not exist.
+/// This would create the recipient TOPO PFS first, which also registers it to receive TOPO, before transferring.
 /// TODO: once migration is complete, rename to just "transfer_only" and make it an entry function (for cheapest way
-/// to transfer APT) - if we want to allow APT PFS without account itself
+/// to transfer TOPO) - if we want to allow TOPO PFS without account itself
 pub fn aptos_account_fungible_transfer_only(to: AccountAddress, amount: u64) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -2612,8 +2612,8 @@ pub fn aptos_account_set_allow_direct_coin_transfers(allow: bool) -> Transaction
     ))
 }
 
-/// Convenient function to transfer APT to a recipient account that might not exist.
-/// This would create the recipient account first, which also registers it to receive APT, before transferring.
+/// Convenient function to transfer TOPO to a recipient account that might not exist.
+/// This would create the recipient account first, which also registers it to receive TOPO, before transferring.
 pub fn aptos_account_transfer(to: AccountAddress, amount: u64) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -2647,60 +2647,6 @@ pub fn aptos_account_transfer_coins(
         ident_str!("transfer_coins").to_owned(),
         vec![coin_type],
         vec![bcs::to_bytes(&to).unwrap(), bcs::to_bytes(&amount).unwrap()],
-    ))
-}
-
-/// Only callable in tests and testnets where the core resources account exists.
-/// Claim the delegated mint capability and destroy the delegated token.
-pub fn aptos_coin_claim_mint_capability() -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("aptos_coin").to_owned(),
-        ),
-        ident_str!("claim_mint_capability").to_owned(),
-        vec![],
-        vec![],
-    ))
-}
-
-/// Only callable in tests and testnets where the core resources account exists.
-/// Create delegated token for the address so the account could claim MintCapability later.
-pub fn aptos_coin_delegate_mint_capability(to: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("aptos_coin").to_owned(),
-        ),
-        ident_str!("delegate_mint_capability").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&to).unwrap()],
-    ))
-}
-
-/// Only callable in tests and testnets where the core resources account exists.
-/// Create new coins and deposit them into dst_addr's account.
-pub fn aptos_coin_mint(dst_addr: AccountAddress, amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("aptos_coin").to_owned(),
-        ),
-        ident_str!("mint").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&dst_addr).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-        ],
     ))
 }
 
@@ -2977,7 +2923,7 @@ pub fn coin_create_coin_conversion_map() -> TransactionPayload {
     ))
 }
 
-/// Create APT pairing by passing `AptosCoin`.
+/// Create TOPO pairing by passing `TopoCoin`.
 pub fn coin_create_pairing(coin_type: TypeTag) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4405,7 +4351,7 @@ pub fn resource_account_create_resource_account(
 /// account, and rotates the authentication key to either the optional auth key if it is
 /// non-empty (though auth keys are 32-bytes) or the source accounts current auth key. Note,
 /// this function adds additional resource ownership to the resource account and should only be
-/// used for resource accounts that need access to `Coin<AptosCoin>`.
+/// used for resource accounts that need access to `Coin<TopoCoin>`.
 pub fn resource_account_create_resource_account_and_fund(
     seed: Vec<u8>,
     optional_auth_key: Vec<u8>,
@@ -5114,6 +5060,60 @@ pub fn staking_proxy_set_voter(
         vec![
             bcs::to_bytes(&operator).unwrap(),
             bcs::to_bytes(&new_voter).unwrap(),
+        ],
+    ))
+}
+
+/// Only callable in tests and testnets where the core resources account exists.
+/// Claim the delegated mint capability and destroy the delegated token.
+pub fn topo_coin_claim_mint_capability() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("topo_coin").to_owned(),
+        ),
+        ident_str!("claim_mint_capability").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+/// Only callable in tests and testnets where the core resources account exists.
+/// Create delegated token for the address so the account could claim MintCapability later.
+pub fn topo_coin_delegate_mint_capability(to: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("topo_coin").to_owned(),
+        ),
+        ident_str!("delegate_mint_capability").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&to).unwrap()],
+    ))
+}
+
+/// Only callable in tests and testnets where the core resources account exists.
+/// Create new coins and deposit them into dst_addr's account.
+pub fn topo_coin_mint(dst_addr: AccountAddress, amount: u64) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("topo_coin").to_owned(),
+        ),
+        ident_str!("mint").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&dst_addr).unwrap(),
+            bcs::to_bytes(&amount).unwrap(),
         ],
     ))
 }
@@ -5856,39 +5856,6 @@ mod decoder {
             Some(EntryFunctionCall::AptosAccountTransferCoins {
                 coin_type: script.ty_args().get(0)?.clone(),
                 to: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn aptos_coin_claim_mint_capability(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::AptosCoinClaimMintCapability {})
-        } else {
-            None
-        }
-    }
-
-    pub fn aptos_coin_delegate_mint_capability(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::AptosCoinDelegateMintCapability {
-                to: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn aptos_coin_mint(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::AptosCoinMint {
-                dst_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
                 amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
@@ -7286,6 +7253,39 @@ mod decoder {
         }
     }
 
+    pub fn topo_coin_claim_mint_capability(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::TopoCoinClaimMintCapability {})
+        } else {
+            None
+        }
+    }
+
+    pub fn topo_coin_delegate_mint_capability(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::TopoCoinDelegateMintCapability {
+                to: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn topo_coin_mint(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::TopoCoinMint {
+                dst_addr: bcs::from_bytes(script.args().get(0)?).ok()?,
+                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn transaction_fee_convert_to_aptos_fa_burn_ref(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -7637,18 +7637,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "aptos_account_transfer_coins".to_string(),
             Box::new(decoder::aptos_account_transfer_coins),
-        );
-        map.insert(
-            "aptos_coin_claim_mint_capability".to_string(),
-            Box::new(decoder::aptos_coin_claim_mint_capability),
-        );
-        map.insert(
-            "aptos_coin_delegate_mint_capability".to_string(),
-            Box::new(decoder::aptos_coin_delegate_mint_capability),
-        );
-        map.insert(
-            "aptos_coin_mint".to_string(),
-            Box::new(decoder::aptos_coin_mint),
         );
         map.insert(
             "aptos_governance_add_approved_script_hash_script".to_string(),
@@ -8088,6 +8076,18 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "staking_proxy_set_voter".to_string(),
             Box::new(decoder::staking_proxy_set_voter),
+        );
+        map.insert(
+            "topo_coin_claim_mint_capability".to_string(),
+            Box::new(decoder::topo_coin_claim_mint_capability),
+        );
+        map.insert(
+            "topo_coin_delegate_mint_capability".to_string(),
+            Box::new(decoder::topo_coin_delegate_mint_capability),
+        );
+        map.insert(
+            "topo_coin_mint".to_string(),
+            Box::new(decoder::topo_coin_mint),
         );
         map.insert(
             "transaction_fee_convert_to_aptos_fa_burn_ref".to_string(),
