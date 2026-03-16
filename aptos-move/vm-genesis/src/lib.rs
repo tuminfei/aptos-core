@@ -78,7 +78,7 @@ use std::collections::BTreeMap;
 const GENESIS_SEED: [u8; 32] = [42; 32];
 
 const GENESIS_MODULE_NAME: &str = "genesis";
-const GOVERNANCE_MODULE_NAME: &str = "aptos_governance";
+const GOVERNANCE_MODULE_NAME: &str = "topo_governance";
 const CODE_MODULE_NAME: &str = "code";
 const VERSION_MODULE_NAME: &str = "version";
 const JWK_CONSENSUS_CONFIG_MODULE_NAME: &str = "jwk_consensus_config";

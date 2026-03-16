@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, MoveHarness};
-use aptos_cached_packages::aptos_stdlib::aptos_account_transfer;
+use aptos_cached_packages::aptos_stdlib::topo_account_transfer;
 use aptos_language_e2e_tests::account::Account;
 
 #[test]
@@ -14,7 +14,7 @@ fn non_existent_sender() {
 
     let txn = sender
         .transaction()
-        .payload(aptos_account_transfer(*receiver.address(), 0))
+        .payload(topo_account_transfer(*receiver.address(), 0))
         .sequence_number(0)
         .sign();
 

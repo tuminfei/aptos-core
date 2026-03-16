@@ -9,7 +9,7 @@
 /// track proposal creation and proposal ids.
 /// 2. Voters can vote on a proposal. Their voting power is derived from the backing stake pool. A stake pool can vote
 /// on a proposal multiple times as long as the total voting power of these votes doesn't exceed its total voting power.
-module aptos_framework::aptos_governance {
+module aptos_framework::topo_governance {
     use std::error;
     use std::option;
     use std::signer;
@@ -959,7 +959,7 @@ module aptos_framework::aptos_governance {
     }
 
     #[test(aptos_framework = @aptos_framework, proposer = @0x123, voter_1 = @0x234, voter_2 = @345)]
-    #[expected_failure(abort_code = 65541, location = aptos_framework::aptos_governance)]
+    #[expected_failure(abort_code = 65541, location = aptos_framework::topo_governance)]
     public entry fun test_cannot_double_vote(
         aptos_framework: signer,
         proposer: signer,
@@ -982,7 +982,7 @@ module aptos_framework::aptos_governance {
     }
 
     #[test(aptos_framework = @aptos_framework, proposer = @0x123, voter_1 = @0x234, voter_2 = @345)]
-    #[expected_failure(abort_code = 65551, location = aptos_framework::aptos_governance)]
+    #[expected_failure(abort_code = 65551, location = aptos_framework::topo_governance)]
     public entry fun test_cannot_vote_for_expired_proposal(
         aptos_framework: signer,
         proposer: signer,
@@ -1007,7 +1007,7 @@ module aptos_framework::aptos_governance {
     }
 
     #[test(aptos_framework = @aptos_framework, proposer = @0x123, voter_1 = @0x234, voter_2 = @0x345)]
-    #[expected_failure(abort_code = 65539, location = aptos_framework::aptos_governance)]
+    #[expected_failure(abort_code = 65539, location = aptos_framework::topo_governance)]
     public entry fun test_cannot_vote_due_to_insufficient_stake_lockup(
         aptos_framework: signer,
         proposer: signer,
@@ -1029,7 +1029,7 @@ module aptos_framework::aptos_governance {
     }
 
     #[test(aptos_framework = @aptos_framework, proposer = @0x123, voter_1 = @0x234, voter_2 = @345)]
-    #[expected_failure(abort_code = 65541, location = aptos_framework::aptos_governance)]
+    #[expected_failure(abort_code = 65541, location = aptos_framework::topo_governance)]
     public entry fun test_cannot_double_vote_with_different_voter_addresses(
         aptos_framework: signer,
         proposer: signer,

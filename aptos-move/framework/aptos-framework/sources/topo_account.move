@@ -1,4 +1,4 @@
-module aptos_framework::aptos_account {
+module aptos_framework::topo_account {
     use aptos_framework::account::{Self, new_event_handle};
     use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin::{Self, Coin};

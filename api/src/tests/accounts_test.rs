@@ -268,13 +268,13 @@ async fn test_account_auto_creation() {
         aptos_stdlib::coin_migrate_to_fungible_store(TopoCoinType::type_tag()),
     ));
     let txn2 = root_account.sign_with_transaction_builder(context.transaction_factory().payload(
-        aptos_stdlib::aptos_account_fungible_transfer_only(account.address(), 10_000_000_000),
+        aptos_stdlib::topo_account_fungible_transfer_only(account.address(), 10_000_000_000),
     ));
     context.commit_block(&[txn1.clone(), txn2.clone()]).await;
     let txn = account.sign_with_transaction_builder(
         context
             .transaction_factory()
-            .payload(aptos_stdlib::aptos_account_fungible_transfer_only(
+            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
                 root_account.address(),
                 1,
             ))

@@ -85,7 +85,7 @@ module aptos_framework::gas_schedule {
     /// Example usage:
     /// ```
     /// aptos_framework::gas_schedule::set_for_next_epoch(&framework_signer, some_gas_schedule_blob);
-    /// aptos_framework::aptos_governance::reconfigure(&framework_signer);
+    /// aptos_framework::topo_governance::reconfigure(&framework_signer);
     /// ```
     public fun set_for_next_epoch(aptos_framework: &signer, gas_schedule_blob: vector<u8>) acquires GasScheduleV2 {
         system_addresses::assert_aptos_framework(aptos_framework);

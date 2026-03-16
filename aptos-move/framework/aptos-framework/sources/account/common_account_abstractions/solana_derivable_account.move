@@ -241,7 +241,7 @@ module aptos_framework::solana_derivable_account {
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(utf8(base58_public_key), utf8(domain));
         let auth_data = create_derivable_auth_data(digest, abstract_signature, abstract_public_key);
-        let entry_function_name = b"0x1::aptos_account::transfer";
+        let entry_function_name = b"0x1::topo_account::transfer";
         authenticate_auth_data(auth_data, &entry_function_name);
     }
 
@@ -257,7 +257,7 @@ module aptos_framework::solana_derivable_account {
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(utf8(base58_public_key), utf8(domain));
         let auth_data = create_derivable_auth_data(digest, abstract_signature, abstract_public_key);
-        let entry_function_name = b"0x1::aptos_account::transfer";
+        let entry_function_name = b"0x1::topo_account::transfer";
         authenticate_auth_data(auth_data, &entry_function_name);
     }
 }

@@ -12,12 +12,12 @@ use aptos_types::{
 };
 use move_core_types::{identifier::Identifier, language_storage::ModuleId};
 
-/// Creates a signed transaction that calls `0x1::aptos_account::transfer`.
+/// Creates a signed transaction that calls `0x1::topo_account::transfer`.
 fn transfer_txn(sender: &Account, recipient: AccountAddress, amount: u64) -> SignedTransaction {
     let payload = TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::ONE,
-            Identifier::new("aptos_account").unwrap(),
+            Identifier::new("topo_account").unwrap(),
         ),
         Identifier::new("transfer").unwrap(),
         vec![],
@@ -99,7 +99,7 @@ fn test_execute_transaction_with_gas_profiling() -> Result<()> {
     assert!(output.gas_used() > 0, "should use some gas");
 
     // Verify the gas-report directory was created under the transaction output.
-    let gas_report_dir = session_path.join("[0] execute 0x1::aptos_account::transfer/gas-report");
+    let gas_report_dir = session_path.join("[0] execute 0x1::topo_account::transfer/gas-report");
     assert!(
         gas_report_dir.exists(),
         "gas-report directory should exist: {}",

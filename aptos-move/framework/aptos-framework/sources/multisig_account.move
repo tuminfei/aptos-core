@@ -1429,7 +1429,7 @@ module aptos_framework::multisig_account {
     ////////////////////////// Tests ///////////////////////////////
 
     #[test_only]
-    use aptos_framework::aptos_account::create_account;
+    use aptos_framework::topo_account::create_account;
     #[test_only]
     use aptos_framework::timestamp;
     #[test_only]

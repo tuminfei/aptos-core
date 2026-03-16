@@ -588,7 +588,7 @@ mod tests {
         runner.run(
             "CreateAccount",
             account_1,
-            aptos_stdlib::aptos_account_create_account(
+            aptos_stdlib::topo_account_create_account(
                 AccountAddress::from_hex_literal("0xcafe1").unwrap(),
             ),
         );
@@ -596,7 +596,7 @@ mod tests {
         runner.run(
             "CreateTransfer",
             account_1,
-            aptos_stdlib::aptos_account_transfer(
+            aptos_stdlib::topo_account_transfer(
                 AccountAddress::from_hex_literal("0xcafe2").unwrap(),
                 1000,
             ),
@@ -1023,7 +1023,7 @@ mod tests {
         runner.run_with_tps_estimate(
             "CreateAccount",
             account_1,
-            aptos_stdlib::aptos_account_create_account(
+            aptos_stdlib::topo_account_create_account(
                 AccountAddress::from_hex_literal("0xcafe1").unwrap(),
             ),
             if use_large_db_numbers { 1583.0 } else { 2215. },

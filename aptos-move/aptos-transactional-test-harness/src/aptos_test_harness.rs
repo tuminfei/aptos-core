@@ -536,7 +536,7 @@ impl AptosTestAdapter<'_> {
         let txn = RawTransaction::new(
             aptos_test_root_address(),
             parameters.sequence_number,
-            aptos_cached_packages::aptos_stdlib::aptos_account_create_account(account_addr),
+            aptos_cached_packages::aptos_stdlib::topo_account_create_account(account_addr),
             parameters.max_gas_amount,
             parameters.gas_unit_price,
             parameters.expiration_timestamp_secs,

@@ -42,7 +42,7 @@ module aptos_framework::execution_config {
     /// Example usage:
     /// ```
     /// aptos_framework::execution_config::set_for_next_epoch(&framework_signer, some_config_bytes);
-    /// aptos_framework::aptos_governance::reconfigure(&framework_signer);
+    /// aptos_framework::topo_governance::reconfigure(&framework_signer);
     /// ```
     public fun set_for_next_epoch(account: &signer, config: vector<u8>) {
         system_addresses::assert_aptos_framework(account);

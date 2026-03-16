@@ -312,7 +312,7 @@ module aptos_framework::jwks {
     ///     b"https://accounts.google.com",
     ///     b"https://accounts.google.com/.well-known/openid-configuration"
     /// );
-    /// aptos_framework::aptos_governance::reconfigure(&framework_signer);
+    /// aptos_framework::topo_governance::reconfigure(&framework_signer);
     /// ```
     public fun upsert_oidc_provider_for_next_epoch(fx: &signer, name: vector<u8>, config_url: vector<u8>): Option<vector<u8>> acquires SupportedOIDCProviders {
         system_addresses::assert_aptos_framework(fx);
@@ -347,7 +347,7 @@ module aptos_framework::jwks {
     ///     &framework_signer,
     ///     b"https://accounts.google.com",
     /// );
-    /// aptos_framework::aptos_governance::reconfigure(&framework_signer);
+    /// aptos_framework::topo_governance::reconfigure(&framework_signer);
     /// ```
     public fun remove_oidc_provider_for_next_epoch(fx: &signer, name: vector<u8>): Option<vector<u8>> acquires SupportedOIDCProviders {
         system_addresses::assert_aptos_framework(fx);

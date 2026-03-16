@@ -20,7 +20,7 @@ module aptos_framework::account {
     use aptos_std::table::{Self, Table};
     use aptos_std::type_info::{Self, TypeInfo};
 
-    friend aptos_framework::aptos_account;
+    friend aptos_framework::topo_account;
     friend aptos_framework::coin;
     friend aptos_framework::genesis;
     friend aptos_framework::multisig_account;

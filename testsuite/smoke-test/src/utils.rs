@@ -149,7 +149,7 @@ pub async fn transfer_coins_non_blocking(
     amount: u64,
 ) -> SignedTransaction {
     let txn = sender.sign_with_transaction_builder(transaction_factory.payload(
-        aptos_stdlib::aptos_coin_transfer(receiver.address(), amount),
+        aptos_stdlib::topo_coin_transfer(receiver.address(), amount),
     ));
 
     client.submit(&txn).await.unwrap();
@@ -308,13 +308,13 @@ pub async fn update_consensus_config(
     let update_consensus_config_script = format!(
         r#"
     script {{
-        use aptos_framework::aptos_governance;
+        use aptos_framework::topo_governance;
         use aptos_framework::consensus_config;
         fun main(core_resources: &signer) {{
-            let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
+            let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
             let config_bytes = {};
             consensus_config::set_for_next_epoch(&framework_signer, config_bytes);
-            aptos_governance::force_end_epoch(&framework_signer);
+            topo_governance::force_end_epoch(&framework_signer);
         }}
     }}
     "#,

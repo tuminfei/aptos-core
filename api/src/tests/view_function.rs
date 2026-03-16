@@ -288,7 +288,7 @@ async fn test_view_does_not_exist() {
         .post(
             "/view",
             json!({
-                "function":"0x1::aptos_account::fake_function",
+                "function":"0x1::topo_account::fake_function",
                 "arguments": vec![owner.address().to_string()],
                 "type_arguments": [],
             }),
@@ -327,7 +327,7 @@ async fn test_simple_view_invalid(
         .post(
             "/view",
             json!({
-                "function":"0x1::aptos_account::assert_account_exists",
+                "function":"0x1::topo_account::assert_account_exists",
                 "arguments": vec![owner.address().to_string()],
                 "type_arguments": [],
             }),

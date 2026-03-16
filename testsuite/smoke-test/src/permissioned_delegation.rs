@@ -104,7 +104,7 @@ async fn test_permissioned_delegation() {
         vec![],
         None,
         info.transaction_factory()
-            .payload(aptos_stdlib::aptos_account_fungible_transfer_only(
+            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
                 account2.address(),
                 100000000,
             )),
@@ -116,7 +116,7 @@ async fn test_permissioned_delegation() {
         vec![],
         None,
         info.transaction_factory()
-            .payload(aptos_stdlib::aptos_account_fungible_transfer_only(
+            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
                 account2.address(),
                 200000000,
             )),
@@ -128,7 +128,7 @@ async fn test_permissioned_delegation() {
         vec![],
         None,
         info.transaction_factory()
-            .payload(aptos_stdlib::aptos_account_fungible_transfer_only(
+            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
                 account2.address(),
                 200000000,
             ))
@@ -140,7 +140,7 @@ async fn test_permissioned_delegation() {
         vec![],
         None,
         info.transaction_factory()
-            .payload(aptos_stdlib::aptos_account_fungible_transfer_only(
+            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
                 account2.address(),
                 700000001,
             ))
@@ -152,7 +152,7 @@ async fn test_permissioned_delegation() {
         vec![],
         None,
         info.transaction_factory()
-            .payload(aptos_stdlib::aptos_account_fungible_transfer_only(
+            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
                 account2.address(),
                 700000000,
             ))

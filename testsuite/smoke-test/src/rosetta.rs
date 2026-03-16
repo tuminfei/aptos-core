@@ -629,7 +629,7 @@ async fn test_transfer() {
         // config/global-constants/src/lib.rs
         .with_gas_unit_price(GAS_UNIT_PRICE)
         .with_max_gas_amount(1000);
-    let txn_payload = aptos_stdlib::aptos_account_transfer(receiver, 100);
+    let txn_payload = aptos_stdlib::topo_account_transfer(receiver, 100);
     let unsigned_transaction = transaction_factory
         .payload(txn_payload)
         .sender(sender)

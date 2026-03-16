@@ -5,7 +5,7 @@ module aptos_framework::transaction_validation {
     use std::option::Option;
     use std::signer;
     use aptos_framework::account;
-    use aptos_framework::aptos_account;
+    use aptos_framework::topo_account;
     use aptos_framework::account_abstraction;
     use aptos_framework::chain_id;
     use aptos_framework::create_signer;
@@ -195,7 +195,7 @@ module aptos_framework::transaction_validation {
                 error::permission_denied(PROLOGUE_PERMISSIONED_GAS_LIMIT_INSUFFICIENT)
             );
             assert!(
-                aptos_account::is_fungible_balance_at_least(gas_payer_address, max_transaction_fee),
+                topo_account::is_fungible_balance_at_least(gas_payer_address, max_transaction_fee),
                 error::invalid_argument(PROLOGUE_ECANT_PAY_GAS_DEPOSIT)
             );
         };
@@ -595,7 +595,7 @@ module aptos_framework::transaction_validation {
         // to do failed transaction cleanup.
         if (!skip_gas_payment(is_simulation, gas_payer)) {
             assert!(
-                aptos_account::is_fungible_balance_at_least(gas_payer, transaction_fee_amount),
+                topo_account::is_fungible_balance_at_least(gas_payer, transaction_fee_amount),
                 error::out_of_range(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
             );
 
@@ -808,7 +808,7 @@ module aptos_framework::transaction_validation {
             gas_payer_address
         )) {
             assert!(
-                aptos_account::is_fungible_balance_at_least(gas_payer_address, transaction_fee_amount),
+                topo_account::is_fungible_balance_at_least(gas_payer_address, transaction_fee_amount),
                 error::out_of_range(PROLOGUE_ECANT_PAY_GAS_DEPOSIT),
             );
 

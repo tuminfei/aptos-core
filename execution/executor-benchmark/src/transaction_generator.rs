@@ -592,7 +592,7 @@ impl TransactionGenerator {
             let transactions: Vec<_> = chunk
                 .iter()
                 .map(|new_account| {
-                    let payload = aptos_stdlib::aptos_account_transfer(
+                    let payload = aptos_stdlib::topo_account_transfer(
                         new_account.authentication_key().account_address(),
                         seed_account_balance,
                     );

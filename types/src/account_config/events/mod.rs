@@ -122,7 +122,7 @@ pub use uri_mutation::*;
 pub use uri_mutation_event::*;
 pub use withdraw_event::*;
 
-pub fn is_aptos_governance_create_proposal_event(event_type: &str) -> bool {
-    event_type == "0x1::aptos_governance::CreateProposal"
-        || event_type == "0x1::aptos_governance::CreateProposalEvent"
+pub fn is_topo_governance_create_proposal_event(event_type: &str) -> bool {
+    event_type == "0x1::topo_governance::CreateProposal"
+        || event_type == "0x1::topo_governance::CreateProposalEvent"
 }

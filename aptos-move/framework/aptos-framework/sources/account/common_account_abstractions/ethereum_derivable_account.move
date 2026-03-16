@@ -297,12 +297,12 @@ module aptos_framework::ethereum_derivable_account {
 
         let ethereum_address = b"0xC7B576Ead6aFb962E2DEcB35814FB29723AEC98a";
         let domain = b"localhost:3001";
-        let entry_function_name = b"0x1::aptos_account::transfer";
+        let entry_function_name = b"0x1::topo_account::transfer";
         let digest_utf8 = b"0x2a2f07c32382a94aa90ddfdb97076b77d779656bb9730c4f3e4d22a30df298dd";
         let issued_at = b"2025-01-01T00:00:00.000Z";
         let scheme = b"https";
         let message = construct_message(&ethereum_address, &domain, &entry_function_name, &digest_utf8, &issued_at, &scheme);
-        let expected_message = b"\x19Ethereum Signed Message:\n442localhost:3001 wants you to sign in with your Ethereum account:\n0xC7B576Ead6aFb962E2DEcB35814FB29723AEC98a\n\nPlease confirm you explicitly initiated this request from localhost:3001. You are approving to execute transaction 0x1::aptos_account::transfer on Aptos blockchain (local).\n\nURI: https://localhost:3001\nVersion: 1\nChain ID: 4\nNonce: 0x2a2f07c32382a94aa90ddfdb97076b77d779656bb9730c4f3e4d22a30df298dd\nIssued At: 2025-01-01T00:00:00.000Z";
+        let expected_message = b"\x19Ethereum Signed Message:\n442localhost:3001 wants you to sign in with your Ethereum account:\n0xC7B576Ead6aFb962E2DEcB35814FB29723AEC98a\n\nPlease confirm you explicitly initiated this request from localhost:3001. You are approving to execute transaction 0x1::topo_account::transfer on Aptos blockchain (local).\n\nURI: https://localhost:3001\nVersion: 1\nChain ID: 4\nNonce: 0x2a2f07c32382a94aa90ddfdb97076b77d779656bb9730c4f3e4d22a30df298dd\nIssued At: 2025-01-01T00:00:00.000Z";
         assert!(message == expected_message);
     }
 
@@ -311,7 +311,7 @@ module aptos_framework::ethereum_derivable_account {
         chain_id::initialize_for_test(framework, 4);
         let ethereum_address = b"0xC7B576Ead6aFb962E2DEcB35814FB29723AEC98a";
         let domain = b"localhost:3001";
-        let entry_function_name = b"0x1::aptos_account::transfer";
+        let entry_function_name = b"0x1::topo_account::transfer";
         let digest = b"0x705f1f57dd8399bf134e649981af43b5c42e59f985c4e4335ab70ce3f96bcd27";
         let issued_at = b"2025-05-02T16:17:10.714Z";
         let scheme = b"https";
@@ -349,7 +349,7 @@ module aptos_framework::ethereum_derivable_account {
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(ethereum_address, domain);
         let auth_data = create_derivable_auth_data(digest, abstract_signature, abstract_public_key);
-        let entry_function_name = b"0x1::aptos_account::transfer";
+        let entry_function_name = b"0x1::topo_account::transfer";
         authenticate_auth_data(auth_data, &entry_function_name);
     }
 
@@ -371,7 +371,7 @@ module aptos_framework::ethereum_derivable_account {
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(ethereum_address, domain);
         let auth_data = create_derivable_auth_data(digest, abstract_signature, abstract_public_key);
-        let entry_function_name = b"0x1::aptos_account::transfer";
+        let entry_function_name = b"0x1::topo_account::transfer";
         authenticate_auth_data(auth_data, &entry_function_name);
     }
 }

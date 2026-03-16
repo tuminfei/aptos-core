@@ -33,12 +33,12 @@
     -  [Function `initialize_storage_refund`](#@Specification_1_initialize_storage_refund)
 
 
-<pre><code><b>use</b> <a href="aptos_account.md#0x1_aptos_account">0x1::aptos_account</a>;
-<b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
+<pre><code><b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
 <b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
 <b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
+<b>use</b> <a href="topo_account.md#0x1_topo_account">0x1::topo_account</a>;
 <b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 </code></pre>
 
@@ -299,7 +299,7 @@ Burn transaction fees in epilogue.
 ) {
     <b>let</b> burn_ref =
         &<b>borrow_global</b>&lt;<a href="transaction_fee.md#0x1_transaction_fee_AptosFABurnCapabilities">AptosFABurnCapabilities</a>&gt;(@aptos_framework).burn_ref;
-    <a href="aptos_account.md#0x1_aptos_account_burn_from_fungible_store_for_gas">aptos_account::burn_from_fungible_store_for_gas</a>(burn_ref, <a href="account.md#0x1_account">account</a>, fee);
+    <a href="topo_account.md#0x1_topo_account_burn_from_fungible_store_for_gas">topo_account::burn_from_fungible_store_for_gas</a>(burn_ref, <a href="account.md#0x1_account">account</a>, fee);
 }
 </code></pre>
 

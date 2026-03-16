@@ -60,7 +60,7 @@ use aptos_types::{
     },
     vm_status::VMStatus,
     write_set::{WriteOp, WriteSet, WriteSetMut},
-    AptosCoinType, CoinType,
+    TopoCoinType, CoinType,
 };
 use aptos_validator_interface::{DebuggerStateView, RestDebuggerInterface};
 use aptos_vm::{
@@ -805,8 +805,8 @@ impl<O: OutputLogger> FakeExecutorImpl<O> {
     }
 
     /// Reads the CoinInfo resource value from this executor's data store.
-    pub fn read_apt_coin_info_resource(&self) -> Option<CoinInfoResource<AptosCoinType>> {
-        self.read_resource(&AptosCoinType::coin_info_address())
+    pub fn read_apt_coin_info_resource(&self) -> Option<CoinInfoResource<TopoCoinType>> {
+        self.read_resource(&TopoCoinType::coin_info_address())
     }
 
     /// Executes the given block of transactions.

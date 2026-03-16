@@ -274,7 +274,7 @@ fn test_db_indexer_data() {
         ident_str!("smart_vector"),
         ident_str!("string_utils"),
         ident_str!("aggregator_v2"),
-        ident_str!("aptos_account"),
+        ident_str!("topo_account"),
         ident_str!("bn254_algebra"),
         ident_str!("config_buffer"),
         ident_str!("create_signer"),

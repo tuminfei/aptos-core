@@ -243,8 +243,6 @@ transferred to A
 
 
 <pre><code><b>use</b> <a href="account.md#0x1_account">0x1::account</a>;
-<b>use</b> <a href="aptos_account.md#0x1_aptos_account">0x1::aptos_account</a>;
-<b>use</b> <a href="aptos_governance.md#0x1_aptos_governance">0x1::aptos_governance</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/bcs.md#0x1_bcs">0x1::bcs</a>;
 <b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">0x1::error</a>;
@@ -261,7 +259,9 @@ transferred to A
 <b>use</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
 <b>use</b> <a href="../../aptos-stdlib/doc/table_with_length.md#0x1_table_with_length">0x1::table_with_length</a>;
 <b>use</b> <a href="timestamp.md#0x1_timestamp">0x1::timestamp</a>;
+<b>use</b> <a href="topo_account.md#0x1_topo_account">0x1::topo_account</a>;
 <b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
+<b>use</b> <a href="topo_governance.md#0x1_topo_governance">0x1::topo_governance</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 </code></pre>
 
@@ -2591,7 +2591,7 @@ latest state.
     <a href="delegation_pool.md#0x1_delegation_pool_assert_partial_governance_voting_enabled">assert_partial_governance_voting_enabled</a>(pool_address);
     // If the whole <a href="stake.md#0x1_stake">stake</a> pool <b>has</b> no <a href="voting.md#0x1_voting">voting</a> power(e.g. it <b>has</b> already voted before partial
     // governance <a href="voting.md#0x1_voting">voting</a> flag is enabled), the delegator also <b>has</b> no <a href="voting.md#0x1_voting">voting</a> power.
-    <b>if</b> (<a href="aptos_governance.md#0x1_aptos_governance_get_remaining_voting_power">aptos_governance::get_remaining_voting_power</a>(pool_address, proposal_id) == 0) {
+    <b>if</b> (<a href="topo_governance.md#0x1_topo_governance_get_remaining_voting_power">topo_governance::get_remaining_voting_power</a>(pool_address, proposal_id) == 0) {
         <b>return</b> 0
     };
 
@@ -3114,7 +3114,7 @@ Vote on a proposal with a voter's voting power. To successfully vote, the follow
     <b>if</b> (voting_power &gt; remaining_voting_power) {
         voting_power = remaining_voting_power;
     };
-    <a href="aptos_governance.md#0x1_aptos_governance_assert_proposal_expiration">aptos_governance::assert_proposal_expiration</a>(pool_address, proposal_id);
+    <a href="topo_governance.md#0x1_topo_governance_assert_proposal_expiration">topo_governance::assert_proposal_expiration</a>(pool_address, proposal_id);
     <b>assert</b>!(voting_power &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="delegation_pool.md#0x1_delegation_pool_ENO_VOTING_POWER">ENO_VOTING_POWER</a>));
 
     <b>let</b> governance_records = <b>borrow_global_mut</b>&lt;<a href="delegation_pool.md#0x1_delegation_pool_GovernanceRecords">GovernanceRecords</a>&gt;(pool_address);
@@ -3124,7 +3124,7 @@ Vote on a proposal with a voter's voting power. To successfully vote, the follow
     *used_voting_power += voting_power;
 
     <b>let</b> pool_signer = <a href="delegation_pool.md#0x1_delegation_pool_retrieve_stake_pool_owner">retrieve_stake_pool_owner</a>(<b>borrow_global</b>&lt;<a href="delegation_pool.md#0x1_delegation_pool_DelegationPool">DelegationPool</a>&gt;(pool_address));
-    <a href="aptos_governance.md#0x1_aptos_governance_partial_vote">aptos_governance::partial_vote</a>(&pool_signer, pool_address, proposal_id, voting_power, should_pass);
+    <a href="topo_governance.md#0x1_topo_governance_partial_vote">topo_governance::partial_vote</a>(&pool_signer, pool_address, proposal_id, voting_power, should_pass);
 
     <a href="event.md#0x1_event_emit">event::emit</a>(
         <a href="delegation_pool.md#0x1_delegation_pool_Vote">Vote</a> {
@@ -3148,7 +3148,7 @@ Vote on a proposal with a voter's voting power. To successfully vote, the follow
 
 A voter could create a governance proposal by this function. To successfully create a proposal, the voter's
 voting power in THIS delegation pool must be not less than the minimum required voting power specified in
-<code><a href="aptos_governance.md#0x1_aptos_governance">aptos_governance</a>.<b>move</b></code>.
+<code><a href="topo_governance.md#0x1_topo_governance">topo_governance</a>.<b>move</b></code>.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="delegation_pool.md#0x1_delegation_pool_create_proposal">create_proposal</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, pool_address: <b>address</b>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_multi_step_proposal: bool)
@@ -3179,10 +3179,10 @@ voting power in THIS delegation pool must be not less than the minimum required 
     <b>let</b> governance_records = <b>borrow_global_mut</b>&lt;<a href="delegation_pool.md#0x1_delegation_pool_GovernanceRecords">GovernanceRecords</a>&gt;(pool_address);
     <b>let</b> total_voting_power = <a href="delegation_pool.md#0x1_delegation_pool_calculate_and_update_delegated_votes">calculate_and_update_delegated_votes</a>(pool, governance_records, voter_addr);
     <b>assert</b>!(
-        total_voting_power &gt;= <a href="aptos_governance.md#0x1_aptos_governance_get_required_proposer_stake">aptos_governance::get_required_proposer_stake</a>(),
+        total_voting_power &gt;= <a href="topo_governance.md#0x1_topo_governance_get_required_proposer_stake">topo_governance::get_required_proposer_stake</a>(),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="delegation_pool.md#0x1_delegation_pool_EINSUFFICIENT_PROPOSER_STAKE">EINSUFFICIENT_PROPOSER_STAKE</a>));
     <b>let</b> pool_signer = <a href="delegation_pool.md#0x1_delegation_pool_retrieve_stake_pool_owner">retrieve_stake_pool_owner</a>(<b>borrow_global</b>&lt;<a href="delegation_pool.md#0x1_delegation_pool_DelegationPool">DelegationPool</a>&gt;(pool_address));
-    <b>let</b> proposal_id = <a href="aptos_governance.md#0x1_aptos_governance_create_proposal_v2_impl">aptos_governance::create_proposal_v2_impl</a>(
+    <b>let</b> proposal_id = <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2_impl">topo_governance::create_proposal_v2_impl</a>(
         &pool_signer,
         pool_address,
         execution_hash,
@@ -4365,7 +4365,7 @@ Add <code>amount</code> of coins to the delegation pool <code>pool_address</code
     <b>let</b> pool = <b>borrow_global_mut</b>&lt;<a href="delegation_pool.md#0x1_delegation_pool_DelegationPool">DelegationPool</a>&gt;(pool_address);
 
     // <a href="stake.md#0x1_stake">stake</a> the entire amount <b>to</b> the <a href="stake.md#0x1_stake">stake</a> pool
-    <a href="aptos_account.md#0x1_aptos_account_transfer">aptos_account::transfer</a>(delegator, pool_address, amount);
+    <a href="topo_account.md#0x1_topo_account_transfer">topo_account::transfer</a>(delegator, pool_address, amount);
     <a href="stake.md#0x1_stake_add_stake">stake::add_stake</a>(&<a href="delegation_pool.md#0x1_delegation_pool_retrieve_stake_pool_owner">retrieve_stake_pool_owner</a>(pool), amount);
 
     // but buy shares for delegator just for the remaining amount after fee
@@ -4639,7 +4639,7 @@ Withdraw <code>amount</code> of owned inactive stake from the delegation pool at
         // no excess <a href="stake.md#0x1_stake">stake</a> <b>if</b> `<a href="stake.md#0x1_stake_withdraw">stake::withdraw</a>` does not inactivate at all
         <a href="stake.md#0x1_stake_withdraw">stake::withdraw</a>(stake_pool_owner, amount);
     };
-    <a href="aptos_account.md#0x1_aptos_account_transfer">aptos_account::transfer</a>(stake_pool_owner, delegator_address, amount);
+    <a href="topo_account.md#0x1_topo_account_transfer">topo_account::transfer</a>(stake_pool_owner, delegator_address, amount);
 
     // commit withdrawal of possibly inactive <a href="stake.md#0x1_stake">stake</a> <b>to</b> the `total_coins_inactive`
     // known by the delegation pool in order <b>to</b> not mistake it for slashing at next synchronization
@@ -5206,8 +5206,8 @@ shares pools, assign commission to operator and eventually prepare delegation po
 <pre><code>inline <b>fun</b> <a href="delegation_pool.md#0x1_delegation_pool_assert_and_update_proposal_used_voting_power">assert_and_update_proposal_used_voting_power</a>(
     governance_records: &<b>mut</b> <a href="delegation_pool.md#0x1_delegation_pool_GovernanceRecords">GovernanceRecords</a>, pool_address: <b>address</b>, proposal_id: u64, voting_power: u64
 ) {
-    <b>let</b> stake_pool_remaining_voting_power = <a href="aptos_governance.md#0x1_aptos_governance_get_remaining_voting_power">aptos_governance::get_remaining_voting_power</a>(pool_address, proposal_id);
-    <b>let</b> stake_pool_used_voting_power = <a href="aptos_governance.md#0x1_aptos_governance_get_voting_power">aptos_governance::get_voting_power</a>(
+    <b>let</b> stake_pool_remaining_voting_power = <a href="topo_governance.md#0x1_topo_governance_get_remaining_voting_power">topo_governance::get_remaining_voting_power</a>(pool_address, proposal_id);
+    <b>let</b> stake_pool_used_voting_power = <a href="topo_governance.md#0x1_topo_governance_get_voting_power">topo_governance::get_voting_power</a>(
         pool_address
     ) - stake_pool_remaining_voting_power;
     <b>let</b> proposal_used_voting_power = governance_records.votes_per_proposal.borrow_mut_with_default(proposal_id, 0);

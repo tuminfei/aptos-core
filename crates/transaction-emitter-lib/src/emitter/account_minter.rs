@@ -515,7 +515,7 @@ pub fn create_and_fund_account_request(
     txn_factory: &TransactionFactory,
 ) -> SignedTransaction {
     creation_account.sign_with_transaction_builder(
-        txn_factory.payload(aptos_stdlib::aptos_account_transfer(address, amount)),
+        txn_factory.payload(aptos_stdlib::topo_account_transfer(address, amount)),
     )
 }
 

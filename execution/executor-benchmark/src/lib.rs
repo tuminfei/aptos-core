@@ -989,17 +989,17 @@ mod tests {
         fa_features.disable(FeatureFlag::CONCURRENT_FUNGIBLE_BALANCE);
 
         test_compare_prod_and_another::<E>(values_match, fa_features.clone(), |address| {
-            aptos_stdlib::aptos_account_fungible_transfer_only(address, 1000)
+            aptos_stdlib::topo_account_fungible_transfer_only(address, 1000)
         });
 
         test_compare_prod_and_another::<E>(values_match, fa_features.clone(), |address| {
-            aptos_stdlib::aptos_account_transfer(address, 1000)
+            aptos_stdlib::topo_account_transfer(address, 1000)
         });
 
         test_compare_prod_and_another::<E>(
             values_match,
             fa_features,
-            aptos_stdlib::aptos_account_create_account,
+            aptos_stdlib::topo_account_create_account,
         );
     }
 

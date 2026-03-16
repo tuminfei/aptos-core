@@ -1,4 +1,4 @@
-spec aptos_framework::aptos_account {
+spec aptos_framework::topo_account {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: During the creation of an Aptos account the following rules should hold: (1) the authentication key

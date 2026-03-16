@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::MoveHarness;
-use aptos_cached_packages::aptos_stdlib::aptos_account_transfer;
+use aptos_cached_packages::aptos_stdlib::topo_account_transfer;
 use aptos_crypto::HashValue;
 use aptos_types::{
     on_chain_config::FeatureFlag,
@@ -33,7 +33,7 @@ fn failed_transaction_cleanup_charges_gas(status_code: StatusCode) {
         .transaction()
         .sequence_number(10)
         .max_gas_amount(max_gas_amount)
-        .payload(aptos_account_transfer(*receiver.address(), 1))
+        .payload(topo_account_transfer(*receiver.address(), 1))
         .sign();
 
     let state_view = h.executor.get_state_view();

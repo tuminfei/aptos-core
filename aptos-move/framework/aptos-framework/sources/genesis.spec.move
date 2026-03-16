@@ -77,7 +77,7 @@ spec aptos_framework::genesis {
 
         // property 1: All the core resources and modules should be created during genesis and owned by the Aptos framework account.
         /// [high-level-req-1]
-        ensures exists<aptos_governance::GovernanceResponsbility>(@aptos_framework);
+        ensures exists<topo_governance::GovernanceResponsbility>(@aptos_framework);
         ensures exists<consensus_config::ConsensusConfig>(@aptos_framework);
         ensures exists<execution_config::ExecutionConfig>(@aptos_framework);
         ensures exists<version::Version>(@aptos_framework);

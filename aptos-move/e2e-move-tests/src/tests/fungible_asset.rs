@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, BlockSplit, MoveHarness, SUCCESS};
-use aptos_cached_packages::aptos_stdlib::{aptos_account_batch_transfer, aptos_account_transfer};
+use aptos_cached_packages::aptos_stdlib::{topo_account_batch_transfer, topo_account_transfer};
 use aptos_language_e2e_tests::{
     account::Account,
     executor::{ExecutorMode, FakeExecutor},
@@ -195,7 +195,7 @@ fn test_prologue_speculation() {
 
     let sink_txn = harness.create_transaction_payload(
         &independent_account,
-        aptos_account_batch_transfer(vec![AccountAddress::random(); 50], vec![10_000_000_000; 50]),
+        topo_account_batch_transfer(vec![AccountAddress::random(); 50], vec![10_000_000_000; 50]),
     );
 
     let account = harness.new_account_at(AccountAddress::ONE);
@@ -205,18 +205,18 @@ fn test_prologue_speculation() {
 
     let fund_txn = harness.create_transaction_payload(
         &account,
-        aptos_account_batch_transfer(
+        topo_account_batch_transfer(
             vec![*dst_1.address(), *dst_2.address(), *dst_3.address()],
             vec![10_000_000_000, 10_000_000_000, 10_000_000_000],
         ),
     );
 
     let transfer_1_txn =
-        harness.create_transaction_payload(&dst_1, aptos_account_transfer(*dst_2.address(), 1));
+        harness.create_transaction_payload(&dst_1, topo_account_transfer(*dst_2.address(), 1));
     let transfer_2_txn =
-        harness.create_transaction_payload(&dst_2, aptos_account_transfer(*dst_3.address(), 1));
+        harness.create_transaction_payload(&dst_2, topo_account_transfer(*dst_3.address(), 1));
     let transfer_3_txn =
-        harness.create_transaction_payload(&dst_3, aptos_account_transfer(*dst_1.address(), 1));
+        harness.create_transaction_payload(&dst_3, topo_account_transfer(*dst_1.address(), 1));
 
     harness.run_block_in_parts_and_check(BlockSplit::Whole, vec![
         (SUCCESS, sink_txn),

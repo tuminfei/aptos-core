@@ -1,4 +1,4 @@
-spec aptos_framework::aptos_governance {
+spec aptos_framework::topo_governance {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: The create proposal function calls create proposal v2.

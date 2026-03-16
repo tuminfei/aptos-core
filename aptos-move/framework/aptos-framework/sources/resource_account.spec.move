@@ -81,15 +81,15 @@ spec aptos_framework::resource_account {
         optional_auth_key: vector<u8>,
         fund_amount: u64,
     ) {
-        use aptos_framework::aptos_account;
+        use aptos_framework::topo_account;
         // TODO(fa_migration)
         pragma verify = false;
         let source_addr = signer::address_of(origin);
         let resource_addr = account::spec_create_resource_address(source_addr, seed);
         let coin_store_resource = global<coin::CoinStore<TopoCoin>>(resource_addr);
 
-        include aptos_account::WithdrawAbortsIf<TopoCoin>{from: origin, amount: fund_amount};
-        include aptos_account::GuidAbortsIf<TopoCoin>{to: resource_addr};
+        include topo_account::WithdrawAbortsIf<TopoCoin>{from: origin, amount: fund_amount};
+        include topo_account::GuidAbortsIf<TopoCoin>{to: resource_addr};
         include RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIfWithoutAccountLimit;
 
         // TODO(fa_migration)

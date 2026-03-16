@@ -660,7 +660,7 @@ fn test_trace_replay_with_module_republishing() {
         let random_account = h.new_account_at(AccountAddress::random());
         let transfer_txn = h.create_entry_function(
             &random_account,
-            MemberId::from_str("0x1::aptos_account::transfer").unwrap(),
+            MemberId::from_str("0x1::topo_account::transfer").unwrap(),
             vec![],
             vec![
                 bcs::to_bytes(random_account.address()).unwrap(),

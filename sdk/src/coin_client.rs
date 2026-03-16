@@ -73,7 +73,7 @@ impl<'a> CoinClient<'a> {
             TransactionPayload::EntryFunction(EntryFunction::new(
                 ModuleId::new(
                     AccountAddress::ONE,
-                    Identifier::new("aptos_account").unwrap(),
+                    Identifier::new("topo_account").unwrap(),
                 ),
                 Identifier::new("transfer_coins").unwrap(),
                 vec![TypeTag::from_str(options.coin_type).unwrap()],

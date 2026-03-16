@@ -1,7 +1,7 @@
 // This module provides an interface to burn or collect and redistribute transaction fees.
 module aptos_framework::transaction_fee {
     use aptos_framework::coin::{Self, AggregatableCoin, BurnCapability, MintCapability};
-    use aptos_framework::aptos_account;
+    use aptos_framework::topo_account;
     use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::fungible_asset::BurnRef;
     use aptos_framework::system_addresses;
@@ -79,7 +79,7 @@ module aptos_framework::transaction_fee {
     ) {
         let burn_ref =
             &borrow_global<AptosFABurnCapabilities>(@aptos_framework).burn_ref;
-        aptos_account::burn_from_fungible_store_for_gas(burn_ref, account, fee);
+        topo_account::burn_from_fungible_store_for_gas(burn_ref, account, fee);
     }
 
     /// Mint refund in epilogue.

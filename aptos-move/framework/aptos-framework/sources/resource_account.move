@@ -238,7 +238,7 @@ module aptos_framework::resource_account {
     public entry fun with_coin(framework: signer, user: signer) acquires Container {
         let user_addr = signer::address_of(&user);
         let (burn, mint) = aptos_framework::topo_coin::initialize_for_test(&framework);
-        aptos_framework::aptos_account::create_account(copy user_addr);
+        aptos_framework::topo_account::create_account(copy user_addr);
 
         let coin = coin::mint<TopoCoin>(100, &mint);
         coin::deposit(copy user_addr, coin);

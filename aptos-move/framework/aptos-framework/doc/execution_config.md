@@ -117,7 +117,7 @@ This can be called by on-chain governance to update on-chain execution configs f
 Example usage:
 ```
 aptos_framework::execution_config::set_for_next_epoch(&framework_signer, some_config_bytes);
-aptos_framework::aptos_governance::reconfigure(&framework_signer);
+aptos_framework::topo_governance::reconfigure(&framework_signer);
 ```
 
 

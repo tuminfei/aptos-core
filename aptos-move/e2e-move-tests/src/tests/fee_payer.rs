@@ -122,7 +122,7 @@ fn test_account_not_exist_with_fee_payer() {
     assert!(alice_start.is_none());
     let bob_start = h.read_aptos_balance(bob.address());
 
-    let payload = aptos_stdlib::aptos_account_set_allow_direct_coin_transfers(true);
+    let payload = aptos_stdlib::topo_account_set_allow_direct_coin_transfers(true);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)
@@ -354,7 +354,7 @@ fn test_account_not_exist_with_fee_payer_without_create_account() {
     );
     assert!(alice_start.is_none());
 
-    let payload = aptos_stdlib::aptos_account_set_allow_direct_coin_transfers(true);
+    let payload = aptos_stdlib::topo_account_set_allow_direct_coin_transfers(true);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)

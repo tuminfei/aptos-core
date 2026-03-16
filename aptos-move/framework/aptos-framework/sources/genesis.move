@@ -7,9 +7,9 @@ module aptos_framework::genesis {
 
     use aptos_framework::account;
     use aptos_framework::aggregator_factory;
-    use aptos_framework::aptos_account;
+    use aptos_framework::topo_account;
     use aptos_framework::topo_coin::{Self, TopoCoin};
-    use aptos_framework::aptos_governance;
+    use aptos_framework::topo_governance;
     use aptos_framework::block;
     use aptos_framework::chain_id;
     use aptos_framework::chain_status;
@@ -95,14 +95,14 @@ module aptos_framework::genesis {
             b"epilogue",
         );
         // Give the decentralized on-chain governance control over the core framework account.
-        aptos_governance::store_signer_cap(&aptos_framework_account, @aptos_framework, aptos_framework_signer_cap);
+        topo_governance::store_signer_cap(&aptos_framework_account, @aptos_framework, aptos_framework_signer_cap);
 
         // put reserved framework reserved accounts under aptos governance
         let framework_reserved_addresses = vector<address>[@0x2, @0x3, @0x4, @0x5, @0x6, @0x7, @0x8, @0x9, @0xa];
         while (!framework_reserved_addresses.is_empty()) {
             let address = framework_reserved_addresses.pop_back<address>();
             let (_, framework_signer_cap) = account::create_framework_reserved_account(address);
-            aptos_governance::store_signer_cap(&aptos_framework_account, address, framework_signer_cap);
+            topo_governance::store_signer_cap(&aptos_framework_account, address, framework_signer_cap);
         };
 
         consensus_config::initialize(&aptos_framework_account, consensus_config);
@@ -168,7 +168,7 @@ module aptos_framework::genesis {
 
         let core_resources = account::create_account(@core_resources);
         account::rotate_authentication_key_internal(&core_resources, core_resources_auth_key);
-        aptos_account::register_topo(&core_resources); // registers TOPO store
+        topo_account::register_topo(&core_resources); // registers TOPO store
         topo_coin::configure_accounts_for_test(aptos_framework, &core_resources, mint_cap);
     }
 
@@ -440,7 +440,7 @@ module aptos_framework::genesis {
         );
         features::change_feature_flags_for_verification(aptos_framework, vector[1, 2], vector[]);
         initialize_topo_coin(aptos_framework);
-        aptos_governance::initialize_for_verification(
+        topo_governance::initialize_for_verification(
             aptos_framework,
             min_voting_threshold,
             required_proposer_stake,
@@ -543,7 +543,7 @@ module aptos_framework::genesis {
         topo_coin::ensure_initialized_with_topo_fa_metadata_for_test();
 
         let core_resources = account::create_account(@core_resources);
-        aptos_account::register_topo(&core_resources); // registers TOPO store
+        topo_account::register_topo(&core_resources); // registers TOPO store
 
         let topo_metadata = object::address_to_object<Metadata>(@aptos_fungible_asset);
         assert!(primary_fungible_store::primary_store_exists(@core_resources, topo_metadata), 2);

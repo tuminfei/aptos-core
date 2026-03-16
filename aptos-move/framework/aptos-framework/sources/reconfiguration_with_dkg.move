@@ -19,7 +19,7 @@ module aptos_framework::reconfiguration_with_dkg {
     use aptos_framework::stake;
     use aptos_framework::system_addresses;
     friend aptos_framework::block;
-    friend aptos_framework::aptos_governance;
+    friend aptos_framework::topo_governance;
 
     /// Trigger a reconfiguration with DKG.
     /// Do nothing if one is already in progress.

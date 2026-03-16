@@ -1062,7 +1062,7 @@ fn parse_failed_operations_from_txn_payload(
             inner.function().as_str(),
         ) {
             (AccountAddress::ONE, COIN_MODULE, TRANSFER_FUNCTION)
-            | (AccountAddress::ONE, APTOS_ACCOUNT_MODULE, TRANSFER_COINS_FUNCTION) => {
+            | (AccountAddress::ONE, TOPO_ACCOUNT_MODULE, TRANSFER_COINS_FUNCTION) => {
                 // We could add a create here as well on transfer_coins, but we don't know if it will actually happen
                 if let Some(type_tag) = inner.ty_args().first() {
                     // Find currency from type tag
@@ -1078,7 +1078,7 @@ fn parse_failed_operations_from_txn_payload(
                     }
                 }
             },
-            (AccountAddress::ONE, APTOS_ACCOUNT_MODULE, TRANSFER_FUNCTION) => {
+            (AccountAddress::ONE, TOPO_ACCOUNT_MODULE, TRANSFER_FUNCTION) => {
                 // We could add a create here as well, but we don't know if it will actually happen
                 operations = parse_coin_transfer_from_txn_payload(
                     inner,
@@ -1088,7 +1088,7 @@ fn parse_failed_operations_from_txn_payload(
                 )
             },
             (AccountAddress::ONE, PRIMARY_FUNGIBLE_STORE_MODULE, TRANSFER_FUNCTION)
-            | (AccountAddress::ONE, APTOS_ACCOUNT_MODULE, TRANSFER_FUNGIBLE_ASSETS_FUNCTION) => {
+            | (AccountAddress::ONE, TOPO_ACCOUNT_MODULE, TRANSFER_FUNGIBLE_ASSETS_FUNCTION) => {
                 // Primary transfer has the same interface as coin transfer, but it's a metadata address instead of a coin type generic
                 let maybe_metadata_address = inner
                     .args()
@@ -2641,7 +2641,7 @@ impl InternalOperation {
     ) -> ApiResult<(aptos_types::transaction::TransactionPayload, AccountAddress)> {
         Ok(match self {
             InternalOperation::CreateAccount(create_account) => (
-                aptos_stdlib::aptos_account_create_account(create_account.new_account),
+                aptos_stdlib::topo_account_create_account(create_account.new_account),
                 create_account.sender,
             ),
             InternalOperation::Transfer(transfer) => {
@@ -2651,7 +2651,7 @@ impl InternalOperation {
                 // We special case APT, because we don't want the behavior to change
                 if currency == &native_coin() {
                     return Ok((
-                        aptos_stdlib::aptos_account_transfer(transfer.receiver, transfer.amount.0),
+                        aptos_stdlib::topo_account_transfer(transfer.receiver, transfer.amount.0),
                         transfer.sender,
                     ));
                 }
@@ -2664,7 +2664,7 @@ impl InternalOperation {
                             let coin_type_tag = parse_type_tag(coin_type)
                                 .map_err(|err| ApiError::InvalidInput(Some(err.to_string())))?;
                             (
-                                aptos_stdlib::aptos_account_transfer_coins(
+                                aptos_stdlib::topo_account_transfer_coins(
                                     coin_type_tag,
                                     transfer.receiver,
                                     transfer.amount.0,

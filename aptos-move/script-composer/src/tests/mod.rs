@@ -28,10 +28,10 @@ fn simple_builder() {
     let bob = h.new_account_at(AccountAddress::from_hex_literal("0xface").unwrap());
 
     let mut builder = TransactionComposer::single_signer();
-    load_module(&mut builder, &h, "0x1::aptos_account");
+    load_module(&mut builder, &h, "0x1::topo_account");
     builder
         .add_batched_call(
-            "0x1::aptos_account".to_string(),
+            "0x1::topo_account".to_string(),
             "transfer".to_string(),
             vec![],
             vec![

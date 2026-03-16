@@ -36,7 +36,7 @@ module aptos_framework::staking_contract {
     use aptos_std::simple_map::{Self, SimpleMap};
 
     use aptos_framework::account::{Self, SignerCapability};
-    use aptos_framework::aptos_account;
+    use aptos_framework::topo_account;
     use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{EventHandle, emit};
@@ -896,7 +896,7 @@ module aptos_framework::staking_contract {
             if (recipient == operator) {
                 recipient = beneficiary_for_operator(operator);
             };
-            aptos_account::deposit_coins(
+            topo_account::deposit_coins(
                 recipient, coin::extract(&mut coins, amount_to_distribute)
             );
 
@@ -912,7 +912,7 @@ module aptos_framework::staking_contract {
 
         // In case there's any dust left, send them all to the staker.
         if (coin::value(&coins) > 0) {
-            aptos_account::deposit_coins(staker, coins);
+            topo_account::deposit_coins(staker, coins);
             distribution_pool.update_total_coins(0);
         } else {
             coin::destroy_zero(coins);
@@ -1713,7 +1713,7 @@ module aptos_framework::staking_contract {
         let beneficiary_address = signer::address_of(beneficiary);
 
         // account::create_account_for_test(beneficiary_address);
-        aptos_framework::aptos_account::create_account(beneficiary_address);
+        aptos_framework::topo_account::create_account(beneficiary_address);
         assert_staking_contract_exists(staker_address, operator1_address);
         assert_staking_contract(
             staker_address,

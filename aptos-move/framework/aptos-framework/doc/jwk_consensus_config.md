@@ -202,11 +202,11 @@ This can be called by on-chain governance to update JWK consensus configs for th
 Example usage:
 ```
 use aptos_framework::jwk_consensus_config;
-use aptos_framework::aptos_governance;
+use aptos_framework::topo_governance;
 // ...
 let config = jwk_consensus_config::new_v1(vector[]);
 jwk_consensus_config::set_for_next_epoch(&framework_signer, config);
-aptos_governance::reconfigure(&framework_signer);
+topo_governance::reconfigure(&framework_signer);
 ```
 
 

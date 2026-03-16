@@ -260,7 +260,7 @@ Abort if the version of the given schedule is lower than the current version.
 Example usage:
 ```
 aptos_framework::gas_schedule::set_for_next_epoch(&framework_signer, some_gas_schedule_blob);
-aptos_framework::aptos_governance::reconfigure(&framework_signer);
+aptos_framework::topo_governance::reconfigure(&framework_signer);
 ```
 
 

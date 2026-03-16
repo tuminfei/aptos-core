@@ -480,12 +480,12 @@ impl TestContext {
     pub async fn api_create_account(&mut self) -> LocalAccount {
         let root = &mut self.root_account().await;
         let account = self.gen_account();
-        self.api_execute_aptos_account_transfer(root, account.address(), TRANSFER_AMOUNT)
+        self.api_execute_topo_account_transfer(root, account.address(), TRANSFER_AMOUNT)
             .await;
         account
     }
 
-    pub async fn api_execute_aptos_account_transfer(
+    pub async fn api_execute_topo_account_transfer(
         &mut self,
         sender: &mut LocalAccount,
         receiver: AccountAddress,
@@ -493,7 +493,7 @@ impl TestContext {
     ) {
         self.api_execute_entry_function(
             sender,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             json!([]),
             json!([receiver.to_hex_literal(), amount.to_string()]),
         )

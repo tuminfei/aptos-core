@@ -1171,7 +1171,7 @@ async fn test_signing_message_with_entry_function_payload(
     let txn = context.create_user_account(&account).await;
     let payload = json!({
         "type": "entry_function_payload",
-        "function": "0x1::aptos_account::create_account",
+        "function": "0x1::topo_account::create_account",
         "type_arguments": [],
         "arguments": [
             account.address().to_hex_literal(), // new_account_address
@@ -2542,7 +2542,7 @@ async fn test_simulation_failure_with_move_abort_error_rendering(
         .entry_function(EntryFunction::new(
             ModuleId::new(
                 AccountAddress::from_hex_literal("0x1").unwrap(),
-                Identifier::new("aptos_account").unwrap(),
+                Identifier::new("topo_account").unwrap(),
             ),
             Identifier::new("transfer").unwrap(),
             vec![],

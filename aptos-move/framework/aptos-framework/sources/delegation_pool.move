@@ -119,9 +119,9 @@ module aptos_framework::delegation_pool {
     use aptos_std::smart_table::{Self, SmartTable};
 
     use aptos_framework::account;
-    use aptos_framework::aptos_account;
+    use aptos_framework::topo_account;
     use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::aptos_governance;
+    use aptos_framework::topo_governance;
     use aptos_framework::coin;
     use aptos_framework::event::{Self, EventHandle, emit};
     use aptos_framework::permissioned_signer;
@@ -744,7 +744,7 @@ module aptos_framework::delegation_pool {
         assert_partial_governance_voting_enabled(pool_address);
         // If the whole stake pool has no voting power(e.g. it has already voted before partial
         // governance voting flag is enabled), the delegator also has no voting power.
-        if (aptos_governance::get_remaining_voting_power(pool_address, proposal_id) == 0) {
+        if (topo_governance::get_remaining_voting_power(pool_address, proposal_id) == 0) {
             return 0
         };
 
@@ -967,7 +967,7 @@ module aptos_framework::delegation_pool {
         if (voting_power > remaining_voting_power) {
             voting_power = remaining_voting_power;
         };
-        aptos_governance::assert_proposal_expiration(pool_address, proposal_id);
+        topo_governance::assert_proposal_expiration(pool_address, proposal_id);
         assert!(voting_power > 0, error::invalid_argument(ENO_VOTING_POWER));
 
         let governance_records = borrow_global_mut<GovernanceRecords>(pool_address);
@@ -977,7 +977,7 @@ module aptos_framework::delegation_pool {
         *used_voting_power += voting_power;
 
         let pool_signer = retrieve_stake_pool_owner(borrow_global<DelegationPool>(pool_address));
-        aptos_governance::partial_vote(&pool_signer, pool_address, proposal_id, voting_power, should_pass);
+        topo_governance::partial_vote(&pool_signer, pool_address, proposal_id, voting_power, should_pass);
 
         event::emit(
             Vote {
@@ -992,7 +992,7 @@ module aptos_framework::delegation_pool {
 
     /// A voter could create a governance proposal by this function. To successfully create a proposal, the voter's
     /// voting power in THIS delegation pool must be not less than the minimum required voting power specified in
-    /// `aptos_governance.move`.
+    /// `topo_governance.move`.
     public entry fun create_proposal(
         voter: &signer,
         pool_address: address,
@@ -1012,10 +1012,10 @@ module aptos_framework::delegation_pool {
         let governance_records = borrow_global_mut<GovernanceRecords>(pool_address);
         let total_voting_power = calculate_and_update_delegated_votes(pool, governance_records, voter_addr);
         assert!(
-            total_voting_power >= aptos_governance::get_required_proposer_stake(),
+            total_voting_power >= topo_governance::get_required_proposer_stake(),
             error::invalid_argument(EINSUFFICIENT_PROPOSER_STAKE));
         let pool_signer = retrieve_stake_pool_owner(borrow_global<DelegationPool>(pool_address));
-        let proposal_id = aptos_governance::create_proposal_v2_impl(
+        let proposal_id = topo_governance::create_proposal_v2_impl(
             &pool_signer,
             pool_address,
             execution_hash,
@@ -1518,7 +1518,7 @@ module aptos_framework::delegation_pool {
         let pool = borrow_global_mut<DelegationPool>(pool_address);
 
         // stake the entire amount to the stake pool
-        aptos_account::transfer(delegator, pool_address, amount);
+        topo_account::transfer(delegator, pool_address, amount);
         stake::add_stake(&retrieve_stake_pool_owner(pool), amount);
 
         // but buy shares for delegator just for the remaining amount after fee
@@ -1692,7 +1692,7 @@ module aptos_framework::delegation_pool {
             // no excess stake if `stake::withdraw` does not inactivate at all
             stake::withdraw(stake_pool_owner, amount);
         };
-        aptos_account::transfer(stake_pool_owner, delegator_address, amount);
+        topo_account::transfer(stake_pool_owner, delegator_address, amount);
 
         // commit withdrawal of possibly inactive stake to the `total_coins_inactive`
         // known by the delegation pool in order to not mistake it for slashing at next synchronization
@@ -2019,8 +2019,8 @@ module aptos_framework::delegation_pool {
     inline fun assert_and_update_proposal_used_voting_power(
         governance_records: &mut GovernanceRecords, pool_address: address, proposal_id: u64, voting_power: u64
     ) {
-        let stake_pool_remaining_voting_power = aptos_governance::get_remaining_voting_power(pool_address, proposal_id);
-        let stake_pool_used_voting_power = aptos_governance::get_voting_power(
+        let stake_pool_remaining_voting_power = topo_governance::get_remaining_voting_power(pool_address, proposal_id);
+        let stake_pool_used_voting_power = topo_governance::get_voting_power(
             pool_address
         ) - stake_pool_remaining_voting_power;
         let proposal_used_voting_power = governance_records.votes_per_proposal.borrow_mut_with_default(proposal_id, 0);
@@ -3750,13 +3750,13 @@ module aptos_framework::delegation_pool {
         initialize_for_test(aptos_framework);
 
         let operator1_address = signer::address_of(operator1);
-        aptos_account::create_account(operator1_address);
+        topo_account::create_account(operator1_address);
 
         let operator2_address = signer::address_of(operator2);
-        aptos_account::create_account(operator2_address);
+        topo_account::create_account(operator2_address);
 
         let beneficiary_address = signer::address_of(beneficiary);
-        aptos_account::create_account(beneficiary_address);
+        topo_account::create_account(beneficiary_address);
 
         // create delegation pool of commission fee 12.65%
         initialize_delegation_pool(operator1, 1265, vector::empty<u8>());
@@ -4042,7 +4042,7 @@ module aptos_framework::delegation_pool {
         // delegator2: &signer,
     ) acquires DelegationPoolOwnership, DelegationPool, GovernanceRecords, BeneficiaryForOperator, NextCommissionPercentage, DelegationPoolAllowlisting {
         initialize_for_test(aptos_framework);
-        aptos_governance::initialize_for_test(
+        topo_governance::initialize_for_test(
             aptos_framework,
             (10 * ONE_TOPO as u128),
             100 * ONE_TOPO,
@@ -4082,7 +4082,7 @@ module aptos_framework::delegation_pool {
         delegator1: &signer,
     ) acquires DelegationPoolOwnership, DelegationPool, GovernanceRecords, BeneficiaryForOperator, NextCommissionPercentage, DelegationPoolAllowlisting {
         initialize_for_test(aptos_framework);
-        aptos_governance::initialize_for_test(
+        topo_governance::initialize_for_test(
             aptos_framework,
             (10 * ONE_TOPO as u128),
             100 * ONE_TOPO,
@@ -4132,7 +4132,7 @@ module aptos_framework::delegation_pool {
         voter2: &signer,
     ) acquires DelegationPoolOwnership, DelegationPool, GovernanceRecords, BeneficiaryForOperator, NextCommissionPercentage, DelegationPoolAllowlisting {
         initialize_for_test_no_reward(aptos_framework);
-        aptos_governance::initialize_for_test(
+        topo_governance::initialize_for_test(
             aptos_framework,
             (10 * ONE_TOPO as u128),
             100 * ONE_TOPO,
@@ -4293,7 +4293,7 @@ module aptos_framework::delegation_pool {
             100,
             1000000
         );
-        aptos_governance::initialize_for_test(
+        topo_governance::initialize_for_test(
             aptos_framework,
             (10 * ONE_TOPO as u128),
             100 * ONE_TOPO,

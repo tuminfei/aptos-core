@@ -13,7 +13,7 @@ module aptos_framework::reconfiguration {
     use aptos_framework::reconfiguration_state;
     use aptos_framework::storage_gas;
 
-    friend aptos_framework::aptos_governance;
+    friend aptos_framework::topo_governance;
     friend aptos_framework::block;
     friend aptos_framework::consensus_config;
     friend aptos_framework::execution_config;

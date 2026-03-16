@@ -45,7 +45,7 @@ module aptos_framework::vesting {
     use aptos_std::simple_map::{Self, SimpleMap};
 
     use aptos_framework::account::{Self, SignerCapability, new_event_handle};
-    use aptos_framework::aptos_account::{Self, assert_account_is_registered_for_topo};
+    use aptos_framework::topo_account::{Self, assert_account_is_registered_for_topo};
     use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{EventHandle, emit};
@@ -745,12 +745,12 @@ module aptos_framework::vesting {
             let amount = pool_u64::shares_to_amount_with_total_coins(grant_pool, shares, total_distribution_amount);
             let share_of_coins = coin::extract(&mut coins, amount);
             let recipient_address = get_beneficiary(vesting_contract, shareholder);
-            aptos_account::deposit_coins(recipient_address, share_of_coins);
+            topo_account::deposit_coins(recipient_address, share_of_coins);
         });
 
         // Send any remaining "dust" (leftover due to rounding error) to the withdrawal address.
         if (coin::value(&coins) > 0) {
-            aptos_account::deposit_coins(vesting_contract.withdrawal_address, coins);
+            topo_account::deposit_coins(vesting_contract.withdrawal_address, coins);
         } else {
             coin::destroy_zero(coins);
         };
@@ -818,7 +818,7 @@ module aptos_framework::vesting {
             coin::destroy_zero(coins);
             return
         };
-        aptos_account::deposit_coins(vesting_contract.withdrawal_address, coins);
+        topo_account::deposit_coins(vesting_contract.withdrawal_address, coins);
 
         emit(
             AdminWithdraw {
@@ -1125,7 +1125,7 @@ module aptos_framework::vesting {
 
     #[test_only]
     public fun setup(aptos_framework: &signer, accounts: &vector<address>) {
-        use aptos_framework::aptos_account::create_account;
+        use aptos_framework::topo_account::create_account;
 
         stake::initialize_for_test_custom(
             aptos_framework,

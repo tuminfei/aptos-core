@@ -171,7 +171,7 @@ impl SignedTransactionBuilder<AccountAddress> for CreateAndTransferAptSignedTran
         txn_factory: &TransactionFactory,
     ) -> SignedTransaction {
         account.sign_with_transaction_builder(txn_factory.payload(
-            aptos_stdlib::aptos_account_transfer(*data, self.amount_to_send),
+            aptos_stdlib::topo_account_transfer(*data, self.amount_to_send),
         ))
     }
 
