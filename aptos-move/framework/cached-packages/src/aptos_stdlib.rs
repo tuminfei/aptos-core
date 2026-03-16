@@ -14,7 +14,8 @@ use aptos_types::{
 };
 use move_core_types::{ident_str, language_storage::ModuleId};
 
-pub fn aptos_coin_transfer(to: AccountAddress, amount: u64) -> TransactionPayload {
+
+pub fn topo_coin_transfer(to: AccountAddress, amount: u64) -> TransactionPayload {
     coin_transfer(TopoCoinType::type_tag(), to, amount)
 }
 

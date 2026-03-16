@@ -202,7 +202,7 @@ impl P2PTransactionGenerator {
                     )
             } else {
                 txn_factory
-                    .payload(aptos_stdlib::aptos_coin_transfer(*to, num_coins))
+                    .payload(aptos_stdlib::topo_coin_transfer(*to, num_coins))
                     .upgrade_payload_with_rng(
                         rng,
                         use_txn_payload_v2_format,
