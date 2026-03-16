@@ -280,7 +280,7 @@ impl CliCommand<()> for InitTool {
         // Create account if it doesn't exist (and there's a faucet)
         // Check if account exists
         let funded = matches!(client
-            .get_account_balance(address, "0x1::AptosCoin::AptosCoin")
+            .get_account_balance(address, "0x1::topo_coin::TopoCoin")
             .await, Ok(res) if *res.inner() > 0);
 
         // If you want to create a private key, but not fund the account, skipping the faucet is still possible

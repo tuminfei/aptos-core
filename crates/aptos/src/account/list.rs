@@ -89,7 +89,7 @@ impl CliCommand<Vec<serde_json::Value>> for ListAccount {
         let client = self.rest_options.client(&self.profile_options)?;
         let response = match self.query {
             ListQuery::Balance => vec![client
-                .get_account_balance(account, "0x1::aptos_coin::AptosCoin")
+                .get_account_balance(account, "0x1::topo_coin::TopoCoin")
                 .await?
                 .into_inner()
                 .into()],

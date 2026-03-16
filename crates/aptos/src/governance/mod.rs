@@ -739,7 +739,7 @@ impl CliCommand<TransactionSummary> for ApproveExecutionHash {
         Ok(self
             .txn_options
             .submit_transaction(
-                aptos_stdlib::aptos_governance_add_approved_script_hash_script(self.proposal_id),
+                aptos_stdlib::topo_governance_add_approved_script_hash_script(self.proposal_id),
             )
             .await
             .map(TransactionSummary::from)?)

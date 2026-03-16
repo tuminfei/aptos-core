@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 pub const ACCOUNT_MODULE: &str = "account";
 pub const TOPO_ACCOUNT_MODULE: &str = "topo_account";
-pub const APTOS_COIN_MODULE: &str = "aptos_coin";
+pub const TOPO_COIN_MODULE: &str = "topo_coin";
 pub const COIN_MODULE: &str = "coin";
 pub const STAKE_MODULE: &str = "stake";
 pub const STAKING_PROXY_MODULE: &str = "staking_proxy";
@@ -22,7 +22,7 @@ pub const FUNGIBLE_ASSET_MODULE: &str = "fungible_asset";
 pub const DISPATCHABLE_FUNGIBLE_ASSET_MODULE: &str = "dispatchable_fungible_asset";
 
 pub const ACCOUNT_RESOURCE: &str = "Account";
-pub const APTOS_COIN_RESOURCE: &str = "AptosCoin";
+pub const TOPO_COIN_RESOURCE: &str = "TopoCoin";
 pub const COIN_INFO_RESOURCE: &str = "CoinInfo";
 pub const COIN_STORE_RESOURCE: &str = "CoinStore";
 pub const STAKE_POOL_RESOURCE: &str = "StakePool";
