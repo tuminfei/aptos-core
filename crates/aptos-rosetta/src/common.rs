@@ -5,7 +5,7 @@ use crate::{
     error::{ApiError, ApiResult},
     types::{
         Currency, CurrencyMetadata, MetadataRequest, NetworkIdentifier, PartialBlockIdentifier,
-        APTOS_COIN_MODULE, APTOS_COIN_RESOURCE,
+        TOPO_COIN_MODULE, TOPO_COIN_RESOURCE,
     },
     RosettaContext,
 };
