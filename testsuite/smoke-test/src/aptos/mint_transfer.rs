@@ -39,7 +39,7 @@ async fn test_mint_transfer() {
 
     let transfer_txn = account1.sign_with_transaction_builder(
         info.transaction_factory()
-            .payload(aptos_stdlib::aptos_coin_transfer(account2.address(), 40000)),
+            .payload(aptos_stdlib::topo_coin_transfer(account2.address(), 40000)),
     );
     info.client().submit_and_wait(&transfer_txn).await.unwrap();
     assert_eq!(

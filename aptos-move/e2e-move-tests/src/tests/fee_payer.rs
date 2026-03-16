@@ -47,7 +47,7 @@ fn test_existing_account_with_fee_payer() {
     let alice_start = h.read_aptos_balance(alice.address());
     let bob_start = h.read_aptos_balance(bob.address());
 
-    let payload = aptos_stdlib::aptos_coin_transfer(*alice.address(), 0);
+    let payload = aptos_stdlib::topo_coin_transfer(*alice.address(), 0);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)
@@ -82,7 +82,7 @@ fn test_existing_account_with_fee_payer_aborts() {
     let alice_start = h.read_aptos_balance(alice.address());
     let bob_start = h.read_aptos_balance(bob.address());
 
-    let payload = aptos_stdlib::aptos_coin_transfer(*alice.address(), 1);
+    let payload = aptos_stdlib::topo_coin_transfer(*alice.address(), 1);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)
@@ -164,7 +164,7 @@ fn test_account_not_exist_with_fee_payer_insufficient_gas() {
     assert!(alice_start.is_none());
     let bob_start = h.read_aptos_balance(bob.address());
 
-    let payload = aptos_stdlib::aptos_coin_transfer(*alice.address(), 1);
+    let payload = aptos_stdlib::topo_coin_transfer(*alice.address(), 1);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)

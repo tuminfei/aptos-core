@@ -87,7 +87,7 @@ fn run_case(input: TransactionState) -> Result<(), Corpus> {
     // build tx
     let tx = sender_acc
         .transaction()
-        .payload(aptos_stdlib::aptos_coin_transfer(*receiver.address(), 1))
+        .payload(aptos_stdlib::topo_coin_transfer(*receiver.address(), 1))
         .sequence_number(0)
         .gas_unit_price(100)
         .max_gas_amount(1000);

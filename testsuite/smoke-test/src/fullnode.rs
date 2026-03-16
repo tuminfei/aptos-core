@@ -76,7 +76,7 @@ async fn test_indexer() {
         .unwrap();
 
     let txn = account1.sign_with_transaction_builder(
-        factory.payload(aptos_stdlib::aptos_coin_transfer(account2.address(), 10)),
+        factory.payload(aptos_stdlib::topo_coin_transfer(account2.address(), 10)),
     );
 
     client.submit_and_wait(&txn).await.unwrap();

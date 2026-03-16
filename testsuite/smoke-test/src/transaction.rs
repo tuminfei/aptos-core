@@ -56,7 +56,7 @@ async fn test_external_transaction_signer() {
 
     let unsigned_txn = info
         .transaction_factory()
-        .payload(aptos_stdlib::aptos_coin_transfer(
+        .payload(aptos_stdlib::topo_coin_transfer(
             receiver.address(),
             amount,
         ))

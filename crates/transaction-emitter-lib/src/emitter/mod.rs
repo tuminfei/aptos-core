@@ -1327,7 +1327,7 @@ pub fn gen_transfer_txn_request(
     txn_factory: &TransactionFactory,
 ) -> SignedTransaction {
     sender.sign_with_transaction_builder(
-        txn_factory.payload(aptos_stdlib::aptos_coin_transfer(*receiver, num_coins)),
+        txn_factory.payload(aptos_stdlib::topo_coin_transfer(*receiver, num_coins)),
     )
 }
 

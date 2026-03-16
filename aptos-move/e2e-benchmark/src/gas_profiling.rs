@@ -576,13 +576,13 @@ mod tests {
         runner.run(
             "Transfer",
             account_1,
-            aptos_stdlib::aptos_coin_transfer(account_2_address, 1000),
+            aptos_stdlib::topo_coin_transfer(account_2_address, 1000),
         );
 
         runner.run(
             "2ndTransfer",
             account_1,
-            aptos_stdlib::aptos_coin_transfer(account_2_address, 1000),
+            aptos_stdlib::topo_coin_transfer(account_2_address, 1000),
         );
 
         runner.run(
@@ -1016,7 +1016,7 @@ mod tests {
         runner.run_with_tps_estimate(
             "Transfer",
             account_1,
-            aptos_stdlib::aptos_coin_transfer(account_2_address, 1000),
+            aptos_stdlib::topo_coin_transfer(account_2_address, 1000),
             if use_large_db_numbers { 2032. } else { 2791. },
         );
 

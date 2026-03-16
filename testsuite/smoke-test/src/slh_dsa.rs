@@ -64,7 +64,7 @@ async fn slh_dsa_scenario(enable_feature: bool) {
     // Create and sign a transaction
     let raw_txn = info
         .transaction_factory()
-        .payload(aptos_stdlib::aptos_coin_transfer(
+        .payload(aptos_stdlib::topo_coin_transfer(
             recipient.address(),
             1_000_000,
         ))

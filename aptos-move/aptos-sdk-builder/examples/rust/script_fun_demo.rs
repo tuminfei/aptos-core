@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::{aptos_coin_transfer, EntryFunctionCall};
+use aptos_framework::{topo_coin_transfer, EntryFunctionCall};
 use aptos_types::AccountAddress;
 
 fn demo_p2p_entry_function() {
@@ -13,7 +13,7 @@ fn demo_p2p_entry_function() {
     let amount = 1234567;
 
     // Now encode and decode a peer to peer transaction entry function.
-    let payload = aptos_coin_transfer(payee.clone(), amount);
+    let payload = topo_coin_transfer(payee.clone(), amount);
     let function_call = EntryFunctionCall::decode(&payload);
     match function_call {
         Some(EntryFunctionCall::AptosCoinTransfer { amount: a, to: p }) => {

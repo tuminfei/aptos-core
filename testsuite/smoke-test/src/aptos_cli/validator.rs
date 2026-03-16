@@ -461,7 +461,7 @@ async fn assert_reordering(swarm: &mut dyn Swarm, expected_reordering: bool) {
 
         for _ in 0..5 {
             let txn = account.sign_with_transaction_builder(
-                transaction_factory.payload(aptos_stdlib::aptos_coin_transfer(dst.address(), 10)),
+                transaction_factory.payload(aptos_stdlib::topo_coin_transfer(dst.address(), 10)),
             );
             txns.push(txn);
         }

@@ -375,7 +375,7 @@ script {{
 
     let txn_builder = info
         .transaction_factory()
-        .payload(aptos_stdlib::aptos_coin_transfer(
+        .payload(aptos_stdlib::topo_coin_transfer(
             recipient.address(),
             1_000_000,
         ));
@@ -482,7 +482,7 @@ async fn test_keyless_groth16_verifies_using_rust_sdk() {
 
     let builder = info
         .transaction_factory()
-        .payload(aptos_stdlib::aptos_coin_transfer(recipient.address(), 100));
+        .payload(aptos_stdlib::topo_coin_transfer(recipient.address(), 100));
     let signed_txn = account.sign_with_transaction_builder(builder);
 
     remove_training_wheels(&mut cli, &mut info, root_idx).await;
@@ -547,7 +547,7 @@ async fn test_keyless_groth16_verifies_using_rust_sdk_from_jwt() {
 
     let builder = info
         .transaction_factory()
-        .payload(aptos_stdlib::aptos_coin_transfer(recipient.address(), 100));
+        .payload(aptos_stdlib::topo_coin_transfer(recipient.address(), 100));
     let signed_txn = account.sign_with_transaction_builder(builder);
 
     remove_training_wheels(&mut cli, &mut info, root_idx).await;
@@ -658,7 +658,7 @@ async fn sign_transaction_any_keyless_pk(
 
     let raw_txn = info
         .transaction_factory()
-        .payload(aptos_stdlib::aptos_coin_transfer(
+        .payload(aptos_stdlib::topo_coin_transfer(
             recipient.address(),
             1_000_000,
         ))

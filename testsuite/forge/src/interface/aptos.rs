@@ -202,7 +202,7 @@ impl AptosPublicInfo {
         amount: u64,
     ) -> Result<PendingTransaction> {
         let tx = from_account.sign_with_transaction_builder(self.transaction_factory().payload(
-            aptos_stdlib::aptos_coin_transfer(to_account.address(), amount),
+            aptos_stdlib::topo_coin_transfer(to_account.address(), amount),
         ));
         let pending_txn = self.rest_client.submit(&tx).await?.into_inner();
         Ok(pending_txn)
