@@ -330,11 +330,11 @@ module aptos_framework::sui_derivable_account {
     fun test_authenticate_auth_data(framework: &signer) {
         chain_id::initialize_for_test(framework, 2);
 
-        let sui_account_address = b"0x8d6ce7a3c13617b29aaf7ec58bee5a611606a89c62c5efbea32e06d8d167bd49";
+        let sui_account_address = b"0xeeb43d1c3625b1eccc070b11bfa7f2b38042228a181b0be5094fa4732109cf2b";
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(sui_account_address, domain);
 
-        let signature_bytes = vector[0, 140, 147, 99, 142, 194, 60, 242, 45, 231, 203, 175, 182, 126, 202, 88, 32, 157, 255, 80, 200, 28, 135, 142, 3, 1, 58, 192, 53, 166, 235, 171, 168, 32, 163, 200, 137, 125, 161, 149, 149, 159, 254, 116, 51, 159, 23, 11, 196, 173, 127, 7, 214, 231, 235, 171, 224, 221, 229, 219, 27, 31, 80, 173, 12, 25, 200, 235, 92, 139, 72, 175, 189, 40, 0, 65, 76, 215, 148, 94, 194, 78, 134, 60, 189, 212, 116, 40, 134, 179, 104, 31, 249, 222, 84, 104, 202];
+        let signature_bytes = x"0051c1480bdc780eb0b00e09c167d4b0cd77545c720f4340687c6213b3993930e4803f2e44c67a26e63c5a2dd7f396a49c02b5dc4f70d6f980860eb48f055c7d08ea6e7897068871bb825a4b87c7a560801daee1e5ec30798a075cd842969a0801";
         let abstract_signature = create_raw_signature(signature_bytes);
 
         let entry_function_name = b"0x1::topo_account::transfer";
@@ -350,11 +350,11 @@ module aptos_framework::sui_derivable_account {
     fun test_authenticate_auth_data_invalid_signature(framework: &signer) {
         chain_id::initialize_for_test(framework, 2);
 
-        let sui_account_address = b"0x8d6ce7a3c13617b29aaf7ec58bee5a611606a89c62c5efbea32e06d8d167bd49";
+        let sui_account_address = b"0xeeb43d1c3625b1eccc070b11bfa7f2b38042228a181b0be5094fa4732109cf2b";
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(sui_account_address, domain);
 
-        let signature_bytes = vector[0, 141, 147, 99, 142, 194, 60, 242, 45, 231, 203, 175, 182, 126, 202, 88, 32, 157, 255, 80, 200, 28, 135, 142, 3, 1, 58, 192, 53, 166, 235, 171, 168, 32, 163, 200, 137, 125, 161, 149, 149, 159, 254, 116, 51, 159, 23, 11, 196, 173, 127, 7, 214, 231, 235, 171, 224, 221, 229, 219, 27, 31, 80, 173, 12, 25, 200, 235, 92, 139, 72, 175, 189, 40, 0, 65, 76, 215, 148, 94, 194, 78, 134, 60, 189, 212, 116, 40, 134, 179, 104, 31, 249, 222, 84, 104, 202];
+        let signature_bytes = x"0052c1480bdc780eb0b00e09c167d4b0cd77545c720f4340687c6213b3993930e4803f2e44c67a26e63c5a2dd7f396a49c02b5dc4f70d6f980860eb48f055c7d08ea6e7897068871bb825a4b87c7a560801daee1e5ec30798a075cd842969a0801";
         let abstract_signature = create_raw_signature(signature_bytes);
 
         let entry_function_name = b"0x1::topo_account::transfer";
@@ -370,11 +370,11 @@ module aptos_framework::sui_derivable_account {
     fun test_authenticate_auth_data_invalid_signing_scheme_type(framework: &signer) {
         chain_id::initialize_for_test(framework, 2);
 
-        let sui_account_address = b"0x8d6ce7a3c13617b29aaf7ec58bee5a611606a89c62c5efbea32e06d8d167bd49";
+        let sui_account_address = b"0xeeb43d1c3625b1eccc070b11bfa7f2b38042228a181b0be5094fa4732109cf2b";
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(sui_account_address, domain);
 
-        let signature_bytes = vector[1, 140, 147, 99, 142, 194, 60, 242, 45, 231, 203, 175, 182, 126, 202, 88, 32, 157, 255, 80, 200, 28, 135, 142, 3, 1, 58, 192, 53, 166, 235, 171, 168, 32, 163, 200, 137, 125, 161, 149, 149, 159, 254, 116, 51, 159, 23, 11, 196, 173, 127, 7, 214, 231, 235, 171, 224, 221, 229, 219, 27, 31, 80, 173, 12, 25, 200, 235, 92, 139, 72, 175, 189, 40, 0, 65, 76, 215, 148, 94, 194, 78, 134, 60, 189, 212, 116, 40, 134, 179, 104, 31, 249, 222, 84, 104, 202];
+        let signature_bytes = x"0151c1480bdc780eb0b00e09c167d4b0cd77545c720f4340687c6213b3993930e4803f2e44c67a26e63c5a2dd7f396a49c02b5dc4f70d6f980860eb48f055c7d08ea6e7897068871bb825a4b87c7a560801daee1e5ec30798a075cd842969a0801";
         let abstract_signature = create_raw_signature(signature_bytes);
 
         let entry_function_name = b"0x1::topo_account::transfer";
@@ -391,11 +391,11 @@ module aptos_framework::sui_derivable_account {
     fun test_authenticate_auth_data_invalid_account_address_mismatch(framework: &signer) {
         chain_id::initialize_for_test(framework, 2);
 
-        let sui_account_address = b"0x8d6ce7a3c13617b29aaf7ec58bee5a611606a89c62c5efbea32e06d8d167bd49";
+        let sui_account_address = b"0xeeb43d1c3625b1eccc070b11bfa7f2b38042228a181b0be5094fa4732109cf2b";
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(sui_account_address, domain);
 
-        let signature_bytes = vector[0, 140, 147, 99, 142, 194, 60, 242, 45, 231, 203, 175, 182, 126, 202, 88, 32, 157, 255, 80, 200, 28, 135, 142, 3, 1, 58, 192, 53, 166, 235, 171, 168, 32, 163, 200, 137, 125, 161, 149, 149, 159, 254, 116, 51, 159, 23, 11, 196, 173, 127, 7, 214, 231, 235, 171, 224, 221, 229, 219, 27, 31, 80, 173, 12, 25, 200, 235, 92, 139, 72, 175, 189, 40, 0, 65, 76, 215, 148, 94, 194, 78, 134, 60, 189, 212, 116, 40, 134, 179, 104, 31, 249, 222, 84, 104, 201];
+        let signature_bytes = x"0051c1480bdc780eb0b00e09c167d4b0cd77545c720f4340687c6213b3993930e4803f2e44c67a26e63c5a2dd7f396a49c02b5dc4f70d6f980860eb48f055c7d08ea6e7897068871bb825a4b87c7a560801daee1e5ec30798a075cd842969a0800";
         let abstract_signature = create_raw_signature(signature_bytes);
 
         let entry_function_name = b"0x1::topo_account::transfer";
@@ -434,5 +434,4 @@ module aptos_framework::sui_derivable_account {
         // This should fail with EMALFORMED_DATA due to trailing bytes
         deserialize_abstract_public_key(&abstract_public_key);
     }
-
 }

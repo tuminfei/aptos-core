@@ -235,9 +235,9 @@ module aptos_framework::solana_derivable_account {
         chain_id::initialize_for_test(framework, 4);
 
         let digest = x"9800ae3d949260dedd01573b2903e9de06abe914530ba5d21f068f8823bfdfa3";
-        let signature = vector[70, 135, 9, 250, 23, 189, 162, 119, 77, 133, 195, 66, 102, 105, 116, 86, 29, 118, 226, 100, 94, 120, 138, 219, 252, 134, 231, 139, 47, 77, 19, 201, 4, 88, 255, 64, 185, 96, 134, 50, 27, 30, 110, 125, 251, 89, 57, 156, 17, 170, 16, 102, 107, 40, 46, 234, 15, 162, 156, 69, 132, 70, 135, 11];
+        let signature = vector[20, 215, 53, 24, 36, 10, 154, 162, 31, 122, 227, 187, 51, 162, 39, 138, 251, 115, 197, 102, 180, 26, 52, 246, 193, 235, 156, 127, 38, 201, 166, 242, 102, 108, 103, 5, 103, 200, 227, 93, 214, 9, 125, 220, 2, 170, 105, 162, 186, 140, 11, 96, 204, 107, 225, 59, 253, 49, 233, 80, 161, 51, 55, 3];
         let abstract_signature = create_message_v1_signature(signature);
-        let base58_public_key = b"Awrh7Cfvx5gc7Ua93hdmmni6KWvkJgH4HwMkixTxmxe";
+        let base58_public_key = b"2JkkABabBFK5fVmzcjLxFSs59xYen4XKfi7PDSdo5CPB";
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(utf8(base58_public_key), utf8(domain));
         let auth_data = create_derivable_auth_data(digest, abstract_signature, abstract_public_key);
@@ -251,13 +251,14 @@ module aptos_framework::solana_derivable_account {
         chain_id::initialize_for_test(framework, 4);
 
         let digest = x"9800ae3d949260dedd01573b2903e9de06abe914530ba5d21f068f8823bfdfa3";
-        let signature = vector[71, 135, 9, 250, 23, 189, 162, 119, 77, 133, 195, 66, 102, 105, 116, 86, 29, 118, 226, 100, 94, 120, 138, 219, 252, 134, 231, 139, 47, 77, 19, 201, 4, 88, 255, 64, 185, 96, 134, 50, 27, 30, 110, 125, 251, 89, 57, 156, 17, 170, 16, 102, 107, 40, 46, 234, 15, 162, 156, 69, 132, 70, 135, 11];
+        let signature = vector[21, 215, 53, 24, 36, 10, 154, 162, 31, 122, 227, 187, 51, 162, 39, 138, 251, 115, 197, 102, 180, 26, 52, 246, 193, 235, 156, 127, 38, 201, 166, 242, 102, 108, 103, 5, 103, 200, 227, 93, 214, 9, 125, 220, 2, 170, 105, 162, 186, 140, 11, 96, 204, 107, 225, 59, 253, 49, 233, 80, 161, 51, 55, 3];
         let abstract_signature = create_message_v1_signature(signature);
-        let base58_public_key = b"Awrh7Cfvx5gc7Ua93hdmmni6KWvkJgH4HwMkixTxmxe";
+        let base58_public_key = b"2JkkABabBFK5fVmzcjLxFSs59xYen4XKfi7PDSdo5CPB";
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(utf8(base58_public_key), utf8(domain));
         let auth_data = create_derivable_auth_data(digest, abstract_signature, abstract_public_key);
         let entry_function_name = b"0x1::topo_account::transfer";
         authenticate_auth_data(auth_data, &entry_function_name);
+        // This is invalid signature test
     }
 }

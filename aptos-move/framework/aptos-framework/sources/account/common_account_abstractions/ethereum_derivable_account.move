@@ -295,21 +295,21 @@ module aptos_framework::ethereum_derivable_account {
     fun test_construct_message(framework: &signer) {
         chain_id::initialize_for_test(framework, 4);
 
-        let ethereum_address = b"0xC7B576Ead6aFb962E2DEcB35814FB29723AEC98a";
+        let ethereum_address = b"0x8FC57c3532c9eFc194838FFcBc11CE9Db49e4bd0";
         let domain = b"localhost:3001";
         let entry_function_name = b"0x1::topo_account::transfer";
         let digest_utf8 = b"0x2a2f07c32382a94aa90ddfdb97076b77d779656bb9730c4f3e4d22a30df298dd";
         let issued_at = b"2025-01-01T00:00:00.000Z";
         let scheme = b"https";
         let message = construct_message(&ethereum_address, &domain, &entry_function_name, &digest_utf8, &issued_at, &scheme);
-        let expected_message = b"\x19Ethereum Signed Message:\n442localhost:3001 wants you to sign in with your Ethereum account:\n0xC7B576Ead6aFb962E2DEcB35814FB29723AEC98a\n\nPlease confirm you explicitly initiated this request from localhost:3001. You are approving to execute transaction 0x1::topo_account::transfer on Aptos blockchain (local).\n\nURI: https://localhost:3001\nVersion: 1\nChain ID: 4\nNonce: 0x2a2f07c32382a94aa90ddfdb97076b77d779656bb9730c4f3e4d22a30df298dd\nIssued At: 2025-01-01T00:00:00.000Z";
+        let expected_message = b"\x19Ethereum Signed Message:\n441localhost:3001 wants you to sign in with your Ethereum account:\n0x8FC57c3532c9eFc194838FFcBc11CE9Db49e4bd0\n\nPlease confirm you explicitly initiated this request from localhost:3001. You are approving to execute transaction 0x1::topo_account::transfer on Aptos blockchain (local).\n\nURI: https://localhost:3001\nVersion: 1\nChain ID: 4\nNonce: 0x2a2f07c32382a94aa90ddfdb97076b77d779656bb9730c4f3e4d22a30df298dd\nIssued At: 2025-01-01T00:00:00.000Z";
         assert!(message == expected_message);
     }
 
     #[test(framework = @0x1)]
     fun test_recover_public_key(framework: &signer) {
         chain_id::initialize_for_test(framework, 4);
-        let ethereum_address = b"0xC7B576Ead6aFb962E2DEcB35814FB29723AEC98a";
+        let ethereum_address = b"0x8FC57c3532c9eFc194838FFcBc11CE9Db49e4bd0";
         let domain = b"localhost:3001";
         let entry_function_name = b"0x1::topo_account::transfer";
         let digest = b"0x705f1f57dd8399bf134e649981af43b5c42e59f985c4e4335ab70ce3f96bcd27";
@@ -317,18 +317,10 @@ module aptos_framework::ethereum_derivable_account {
         let scheme = b"https";
         let message = construct_message(&ethereum_address, &domain, &entry_function_name, &digest, &issued_at, &scheme);
         let hashed_message = aptos_hash::keccak256(message);
-        let signature_bytes = vector[
-            162, 57, 230, 98, 9, 139, 202, 15, 110, 61, 237, 54, 252, 234, 202, 13,
-            181, 196, 174, 19, 226, 50, 151, 63, 137, 229, 144, 15, 4, 56, 1, 122,
-            42, 51, 191, 43, 162, 155, 55, 227, 62, 164, 247, 18, 154, 68, 59, 82,
-            108, 124, 83, 72, 224, 158, 79, 20, 123, 172, 105, 71, 12, 114, 208, 246, 27
-        ];
+        let signature_bytes = x"9a4c9156c60cdb1372aadd4e5ef49411a56aa2220cd800ddb927982a0bcbf29e33faeb04539985a0089f3e4d41209bdaf9e5d874601666c790e4f8545118b44f1b";
         let base64_public_key = recover_public_key(&signature_bytes, &hashed_message);
         assert!(base64_public_key == vector[
-            4, 186, 242, 201, 107, 125, 171, 241, 239, 174, 216, 103, 198, 245, 151, 84,
-            208, 238, 134, 130, 51, 223, 164, 243, 149, 234, 188, 140, 237, 189, 190, 221,
-            95, 60, 172, 1, 22, 96, 232, 105, 172, 184, 198, 168, 157, 54, 230, 217,
-            100, 150, 220, 31, 135, 165, 51, 83, 53, 159, 139, 98, 103, 106, 250, 194, 94
+            4, 217, 234, 126, 222, 109, 60, 184, 130, 32, 144, 207, 231, 128, 54, 61, 165, 204, 13, 49, 239, 106, 122, 68, 44, 164, 16, 120, 37, 231, 244, 48, 165, 45, 4, 212, 225, 21, 227, 43, 87, 216, 239, 22, 202, 168, 23, 37, 84, 102, 246, 79, 164, 140, 31, 54, 192, 115, 193, 110, 253, 124, 113, 9, 155
         ]
         );
     }
@@ -338,14 +330,9 @@ module aptos_framework::ethereum_derivable_account {
         chain_id::initialize_for_test(framework, 4);
 
         let digest = x"705f1f57dd8399bf134e649981af43b5c42e59f985c4e4335ab70ce3f96bcd27";
-        let signature = vector[
-            162, 57, 230, 98, 9, 139, 202, 15, 110, 61, 237, 54, 252, 234, 202, 13,
-            181, 196, 174, 19, 226, 50, 151, 63, 137, 229, 144, 15, 4, 56, 1, 122,
-            42, 51, 191, 43, 162, 155, 55, 227, 62, 164, 247, 18, 154, 68, 59, 82,
-            108, 124, 83, 72, 224, 158, 79, 20, 123, 172, 105, 71, 12, 114, 208, 246, 27
-        ];
+        let signature = x"9a4c9156c60cdb1372aadd4e5ef49411a56aa2220cd800ddb927982a0bcbf29e33faeb04539985a0089f3e4d41209bdaf9e5d874601666c790e4f8545118b44f1b";
         let abstract_signature = create_raw_signature(utf8(b"https"), utf8(b"2025-05-02T16:17:10.714Z"), signature);
-        let ethereum_address = b"0xC7B576Ead6aFb962E2DEcB35814FB29723AEC98a";
+        let ethereum_address = b"0x8FC57c3532c9eFc194838FFcBc11CE9Db49e4bd0";
         let domain = b"localhost:3001";
         let abstract_public_key = create_abstract_public_key(ethereum_address, domain);
         let auth_data = create_derivable_auth_data(digest, abstract_signature, abstract_public_key);

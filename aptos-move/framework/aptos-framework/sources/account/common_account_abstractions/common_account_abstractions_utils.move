@@ -13,11 +13,13 @@ module aptos_framework::common_account_abstractions_utils {
 
     public(friend) fun network_name(): vector<u8> {
         let chain_id = chain_id::get();
-        if (chain_id == 1) {
+        if (chain_id == 1 || chain_id == 161) {
             b"mainnet"
-        } else if (chain_id == 2) {
+        } else if (chain_id == 2 || chain_id == 162) {
             b"testnet"
-        } else if (chain_id == 4) {
+        } else if (chain_id == 163) {
+            b"devnet"
+        } else if (chain_id == 4 || chain_id == 164) {
             b"local"
         } else {
             let network_name = &mut vector[];
@@ -97,19 +99,19 @@ module aptos_framework::common_account_abstractions_utils {
 
     #[test(framework = @0x1)]
     fun test_network_name_mainnet(framework: &signer) {
-        chain_id::initialize_for_test(framework, 1);
+        chain_id::initialize_for_test(framework, 161);
         assert!(network_name() == b"mainnet");
     }
 
     #[test(framework = @0x1)]
     fun test_network_name_testnet(framework: &signer) {
-        chain_id::initialize_for_test(framework, 2);
+        chain_id::initialize_for_test(framework, 162);
         assert!(network_name() == b"testnet");
     }
 
     #[test(framework = @0x1)]
     fun test_network_name_local(framework: &signer) {
-        chain_id::initialize_for_test(framework, 4);
+        chain_id::initialize_for_test(framework, 164);
         assert!(network_name() == b"local");
     }
 
@@ -134,7 +136,7 @@ module aptos_framework::common_account_abstractions_utils {
 
     #[test(framework = @0x1)]
     fun test_construct_message_for_sui(framework: &signer) {
-        chain_id::initialize_for_test(framework, 2);
+        chain_id::initialize_for_test(framework, 162);
         let sui_account_address = b"0x8d6ce7a3c13617b29aaf7ec58bee5a611606a89c62c5efbea32e06d8d167bd49";
         let domain = b"localhost:3001";
         let entry_function_name = b"0x1::coin::transfer";
@@ -145,7 +147,7 @@ module aptos_framework::common_account_abstractions_utils {
 
     #[test(framework = @0x1)]
     fun test_construct_message_for_solana(framework: &signer) {
-        chain_id::initialize_for_test(framework, 2);
+        chain_id::initialize_for_test(framework, 162);
 
         let base58_public_key = b"G56zT1K6AQab7FzwHdQ8hiHXusR14Rmddw6Vz5MFbbmV";
         let domain = b"localhost:3000";
