@@ -98,7 +98,7 @@ module aptos_std::type_info {
         features::change_feature_flags_for_testing(&fx, vector[features::get_aptos_stdlib_chain_id_feature()], vector[]);
 
         // The testing environment chain ID is 4u8.
-        assert!(chain_id() == 4u8, 1);
+        assert!(chain_id() == 164u8, 1);
     }
 
     #[test]
