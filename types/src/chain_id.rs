@@ -42,11 +42,11 @@ impl NamedChain {
     pub fn from_chain_id(chain_id: &ChainId) -> Result<NamedChain, String> {
         let chain_id = chain_id.id();
         match chain_id {
-            1 => Ok(NamedChain::MAINNET),
-            2 => Ok(NamedChain::TESTNET),
-            3 => Ok(NamedChain::DEVNET), // TODO: this is not correct and should removed. The devnet chain ID changes.
-            4 => Ok(NamedChain::TESTING),
-            5 => Ok(NamedChain::PREMAINNET),
+            161 => Ok(NamedChain::MAINNET),
+            162 => Ok(NamedChain::TESTNET),
+            163 => Ok(NamedChain::DEVNET), // TODO: this is not correct and should removed. The devnet chain ID changes.
+            164 => Ok(NamedChain::TESTING),
+            165 => Ok(NamedChain::PREMAINNET),
             _ => Err(format!("Not a named chain. Given ID: {:?}", chain_id)),
         }
     }
