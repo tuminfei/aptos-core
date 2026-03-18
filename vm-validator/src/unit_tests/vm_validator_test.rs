@@ -67,7 +67,7 @@ impl std::ops::Deref for TestValidator {
 // * SEQUENCE_NUMBER_TOO_NEW -- This error is filtered out when running validation; it is only
 //   testable when running the executor.
 // * INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE -- This is tested in verify_txn.rs.
-// * SENDING_ACCOUNT_FROZEN: Tested in functional-tests/tests/aptos_account/freezing.move.
+// * SENDING_ACCOUNT_FROZEN: Tested in functional-tests/tests/topo_account/freezing.move.
 // * Errors arising from deserializing the code -- these are tested in
 //   - move-language/move/language/move-binary-format/src/unit_tests/deserializer_tests.rs
 //   - move-language/move/language/move-binary-format/tests/serializer_tests.rs
@@ -81,7 +81,7 @@ fn test_validate_transaction() {
     let vm_validator = TestValidator::new();
 
     let address = account_config::aptos_test_root_address();
-    let program = aptos_stdlib::aptos_coin_mint(address, 100);
+    let program = aptos_stdlib::topo_coin_mint(address, 100);
     let transaction = transaction_test_helpers::get_test_signed_txn(
         address,
         1,

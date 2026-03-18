@@ -1234,7 +1234,7 @@ mod tests {
     #[test]
     fn test_recover_account_from_derive_path() {
         // Same constants in test cases of TypeScript
-        // https://github.com/aptos-labs/aptos-core/blob/main/ecosystem/typescript/sdk/src/aptos_account.test.ts
+        // https://github.com/aptos-labs/aptos-core/blob/main/ecosystem/typescript/sdk/src/topo_account.test.ts
         let derive_path = "m/44'/637'/0'/0'/0'";
         let mnemonic_phrase =
             "shoot island position soft burden budget tooth cruel issue economy destroy above";

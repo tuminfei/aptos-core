@@ -46,7 +46,7 @@ pub struct Submit {
 
 #[derive(Subcommand, Debug)]
 pub enum WorkTypeSubcommand {
-    /// Executes coin::transfer<AptosCoin> with given file providing list of destinations
+    /// Executes coin::transfer<TopoCoin> with given file providing list of destinations
     TransferApt(TransferArg),
     /// Executes topo_account::transfer with given file providing list of destinations
     CreateAndTransferApt(TransferArg),

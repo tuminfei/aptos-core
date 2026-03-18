@@ -115,7 +115,7 @@ mod tests {
             EntryFunction, RawTransaction, ReplayProtector, Script, SignedTransaction,
             TransactionExecutable,
         },
-        utility_coin::AptosCoinType,
+        utility_coin::TopoCoinType,
         CoinType,
     };
     use move_core_types::{account_address::AccountAddress, ident_str, language_storage::ModuleId};
@@ -182,7 +182,7 @@ mod tests {
         let entry_func = EntryFunction::new(
             ModuleId::new(AccountAddress::ONE, ident_str!("coin").to_owned()),
             ident_str!("transfer").to_owned(),
-            vec![AptosCoinType::type_tag()],
+            vec![TopoCoinType::type_tag()],
             vec![
                 bcs::to_bytes(&receiver).unwrap(),
                 bcs::to_bytes(&1).unwrap(),

@@ -320,13 +320,13 @@
                 "type": "MOVE_TYPES_STRUCT",
                 "struct": {
                   "address": "0x1",
-                  "module": "aptos_coin",
-                  "name": "AptosCoin"
+                  "module": "topo_coin",
+                  "name": "TopoCoin"
                 }
               }
             ]
           },
-          "typeStr": "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
+          "typeStr": "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>",
           "data": "{\"coin\":{\"value\":\"2241957998\"},\"deposit_events\":{\"counter\":\"980\",\"guid\":{\"id\":{\"addr\":\"0xc24b9ea285e953bbf7470309b879bc60d5a68e71e2f2c17be047c3f74664e82b\",\"creation_num\":\"2\"}}},\"frozen\":false,\"withdraw_events\":{\"counter\":\"1072\",\"guid\":{\"id\":{\"addr\":\"0xc24b9ea285e953bbf7470309b879bc60d5a68e71e2f2c17be047c3f74664e82b\",\"creation_num\":\"3\"}}}}"
         }
       },

@@ -27,13 +27,13 @@
                 "type": "MOVE_TYPES_STRUCT",
                 "struct": {
                   "address": "0x1",
-                  "module": "aptos_coin",
-                  "name": "AptosCoin"
+                  "module": "topo_coin",
+                  "name": "TopoCoin"
                 }
               }
             ]
           },
-          "typeStr": "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
+          "typeStr": "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>",
           "data": "{\"coin\":{\"value\":\"56421315284\"},\"deposit_events\":{\"counter\":\"7194\",\"guid\":{\"id\":{\"addr\":\"0x8c557bb0a12d47c1eda90dd4883b44674111b915fa39ff862e6a0a39140dcd4\",\"creation_num\":\"2\"}}},\"frozen\":false,\"withdraw_events\":{\"counter\":\"7260\",\"guid\":{\"id\":{\"addr\":\"0x8c557bb0a12d47c1eda90dd4883b44674111b915fa39ff862e6a0a39140dcd4\",\"creation_num\":\"3\"}}}}"
         }
       },
@@ -51,13 +51,13 @@
                 "type": "MOVE_TYPES_STRUCT",
                 "struct": {
                   "address": "0x1",
-                  "module": "aptos_coin",
-                  "name": "AptosCoin"
+                  "module": "topo_coin",
+                  "name": "TopoCoin"
                 }
               }
             ]
           },
-          "typeStr": "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
+          "typeStr": "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>",
           "data": "{\"coin\":{\"value\":\"2030623591\"},\"deposit_events\":{\"counter\":\"3698\",\"guid\":{\"id\":{\"addr\":\"0x189365d87b89fece2ba6b9411ce750a05cb1d3e4715107836117137da2d24fe3\",\"creation_num\":\"2\"}}},\"frozen\":false,\"withdraw_events\":{\"counter\":\"19\",\"guid\":{\"id\":{\"addr\":\"0x189365d87b89fece2ba6b9411ce750a05cb1d3e4715107836117137da2d24fe3\",\"creation_num\":\"3\"}}}}"
         }
       },
@@ -88,13 +88,13 @@
                 "type": "MOVE_TYPES_STRUCT",
                 "struct": {
                   "address": "0x1",
-                  "module": "aptos_coin",
-                  "name": "AptosCoin"
+                  "module": "topo_coin",
+                  "name": "TopoCoin"
                 }
               }
             ]
           },
-          "typeStr": "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
+          "typeStr": "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>",
           "data": "{\"coin\":{\"value\":\"117976684\"},\"deposit_events\":{\"counter\":\"810\",\"guid\":{\"id\":{\"addr\":\"0x27e8e9a9ebadb462322bca29352c3a0d24f5b80caa03a529cb71a69b6a09c374\",\"creation_num\":\"2\"}}},\"frozen\":false,\"withdraw_events\":{\"counter\":\"2326\",\"guid\":{\"id\":{\"addr\":\"0x27e8e9a9ebadb462322bca29352c3a0d24f5b80caa03a529cb71a69b6a09c374\",\"creation_num\":\"3\"}}}}"
         }
       },
@@ -182,13 +182,13 @@
                 "type": "MOVE_TYPES_STRUCT",
                 "struct": {
                   "address": "0x1",
-                  "module": "aptos_coin",
-                  "name": "AptosCoin"
+                  "module": "topo_coin",
+                  "name": "TopoCoin"
                 }
               }
             ]
           },
-          "typeStr": "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
+          "typeStr": "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>",
           "data": "{\"coin\":{\"value\":\"12793006216\"},\"deposit_events\":{\"counter\":\"150846\",\"guid\":{\"id\":{\"addr\":\"0x6a03eb973cd9385d62fc2842d02a4dd6b70e52f5da77a0689e57e48d93fae1b4\",\"creation_num\":\"2\"}}},\"frozen\":false,\"withdraw_events\":{\"counter\":\"24\",\"guid\":{\"id\":{\"addr\":\"0x6a03eb973cd9385d62fc2842d02a4dd6b70e52f5da77a0689e57e48d93fae1b4\",\"creation_num\":\"3\"}}}}"
         }
       },
@@ -262,13 +262,13 @@
                 "type": "MOVE_TYPES_STRUCT",
                 "struct": {
                   "address": "0x1",
-                  "module": "aptos_coin",
-                  "name": "AptosCoin"
+                  "module": "topo_coin",
+                  "name": "TopoCoin"
                 }
               }
             ]
           },
-          "typeStr": "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
+          "typeStr": "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>",
           "data": "{\"coin\":{\"value\":\"1214445864\"},\"deposit_events\":{\"counter\":\"1646\",\"guid\":{\"id\":{\"addr\":\"0xb4576a3ec891f0508aedf9b907391e8aa2e467704f321a615cae8c8c730db76f\",\"creation_num\":\"2\"}}},\"frozen\":false,\"withdraw_events\":{\"counter\":\"2085\",\"guid\":{\"id\":{\"addr\":\"0xb4576a3ec891f0508aedf9b907391e8aa2e467704f321a615cae8c8c730db76f\",\"creation_num\":\"3\"}}}}"
         }
       },
@@ -425,13 +425,13 @@
                 "type": "MOVE_TYPES_STRUCT",
                 "struct": {
                   "address": "0x1",
-                  "module": "aptos_coin",
-                  "name": "AptosCoin"
+                  "module": "topo_coin",
+                  "name": "TopoCoin"
                 }
               }
             ]
           },
-          "typeStr": "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
+          "typeStr": "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>",
           "data": "{\"coin\":{\"value\":\"726963530\"},\"deposit_events\":{\"counter\":\"8587\",\"guid\":{\"id\":{\"addr\":\"0xeea7e965045cd02bed0649694c2c7e1e60a68ffc600c55a8af7df5f27157c0e7\",\"creation_num\":\"2\"}}},\"frozen\":false,\"withdraw_events\":{\"counter\":\"12128\",\"guid\":{\"id\":{\"addr\":\"0xeea7e965045cd02bed0649694c2c7e1e60a68ffc600c55a8af7df5f27157c0e7\",\"creation_num\":\"3\"}}}}"
         }
       },
@@ -707,8 +707,8 @@
               "type": "MOVE_TYPES_STRUCT",
               "struct": {
                 "address": "0x1",
-                "module": "aptos_coin",
-                "name": "AptosCoin"
+                "module": "topo_coin",
+                "name": "TopoCoin"
               }
             }
           ],

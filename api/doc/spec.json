@@ -17312,7 +17312,7 @@
         "type": "string",
         "format": "hex",
         "description": "A hex encoded 32 byte Aptos account address or a struct tag.\n\nThis is represented in a string as a 64 character hex string, sometimes\nshortened by stripping leading 0s, and adding a 0x or\nFormat: `{address}::{module name}::{struct name}`\n",
-        "example": "0x1::aptos_coin::AptosCoin"
+        "example": "0x1::topo_coin::TopoCoin"
       },
       "Block": {
         "type": "object",
@@ -17996,7 +17996,7 @@
       "EntryFunctionId": {
         "type": "string",
         "description": "Entry function id is string representation of a entry function defined on-chain.\n\nFormat: `{address}::{module name}::{function name}`\n\nBoth `module name` and `function name` are case-sensitive.\n",
-        "example": "0x1::aptos_coin::transfer"
+        "example": "0x1::topo_coin::transfer"
       },
       "EntryFunctionPayload": {
         "type": "object",
@@ -18686,7 +18686,7 @@
       "MoveModuleId": {
         "type": "string",
         "description": "Move module id is a string representation of Move module.\n\nFormat: `{address}::{module name}`\n\n`address` should be hex-encoded 32 byte account address that is prefixed with `0x`.\n\nModule name is case-sensitive.\n",
-        "example": "0x1::aptos_coin"
+        "example": "0x1::topo_coin"
       },
       "MoveResource": {
         "type": "object",
@@ -18812,8 +18812,8 @@
       },
       "MoveStructTag": {
         "type": "string",
-        "description": "String representation of a MoveStructTag (on-chain Move struct type). This exists so you\ncan specify MoveStructTags as path / query parameters, e.g. for get_events_by_event_handle.\n\nIt is a combination of:\n  1. `move_module_address`, `module_name` and `struct_name`, all joined by `::`\n  2. `struct generic type parameters` joined by `, `\n\nExamples:\n  * `0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>`\n  * `0x1::account::Account`\n\nNote:\n  1. Empty chars should be ignored when comparing 2 struct tag ids.\n  2. When used in an URL path, should be encoded by url-encoding (AKA percent-encoding).\n\nSee [doc](https://aptos.dev/concepts/accounts) for more details.\n",
-        "example": "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
+        "description": "String representation of a MoveStructTag (on-chain Move struct type). This exists so you\ncan specify MoveStructTags as path / query parameters, e.g. for get_events_by_event_handle.\n\nIt is a combination of:\n  1. `move_module_address`, `module_name` and `struct_name`, all joined by `::`\n  2. `struct generic type parameters` joined by `, `\n\nExamples:\n  * `0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>`\n  * `0x1::account::Account`\n\nNote:\n  1. Empty chars should be ignored when comparing 2 struct tag ids.\n  2. When used in an URL path, should be encoded by url-encoding (AKA percent-encoding).\n\nSee [doc](https://aptos.dev/concepts/accounts) for more details.\n",
+        "example": "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>",
         "pattern": "^0x[0-9a-zA-Z:_<>]+$"
       },
       "MoveStructValue": {
@@ -18856,7 +18856,7 @@
       },
       "MoveType": {
         "type": "string",
-        "description": "String representation of an on-chain Move type tag that is exposed in transaction payload.\n    Values:\n      - bool\n      - u8\n      - u16\n      - u32\n      - u64\n      - u128\n      - u256\n      - i8\n      - i16\n      - i32\n      - i64\n      - i128\n      - i256\n      - address\n      - signer\n      - vector: `vector<{non-reference MoveTypeId}>`\n      - struct: `{address}::{module_name}::{struct_name}::<{generic types}>`\n\n    Vector type value examples:\n      - `vector<u8>`\n      - `vector<vector<u64>>`\n      - `vector<0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>>`\n\n    Struct type value examples:\n      - `0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>\n      - `0x1::account::Account`\n\n    Note:\n      1. Empty chars should be ignored when comparing 2 struct tag ids.\n      2. When used in an URL path, should be encoded by url-encoding (AKA percent-encoding).\n",
+        "description": "String representation of an on-chain Move type tag that is exposed in transaction payload.\n    Values:\n      - bool\n      - u8\n      - u16\n      - u32\n      - u64\n      - u128\n      - u256\n      - i8\n      - i16\n      - i32\n      - i64\n      - i128\n      - i256\n      - address\n      - signer\n      - vector: `vector<{non-reference MoveTypeId}>`\n      - struct: `{address}::{module_name}::{struct_name}::<{generic types}>`\n\n    Vector type value examples:\n      - `vector<u8>`\n      - `vector<vector<u64>>`\n      - `vector<0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>>`\n\n    Struct type value examples:\n      - `0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>\n      - `0x1::account::Account`\n\n    Note:\n      1. Empty chars should be ignored when comparing 2 struct tag ids.\n      2. When used in an URL path, should be encoded by url-encoding (AKA percent-encoding).\n",
         "pattern": "^(bool|u8|u16|u32|u64|u128|u256|i8|i16|i32|i64|i128|i256|address|signer|vector<.+>|0x[0-9a-zA-Z:_<, >]+)$"
       },
       "MoveValue": {

@@ -759,7 +759,7 @@ impl DbReader for FakeAptosDB {
 
         // Since the genesis write set is persisted with AptosDB, we call
         // it to serve state values targeting the framework account
-        // (to access AptosCoin, for example).
+        // (to access TopoCoin, for example).
         // The in-memory data structures only handles "normal user" accounts.
         if account_address != AccountAddress::ONE
             && struct_tag.is_some()

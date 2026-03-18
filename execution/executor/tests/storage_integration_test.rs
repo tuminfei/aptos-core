@@ -110,7 +110,7 @@ fn test_reconfiguration() {
         /* sequence_number = */ 0,
         genesis_key.clone(),
         genesis_key.public_key(),
-        Some(aptos_stdlib::aptos_coin_mint(validator_account, 1_000_000)),
+        Some(aptos_stdlib::topo_coin_mint(validator_account, 1_000_000)),
     );
     // txn2 = a dummy block prologue to bump the timer.
     let txn2 = Transaction::BlockMetadata(BlockMetadata::new(
@@ -137,7 +137,7 @@ fn test_reconfiguration() {
         2,
         genesis_key.clone(),
         genesis_key.public_key(),
-        Some(aptos_stdlib::aptos_governance_force_end_epoch_test_only()),
+        Some(aptos_stdlib::topo_governance_force_end_epoch_test_only()),
     );
 
     let txn_block = into_signature_verified_block(vec![txn1, txn2, txn3, txn4]);

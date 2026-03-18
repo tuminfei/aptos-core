@@ -398,9 +398,9 @@ impl TestContext {
         // This function executes the following script as the root account:
         // script {
         //   fun main(root: &signer, feature: u64) {
-        //     let aptos_framework = aptos_framework::aptos_governance::get_signer_testnet_only(root, @0x1);
+        //     let aptos_framework = aptos_framework::topo_governance::get_signer_testnet_only(root, @0x1);
         //     std::features::change_feature_flags_for_next_epoch(&aptos_framework, vector[feature], vector[]);
-        //     aptos_framework::aptos_governance::reconfigure(&aptos_framework);
+        //     aptos_framework::topo_governance::reconfigure(&aptos_framework);
         //     std::features::on_new_epoch(&aptos_framework);
         //   }
         // }
@@ -418,9 +418,9 @@ impl TestContext {
         // This function executes the following script as the root account:
         // script {
         //   fun main(root: &signer, feature: u64) {
-        //     let aptos_framework = aptos_framework::aptos_governance::get_signer_testnet_only(root, @0x1);
+        //     let aptos_framework = aptos_framework::topo_governance::get_signer_testnet_only(root, @0x1);
         //     std::features::change_feature_flags_for_next_epoch(&aptos_framework, vector[], vector[feature]);
-        //     aptos_framework::aptos_governance::reconfigure(&aptos_framework);
+        //     aptos_framework::topo_governance::reconfigure(&aptos_framework);
         //     std::features::on_new_epoch(&aptos_framework);
         //   }
         // }
@@ -975,7 +975,7 @@ impl TestContext {
                 account,
                 "0x1",
                 "coin",
-                "CoinStore<0x1::aptos_coin::AptosCoin>",
+                "CoinStore<0x1::topo_coin::TopoCoin>",
             )
             .await;
         let coin = coin_balance_option.map(|x| {
