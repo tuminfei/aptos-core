@@ -1,6 +1,6 @@
 script {
     use std::signer;
-    use aptos_framework::aptos_account;
+    use aptos_framework::topo_account;
     use aptos_framework::topo_coin;
     use aptos_framework::coin;
 
@@ -17,6 +17,6 @@ script {
             topo_coin::mint(minter, minter_addr, amount + GAS_BUFFER);
         };
 
-        aptos_account::transfer(minter, dst_addr, amount);
+        topo_account::transfer(minter, dst_addr, amount);
     }
 }
