@@ -94,7 +94,7 @@ async fn wait_for_account_balance(client: &RestClient, address: AccountAddress) 
     let start = std::time::Instant::now();
     while start.elapsed() < DEFAULT_WAIT_TIMEOUT {
         if client
-            .get_account_balance(address, "0x1::aptos_coin::AptosCoin")
+            .get_account_balance(address, "0x1::topo_coin::TopoCoin")
             .await
             .unwrap()
             .into_inner()

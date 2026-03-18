@@ -1,7 +1,7 @@
 #[test_only]
 module rewards_pool::test_helpers {
     use aptos_framework::account;
-    use aptos_framework::aptos_governance;
+    use aptos_framework::topo_governance;
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::fungible_asset::{Self, FungibleAsset};
     use aptos_framework::object;

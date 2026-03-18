@@ -26,7 +26,7 @@
 module dao_platform::nft_dao {
     use aptos_framework::account::{SignerCapability, create_signer_with_capability};
     use aptos_framework::account;
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin;
     use aptos_framework::timestamp;
     use aptos_std::table::Table;
@@ -672,7 +672,7 @@ module dao_platform::nft_dao {
     /////////////////////////// Private functions //////////////////////////////////
     /// Transfer coin from the DAO account to the destination account
     fun transfer_fund(res_acct: &signer, dst: address, amount: u64) {
-        coin::transfer<AptosCoin>(res_acct, dst, amount);
+        coin::transfer<TopoCoin>(res_acct, dst, amount);
     }
 
     /// offer one NFT from DAO to the DST address. The DST address should
@@ -815,9 +815,9 @@ module dao_platform::nft_dao {
     #[test_only]
     use aptos_token::token::create_token_script;
     #[test_only]
-    use aptos_framework::aptos_account::transfer_coins;
+    use aptos_framework::topo_account::transfer_coins;
     #[test_only]
-    use aptos_framework::aptos_coin;
+    use aptos_framework::topo_coin;
     use aptos_token::token_transfers;
 
     #[test_only]
@@ -861,7 +861,7 @@ module dao_platform::nft_dao {
         account::create_account_for_test(@0xaf);
 
         // intialize with some fund in the DAO resource account
-        let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(aptos_framework);
+        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
 
         setup_voting_token_distribution(creator, voter);
         // creator creates a dao
@@ -913,14 +913,14 @@ module dao_platform::nft_dao {
         //
 
         let coins = coin::mint(100, &mint_cap);
-        coin::register<AptosCoin>(creator);
-        coin::register<AptosCoin>(voter);
+        coin::register<TopoCoin>(creator);
+        coin::register<TopoCoin>(voter);
         coin::deposit(creator_addr, coins);
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);
 
         // now resource account has a fund pool of 90 coins
-        transfer_coins<AptosCoin>(creator, res_acc, 90);
+        transfer_coins<TopoCoin>(creator, res_acc, 90);
 
         // creator a proposal to transfer 45 coins to voter's account
         create_proposal(
@@ -949,7 +949,7 @@ module dao_platform::nft_dao {
         resolve(2, res_acc);
         assert!(get_proposal_resolution(1, res_acc) == PROPOSAL_RESOLVED_PASSED, 1);
         // voter gets 45 coin transferred to her account after resolving
-        assert!(coin::balance<AptosCoin>(signer::address_of(voter)) == 45, 1);
+        assert!(coin::balance<TopoCoin>(signer::address_of(voter)) == 45, 1);
     }
 
     #[test(aptos_framework = @0x1, admin = @0xdeaf, new_admin = @0xaf)]

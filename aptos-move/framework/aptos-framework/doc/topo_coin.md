@@ -195,7 +195,7 @@ Account does not have mint capability
 
 ## Function `initialize`
 
-Can only called during genesis to initialize the Topo coin.
+Can only called during genesis to initialize the Aptos coin.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;, <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
@@ -212,8 +212,8 @@ Can only called during genesis to initialize the Topo coin.
 
     <b>let</b> (burn_cap, freeze_cap, mint_cap) = <a href="coin.md#0x1_coin_initialize_with_parallelizable_supply">coin::initialize_with_parallelizable_supply</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;(
         aptos_framework,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"Topo Coin"),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"TOPO"),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"Aptos Coin"),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"APT"),
         8, // decimals
         <b>true</b>, // monitor_supply
     );
@@ -289,7 +289,7 @@ and accounts have been initialized during genesis.
 
 Can only be called during genesis for tests to grant mint capability to aptos framework and core resources
 accounts.
-Expects account and TOPO store to be registered before calling.
+Expects account and APT store to be registered before calling.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_configure_accounts_for_test">configure_accounts_for_test</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
@@ -483,7 +483,7 @@ Claim the delegated mint capability and destroy the delegated token.
 
 <tr>
 <td>1</td>
-<td>The native token, TOPO, must be initialized during genesis.</td>
+<td>The native token, APT, must be initialized during genesis.</td>
 <td>Medium</td>
 <td>The initialize function is only called once, during genesis.</td>
 <td>Formally verified via <a href="#high-level-req-1">initialize</a>.</td>
@@ -491,23 +491,15 @@ Claim the delegated mint capability and destroy the delegated token.
 
 <tr>
 <td>2</td>
-<td>The TOPO coin may only be created exactly once.</td>
+<td>The APT coin may only be created exactly once.</td>
 <td>Medium</td>
 <td>The initialization function may only be called once.</td>
 <td>Enforced through the <a href="https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-framework/sources/coin.move">coin</a> module, which has been audited.</td>
 </tr>
 
 <tr>
-<td>3</td>
-<td>The abilities to mint Topo tokens should be transferable, duplicatable, and destroyable.</td>
-<td>High</td>
-<td>The MintCapability struct has the copy and store abilities. This means that it can be duplicated and stored in different object wrappers (such as MintCapStore). This capability is tested against the destroy_mint_cap and claim_mint_capability functions.</td>
-<td>Verified via <a href="#high-level-req-3">initialize</a>.</td>
-</tr>
-
-<tr>
 <td>4</td>
-<td>Any type of operation on the TOPO coin should fail if the user has not registered for the coin.</td>
+<td>Any type of operation on the APT coin should fail if the user has not registered for the coin.</td>
 <td>Medium</td>
 <td>Coin operations may succeed only on valid user coin registration.</td>
 <td>Enforced through the <a href="https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-framework/sources/coin.move">coin</a> module, which has been audited.</td>
@@ -544,8 +536,8 @@ Claim the delegated mint capability and destroy the delegated token.
 <b>aborts_if</b> <a href="permissioned_signer.md#0x1_permissioned_signer_spec_is_permissioned_signer">permissioned_signer::spec_is_permissioned_signer</a>(aptos_framework);
 <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
 <b>aborts_if</b> addr != @aptos_framework;
-<b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"Topo Coin");
-<b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"TOPO");
+<b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"Aptos Coin");
+<b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"APT");
 <b>aborts_if</b> <b>exists</b>&lt;<a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a>&gt;(addr);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;&gt;(addr);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="aggregator_factory.md#0x1_aggregator_factory_AggregatorFactory">aggregator_factory::AggregatorFactory</a>&gt;(addr);

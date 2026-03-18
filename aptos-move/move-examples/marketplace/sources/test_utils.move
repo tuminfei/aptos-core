@@ -5,7 +5,7 @@ module marketplace::test_utils {
     use std::vector;
 
     use aptos_framework::account;
-    use aptos_framework::aptos_coin::{Self, AptosCoin};
+    use aptos_framework::topo_coin::{Self, TopoCoin};
     use aptos_framework::coin;
     use aptos_framework::object::{Self, Object};
     use aptos_framework::timestamp;
@@ -24,19 +24,19 @@ module marketplace::test_utils {
         purchaser: &signer,
     ): (address, address, address) {
         timestamp::set_time_has_started_for_testing(aptos_framework);
-        let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(aptos_framework);
+        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
 
         let marketplace_addr = signer::address_of(marketplace);
         account::create_account_for_test(marketplace_addr);
-        coin::register<AptosCoin>(marketplace);
+        coin::register<TopoCoin>(marketplace);
 
         let seller_addr = signer::address_of(seller);
         account::create_account_for_test(seller_addr);
-        coin::register<AptosCoin>(seller);
+        coin::register<TopoCoin>(seller);
 
         let purchaser_addr = signer::address_of(purchaser);
         account::create_account_for_test(purchaser_addr);
-        coin::register<AptosCoin>(purchaser);
+        coin::register<TopoCoin>(purchaser);
 
         let coins = coin::mint(10000, &mint_cap);
         coin::deposit(seller_addr, coins);

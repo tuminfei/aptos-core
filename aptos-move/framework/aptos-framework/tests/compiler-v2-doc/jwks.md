@@ -1019,7 +1019,7 @@ aptos_framework::jwks::upsert_oidc_provider_for_next_epoch(
 b"https://accounts.google.com",
 b"https://accounts.google.com/.well-known/openid-configuration"
 );
-aptos_framework::aptos_governance::reconfigure(&framework_signer);
+aptos_framework::topo_governance::reconfigure(&framework_signer);
 ```
 
 
@@ -1094,7 +1094,7 @@ aptos_framework::jwks::remove_oidc_provider_for_next_epoch(
 &framework_signer,
 b"https://accounts.google.com",
 );
-aptos_framework::aptos_governance::reconfigure(&framework_signer);
+aptos_framework::topo_governance::reconfigure(&framework_signer);
 ```
 
 

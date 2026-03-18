@@ -189,7 +189,7 @@ impl AptosPublicInfo {
     pub async fn mint(&mut self, addr: AccountAddress, amount: u64) -> Result<()> {
         let mint_txn = self.root_account.sign_with_transaction_builder(
             self.transaction_factory()
-                .payload(aptos_stdlib::aptos_coin_mint(addr, amount)),
+                .payload(aptos_stdlib::topo_coin_mint(addr, amount)),
         );
         self.rest_client.submit_and_wait(&mint_txn).await?;
         Ok(())
@@ -226,7 +226,7 @@ impl AptosPublicInfo {
         TransactionFactory::new(self.chain_id).with_gas_unit_price(unit_price)
     }
 
-    pub async fn get_approved_execution_hash_at_aptos_governance(
+    pub async fn get_approved_execution_hash_at_topo_governance(
         &self,
         proposal_id: u64,
     ) -> Vec<u8> {
@@ -234,7 +234,7 @@ impl AptosPublicInfo {
             .rest_client
             .get_account_resource_bcs::<SimpleMap<u64, Vec<u8>>>(
                 CORE_CODE_ADDRESS,
-                "0x1::aptos_governance::ApprovedExecutionHashes",
+                "0x1::topo_governance::ApprovedExecutionHashes",
             )
             .await;
         let hashes = approved_execution_hashes.unwrap().into_inner().data;
@@ -250,7 +250,7 @@ impl AptosPublicInfo {
 
     pub async fn get_balance(&self, address: AccountAddress) -> u64 {
         self.rest_client
-            .get_account_balance(address, "0x1::aptos_coin::AptosCoin")
+            .get_account_balance(address, "0x1::topo_coin::TopoCoin")
             .await
             .unwrap()
             .into_inner()
@@ -322,7 +322,7 @@ pub async fn reconfig(
         vec![root_account.sign_with_transaction_builder(
             transaction_factory
                 .clone()
-                .payload(aptos_stdlib::aptos_governance_force_end_epoch_test_only()),
+                .payload(aptos_stdlib::topo_governance_force_end_epoch_test_only()),
         )]
     };
 

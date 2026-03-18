@@ -21,8 +21,8 @@
 /// contract, consider raising the minimum balance to minimize rounding errors from frequent distribution calls.
 module staking::commission {
     use aptos_framework::account::{Self, SignerCapability};
-    use aptos_framework::aptos_account;
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::topo_account;
+    use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::coin;
     use aptos_framework::resource_account;
     use aptos_framework::timestamp;
@@ -167,7 +167,7 @@ module staking::commission {
     public entry fun distribute_commission(account: &signer) acquires CommissionConfig {
         assert_manager_or_operator(account);
 
-        let balance = coin::balance<AptosCoin>(@staking);
+        let balance = coin::balance<TopoCoin>(@staking);
         assert!(balance >= MIN_BALANCE_FOR_DISTRIBUTION, EINSUFFICIENT_BALANCE_FOR_DISTRIBUTION);
 
         // Commission owed so far plus any debt.
@@ -191,11 +191,11 @@ module staking::commission {
             config.commission_debt = apt_to_usd(debt_apt);
         } else {
             let surplus_balance = balance - commission_in_apt;
-            aptos_account::transfer(commission_signer, config.manager, surplus_balance);
+            topo_account::transfer(commission_signer, config.manager, surplus_balance);
         };
 
-        let remaining_balance = coin::balance<AptosCoin>(@staking);
-        aptos_account::transfer(commission_signer, config.operator, remaining_balance);
+        let remaining_balance = coin::balance<TopoCoin>(@staking);
+        topo_account::transfer(commission_signer, config.operator, remaining_balance);
 
         event::emit(CommissionDistributed {
             manager: config.manager,

@@ -6,7 +6,7 @@
 ///
 /// The voting flow:
 /// 1. The Voting module can be deployed at a known address (e.g. 0x1 for Aptos on-chain governance)
-/// 2. The governance module, e.g. AptosGovernance, can be deployed later and define a GovernanceProposal resource type
+/// 2. The governance module, e.g. TopoGovernance, can be deployed later and define a GovernanceProposal resource type
 /// that can also contain other information such as Capability resource for authorization.
 /// 3. The governance module's owner can then register the ProposalType with Voting. This also hosts the proposal list
 /// (forum) on the calling account.

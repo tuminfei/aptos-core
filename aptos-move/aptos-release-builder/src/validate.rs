@@ -141,14 +141,14 @@ impl NetworkConfig {
 
         std::fs::write(fas_script_path.as_path(), format!(r#"
         script {{
-            use aptos_framework::aptos_governance;
+            use aptos_framework::topo_governance;
 
             fun main(core_resources: &signer) {{
-                let core_signer = aptos_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
+                let core_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
 
                 let framework_signer = &core_signer;
 
-                aptos_governance::update_governance_config(framework_signer, 0, 0, {});
+                topo_governance::update_governance_config(framework_signer, 0, 0, {});
             }}
         }}
         "#, resolution_time).as_bytes())?;
@@ -291,7 +291,7 @@ impl NetworkConfig {
         let mut args = vec![
             "",
             "--function-id",
-            "0x1::aptos_coin::mint",
+            "0x1::topo_coin::mint",
             "--sender-account",
             "0xa550c18",
             "--args",
@@ -328,7 +328,7 @@ impl NetworkConfig {
         let mut args = vec![
             "",
             "--function-id",
-            "0x1::aptos_governance::add_approved_script_hash_script",
+            "0x1::topo_governance::add_approved_script_hash_script",
             "--sender-account",
             "0xa550c18",
             "--args",

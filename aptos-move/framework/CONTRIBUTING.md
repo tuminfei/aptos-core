@@ -35,12 +35,12 @@ Most tests for the standard library live [here](../e2e-move-tests) and can be ru
 ## Coding conventions
 
 ### Naming
-- **Module names**: are camel case e.g., `AptosAccount`, `Aptos`
+- **Module names**: are camel case e.g., `TopoAccount`, `Aptos`
 - **Type names**: are camel case e.g., `WithdrawalCapability`, `KeyRotationCapability`
 - **Function names**: are lower snake case e.g., `register_currency`
 - **Constant names**: are upper snake case e.g., `TREASURY_COMPLIANCE_ADDRESS`
-- Generic types should be descriptive, or anti-descriptive where appropriate (e.g. `T` for the Vector generic type parameter, `AptosAccount` for the core `AptosAccount` resource, `deposit<CoinType>(t: CoinType)` for depositing a token in the `Aptos` module). Most of the time the "main" type in a module should be the same name as the module e.g., `Aptos::Aptos`, `AptosAccount::AptosAccount`.
-- **Module file names**: are the same as the module name e.g., `AptosAccount.move`
+- Generic types should be descriptive, or anti-descriptive where appropriate (e.g. `T` for the Vector generic type parameter, `TopoAccount` for the core `TopoAccount` resource, `deposit<CoinType>(t: CoinType)` for depositing a token in the `Aptos` module). Most of the time the "main" type in a module should be the same name as the module e.g., `Aptos::Aptos`, `TopoAccount::TopoAccount`.
+- **Module file names**: are the same as the module name e.g., `TopoAccount.move`
 - **Script file names**: should be lower snake case and named after the name of the “main” function in the script.
 - **Mixed file names**: If the file contains multiple modules and/or scripts, the file name should be lower_snake_case, where the name does not match any particular module/script inside.
 

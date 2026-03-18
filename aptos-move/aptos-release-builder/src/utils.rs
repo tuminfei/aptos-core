@@ -15,7 +15,7 @@ pub(crate) fn generate_governance_proposal_header(
     emitln!(writer, "script {");
     writer.indent();
 
-    emitln!(writer, "use aptos_framework::aptos_governance;");
+    emitln!(writer, "use aptos_framework::topo_governance;");
     for deps_name in deps_names {
         emitln!(writer, "use {};", deps_name);
     }
@@ -29,7 +29,7 @@ pub(crate) fn generate_governance_proposal_header(
     } else {
         emitln!(
             writer,
-            "let framework_signer = aptos_governance::resolve(proposal_id, @{});\n",
+            "let framework_signer = topo_governance::resolve(proposal_id, @{});\n",
             AccountAddress::ONE,
         );
     }
@@ -39,7 +39,7 @@ pub(crate) fn generate_testnet_header(writer: &CodeWriter, deps_names: &[&str]) 
     emitln!(writer, "script {");
     writer.indent();
 
-    emitln!(writer, "use aptos_framework::aptos_governance;");
+    emitln!(writer, "use aptos_framework::topo_governance;");
     for deps_name in deps_names {
         emitln!(writer, "use {};", deps_name);
     }
@@ -50,7 +50,7 @@ pub(crate) fn generate_testnet_header(writer: &CodeWriter, deps_names: &[&str]) 
 
     emitln!(
         writer,
-        "let core_signer = aptos_governance::get_signer_testnet_only(core_resources, @{});\n",
+        "let core_signer = topo_governance::get_signer_testnet_only(core_resources, @{});\n",
         AccountAddress::ONE,
     );
     emitln!(writer, "let framework_signer = &core_signer;\n");

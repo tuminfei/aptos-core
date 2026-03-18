@@ -20,7 +20,7 @@ struct ModuleData {
     mint_cap: Vec<u8>, // placeholder for mint capability
 }
 
-const APTOS_COIN_STRUCT_STRING: &str = "0x1::aptos_coin::AptosCoin";
+const TOPO_COIN_STRUCT_STRING: &str = "0x1::topo_coin::TopoCoin";
 const CHLOE_COIN_STRUCT_STRING: &str =
     "0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::simple_defi::ChloesCoin";
 const EXCHANGE_FROM_FUNCTION: &str = "exchange_from_entry";
@@ -78,7 +78,7 @@ fn exchange_e2e_test() {
     assert_coin_balance(
         &mut h,
         test_user_account.address(),
-        APTOS_COIN_STRUCT_STRING,
+        TOPO_COIN_STRUCT_STRING,
         20,
     );
 
@@ -87,7 +87,7 @@ fn exchange_e2e_test() {
     assert_coin_balance(
         &mut h,
         test_user_account.address(),
-        APTOS_COIN_STRUCT_STRING,
+        TOPO_COIN_STRUCT_STRING,
         15,
     );
     assert_coin_balance(
@@ -96,7 +96,7 @@ fn exchange_e2e_test() {
         CHLOE_COIN_STRUCT_STRING,
         5,
     );
-    assert_coin_balance(&mut h, &resource_address, APTOS_COIN_STRUCT_STRING, 5);
+    assert_coin_balance(&mut h, &resource_address, TOPO_COIN_STRUCT_STRING, 5);
     assert_coin_balance(&mut h, &resource_address, CHLOE_COIN_STRUCT_STRING, 0);
 
     // swap to 3 aptos coins from 3 chloe's aptos coins
@@ -104,7 +104,7 @@ fn exchange_e2e_test() {
     assert_coin_balance(
         &mut h,
         test_user_account.address(),
-        APTOS_COIN_STRUCT_STRING,
+        TOPO_COIN_STRUCT_STRING,
         18,
     );
     assert_coin_balance(
@@ -113,7 +113,7 @@ fn exchange_e2e_test() {
         CHLOE_COIN_STRUCT_STRING,
         2,
     );
-    assert_coin_balance(&mut h, &resource_address, APTOS_COIN_STRUCT_STRING, 2);
+    assert_coin_balance(&mut h, &resource_address, TOPO_COIN_STRUCT_STRING, 2);
     assert_coin_balance(&mut h, &resource_address, CHLOE_COIN_STRUCT_STRING, 0);
 }
 

@@ -16,7 +16,7 @@ fn demo_p2p_entry_function() {
     let payload = topo_coin_transfer(payee.clone(), amount);
     let function_call = EntryFunctionCall::decode(&payload);
     match function_call {
-        Some(EntryFunctionCall::AptosCoinTransfer { amount: a, to: p }) => {
+        Some(EntryFunctionCall::TopoCoinTransfer { amount: a, to: p }) => {
             assert_eq!(a, amount);
             assert_eq!(p, payee.clone());
         }

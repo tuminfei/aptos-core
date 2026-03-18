@@ -908,7 +908,7 @@ Lifetime: transient
 
 <a id="0x1_features_PARTIAL_GOVERNANCE_VOTING"></a>
 
-Whether enable paritial governance voting on aptos_governance.
+Whether enable paritial governance voting on topo_governance.
 Lifetime: transient
 
 

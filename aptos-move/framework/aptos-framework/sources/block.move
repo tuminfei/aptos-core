@@ -130,7 +130,7 @@ module aptos_framework::block {
     }
 
     /// Update the epoch interval.
-    /// Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+    /// Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
     public fun update_epoch_interval_microsecs(
         aptos_framework: &signer, new_epoch_interval: u64
     ) acquires BlockResource {

@@ -31,7 +31,7 @@ fn main() -> Result<()> {
                     .account()
                     .transaction()
                     .gas_unit_price(100)
-                    .payload(aptos_cached_packages::aptos_stdlib::aptos_coin_transfer(
+                    .payload(aptos_cached_packages::aptos_stdlib::topo_coin_transfer(
                         *bob.account().address(),
                         1000,
                     ))

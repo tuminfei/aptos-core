@@ -574,7 +574,7 @@ async fn test_view_function() {
     // Non-BCS
     let view_request = ViewRequest {
         function: "0x1::coin::is_account_registered".parse().unwrap(),
-        type_arguments: vec!["0x1::aptos_coin::AptosCoin".parse().unwrap()],
+        type_arguments: vec!["0x1::topo_coin::TopoCoin".parse().unwrap()],
         arguments: vec![serde_json::Value::String(address.to_hex_literal())],
     };
 
@@ -588,7 +588,7 @@ async fn test_view_function() {
         module: ModuleId::new(address, ident_str!("coin").into()),
         function: ident_str!("is_account_registered").into(),
         ty_args: vec![TypeTag::Struct(Box::new(
-            StructTag::from_str("0x1::aptos_coin::AptosCoin").unwrap(),
+            StructTag::from_str("0x1::topo_coin::TopoCoin").unwrap(),
         ))],
         args: vec![bcs::to_bytes(&address).unwrap()],
     };

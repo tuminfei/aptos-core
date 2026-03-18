@@ -152,7 +152,7 @@ module aptos_framework::staking_config {
     }
 
     /// Initialize rewards configurations.
-    /// Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+    /// Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
     public fun initialize_rewards(
         aptos_framework: &signer,
         rewards_rate: FixedPoint64,
@@ -265,7 +265,7 @@ module aptos_framework::staking_config {
     }
 
     /// Update the min and max stake amounts.
-    /// Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+    /// Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
     public fun update_required_stake(
         aptos_framework: &signer,
         minimum_stake: u64,
@@ -280,7 +280,7 @@ module aptos_framework::staking_config {
     }
 
     /// Update the recurring lockup duration.
-    /// Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+    /// Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
     public fun update_recurring_lockup_duration_secs(
         aptos_framework: &signer,
         new_recurring_lockup_duration_secs: u64,
@@ -294,7 +294,7 @@ module aptos_framework::staking_config {
 
     /// DEPRECATING
     /// Update the rewards rate.
-    /// Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+    /// Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
     public fun update_rewards_rate(
         aptos_framework: &signer,
         new_rewards_rate: u64,
@@ -349,7 +349,7 @@ module aptos_framework::staking_config {
     }
 
     /// Update the joining limit %.
-    /// Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+    /// Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
     public fun update_voting_power_increase_limit(
         aptos_framework: &signer,
         new_voting_power_increase_limit: u64,

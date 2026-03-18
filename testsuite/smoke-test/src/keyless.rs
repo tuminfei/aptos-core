@@ -264,9 +264,9 @@ async fn federated_keyless_scenario(
         let script = r#"
 script {
     use aptos_framework::jwks;
-    use aptos_framework::aptos_governance;
+    use aptos_framework::topo_governance;
     fun main(core_resources: &signer) {
-        let framework = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
+        let framework = topo_governance::get_signer_testnet_only(core_resources, @0x1);
         jwks::set_patches(&framework, vector[]);
     }
 }
@@ -834,12 +834,12 @@ pub(crate) async fn remove_training_wheels(
         r#"
 script {{
 use aptos_framework::{};
-use aptos_framework::aptos_governance;
+use aptos_framework::topo_governance;
 use std::option;
 fun main(core_resources: &signer) {{
-    let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
+    let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
     {}::update_training_wheels_for_next_epoch(&framework_signer, option::none());
-    aptos_governance::force_end_epoch(&framework_signer);
+    topo_governance::force_end_epoch(&framework_signer);
 }}
 }}
 "#,
@@ -935,11 +935,11 @@ pub(crate) async fn spawn_network_and_execute_gov_proposals(
 script {{
 use aptos_framework::jwks;
 use aptos_framework::{};
-use aptos_framework::aptos_governance;
+use aptos_framework::topo_governance;
 use std::string::utf8;
 use std::option;
 fun main(core_resources: &signer) {{
-    let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
+    let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
     let jwk_0 = jwks::new_rsa_jwk(
         utf8(b"{}"),
         utf8(b"{}"),
@@ -954,7 +954,7 @@ fun main(core_resources: &signer) {{
 
     {}::update_max_exp_horizon_for_next_epoch(&framework_signer, {});
     {}::update_training_wheels_for_next_epoch(&framework_signer, option::some(x"{}"));
-    aptos_governance::force_end_epoch(&framework_signer);
+    topo_governance::force_end_epoch(&framework_signer);
 }}
 }}
 "#,
@@ -1020,12 +1020,12 @@ fn get_rotate_vk_governance_script(vk: &Groth16VerificationKey) -> String {
         r#"
 script {{
     use aptos_framework::{};
-    use aptos_framework::aptos_governance;
+    use aptos_framework::topo_governance;
     fun main(core_resources: &signer) {{
-        let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
         let vk = {}::new_groth16_verification_key(x"{}", x"{}", x"{}", x"{}", vector[x"{}", x"{}"]);
         {}::set_groth16_verification_key_for_next_epoch(&framework_signer, vk);
-        aptos_governance::force_end_epoch(&framework_signer);
+        topo_governance::force_end_epoch(&framework_signer);
     }}
 }}
 "#,

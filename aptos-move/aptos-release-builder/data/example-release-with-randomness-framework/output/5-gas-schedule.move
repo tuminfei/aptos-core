@@ -415,11 +415,11 @@
 //     aptos_framework.string_utils.format.per_byte                            : 3
 
 script {
-    use aptos_framework::aptos_governance;
+    use aptos_framework::topo_governance;
     use aptos_framework::gas_schedule;
 
     fun main(core_resources: &signer) {
-        let core_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
+        let core_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
 
         let framework_signer = &core_signer;
 
@@ -1353,6 +1353,6 @@ script {
         ];
 
         gas_schedule::set_for_next_epoch(framework_signer, gas_schedule_blob);
-        aptos_governance::reconfigure(framework_signer);
+        topo_governance::reconfigure(framework_signer);
     }
 }

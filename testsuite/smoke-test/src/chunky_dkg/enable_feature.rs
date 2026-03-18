@@ -75,12 +75,12 @@ async fn chunky_dkg_enable_feature() {
     let script = r#"
 script {
     use aptos_std::fixed_point64;
-    use aptos_framework::aptos_governance;
+    use aptos_framework::topo_governance;
     use aptos_framework::chunky_dkg_config;
     use aptos_framework::features;
 
     fun main(core_resources: &signer) {
-        let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
 
         // Enable chunky DKG config (V1 with default thresholds).
         let config = chunky_dkg_config::new_v1(
@@ -93,7 +93,7 @@ script {
         features::change_feature_flags_for_next_epoch(&framework_signer, vector[108], vector[]);
 
         // Trigger reconfiguration.
-        aptos_governance::reconfigure(&framework_signer);
+        topo_governance::reconfigure(&framework_signer);
     }
 }
 "#;

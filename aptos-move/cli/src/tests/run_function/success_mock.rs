@@ -34,7 +34,7 @@ fn run_function_success_mock() {
             "--function-id",
             "0x1::coin::balance",
             "--type-args",
-            "0x1::aptos_coin::AptosCoin",
+            "0x1::topo_coin::TopoCoin",
             "--args",
             "address:0x1",
             "--assume-yes",

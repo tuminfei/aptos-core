@@ -18,7 +18,7 @@ async fn test_account_auto_creation() {
     let account2 = info.random_account();
 
     let migrate_txn = account1.sign_with_transaction_builder(info.transaction_factory().payload(
-        aptos_stdlib::coin_migrate_to_fungible_store(aptos_types::AptosCoinType::type_tag()),
+        aptos_stdlib::coin_migrate_to_fungible_store(aptos_types::TopoCoinType::type_tag()),
     ));
     info.client().submit_and_wait(&migrate_txn).await.unwrap();
 

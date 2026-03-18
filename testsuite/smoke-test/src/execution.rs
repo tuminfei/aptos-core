@@ -77,13 +77,13 @@ async fn update_execution_config(
     let update_execution_config_script = format!(
         r#"
     script {{
-        use aptos_framework::aptos_governance;
+        use aptos_framework::topo_governance;
         use aptos_framework::execution_config;
         fun main(core_resources: &signer) {{
-            let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
+            let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
             let config_bytes = {};
             execution_config::set_for_next_epoch(&framework_signer, config_bytes);
-            aptos_governance::force_end_epoch(&framework_signer);
+            topo_governance::force_end_epoch(&framework_signer);
         }}
     }}
     "#,

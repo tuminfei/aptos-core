@@ -1,17 +1,17 @@
-/// Define the GovernanceProposal that will be used as part of on-chain governance by AptosGovernance.
+/// Define the GovernanceProposal that will be used as part of on-chain governance by TopoGovernance.
 ///
-/// This is separate from the AptosGovernance module to avoid circular dependency between AptosGovernance and Stake.
+/// This is separate from the TopoGovernance module to avoid circular dependency between TopoGovernance and Stake.
 module aptos_framework::governance_proposal {
     friend aptos_framework::topo_governance;
 
     struct GovernanceProposal has store, drop {}
 
-    /// Create and return a GovernanceProposal resource. Can only be called by AptosGovernance
+    /// Create and return a GovernanceProposal resource. Can only be called by TopoGovernance
     public(friend) fun create_proposal(): GovernanceProposal {
         GovernanceProposal {}
     }
 
-    /// Useful for AptosGovernance to create an empty proposal as proof.
+    /// Useful for TopoGovernance to create an empty proposal as proof.
     public(friend) fun create_empty_proposal(): GovernanceProposal {
         create_proposal()
     }

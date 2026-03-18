@@ -51,13 +51,13 @@ async fn enable_feature_2() {
     let script = format!(
         r#"
 script {{
-    use aptos_framework::aptos_governance;
+    use aptos_framework::topo_governance;
     use aptos_framework::consensus_config;
     use aptos_framework::randomness_config;
     use aptos_std::fixed_point64;
 
     fun main(core_resources: &signer) {{
-        let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
         let consensus_config_bytes = vector{:?};
         consensus_config::set_for_next_epoch(&framework_signer, consensus_config_bytes);
         let randomness_config = randomness_config::new_v1(
@@ -65,7 +65,7 @@ script {{
             fixed_point64::create_from_rational(2, 3)
         );
         randomness_config::set_for_next_epoch(&framework_signer, randomness_config);
-        aptos_governance::reconfigure(&framework_signer);
+        topo_governance::reconfigure(&framework_signer);
     }}
 }}
 "#,

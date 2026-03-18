@@ -32,7 +32,7 @@ use aptos_types::{
         SignedTransaction, TransactionArgument, TransactionOutput, TransactionPayload,
         TransactionStatus, ViewFunctionOutput,
     },
-    AptosCoinType,
+    TopoCoinType,
 };
 use claims::assert_ok;
 use move_core_types::{
@@ -930,9 +930,9 @@ impl<O: OutputLogger> MoveHarnessImpl<O> {
     }
 
     pub fn read_aptos_balance(&self, addr: &AccountAddress) -> u64 {
-        self.read_resource::<CoinStoreResource<AptosCoinType>>(
+        self.read_resource::<CoinStoreResource<TopoCoinType>>(
             addr,
-            CoinStoreResource::<AptosCoinType>::struct_tag(),
+            CoinStoreResource::<TopoCoinType>::struct_tag(),
         )
         .map(|c| c.coin())
         .unwrap_or(0)

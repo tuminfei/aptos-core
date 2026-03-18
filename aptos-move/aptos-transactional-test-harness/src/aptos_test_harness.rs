@@ -445,7 +445,7 @@ impl AptosTestAdapter<'_> {
             ))
     }
 
-    /// Obtain the AptosCoin amount under address `signer_addr`
+    /// Obtain the TopoCoin amount under address `signer_addr`
     fn fetch_account_balance(&self, signer_addr: &AccountAddress) -> Result<u64> {
         Ok(FungibleStoreResource::fetch_move_resource_from_group(
             &self.storage,
@@ -552,7 +552,7 @@ impl AptosTestAdapter<'_> {
         let txn = RawTransaction::new(
             aptos_test_root_address(),
             parameters.sequence_number + 1,
-            aptos_cached_packages::aptos_stdlib::aptos_coin_mint(account_addr, amount),
+            aptos_cached_packages::aptos_stdlib::topo_coin_mint(account_addr, amount),
             parameters.max_gas_amount,
             parameters.gas_unit_price,
             parameters.expiration_timestamp_secs,

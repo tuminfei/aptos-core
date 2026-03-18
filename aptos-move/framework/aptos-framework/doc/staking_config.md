@@ -434,7 +434,7 @@ Return the reward rate of this epoch as a tuple (numerator, denominator).
 ## Function `initialize_rewards`
 
 Initialize rewards configurations.
-Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize_rewards">initialize_rewards</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, min_rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, rewards_rate_period_in_secs: u64, last_rewards_rate_period_start_in_secs: u64, rewards_rate_decrease_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>)
@@ -727,7 +727,7 @@ Calculate and return the up-to-date StakingRewardsConfig.
 ## Function `update_required_stake`
 
 Update the min and max stake amounts.
-Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_required_stake">update_required_stake</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, minimum_stake: u64, maximum_stake: u64)
@@ -762,7 +762,7 @@ Can only be called as part of the Aptos governance proposal process established 
 ## Function `update_recurring_lockup_duration_secs`
 
 Update the recurring lockup duration.
-Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_recurring_lockup_duration_secs">update_recurring_lockup_duration_secs</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_recurring_lockup_duration_secs: u64)
@@ -796,7 +796,7 @@ Can only be called as part of the Aptos governance proposal process established 
 
 DEPRECATING
 Update the rewards rate.
-Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_rate">update_rewards_rate</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_rewards_rate: u64, new_rewards_rate_denominator: u64)
@@ -891,7 +891,7 @@ Can only be called as part of the Aptos governance proposal process established 
 ## Function `update_voting_power_increase_limit`
 
 Update the joining limit %.
-Can only be called as part of the Aptos governance proposal process established by the AptosGovernance module.
+Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_voting_power_increase_limit">update_voting_power_increase_limit</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_voting_power_increase_limit: u64)

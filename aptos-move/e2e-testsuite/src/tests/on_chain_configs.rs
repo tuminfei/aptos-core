@@ -25,7 +25,7 @@ fn initial_aptos_version() {
         .sign();
     let txn_1 = account
         .transaction()
-        .payload(aptos_stdlib::aptos_governance_force_end_epoch())
+        .payload(aptos_stdlib::topo_governance_force_end_epoch())
         .sequence_number(1)
         .sign();
     executor.new_block();
@@ -52,7 +52,7 @@ fn drop_txn_after_reconfiguration() {
     let txn = executor
         .new_account_at(CORE_CODE_ADDRESS)
         .transaction()
-        .payload(aptos_stdlib::aptos_governance_force_end_epoch())
+        .payload(aptos_stdlib::topo_governance_force_end_epoch())
         .sequence_number(0)
         .sign();
     executor.new_block();

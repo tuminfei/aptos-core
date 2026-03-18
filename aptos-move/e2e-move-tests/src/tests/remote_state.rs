@@ -34,7 +34,7 @@ use move_core_types::{language_storage::TypeTag, value::MoveValue};
 use move_model::metadata::LanguageVersion;
 use std::str::FromStr;
 
-const APTOS_COIN_STRUCT_STRING: &str = "0x1::aptos_coin::AptosCoin";
+const TOPO_COIN_STRUCT_STRING: &str = "0x1::topo_coin::TopoCoin";
 
 const TESTNET_TXN_VERSION: u64 = 6691904943;
 const TESTNET_ACCOUNT_ADDR: &str =
@@ -48,7 +48,7 @@ fn get_account_apt_balance(h: &mut MoveHarness, addr: AccountAddress) -> u64 {
     let bytes = h
         .execute_view_function(
             str::parse("0x1::coin::balance").unwrap(),
-            vec![TypeTag::from_str(APTOS_COIN_STRUCT_STRING).unwrap()],
+            vec![TypeTag::from_str(TOPO_COIN_STRUCT_STRING).unwrap()],
             vec![addr.to_vec()],
         )
         .values
@@ -100,7 +100,7 @@ async fn transfer_to_existing_account() {
     let status = h.run_entry_function(
         &new_account,
         str::parse("0x1::coin::transfer").unwrap(),
-        vec![TypeTag::from_str("0x1::aptos_coin::AptosCoin").unwrap()],
+        vec![TypeTag::from_str("0x1::topo_coin::TopoCoin").unwrap()],
         vec![
             MoveValue::Address(existing_account_addr)
                 .simple_serialize()
@@ -143,7 +143,7 @@ async fn transfer_from_existing_account() {
     let status = h.run_entry_function(
         &existing_account,
         str::parse("0x1::coin::transfer").unwrap(),
-        vec![TypeTag::from_str("0x1::aptos_coin::AptosCoin").unwrap()],
+        vec![TypeTag::from_str("0x1::topo_coin::TopoCoin").unwrap()],
         vec![
             MoveValue::Address(*new_account.address())
                 .simple_serialize()

@@ -472,7 +472,7 @@ impl<O: OutputLogger> FakeExecutorImpl<O> {
                 .simple_serialize()
                 .unwrap(),
         ]);
-        self.exec("aptos_governance", "force_end_epoch", vec![], vec![
+        self.exec("topo_governance", "force_end_epoch", vec![], vec![
             core_signer_arg,
         ]);
     }
@@ -792,7 +792,7 @@ impl<O: OutputLogger> FakeExecutorImpl<O> {
             .execute_view_function(
                 str::parse("0x1::coin::supply").unwrap(),
                 vec![move_core_types::language_storage::TypeTag::from_str(
-                    "0x1::aptos_coin::AptosCoin",
+                    "0x1::topo_coin::TopoCoin",
                 )
                 .unwrap()],
                 vec![],

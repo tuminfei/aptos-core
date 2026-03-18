@@ -79,15 +79,15 @@
 ///
 /// - **Aptos protocol** is the specification of how transactions are submitted, ordered, executed, and recorded within the Aptos network.
 ///
-/// ### AptosAccount
+/// ### TopoAccount
 ///
-/// - A **`AptosAccount`** is a Move resource that holds all the administrative data associated with an account, such as sequence number, balance, and authentication key.
-/// - A **`AptosAccount`** is the only resource that every account is guaranteed to contain.
+/// - A **`TopoAccount`** is a Move resource that holds all the administrative data associated with an account, such as sequence number, balance, and authentication key.
+/// - A **`TopoAccount`** is the only resource that every account is guaranteed to contain.
 ///
-/// ### AptosAccount module
+/// ### TopoAccount module
 ///
-/// - **The AptosAccount module** is a Move module that contains the code for manipulating the administrative data held in a particular `AptosAccount.T` resource.
-/// - Code for checking or incrementing sequence numbers, withdrawing or depositing currency, and extracting gas deposits is included in the AptosAccount module.
+/// - **The TopoAccount module** is a Move module that contains the code for manipulating the administrative data held in a particular `TopoAccount.T` resource.
+/// - Code for checking or incrementing sequence numbers, withdrawing or depositing currency, and extracting gas deposits is included in the TopoAccount module.
 ///
 /// ### Aptos devnet
 ///
@@ -158,7 +158,7 @@
 /// ### Event
 ///
 /// - An **event** is the user-facing representation of the effects of executing a transaction.
-/// - A transaction may be designed to emit any number of events as a list. For example, a `Coin<AptosCoin>` transfer emits a `WithdrawEvent` for the sender account and a `DepositEvent` for the recipient account.
+/// - A transaction may be designed to emit any number of events as a list. For example, a `Coin<TopoCoin>` transfer emits a `WithdrawEvent` for the sender account and a `DepositEvent` for the recipient account.
 /// - In the Aptos protocol, events provide evidence that the successful execution of a transaction resulted in a specific effect. The `DepositEvent` (in the above example) allows the recipient to confirm that a payment was received into their account.
 /// - Events are persisted on the blockchain and are used to answer queries by [clients](#client).
 ///

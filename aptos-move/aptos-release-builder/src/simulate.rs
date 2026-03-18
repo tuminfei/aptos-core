@@ -189,10 +189,10 @@ fn add_simple_native_function(
  * Patches
  *
  **************************************************************************************************/
-static MODULE_ID_APTOS_GOVERNANCE: Lazy<ModuleId> = Lazy::new(|| {
+static MODULE_ID_TOPO_GOVERNANCE: Lazy<ModuleId> = Lazy::new(|| {
     ModuleId::new(
         AccountAddress::ONE,
-        Identifier::new("aptos_governance").unwrap(),
+        Identifier::new("topo_governance").unwrap(),
     )
 });
 
@@ -235,15 +235,15 @@ where
     Ok(())
 }
 
-/// Patches `aptos_framework::aptos_governance::resolve_multi_step_proposal` so that
+/// Patches `aptos_framework::topo_governance::resolve_multi_step_proposal` so that
 /// it returns the requested signer directly, skipping the governance process altogether.
-fn patch_aptos_governance(
+fn patch_topo_governance(
     state_view: &impl SimulationStateStore,
     forbid_next_execution_hash: bool,
 ) -> Result<()> {
     use Bytecode::*;
 
-    patch_module(state_view, &MODULE_ID_APTOS_GOVERNANCE, |m| {
+    patch_module(state_view, &MODULE_ID_TOPO_GOVERNANCE, |m| {
         // Inject `native fun create_signer`.
         let create_signer_handle_idx = add_simple_native_function(
             m,
@@ -337,7 +337,7 @@ fn force_end_epoch(state_view: &impl SimulationStateStore) -> Result<()> {
     let traversal_storage = TraversalStorage::new();
     let mut sess = vm.new_session(&resolver, SessionId::void(), None);
     sess.execute_function_bypass_visibility(
-        &MODULE_ID_APTOS_GOVERNANCE,
+        &MODULE_ID_TOPO_GOVERNANCE,
         IdentStr::new("force_end_epoch").unwrap(),
         vec![],
         vec![MoveValue::Signer(AccountAddress::ONE)
@@ -456,7 +456,7 @@ pub async fn simulate_multistep_proposal(
         // If the script is the last step of the proposal, it MUST NOT have a next execution hash.
         // Set the boolean flag to true to use a modified patch to catch this.
         let forbid_next_execution_hash = script_idx == proposal_scripts.len() - 1;
-        patch_aptos_governance(&state_view, forbid_next_execution_hash)
+        patch_topo_governance(&state_view, forbid_next_execution_hash)
             .context("failed to patch resolve_multistep_proposal")?;
 
         // Add the hash of the script to the list of approved hashes, so that the

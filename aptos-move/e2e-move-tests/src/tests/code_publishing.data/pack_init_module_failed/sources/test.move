@@ -1,18 +1,18 @@
 module 0xcafe::test {
     use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::aptos_coin::AptosCoin;
+    use aptos_framework::topo_coin::TopoCoin;
     use std::signer::address_of;
 
     struct State has key {
         important_value: u64,
-        coins: Coin<AptosCoin>,
+        coins: Coin<TopoCoin>,
     }
 
     fun init_module(s: &signer) {
         // Transfer away all the APT from s so there's nothing left to pay for gas.
         // This makes this init_module function fail for sure.
-        let balance = coin::balance<AptosCoin>(address_of(s));
-        let coins = coin::withdraw<AptosCoin>(s, balance);
+        let balance = coin::balance<TopoCoin>(address_of(s));
+        let coins = coin::withdraw<TopoCoin>(s, balance);
 
         move_to(s, State {
             important_value: get_value(),

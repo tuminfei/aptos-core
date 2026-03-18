@@ -80,7 +80,7 @@ test = false
 }
 
 #[test]
-// Ignored because transactions require minting/transferring Coin<AptosCoin>, which the
+// Ignored because transactions require minting/transferring Coin<TopoCoin>, which the
 // transaction builder does not support (it doesn't supported typed functions yet).
 #[ignore]
 fn test_that_rust_entry_fun_code_compiles() {

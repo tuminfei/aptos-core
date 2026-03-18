@@ -441,7 +441,7 @@ impl Execution {
             if let Path::Resource(tag) = path {
                 if tag.name.as_str() == "CoinStore" && !tag.type_args.is_empty() {
                     let para_type = &tag.type_args[0];
-                    if para_type.to_canonical_string() == "0x1::aptos_coin::AptosCoin" {
+                    if para_type.to_canonical_string() == "0x1::topo_coin::TopoCoin" {
                         return true;
                     }
                 }

@@ -175,17 +175,17 @@ async fn common(params: TestParams) {
     let script = format!(
         r#"
 script {{
-    use aptos_framework::aptos_governance;
+    use aptos_framework::topo_governance;
     use aptos_framework::randomness_api_v0_config;
     use std::option;
 
     fun main(core_resources: &signer) {{
-        let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
         let required_gas = if ({}) {{ option::some(10000) }} else {{ option::none() }};
         randomness_api_v0_config::set_for_next_epoch(&framework_signer, required_gas);
         let allow_custom_max_gas = {};
         randomness_api_v0_config::set_allow_max_gas_flag_for_next_epoch(&framework_signer, allow_custom_max_gas);
-        aptos_governance::reconfigure(&framework_signer);
+        topo_governance::reconfigure(&framework_signer);
     }}
 }}
 "#,
