@@ -229,6 +229,11 @@ impl ConsensusObserver {
             );
         }
 
+        // Clear the pipeline builder's module cache so that the stale CachedStateView is released.
+        if let Some(ref builder) = self.pipeline_builder {
+            builder.clear_module_cache();
+        }
+
         // Increment the cleared block state counter
         metrics::increment_counter_without_labels(&metrics::OBSERVER_CLEARED_BLOCK_STATE);
     }
@@ -638,6 +643,14 @@ impl ConsensusObserver {
                     peer_network_id,
                     message_received_time,
                     ordered_block_with_window,
+                )
+                .await;
+            },
+            ConsensusObserverDirectSend::OrderedBlockV2(ordered_block_v2) => {
+                self.process_ordered_block_message(
+                    peer_network_id,
+                    message_received_time,
+                    ordered_block_v2.into_ordered_block(),
                 )
                 .await;
             },

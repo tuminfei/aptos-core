@@ -17,10 +17,10 @@
 
 use crate::{
     ast::{
-        AccessSpecifier, AccessSpecifierKind, Address, AddressSpecifier, Attribute, ConditionKind,
-        Exp, ExpData, FriendDecl, GlobalInvariant, MemoryLabel, ModuleName, PropertyBag,
-        PropertyValue, ResourceSpecifier, Spec, SpecBlockInfo, SpecBlockTarget, SpecFunDecl,
-        SpecVarDecl, UseDecl, Value,
+        AccessSpecifier, AccessSpecifierKind, Address, AddressSpecifier, Attribute, Exp, ExpData,
+        FrameSpec, FriendDecl, FunParamAccessOf, GlobalInvariant, MemoryLabel, ModuleName,
+        PropertyBag, PropertyValue, ResourceSpecifier, Spec, SpecBlockInfo, SpecBlockTarget,
+        SpecFunDecl, SpecVarDecl, UseDecl, Value,
     },
     code_writer::CodeWriter,
     emit, emitln,
@@ -1776,6 +1776,7 @@ impl GlobalEnv {
                     .or_insert_with(|| FunctionData::new(name, loc));
                 entry.visibility = definition_view.visibility();
                 entry.is_native = definition_view.is_native();
+                entry.is_struct_api = true;
                 entry.kind = if definition_view.is_entry() {
                     FunctionKind::Entry
                 } else {
@@ -2213,12 +2214,17 @@ impl GlobalEnv {
             visibility,
             has_package_visibility,
             is_native: false,
+            is_struct_api: false,
             kind: FunctionKind::Regular,
             attributes: vec![],
             type_params,
             params,
             result_type,
             access_specifiers: None,
+            fun_param_access_of: vec![],
+            spec_used_memory: BTreeSet::new(),
+            spec_old_memory: BTreeSet::new(),
+            spec_uses_old: false,
             acquired_structs: None,
             spec: RefCell::new(spec_opt.unwrap_or_default()),
             def: Some(def),
@@ -2280,12 +2286,17 @@ impl GlobalEnv {
             visibility,
             has_package_visibility,
             is_native: false,
+            is_struct_api: false,
             kind: FunctionKind::Regular,
             attributes: vec![],
             type_params,
             params,
             result_type,
             access_specifiers: None,
+            fun_param_access_of: vec![],
+            spec_used_memory: BTreeSet::new(),
+            spec_old_memory: BTreeSet::new(),
+            spec_uses_old: false,
             acquired_structs: None,
             spec: RefCell::new(spec_opt.unwrap_or_default()),
             def: Some(def),
@@ -2440,6 +2451,41 @@ impl GlobalEnv {
     /// Gets a function by qualified id.
     pub fn get_function_qid(&self, qid: QualifiedId<FunId>) -> FunctionEnv<'_> {
         self.get_module(qid.module_id).into_function(qid.id)
+    }
+
+    /// Sets spec memory information for a function, computed during spec_rewriter.
+    pub fn set_function_spec_memory(
+        &mut self,
+        qid: QualifiedId<FunId>,
+        spec_used_memory: BTreeSet<QualifiedInstId<StructId>>,
+        spec_old_memory: BTreeSet<QualifiedInstId<StructId>>,
+        spec_uses_old: bool,
+    ) {
+        let data = self
+            .get_module_data_mut(qid.module_id)
+            .function_data
+            .get_mut(&qid.id)
+            .expect("function data exists");
+        data.spec_used_memory = spec_used_memory;
+        data.spec_old_memory = spec_old_memory;
+        data.spec_uses_old = spec_uses_old;
+    }
+
+    /// Sets derived memory on a function parameter's access_of entry.
+    pub fn set_fun_param_access_of_memory(
+        &mut self,
+        qid: QualifiedId<FunId>,
+        param_idx: usize,
+        used_memory: BTreeSet<QualifiedInstId<StructId>>,
+        old_memory: BTreeSet<QualifiedInstId<StructId>>,
+    ) {
+        let data = self
+            .get_module_data_mut(qid.module_id)
+            .function_data
+            .get_mut(&qid.id)
+            .expect("function data exists");
+        data.fun_param_access_of[param_idx].used_memory = used_memory;
+        data.fun_param_access_of[param_idx].old_memory = old_memory;
     }
 
     /// Returns an iterator for all modules in the environment.
@@ -4682,6 +4728,9 @@ pub struct FunctionData {
     /// Whether this is a native function
     pub(crate) is_native: bool,
 
+    /// Whether this is a compiler-generated struct API wrapper. Set from `FunctionAttribute` tags.
+    pub(crate) is_struct_api: bool,
+
     /// The kind of the function.
     pub(crate) kind: FunctionKind,
 
@@ -4699,6 +4748,17 @@ pub struct FunctionData {
 
     /// Access specifiers.
     pub(crate) access_specifiers: Option<Vec<AccessSpecifier>>,
+
+    /// Access specifiers for function-typed parameters (from `modifies_of`/`reads_of` in spec blocks).
+    pub(crate) fun_param_access_of: Vec<FunParamAccessOf>,
+
+    /// Memory used by this function's spec conditions (requires, ensures, aborts_if).
+    /// Computed during the spec_rewriter pass.
+    pub(crate) spec_used_memory: BTreeSet<QualifiedInstId<StructId>>,
+    /// Resources accessed in old() contexts within spec conditions.
+    pub(crate) spec_old_memory: BTreeSet<QualifiedInstId<StructId>>,
+    /// Whether any spec condition uses old() or the function has &mut params.
+    pub(crate) spec_uses_old: bool,
 
     /// Acquires information, if available. This is either inferred or annotated by the
     /// user via a legacy acquires declaration.
@@ -4745,12 +4805,17 @@ impl FunctionData {
             visibility: Default::default(),
             has_package_visibility: false,
             is_native: false,
+            is_struct_api: false,
             kind: FunctionKind::Regular,
             attributes: vec![],
             type_params: vec![],
             params: vec![],
             result_type: Type::unit(),
             access_specifiers: None,
+            fun_param_access_of: vec![],
+            spec_used_memory: BTreeSet::new(),
+            spec_old_memory: BTreeSet::new(),
+            spec_uses_old: false,
             acquired_structs: None,
             spec: RefCell::new(Default::default()),
             def: None,
@@ -4894,6 +4959,36 @@ impl<'env> FunctionEnv<'env> {
     /// Checks whether this function or its module is test-only or verify-only.
     pub fn is_test_or_verify_only(&self) -> bool {
         self.is_test_only() || self.is_verify_only()
+    }
+
+    /// Returns `true` if this is a compiler-generated struct API wrapper (`pack$S`, `unpack$S`,
+    /// `borrow$S$N`, `borrow_mut$S$N`, `test_variant$S$V`, `pack_variant$S$V`,
+    /// `unpack_variant$S$V`). These are synthetic wrappers with no user-written body or spec.
+    pub fn is_struct_api(&self) -> bool {
+        self.data.is_struct_api
+    }
+
+    /// Returns `true` for functions that have no independently-processed bytecode target in the
+    /// prover pipeline and should be skipped when iterating over functions for analysis:
+    /// - inline functions: their bodies are inlined at every call site
+    /// - struct API wrappers: their call sites are replaced by native operations
+    ///   (Pack, BorrowField, etc.) in stackless_bytecode_generator before any processor runs
+    pub fn is_not_prover_target(&self) -> bool {
+        self.is_inline() || self.is_struct_api()
+    }
+
+    /// If this is a struct API wrapper, returns `(ModuleId, StructId)` of the struct it
+    /// operates on (parsed from the `op$StructName$...` naming convention). Returns `None`
+    /// for non-struct-API functions.
+    pub fn get_struct_api_struct(&self) -> Option<(ModuleId, StructId)> {
+        if !self.is_struct_api() {
+            return None;
+        }
+        let name = self.get_simple_name_string();
+        let struct_name = name.split('$').nth(1)?;
+        let sym = self.module_env.env.symbol_pool().make(struct_name);
+        let struct_env = self.module_env.find_struct(sym)?;
+        Some((self.module_env.get_id(), struct_env.get_id()))
     }
 
     /// Returns the location of the specification block of this function. If the function has
@@ -5249,6 +5344,26 @@ impl<'env> FunctionEnv<'env> {
         self.data.access_specifiers.as_deref()
     }
 
+    /// Returns access specifiers for function-typed parameters (from `modifies_of`/`reads_of` in spec blocks).
+    pub fn get_fun_param_access_of(&self) -> &[FunParamAccessOf] {
+        &self.data.fun_param_access_of
+    }
+
+    /// Returns memory used by this function's spec conditions.
+    pub fn get_spec_used_memory(&self) -> &BTreeSet<QualifiedInstId<StructId>> {
+        &self.data.spec_used_memory
+    }
+
+    /// Returns memory accessed in old() contexts within spec conditions.
+    pub fn get_spec_old_memory(&self) -> &BTreeSet<QualifiedInstId<StructId>> {
+        &self.data.spec_old_memory
+    }
+
+    /// Returns whether any spec condition uses old() or function has &mut params.
+    pub fn spec_uses_old(&self) -> bool {
+        self.data.spec_uses_old
+    }
+
     /// Returns the inferred acquired structs of this function. This is checked
     /// against declared acquires from `get_access_specifiers`.
     pub fn get_acquired_structs(&self) -> Option<&BTreeSet<StructId>> {
@@ -5351,26 +5466,44 @@ impl<'env> FunctionEnv<'env> {
         )
     }
 
-    /// Computes the modified targets of the spec clause, as a map from resource type names to
-    /// resource indices (list of types and address).
+    /// Returns the modified targets, as a map from resource type names to
+    /// target expressions (Operation::Global with address).
     pub fn get_modify_targets(&self) -> BTreeMap<QualifiedId<StructId>, Vec<Exp>> {
-        // Compute the modify targets from `modifies` conditions.
-        let spec = &self.get_spec();
-        let modify_conditions = spec.filter_kind(ConditionKind::Modifies);
         let mut modify_targets: BTreeMap<QualifiedId<StructId>, Vec<Exp>> = BTreeMap::new();
-        for cond in modify_conditions {
-            cond.all_exps().for_each(|target| {
+        let spec = self.data.spec.borrow();
+        if let Some(frame) = &spec.frame_spec {
+            for target in &frame.modifies_targets {
                 let node_id = target.node_id();
-                let rty = &self.module_env.env.get_node_instantiation(node_id)[0];
-                let (mid, sid, _) = rty.require_struct();
-                let type_name = mid.qualified(sid);
-                modify_targets
-                    .entry(type_name)
-                    .or_default()
-                    .push(target.clone());
-            });
+                let ty = self.module_env.env.get_node_type(node_id);
+                let ty = ty.skip_reference();
+                if let Type::Struct(mid, sid, _) = ty {
+                    modify_targets
+                        .entry(mid.qualified(*sid))
+                        .or_default()
+                        .push(target.clone());
+                }
+            }
         }
         modify_targets
+    }
+
+    /// Returns the frame spec (modifies/reads) if any.
+    pub fn get_frame_spec(&self) -> Option<std::cell::Ref<'_, FrameSpec>> {
+        let spec = self.data.spec.borrow();
+        if spec.frame_spec.is_some() {
+            Some(std::cell::Ref::map(spec, |s| {
+                s.frame_spec.as_ref().unwrap()
+            }))
+        } else {
+            None
+        }
+    }
+
+    /// Adds inferred modifies targets to the function's frame spec.
+    pub fn add_modifies_targets(&self, targets: Vec<Exp>) {
+        let mut spec = self.data.spec.borrow_mut();
+        let frame = spec.frame_spec.get_or_insert_with(FrameSpec::default);
+        frame.modifies_targets.extend(targets);
     }
 
     /// Determine whether the function is target of verification.

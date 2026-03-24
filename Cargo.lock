@@ -295,7 +295,7 @@ dependencies = [
 
 [[package]]
 name = "aptos"
-version = "8.1.0"
+version = "9.0.0"
 dependencies = [
  "anyhow",
  "aptos-api-types",
@@ -3128,6 +3128,7 @@ dependencies = [
 name = "aptos-move-cli"
 version = "1.0.0"
 dependencies = [
+ "ahash 0.8.12",
  "anyhow",
  "aptos-api-types",
  "aptos-cached-packages",
@@ -3146,11 +3147,13 @@ dependencies = [
  "aptos-vm-environment",
  "aptos-vm-logging",
  "aptos-vm-types",
+ "async-recursion",
  "async-trait",
  "bcs 0.1.4",
  "clap 4.5.60",
  "colored",
  "futures",
+ "hex",
  "itertools 0.13.0",
  "legacy-move-compiler",
  "mockall 0.11.4",
@@ -4368,6 +4371,7 @@ dependencies = [
  "aptos-storage-service-notifications",
  "aptos-storage-service-types",
  "aptos-time-service",
+ "aptos-token-bucket",
  "aptos-types",
  "arc-swap",
  "bcs 0.1.4",
@@ -8349,7 +8353,7 @@ dependencies = [
  "pq-sys",
  "r2d2",
  "serde_json",
- "uuid 0.8.2",
+ "uuid 1.11.0",
 ]
 
 [[package]]
@@ -8690,6 +8694,7 @@ dependencies = [
  "serde",
  "sha3 0.9.1",
  "test-case",
+ "thousands",
  "tokio",
 ]
 
@@ -9533,7 +9538,7 @@ checksum = "e29e5681dc8556fb9df1409e95eae050e12e8776394313da3546dcb8cf390c73"
 dependencies = [
  "az",
  "bytemuck",
- "half 1.8.2",
+ "half 2.2.1",
  "typenum",
 ]
 
@@ -12620,8 +12625,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "mono-move-global-context"
+version = "0.1.0"
+dependencies = [
+ "ahash 0.8.12",
+ "bumpalo",
+ "crossbeam-utils",
+ "dashmap 7.0.0-rc2",
+ "move-core-types",
+ "parking_lot 0.12.1",
+]
+
+[[package]]
 name = "mono-move-micro-ops"
 version = "0.1.0"
+
+[[package]]
+name = "mono-move-programs"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "legacy-move-compiler",
+ "mono-move-runtime",
+ "move-binary-format",
+ "move-compiler-v2",
+ "move-core-types",
+ "move-vm-runtime",
+ "move-vm-test-utils",
+ "move-vm-types",
+ "rand 0.7.3",
+ "tempfile",
+]
+
+[[package]]
+name = "mono-move-runtime"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "mono-move-micro-ops",
+ "rand 0.7.3",
+]
 
 [[package]]
 name = "more-asserts"
@@ -13187,6 +13230,7 @@ dependencies = [
  "move-stackless-bytecode",
  "move-stackless-bytecode-test-utils",
  "num 0.4.1",
+ "petgraph 0.6.5",
  "serde",
  "shell-words",
  "tempfile",
@@ -13441,6 +13485,7 @@ version = "0.1.0"
 dependencies = [
  "ambassador",
  "arc-swap",
+ "bcs 0.1.4",
  "better_any",
  "bitvec",
  "bytes",
@@ -18718,6 +18763,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "thousands"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3bf63baf9f5039dadc247375c29eb13706706cfde997d0330d05aa63a77d8820"
+
+[[package]]
 name = "thread-id"
 version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -19936,7 +19987,7 @@ dependencies = [
  "errno",
  "js-sys",
  "libc",
- "rustix 0.37.27",
+ "rustix 0.38.28",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "wasm-bindgen",
  "winapi 0.3.9",

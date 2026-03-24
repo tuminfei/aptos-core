@@ -62,6 +62,7 @@ const TEST_CONFIG: HotStateConfig = HotStateConfig {
     refresh_interval_versions: REFRESH_INTERVAL_VERSIONS,
     delete_on_restart: false,
     compute_root_hash: true,
+    persist_hotness_in_write_set: true,
 };
 
 #[derive(Debug)]
@@ -672,8 +673,8 @@ fn commit_state_buffer(
                 &state_by_version.get_state(Some(next_version - 1)).hot_state[shard_id];
             assert_eq!(all_entries.len(), naive_hot_state.len());
 
-            for (key, slot) in &all_entries {
-                let slot2 = naive_hot_state.peek(key).unwrap();
+            for (key, slot) in naive_hot_state.iter() {
+                let slot2 = all_entries.get(key.crypto_hash_ref()).unwrap();
                 StateByVersion::assert_state_slot(slot, slot2);
             }
         });
