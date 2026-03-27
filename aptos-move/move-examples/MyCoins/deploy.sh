@@ -61,8 +61,25 @@ echo "注册成功！"
 echo "\n=== MyCoins 项目部署完成 ==="
 echo "您现在可以开始使用 DOG、CAT 和 BIRD 代币了！"
 
-# 4. 转账功能
-echo "\n4. 转账功能说明："
+# 4. 铸造代币功能
+echo "\n4. 铸造代币功能说明："
+echo "您可以使用以下命令进行代币铸造："
+echo ""
+echo "# 铸造 DogCoin"
+echo "aptos move run --function-id 0x1::managed_coin::mint --type-args 0x0c0084b96923d3281d39c5a6561ac957fb9af07cc65132fc8806a89ec071b28b::dog_coin::DogCoin --args address:0xb06c20bfc513770514517a4518c2a9a1ecbd6d0be3d40f98675efeeee00ada9d u64:100000 --profile coin-admin"
+echo ""
+echo "# 铸造 CatCoin"
+echo "aptos move run --function-id 0x1::managed_coin::mint --type-args 0x0c0084b96923d3281d39c5a6561ac957fb9af07cc65132fc8806a89ec071b28b::cat_coin::CatCoin --args address:0xb06c20bfc513770514517a4518c2a9a1ecbd6d0be3d40f98675efeeee00ada9d u64:100000 --profile coin-admin"
+echo ""
+echo "# 铸造 BirdCoin"
+echo "aptos move run --function-id 0x1::managed_coin::mint --type-args 0x0c0084b96923d3281d39c5a6561ac957fb9af07cc65132fc8806a89ec071b28b::bird_coin::BirdCoin --args address:0xb06c20bfc513770514517a4518c2a9a1ecbd6d0be3d40f98675efeeee00ada9d u64:100000 --profile coin-admin"
+echo ""
+echo "注意：参数之间用空格分隔，不要使用方括号或逗号。"
+echo "请将 0xb06c20bfc513770514517a4518c2a9a1ecbd6d0be3d40f98675efeeee00ada9d 替换为实际的接收者地址，将相应的金额替换为要铸造的数量。"
+
+
+# 5. 转账功能
+echo "\n5. 转账功能说明："
 echo "您可以使用以下命令进行代币转账："
 echo ""
 echo "# 转账 DogCoin"
@@ -76,3 +93,4 @@ echo "aptos move run --function-id 0x1::coin::transfer --type-args 0x0c0084b9692
 echo ""
 echo "注意：参数之间用空格分隔，不要使用方括号或逗号。"
 echo "请将 0xb06c20bfc513770514517a4518c2a9a1ecbd6d0be3d40f98675efeeee00ada9d 替换为实际的接收者地址，将相应的金额替换为要转账的数量。"
+
