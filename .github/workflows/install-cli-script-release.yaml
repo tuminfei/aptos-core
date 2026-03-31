@@ -151,7 +151,7 @@ jobs:
       - build-linux-arm-binary
       - build-macos-arm-binary
       - build-macos-x86_64-binary
-    runs-on: 2cpu-gh-ubuntu24-x64
+    runs-on: ubuntu-24.04
     permissions:
       contents: "write"
       pull-requests: "read"
