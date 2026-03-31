@@ -141,7 +141,15 @@ jobs:
         run: git config --global core.longpaths true
         shell: bash
       - name: Build CLI
-        run: scripts\cli\build_cli_release.ps1
+        shell: pwsh
+        run: |
+          $releaseVersion = "${{ inputs.release_version }}"
+          $skipChecks = "${{ inputs.skip_checks }}"
+          if (-not $releaseVersion) {
+            Write-Error "release_version input is required and cannot be empty"
+            exit 1
+          }
+          & scripts/cli/build_cli_release.ps1 -ReleaseVersion $releaseVersion -SkipChecks $skipChecks
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
@@ -162,7 +170,7 @@ jobs:
     permissions:
       contents: "write"
       pull-requests: "read"
-    if: ${{ inputs.dry_run }} == 'false'
+    if: ${{ inputs.dry_run != 'true' }}
     steps:
       - name: Download prebuilt binaries
         uses: actions/download-artifact@v4
