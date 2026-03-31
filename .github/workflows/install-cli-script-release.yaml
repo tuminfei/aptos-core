@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.source_git_ref_override }}
-      - uses: aptos-labs/aptos-core/.github/actions/cli-rust-setup@main
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
       - name: Build CLI
         run: scripts/cli/build_cli_release.sh "Ubuntu-22.04" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
       - name: Upload Binary
@@ -66,7 +66,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.source_git_ref_override }}
-      - uses: aptos-labs/aptos-core/.github/actions/cli-rust-setup@main
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
       - name: Build CLI
         run: scripts/cli/build_cli_release.sh "Ubuntu-24.04" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
       - name: Upload Binary
@@ -82,7 +82,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.source_git_ref_override }}
-      - uses: aptos-labs/aptos-core/.github/actions/cli-rust-setup@main
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
       - name: Build CLI
         run: scripts/cli/build_cli_release.sh "Linux" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "true"
       - name: Upload Binary
@@ -98,7 +98,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.source_git_ref_override }}
-      - uses: aptos-labs/aptos-core/.github/actions/cli-rust-setup@main
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
       - name: Build CLI
         run: scripts/cli/build_cli_release.sh "Linux" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
       - name: Upload Binary
@@ -114,7 +114,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.source_git_ref_override }}
-      - uses: aptos-labs/aptos-core/.github/actions/cli-rust-setup@main
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
       - name: Build CLI
         run: scripts/cli/build_cli_release.sh "macOS" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
       - name: Upload Binary
@@ -130,7 +130,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.source_git_ref_override }}
-      - uses: aptos-labs/aptos-core/.github/actions/cli-rust-setup@main
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
       - name: Build CLI
         run: scripts/cli/build_cli_release.sh "macOS" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
       - name: Upload Binary

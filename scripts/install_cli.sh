@@ -93,7 +93,7 @@ esac
 
 # Set download URL and binary name
 RELEASE_TAG="aptos-cli-v$VERSION"
-DOWNLOAD_URL="https://github.com/aptos-labs/aptos-core/releases/download/$RELEASE_TAG/aptos-cli-$VERSION-$OS-$ARCH.zip"
+DOWNLOAD_URL="https://github.com/tuminfei/aptos-core/releases/download/$RELEASE_TAG/aptos-cli-$VERSION-$OS-$ARCH.zip"
 BINARY_NAME="aptos"
 
 if [ "$OS" = "Windows" ]; then
