@@ -141,39 +141,12 @@ jobs:
           name: cli-builds-macos-arm
           path: aptos-cli-*.zip
 
-  build-windows-binary:
-    name: "Build Windows binary"
-    runs-on: windows-2025
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.source_git_ref_override }}
-      - name: Ensure long paths work
-        run: git config --global core.longpaths true
-        shell: bash
-      - name: Build CLI
-        shell: pwsh
-        run: |
-          $releaseVersion = "${{ inputs.release_version }}"
-          $skipChecks = "${{ inputs.skip_checks }}"
-          if (-not $releaseVersion) {
-            Write-Error "release_version input is required and cannot be empty"
-            exit 1
-          }
-          & scripts/cli/build_cli_release.ps1 -ReleaseVersion $releaseVersion -SkipChecks $skipChecks
-      - name: Upload Binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: cli-builds-windows
-          path: aptos-cli-*.zip
-
   release-binaries:
     name: "Release binaries"
     needs:
       - update-install-script
       - build-ubuntu22-binary
       - build-ubuntu24-binary
-      - build-windows-binary
       - build-linux-binary
       - build-linux-arm-binary
       - build-macos-arm-binary
