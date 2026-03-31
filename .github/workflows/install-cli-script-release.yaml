@@ -152,7 +152,8 @@ jobs:
         run: git config --global core.longpaths true
         shell: bash
       - name: Build CLI
-        run: scripts\cli\build_cli_release.ps1
+        shell: pwsh
+        run: scripts/cli/build_cli_release.ps1 -ReleaseVersion "${{ inputs.release_version }}" -SkipChecks "${{ inputs.skip_checks }}"
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
@@ -174,7 +175,7 @@ jobs:
     permissions:
       contents: "write"
       pull-requests: "read"
-    if: ${{ inputs.dry_run }} == 'false'
+    if: ${{ inputs.dry_run == false }}
     steps:
       - name: Download prebuilt binaries
         uses: actions/download-artifact@v4
@@ -201,7 +202,7 @@ jobs:
     name: "Deploy install_cli.sh script"
     needs: release-binaries
     runs-on: ubuntu-22.04
-    if: ${{ inputs.dry_run }} == 'false'
+    if: ${{ inputs.dry_run == false }}
     steps:
       - name: Download updated script
         uses: actions/download-artifact@v4
