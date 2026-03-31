@@ -1,0 +1,227 @@
+name: "Release Install CLI Script and Binaries"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        type: string
+        required: true
+        description: "The CLI release version to update in the script. E.g. `0.10.0`"
+      source_git_ref_override:
+        type: string
+        required: false
+        description: "GIT_SHA_OVERRIDE: Use this to override the Git SHA1, branch name (e.g. devnet) or tag to build the binaries from. Defaults to the workflow Git REV, but can be different than that:"
+      dry_run:
+        type: boolean
+        required: false
+        default: true
+        description: "Dry run - If checked, the script won't be updated or deployed"
+      skip_checks:
+        type: boolean
+        required: false
+        default: false
+        description: "Skip checks - If checked, the release will skip version checks"
+
+jobs:
+  update-install-script:
+    name: "Update install_cli.sh script"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Update default version in install_cli.sh
+        run: |
+          sed -i 's/DEFAULT_VERSION="[0-9]\+\.[0-9]\+\.[0-9]\+"/DEFAULT_VERSION="${{ inputs.release_version }}"/g' scripts/install_cli.sh
+          
+      - name: Verify script update
+        run: |
+          grep "DEFAULT_VERSION=" scripts/install_cli.sh
+          
+      - name: Upload updated script as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-cli-script
+          path: scripts/install_cli.sh
+
+  build-ubuntu22-binary:
+    name: "Build Ubuntu 22.04 binary"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
+      - name: Build CLI
+        run: scripts/cli/build_cli_release.sh "Ubuntu-22.04" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-ubuntu-22.04
+          path: aptos-cli-*.zip
+
+  build-ubuntu24-binary:
+    name: "Build Ubuntu 24.04 binary"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
+      - name: Build CLI
+        run: scripts/cli/build_cli_release.sh "Ubuntu-24.04" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-ubuntu-24.04
+          path: aptos-cli-*.zip
+
+  build-linux-binary:
+    name: "Build Linux binary"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
+      - name: Build CLI
+        run: scripts/cli/build_cli_release.sh "Linux" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "true"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-linux
+          path: aptos-cli-*.zip
+
+  build-linux-arm-binary:
+    name: "Build Linux ARM binary"
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
+      - name: Build CLI
+        run: scripts/cli/build_cli_release.sh "Linux" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-linux-arm
+          path: aptos-cli-*.zip
+
+  build-macos-x86_64-binary:
+    name: "Build MacOS x86_64 binary"
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
+      - name: Build CLI
+        run: scripts/cli/build_cli_release.sh "macOS" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-macos-x86-64
+          path: aptos-cli-*.zip
+
+  build-macos-arm-binary:
+    name: "Build MacOS ARM binary"
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: tuminfei/aptos-core/.github/actions/cli-rust-setup@main
+      - name: Build CLI
+        run: scripts/cli/build_cli_release.sh "macOS" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-macos-arm
+          path: aptos-cli-*.zip
+
+  build-windows-binary:
+    name: "Build Windows binary"
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - name: Ensure long paths work
+        run: git config --global core.longpaths true
+        shell: bash
+      - name: Build CLI
+        run: scripts\cli\build_cli_release.ps1
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-windows
+          path: aptos-cli-*.zip
+
+  release-binaries:
+    name: "Release binaries"
+    needs:
+      - update-install-script
+      - build-ubuntu22-binary
+      - build-ubuntu24-binary
+      - build-windows-binary
+      - build-linux-binary
+      - build-linux-arm-binary
+      - build-macos-arm-binary
+      - build-macos-x86_64-binary
+    runs-on: 2cpu-gh-ubuntu24-x64
+    permissions:
+      contents: "write"
+      pull-requests: "read"
+    if: ${{ inputs.dry_run }} == 'false'
+    steps:
+      - name: Download prebuilt binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cli-builds-*
+          merge-multiple: true
+      - name: Download updated script
+        uses: actions/download-artifact@v4
+        with:
+          name: install-cli-script
+          path: .
+      - name: Create GitHub Release
+        uses: marvinpinto/action-automatic-releases@919008cf3f741b179569b7a6fb4d8860689ab7f0 # pin@v1.2.1
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "${{ format('aptos-cli-v{0}', inputs.release_version) }}"
+          prerelease: false
+          title: "${{ format('Aptos CLI Release v{0}', inputs.release_version) }}"
+          files: |
+            aptos-cli-*.zip
+            install_cli.sh
+
+  deploy-script:
+    name: "Deploy install_cli.sh script"
+    needs: release-binaries
+    runs-on: ubuntu-22.04
+    if: ${{ inputs.dry_run }} == 'false'
+    steps:
+      - name: Download updated script
+        uses: actions/download-artifact@v4
+        with:
+          name: install-cli-script
+          path: .
+      
+      - name: Deploy script to aptos.dev
+        # This is a placeholder - actual deployment mechanism will depend on how aptos.dev is hosted
+        # For example, if using GitHub Pages, you would commit to the appropriate branch
+        # Or if using a different hosting service, you would use their deployment API
+        run: |
+          echo "Deploying install_cli.sh to aptos.dev/scripts/"
+          # Example deployment command (replace with actual):
+          # scp install_cli.sh user@aptos.dev:/path/to/scripts/
+          # Or if using GitHub Pages:
+          # git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/aptos-labs/aptos.dev.git
+          # cp install_cli.sh aptos.dev/scripts/
+          # cd aptos.dev && git add scripts/install_cli.sh && git commit -m "Update install_cli.sh to v${{ inputs.release_version }}" && git push
+          
+      - name: Verify deployment
+        run: |
+          echo "Verifying deployment..."
+          # Example verification command (replace with actual):
+          # curl -s -L https://aptos.dev/scripts/install_cli.sh | grep "DEFAULT_VERSION="
