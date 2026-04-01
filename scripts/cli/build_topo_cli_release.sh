@@ -17,7 +17,12 @@
 set -e
 
 NAME='topo-cli'
-CRATE_NAME='topo' # [注意]: 请确保在这个库下，实际存在的对应的Cargo crate名称为 "topo" 或修改此处为准确的目录名
+# Auto-detect crate folder depending on whether the codebase has been renamed
+if [ -f "crates/topo/Cargo.toml" ]; then
+  CRATE_NAME='topo'
+else
+  CRATE_NAME='aptos'
+fi
 CARGO_PATH="crates/$CRATE_NAME/Cargo.toml"
 PLATFORM_NAME="$1"
 EXPECTED_VERSION="$2"
@@ -53,9 +58,24 @@ else
 fi
 cd target/cli/
 
+# Rename the compiled binary to 'topo' if it was built from the 'aptos' crate
+if [ "$CRATE_NAME" != "topo" ]; then
+  if [ -f "$CRATE_NAME" ]; then
+    mv "$CRATE_NAME" topo
+  fi
+  if [ -f "$CRATE_NAME.exe" ]; then
+    mv "$CRATE_NAME.exe" topo.exe
+  fi
+fi
+
 # Compress the CLI
 ZIP_NAME="$NAME-$VERSION-$PLATFORM_NAME-$ARCH.zip"
 
 echo "Zipping release: $ZIP_NAME"
-zip "$ZIP_NAME" "$CRATE_NAME"
+# Depending on target platform, the executable might have .exe
+if [ -f "topo.exe" ]; then
+  zip "$ZIP_NAME" "topo.exe"
+else
+  zip "$ZIP_NAME" "topo"
+fi
 mv "$ZIP_NAME" ../..
