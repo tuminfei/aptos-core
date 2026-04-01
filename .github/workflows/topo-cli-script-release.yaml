@@ -168,7 +168,7 @@ jobs:
           
       - name: Create GitHub Release in Topo-Labs/topo-chain
         env:
-          GITHUB_TOKEN: ${{ secrets.TOPO_CHAIN_PAT }} # 请确保配置该 PAT (或如果该Action就是在topo-chain中运行, 替换为 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }})
+          GH_TOKEN: ${{ secrets.TOPO_CHAIN_PAT || secrets.GITHUB_TOKEN }} # 优先使用自定义PAT跨库发布，未配置则降级使用本仓默认Token
         run: |
           gh release create "topo-cli-v${{ inputs.release_version }}" \
             --repo Topo-Labs/topo-chain \
