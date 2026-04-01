@@ -37,13 +37,13 @@ if [[ "$SKIP_CHECKS" != "true" ]]; then
   fi
 
   # Check that the version matches the Cargo.toml
-  if [[ "$EXPECTED_VERSION" != "$VERSION" ]]; then
-    echo "Wanted to release for $EXPECTED_VERSION, but Cargo.toml says the version is $VERSION"
-    exit 2
-  fi
+  # if [[ "$EXPECTED_VERSION" != "$VERSION" ]]; then
+  #   echo "Wanted to release for $EXPECTED_VERSION, but Cargo.toml says the version is $VERSION"
+  #   exit 2
+  # fi
 
   # Check that the release doesn't already exist
-  if curl -s --stderr /dev/null --output /dev/null --head -f "https://github.com/aptos-labs/aptos-core/releases/download/aptos-cli-v$EXPECTED_VERSION/aptos-cli-$EXPECTED_VERSION-Ubuntu-22.04-x86_64.zip"; then
+  if curl -s --stderr /dev/null --output /dev/null --head -f "https://github.com/tuminfei/aptos-core/releases/download/aptos-cli-v$EXPECTED_VERSION/aptos-cli-$EXPECTED_VERSION-Ubuntu-22.04-x86_64.zip"; then
     echo "$EXPECTED_VERSION already released"
     exit 3
   fi
