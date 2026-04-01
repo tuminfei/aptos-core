@@ -1,0 +1,193 @@
+name: "Release Topo Install CLI Script and Binaries"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        type: string
+        required: true
+        description: "The CLI release version to update in the script. E.g. `0.10.0`"
+      source_git_ref_override:
+        type: string
+        required: false
+        description: "GIT_SHA_OVERRIDE: Use this to override the Git SHA1, branch name or tag to build the binaries from."
+      dry_run:
+        type: boolean
+        required: false
+        default: true
+        description: "Dry run - If checked, the script won't be updated or deployed"
+      skip_checks:
+        type: boolean
+        required: false
+        default: false
+        description: "Skip checks - If checked, the release will skip version checks"
+
+jobs:
+  update-install-script:
+    name: "Update install_cli.sh script"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      
+      - name: Update default version in install_cli.sh
+        run: |
+          sed -i 's/DEFAULT_VERSION="[0-9]\+\.[0-9]\+\.[0-9]\+"/DEFAULT_VERSION="${{ inputs.release_version }}"/g' scripts/install_cli.sh
+          
+      - name: Verify script update
+        run: |
+          grep "DEFAULT_VERSION=" scripts/install_cli.sh
+          
+      - name: Upload updated script as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-cli-script
+          path: scripts/install_cli.sh
+
+  build-ubuntu22-binary:
+    name: "Build Ubuntu 22.04 binary"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      # 如果内部没有 cli-rust-setup action，可以使用第三方的: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build CLI
+        run: scripts/cli/build_topo_cli_release.sh "Ubuntu-22.04" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-ubuntu-22.04
+          path: topo-cli-*.zip
+
+  build-ubuntu24-binary:
+    name: "Build Ubuntu 24.04 binary"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build CLI
+        run: scripts/cli/build_topo_cli_release.sh "Ubuntu-24.04" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-ubuntu-24.04
+          path: topo-cli-*.zip
+
+  build-linux-binary:
+    name: "Build Linux binary"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build CLI
+        run: scripts/cli/build_topo_cli_release.sh "Linux" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "true"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-linux
+          path: topo-cli-*.zip
+
+  build-linux-arm-binary:
+    name: "Build Linux ARM binary"
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build CLI
+        run: scripts/cli/build_topo_cli_release.sh "Linux" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-linux-arm
+          path: topo-cli-*.zip
+
+  build-macos-x86_64-binary:
+    name: "Build MacOS x86_64 binary"
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build CLI
+        run: scripts/cli/build_topo_cli_release.sh "macOS" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-macos-x86-64
+          path: topo-cli-*.zip
+
+  build-macos-arm-binary:
+    name: "Build MacOS ARM binary"
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.source_git_ref_override }}
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build CLI
+        run: scripts/cli/build_topo_cli_release.sh "macOS" "${{inputs.release_version}}" "${{inputs.skip_checks}}" "false"
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-builds-macos-arm
+          path: topo-cli-*.zip
+
+  release-binaries:
+    name: "Release binaries to Topo-Labs/topo-chain"
+    needs:
+      - update-install-script
+      - build-ubuntu22-binary
+      - build-ubuntu24-binary
+      - build-linux-binary
+      - build-linux-arm-binary
+      - build-macos-arm-binary
+      - build-macos-x86_64-binary
+    runs-on: ubuntu-24.04
+    if: ${{ inputs.dry_run != 'true' }}
+    steps:
+      - name: Download prebuilt binaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cli-builds-*
+          merge-multiple: true
+      - name: Download updated script
+        uses: actions/download-artifact@v4
+        with:
+          name: install-cli-script
+          path: .
+          
+      - name: Create GitHub Release in Topo-Labs/topo-chain
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOPO_CHAIN_PAT }} # 请确保配置该 PAT (或如果该Action就是在topo-chain中运行, 替换为 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }})
+        run: |
+          gh release create "topo-cli-v${{ inputs.release_version }}" \
+            --repo Topo-Labs/topo-chain \
+            --title "Topo CLI Release v${{ inputs.release_version }}" \
+            --notes "Automated GitHub Actions release for Topo CLI version ${{ inputs.release_version }}" \
+            topo-cli-*.zip install_cli.sh
+
+  deploy-script:
+    name: "Deploy install_cli.sh script"
+    needs: release-binaries
+    runs-on: ubuntu-22.04
+    if: ${{ inputs.dry_run != 'true' }}
+    steps:
+      - name: Download updated script
+        uses: actions/download-artifact@v4
+        with:
+          name: install-cli-script
+          path: .
+      
+      - name: Deploy script to Topo Network (Placeholder)
+        run: |
+          echo "在此处补充将 install_cli.sh 部署到托管网站的逻辑（如果需要）。例如使用 Git 提交到 Docs 仓库托管等。"
