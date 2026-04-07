@@ -208,7 +208,7 @@ crate::gas_schedule::macros::define_gas_parameters!(
         [
             max_execution_gas: InternalGas,
             { 7.. => "max_execution_gas" },
-            9_200_000_000, // 92ms of execution at 100k gas per ms
+            50_000_000_000, // 500ms of execution at 100k gas per ms
         ],
         [
             max_execution_gas_gov: InternalGas,
