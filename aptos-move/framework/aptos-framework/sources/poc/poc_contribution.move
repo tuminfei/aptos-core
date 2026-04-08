@@ -45,6 +45,7 @@ module aptos_framework::poc_contribution {
 
     // ========== 贡献事件 ==========
 
+    #[event]
     /// 可信贡献事件 —— POC 算力体系的协议边界。
     ///
     /// 该事件表示：本模块已在当前交易内完成一笔通过注册表校验的标准股权发放，
@@ -55,7 +56,6 @@ module aptos_framework::poc_contribution {
     /// - 事件只在真实转账成功后发出
     /// - 关键资产参数由注册表给出，非外部传入
     /// - 链下还能看到同交易的 FA 转账事实做交叉验证
-    #[event]
     struct ContributionEvent has drop, store {
         /// 贡献者（接收股权代币的用户地址）
         contributor: address,
