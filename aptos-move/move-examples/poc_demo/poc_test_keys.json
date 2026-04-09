@@ -1,0 +1,132 @@
+{
+  "app_keys": [
+    {
+      "private_key": "0xf1b89bf8c57fa20d065a9a89c61d896a788d0b328fc78a3523ce73c8a644cb07",
+      "account": "0xd957e478eee036a8689944bb6c67e1dbbe9bea351a311818ca63e28de7da8e07"
+    },
+    {
+      "private_key": "0xff0a7b4bc2ea3589a6024f950a6cb291cbb65aeb0bc9835a7566253a972b54e4",
+      "account": "0xe2c66fa70ff7fe832b48b12c8fca2c6e86649d7ef0e423c2d274081fe00a7d78"
+    },
+    {
+      "private_key": "0x0844a2563c547025da91641713d3febaa01647c9c023d6f27b450d8c56a681cd",
+      "account": "0xa3f7f0add5d21e52f29b72117fe184cc64a54fe7ce3bb6f3e3af712d0edf3421"
+    }
+  ],
+  "user_keys": [
+    {
+      "private_key": "0x5c79b1a551567856ead547ac3c5d43e74004cf32b4c674cc721f16d3717cf8d3",
+      "account": "0x6f12ec6b1da0bffa754f55a3d2c63980179e3d45f3976bd6499ed759448764bd"
+    },
+    {
+      "private_key": "0x5b8e8e6e78c8ac7cb7687c2d4c313e609136a0f87960c437157a7d9dcc9cf36d",
+      "account": "0xfb12114cddaa849461ae1d63cd4ddcc8b207ef32403da72276abb39a7aab18cc"
+    },
+    {
+      "private_key": "0x0d865cfff2979a4fe04825419c002f911361d51dce2a16637cb142c8f1fee778",
+      "account": "0x765ee677212cef6c62fb3d0f3c2dbb03479cb11cbcbf52642000c9b1ee9face8"
+    },
+    {
+      "private_key": "0x7143fb112f220f7bf05bce84ee3295c1ef611a93451a7c165fc9dcc9110f0419",
+      "account": "0x148cd1f9db08e2d29c3c145a1d1dd4f5a10ee62dde50d06046c17ada77dc7512"
+    },
+    {
+      "private_key": "0x87bcd5d2f016afc8fab92f266f0fc1add6881fa676812f2ef419d05fd2b3f5e2",
+      "account": "0xd03c0199e5abc7fdb276115c2fd051ec6dc207f5c3400c05baf99a39a04256b4"
+    },
+    {
+      "private_key": "0xb123a8e7f1b678e9d54263632cac15fd0c25473f17200d312807d451940673a9",
+      "account": "0x5ebbf4ca9880449300f46097281b88a652554bc0a58fa57213630a1cfe0dbfb4"
+    },
+    {
+      "private_key": "0xed1acff36a9ae3a9f466cf28e794b93b59b296af72edacebacaea0401f88d057",
+      "account": "0x96acddb780040e5b6947e04561dc170bb06db68f79b5e98a23147e1cef0da7e9"
+    },
+    {
+      "private_key": "0xbf58daa5f6190cd0b85e92a3f95aa1e8df080765994aecdccfb1c7bb0c6cefea",
+      "account": "0xfb76e42f871b95c4d23dcf32007753e725ab641d2a2b895520780f059f44c52e"
+    },
+    {
+      "private_key": "0x9ebb8740eb222b26b86943d1a1ec20d3d9210d96e9f100786d4a1b74a329fb45",
+      "account": "0xb11302fe1b427f570ac37f2ab754e2c4c5d550cd12401ff2dda30ceb091bfcd5"
+    },
+    {
+      "private_key": "0x043c7c50d6d420990530b3c1288299ef86ef0cf1ef4095659bc620b0e6a654d0",
+      "account": "0xa73451f4d17b5d0872e9d7dffebb78c27b6d85e8e92ff0f60fa9cc550e5fc04e"
+    },
+    {
+      "private_key": "0xe9806da61c60408793f1fd55277a248575c4ebf33bf10272bdc8968600cc7305",
+      "account": "0x67d964c85874041dcfa50b5cbd6e78b51e5fb6dafa2b14376c6c5c7145e42845"
+    },
+    {
+      "private_key": "0x871f4cd650698d53374b6a3023e554d151c99f35c2b216ee15a16b4045ec02cc",
+      "account": "0x920810a90133514d508c9f3438289628ae991eb362e5c54f0c911dea4fa2c746"
+    },
+    {
+      "private_key": "0xba6431a8f256f20cb5022a267ca478f89754c0f80bcb59b16066db47dd443247",
+      "account": "0x4bf7b66a97218a472f8fb3338e000d60baca0d82842fb179cd2652a7cf3cba1e"
+    },
+    {
+      "private_key": "0x23c7031c2e9e59e10c5b86820dbbd4ed023f438c85df3a2d6e5739073ed67226",
+      "account": "0xad541e574789596815acc80c6d0d551e1ab1bbec76fbf41c09ae7bb16fd9154a"
+    },
+    {
+      "private_key": "0xed33fe328a154c566a9801eff25666f6d1f65aedb5ceb414be7e34dce489a665",
+      "account": "0x2f3ca4f921ea703c0b254b3c0110ed4571fab55061f716c1d63b01f613c421c5"
+    },
+    {
+      "private_key": "0xffa4f14623c1f416f9f4f1f27d66f69da0a344be4fbc4d6a62ccd04203bfcdbd",
+      "account": "0xecb809f09aa7a4fb2a5546685d44ef0d963e4beef3989e72589f31ed1e8a5d76"
+    },
+    {
+      "private_key": "0x24cf20177019b0b428d9b2325f36059cc7000eef3c7a6d94f190762b12e38c25",
+      "account": "0xe0c72e119692f964ccd058b2b2a28c405fa503f2071815d06da35e986a67a201"
+    },
+    {
+      "private_key": "0x082fe59bfac5877a765a3f783a83c8785ab8c08629176c014d7e8549b49440a2",
+      "account": "0x525a84127e51fabbefcee40bceb38abf399aa08889fd932c3bba8ff0b4dc9e3a"
+    },
+    {
+      "private_key": "0xddff9f69b545214978b863b93de2906f5c07b4d602038a3fea63ed395775c72d",
+      "account": "0xd1c84cdec6298c88c66c9dc561e1a6df0d515e00516b0c761f736b433e1c27b4"
+    },
+    {
+      "private_key": "0xe470c428d6264feb1d397d4a0133d5710221b10b3f41fa09bfe61db2217115d0",
+      "account": "0x092d94d74eb19043c8ab1571a85934e2796ecae9b9e8ec55ad725853a99c2086"
+    }
+  ],
+  "app_objects": [
+    "0xe34bb6f19121d559bfd06157c26b09a0bdf19d00372cda76ccc1d581fd77df1f",
+    "0xd348d6fdff380170e6e2704c442c2900bf4e36ec890d7a630ed30de2d0c58fe1",
+    "0xf12118224c754142c7fec730ede2a4cd89fb716f54b232c079a3751eb0a14dba"
+  ],
+  "app_configs": [
+    {
+      "name": "Alpha",
+      "symbol": "PDEQ-A",
+      "uri": "https://app-alpha.example.com",
+      "supply": 1000000000000,
+      "price": 100,
+      "decimals": 9
+    },
+    {
+      "name": "Beta",
+      "symbol": "PDEQ-B",
+      "uri": "https://app-beta.example.com",
+      "supply": 500000000000,
+      "price": 200,
+      "decimals": 9
+    },
+    {
+      "name": "Gamma",
+      "symbol": "PDEQ-G",
+      "uri": "https://app-gamma.example.com",
+      "supply": 2000000000000,
+      "price": 50,
+      "decimals": 9
+    }
+  ],
+  "poc_framework": "0xbfe262acf85005487af8911dc00d3587178c26bd0ff5443a89614da5f823028d",
+  "rest_url": "http://120.26.182.36:8080/",
+  "saved_at": "2026-04-09 12:27:51"
+}

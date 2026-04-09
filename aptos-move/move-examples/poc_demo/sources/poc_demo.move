@@ -7,13 +7,13 @@ module poc_demo::poc_demo {
     use aptos_std::smart_table::{Self, SmartTable};
 
     use aptos_framework::account::{Self, SignerCapability};
-    use aptos_framework::aptos_account;
     use aptos_framework::event;
     use aptos_framework::fungible_asset::{Self, Metadata, MintRef};
     use aptos_framework::object;
-    use aptos_framework::poc_contribution;
-    use aptos_framework::poc_registry;
+    use poc_framework::poc_contribution;
+    use poc_framework::poc_registry;
     use aptos_framework::primary_fungible_store;
+    use aptos_framework::topo_account;
 
     const EAPP_ALREADY_INITIALIZED: u64 = 1;
     const EAPP_NOT_FOUND: u64 = 2;
@@ -90,7 +90,7 @@ module poc_demo::poc_demo {
             option::none(),
             string::utf8(b"POC Demo Equity"),
             string::utf8(b"PDEQ"),
-            0,
+            9,
             string::utf8(b""),
             string::utf8(b""),
         );
@@ -145,7 +145,7 @@ module poc_demo::poc_demo {
         let buyer_addr = signer::address_of(buyer);
         let config = borrow_global_mut<DemoApp>(app_admin);
         let payment_amount = equity_amount * config.price_per_equity;
-        aptos_account::transfer(buyer, config.settlement_address, payment_amount);
+        topo_account::transfer(buyer, config.settlement_address, payment_amount);
 
         let trade_id = config.next_trade_id;
         config.next_trade_id = trade_id + 1;

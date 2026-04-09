@@ -4,6 +4,8 @@ version = "0.0.0"
 
 [addresses]
 poc_demo = "_"
+poc_framework = "bfe262acf85005487af8911dc00d3587178c26bd0ff5443a89614da5f823028d"
 
 [dependencies]
 AptosFramework = { local = "../../framework/aptos-framework" }
+PocFramework = {local = "../poc_framework"}
