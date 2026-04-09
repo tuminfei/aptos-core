@@ -13,9 +13,6 @@ pub use filters::*;
 pub use traits::Filterable;
 
 #[cfg(test)]
-pub mod test_lib;
-
-#[cfg(test)]
 mod tests {
 
     #[test]
