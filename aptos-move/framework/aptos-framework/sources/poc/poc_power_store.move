@@ -41,7 +41,7 @@ module aptos_framework::poc_power_store {
 
     /// 用户当前算力信息。
     struct UserPowerInfo has copy, drop, store {
-        power: u128,
+        power: u64,
         last_updated_period: u64,
     }
 
@@ -57,7 +57,7 @@ module aptos_framework::poc_power_store {
     struct PowerUpdatedEvent has drop, store {
         period: u64,
         user: address,
-        power: u128,
+        power: u64,
     }
 
     // ========== 初始化 ==========
@@ -118,7 +118,7 @@ module aptos_framework::poc_power_store {
         operator: &signer,
         period: u64,
         users: vector<address>,
-        powers: vector<u128>,
+        powers: vector<u64>,
     ) acquires PowerStore {
         assert_store_exists();
         assert!(
@@ -149,7 +149,7 @@ module aptos_framework::poc_power_store {
 
     // 获取用户当前最新算力；不存在时返回 0。
     #[view]
-    public fun get_user_power(user: address): u128 acquires PowerStore {
+    public fun get_user_power(user: address): u64 acquires PowerStore {
         get_user_power_info(user).power
     }
 
@@ -194,7 +194,7 @@ module aptos_framework::poc_power_store {
     fun upsert_user_power_if_not_stale(
         store: &mut PowerStore,
         user: address,
-        power: u128,
+        power: u64,
         period: u64,
     ): bool {
         if (store.users.contains(user)) {
@@ -237,7 +237,7 @@ module aptos_framework::poc_power_store {
             &operator,
             1,
             vector[signer::address_of(&user1), signer::address_of(&user2)],
-            vector[10u128, 20u128],
+            vector[10u64, 20u64],
         );
 
         let user1_info = get_user_power_info(signer::address_of(&user1));
@@ -261,13 +261,13 @@ module aptos_framework::poc_power_store {
             &operator,
             1,
             vector[signer::address_of(&user1)],
-            vector[42u128],
+            vector[42u64],
         );
         batch_update(
             &operator,
             2,
             vector[signer::address_of(&user1)],
-            vector[88u128],
+            vector[88u64],
         );
 
         let info = get_user_power_info(signer::address_of(&user1));
@@ -288,14 +288,14 @@ module aptos_framework::poc_power_store {
             &operator,
             2,
             vector[signer::address_of(&user1)],
-            vector[88u128],
+            vector[88u64],
         );
 
         batch_update(
             &operator,
             1,
             vector[signer::address_of(&user1), signer::address_of(&user2)],
-            vector[42u128, 15u128],
+            vector[42u64, 15u64],
         );
 
         let user1_info = get_user_power_info(signer::address_of(&user1));
