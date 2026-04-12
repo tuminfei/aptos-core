@@ -1,13 +1,3 @@
-/// 统一的链上质押注册表。
-///
-/// 这个模块负责把三类状态收敛到一起：
-/// 1. 用户在注册表里真实托管的 TOPO 余额；
-/// 2. 用户当前把这笔余额委托给哪个验证者；
-/// 3. `poc_power_store` 中记录的原始 power。
-///
-/// 最终治理和奖励使用的不是原始 power，而是有效 power：
-/// 只有在“已委托给有效验证者”且“链上 deposit 足以覆盖”的情况下，
-/// 原始 power 才会真正转化成可投票、可计奖的权重。
 module aptos_framework::staking_registry {
     use std::error;
     use std::signer;
@@ -48,12 +38,6 @@ module aptos_framework::staking_registry {
     const VALIDATOR_STATUS_PENDING_INACTIVE: u64 = 3;
     const VALIDATOR_STATUS_INACTIVE: u64 = 4;
 
-    /// genesis 期间临时保管的铸币能力。
-    ///
-    /// registry 自己的全局资源要等 `initialize` 后才存在，
-    /// 但 epoch 奖励分发又需要长期保存 `MintCapability<TopoCoin>`。
-    /// 因此先由 genesis 把 capability 存到这个过渡资源里，
-    /// 初始化 registry 时再整体搬入 `StakingRegistry`。
     struct PendingMintCapability has key {
         mint_cap: MintCapability<TopoCoin>,
     }
@@ -116,8 +100,6 @@ module aptos_framework::staking_registry {
             return
         };
 
-        // `octas_per_power` 定义“多少最小币单位才能覆盖 1 点 power”，
-        // 不能为 0，否则后续有效 power 计算会出现除零。
         assert!(octas_per_power > 0, error::invalid_argument(EINVALID_CONFIG));
         assert!(
             max_delegators_per_validator > 0,
@@ -129,9 +111,6 @@ module aptos_framework::staking_registry {
         );
 
         let PendingMintCapability { mint_cap } = move_from<PendingMintCapability>(@aptos_framework);
-        // `genesis_stake_power_multiplier` 默认是 1，
-        // 表示创世原始 power 默认等于 `stake_amount`。
-        // 后续如果要切换为固定倍率换算，只需要改链上配置，不需要再让 Rust 侧额外传参。
         move_to(aptos_framework, StakingRegistry {
             validators: table::new(),
             users: table::new(),
@@ -151,7 +130,6 @@ module aptos_framework::staking_registry {
         if (!exists<StakingRegistry>(@aptos_framework)) {
             0
         } else {
-            // 这里返回的是链上真实生效的创世 stake -> power 换算倍率。
             borrow_global<StakingRegistry>(@aptos_framework).config.genesis_stake_power_multiplier
         }
     }
@@ -161,9 +139,6 @@ module aptos_framework::staking_registry {
     ): u64 acquires StakingRegistry {
         assert_registry_exists();
         let registry = borrow_global<StakingRegistry>(@aptos_framework);
-        // 创世不再从外部显式接收 `initial_power`，
-        // 而是统一通过 `stake_amount * 链上倍率` 推导。
-        // 这样可以确保 Rust 输入、Move 执行和文档设计三者只有一套真相来源。
         let wide_power =
             (stake_amount as u128) * (registry.config.genesis_stake_power_multiplier as u128);
         assert!(wide_power <= MAX_U64, error::invalid_argument(EINVALID_CONFIG));
@@ -280,11 +255,6 @@ module aptos_framework::staking_registry {
         extract_withdrawable_deposit(user_address)
     }
 
-    /// vesting 专用的受限提取接口。
-    ///
-    /// 与“整笔 withdraw”不同，这里允许从仍在注册表托管的 deposit 中切出固定额度，
-    /// 供 vesting 把“本期解锁金额”转到合约账户。
-    /// 这样 vesting 不需要为了释放一部分金额而拆掉整笔委托关系。
     public(friend) fun extract_deposit_as_coins(
         user_address: address,
         amount: u64,
@@ -310,7 +280,6 @@ module aptos_framework::staking_registry {
 
         let info = registry.users.borrow(user);
         if (info.delegated_to == @0x0) {
-            // 没有委托关系时，注册表里的 deposit 只是托管余额，不产生治理/奖励权重。
             return 0
         };
         if (!registry.validators.contains(info.delegated_to)) {
@@ -320,12 +289,9 @@ module aptos_framework::staking_registry {
         let pool = registry.validators.borrow(info.delegated_to);
         if (pool.status != VALIDATOR_STATUS_ACTIVE
             && pool.status != VALIDATOR_STATUS_PENDING_INACTIVE) {
-            // 只有 active 或 pending_inactive 还能保留有效 power。
-            // 未激活或已完全 inactive 的验证者不应该继续贡献治理权重。
             return 0
         };
 
-        // 最终有效 power = min(原始 power, deposit 可覆盖上限)。
         calculate_effective_power(info, registry.config.octas_per_power, user)
     }
 
@@ -343,8 +309,6 @@ module aptos_framework::staking_registry {
         };
 
         let pool = registry.validators.borrow(validator_address);
-        // joining power 只统计验证者 owner 自己那部分有效 power，
-        // 用于表达验证者本人的进入/留存权重，不把其他委托人的份额混进来。
         get_user_effective_power_for_validator(
             registry,
             pool.owner_address,
@@ -369,10 +333,6 @@ module aptos_framework::staking_registry {
         let total_power = 0u128;
         pool.delegator_list.for_each_ref(|member| {
             let member_address = *member;
-            // 每个成员都必须同时满足：
-            // 1. 当前仍然委托给该验证者；
-            // 2. 自己在 power_store 中有 raw power；
-            // 3. 链上 deposit 足以覆盖。
             total_power += (get_user_effective_power_for_validator(
                 registry,
                 member_address,
@@ -512,7 +472,6 @@ module aptos_framework::staking_registry {
         let pool = registry.validators.borrow(validator_address);
         let owner_address = pool.owner_address;
         let commission_bps = pool.commission_bps;
-        // 先复制 delegator 列表和各自 power 快照，后面才能安全切换到可变借用去发奖励。
         let members = copy_addresses(&pool.delegator_list);
         let member_powers = vector<u64>[];
         let pool_power = 0u128;
@@ -537,9 +496,6 @@ module aptos_framework::staking_registry {
             return
         };
 
-        // 奖励先按佣金比例切分，再把剩余部分按有效 power 占比分配给 delegator。
-        // 整数除法留下的舍入残差统一并入 owner_reward，
-        // 从而保证“本轮实际铸造 == 全部用户实际收到的总和”。
         let commission = (((epoch_reward as u128) * (commission_bps as u128)) / 10000) as u64;
         let distributable = epoch_reward - commission;
 
@@ -559,8 +515,6 @@ module aptos_framework::staking_registry {
                     if (!users.contains(member)) {
                         users.add(member, new_user_info());
                     };
-                    // 奖励直接滚入 deposit，而不是立刻转到外部账户。
-                    // 这样奖励可以继续跟随当前委托关系积累并参与后续有效 power 约束。
                     let info = users.borrow_mut(member);
                     coin::merge(&mut info.deposit, coin::mint<TopoCoin>(reward, mint_cap));
                 };
@@ -592,7 +546,6 @@ module aptos_framework::staking_registry {
         );
 
         if (!registry.users.contains(owner_address)) {
-            // owner 不一定先有 deposit，但佣金最终一定会回到 owner 名下的 deposit。
             registry.users.add(owner_address, new_user_info());
         };
 
@@ -629,9 +582,6 @@ module aptos_framework::staking_registry {
 
         let max_delegators = registry.config.max_delegators_per_validator;
         let pool = registry.validators.borrow_mut(validator_address);
-        // 注册表模式下，委托不会移动 coin 所有权；
-        // deposit 一直放在用户自己的 `UserStakeInfo.deposit` 中，
-        // validator 侧只记录“有哪些地址把这笔 deposit 归属给我”。
         add_delegator(pool, user_address, max_delegators);
 
         let info = registry.users.borrow_mut(user_address);
@@ -653,7 +603,6 @@ module aptos_framework::staking_registry {
 
         let info = registry.users.borrow_mut(user_address);
         info.delegated_to = @0x0;
-        // 撤销委托后进入 cooldown，防止用户在敏感窗口内快速切换委托或立即提走 deposit。
         info.cooldown_until_secs = timestamp::now_seconds() + registry.config.cooldown_secs;
     }
 
@@ -753,13 +702,10 @@ module aptos_framework::staking_registry {
         octas_per_power: u64,
         user: address,
     ): u64 {
-        // `raw_power` 由 POC 系统维护，表达外部业务层或创世阶段赋予的原始权重。
         let raw_power = poc_power_store::get_user_power(user);
         if (raw_power == 0) {
             return 0
         };
-        // 链上实际 deposit 决定这份 raw_power 最多能被兑现多少。
-        // 如果 raw_power 很高但 deposit 不足，则必须按 deposit_cover 截断。
         let deposit_octas = coin::value(&info.deposit);
         let deposit_cover = deposit_octas / octas_per_power;
         math64::min(raw_power, deposit_cover)

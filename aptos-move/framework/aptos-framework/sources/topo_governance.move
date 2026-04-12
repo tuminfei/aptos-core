@@ -320,50 +320,26 @@ module aptos_framework::topo_governance {
             @aptos_framework,
             proposal_id
         );
-        if (staking_registry::registry_exists()) {
-            // registry 模式下，治理主体已经从“stake_pool 地址”切换成“持有有效 power 的地址自身”。
-            // 因此这里直接基于 voter 地址查询有效 power，再减去该地址已经使用过的票数。
-            if (is_proposal_expired(proposal_expiration)) {
-                return 0
-            };
-            if (has_entirely_voted(voter, proposal_id)) {
-                return 0
-            };
-            let total_voting_power = staking_registry::get_effective_power(voter);
-            if (total_voting_power == 0) {
-                return 0
-            };
-            let record_key = RecordKey {
-                voter,
-                proposal_id,
-            };
-            let used_voting_power =
-                *VotingRecordsV2[@aptos_framework].votes.borrow_with_default(record_key, &0);
-            if (used_voting_power >= total_voting_power) {
-                0
-            } else {
-                total_voting_power - used_voting_power
-            }
+        if (is_proposal_expired(proposal_expiration)) {
+            return 0
+        };
+        if (has_entirely_voted(voter, proposal_id)) {
+            return 0
+        };
+        let total_voting_power = staking_registry::get_effective_power(voter);
+        if (total_voting_power == 0) {
+            return 0
+        };
+        let record_key = RecordKey {
+            voter,
+            proposal_id,
+        };
+        let used_voting_power =
+            *VotingRecordsV2[@aptos_framework].votes.borrow_with_default(record_key, &0);
+        if (used_voting_power >= total_voting_power) {
+            0
         } else {
-            // The voter's stake needs to be locked up at least as long as the proposal's expiration.
-            // Also no one can vote on a expired proposal.
-            if (!stake_pool_is_eligible_to_vote(voter, proposal_expiration)
-                || is_proposal_expired(proposal_expiration)) {
-                return 0
-            };
-
-            // If a stake pool has already voted on a proposal before partial governance voting is enabled, the stake pool
-            // cannot vote on the proposal even after partial governance voting is enabled.
-            if (has_entirely_voted(voter, proposal_id)) {
-                return 0
-            };
-            let record_key = RecordKey {
-                voter,
-                proposal_id,
-            };
-            let used_voting_power =
-                *VotingRecordsV2[@aptos_framework].votes.borrow_with_default(record_key, &0);
-            get_voting_power(voter) - used_voting_power
+            total_voting_power - used_voting_power
         }
     }
 
@@ -373,20 +349,10 @@ module aptos_framework::topo_governance {
             @aptos_framework,
             proposal_id
         );
-        if (staking_registry::registry_exists()) {
-            // registry 模式不再依赖传统的 stake lockup 到期时间判定可投票性，
-            // 是否还能投票完全由“当前是否仍有有效 power”决定。
-            assert!(
-                staking_registry::get_effective_power(voter) > 0,
-                error::invalid_argument(ENO_VOTING_POWER),
-            );
-        } else {
-            // The voter's stake needs to be locked up at least as long as the proposal's expiration.
-            assert!(
-                stake_pool_is_eligible_to_vote(voter, proposal_expiration),
-                error::invalid_argument(EINSUFFICIENT_STAKE_LOCKUP),
-            );
-        };
+        assert!(
+            stake_pool_is_eligible_to_vote(voter, proposal_expiration),
+            error::invalid_argument(ENO_VOTING_POWER),
+        );
         assert!(
             !is_proposal_expired(proposal_expiration),
             error::invalid_argument(EPROPOSAL_EXPIRED),
@@ -394,17 +360,9 @@ module aptos_framework::topo_governance {
     }
 
     inline fun stake_pool_is_eligible_to_vote(
-        stake_pool: address, proposal_expiration: u64
+        stake_pool: address, _proposal_expiration: u64
     ): bool {
-        if (staking_registry::registry_exists()) {
-            staking_registry::get_effective_power(stake_pool) > 0
-        } else {
-            // The voter's stake needs to be locked up at least as long as the proposal's expiration.
-            // Also no one can vote on a expired proposal.
-            // Note the boundary condition must be strictly less than to avoid the edge case where the
-            // proposal expiration is equal to the lockup until.
-            proposal_expiration < stake::get_lockup_secs(stake_pool)
-        }
+        staking_registry::get_effective_power(stake_pool) > 0
     }
 
     inline fun is_proposal_expired(proposal_expiration: u64): bool {
@@ -444,15 +402,6 @@ module aptos_framework::topo_governance {
         );
     }
 
-    /// 创建提案的中间层实现。
-    /// 该函数接受旧模式的 `stake_pool` 参数，但在 registry 模式下会将其忽略，
-    /// 将投票主体（voting_subject）强制收敛为 proposer 自身地址。
-    ///
-    /// 这是一个适配层：外部调用方（如 create_proposal_v2）仍然传入 stake_pool，
-    /// 但本函数会根据当前模式决定真正的 voting_subject，然后委托给
-    /// create_proposal_v2_impl_with_voting_subject 执行核心逻辑。
-    ///
-    /// @return proposal_id 创建成功后返回提案 ID。
     public fun create_proposal_v2_impl(
         proposer: &signer,
         stake_pool: address,
@@ -461,19 +410,10 @@ module aptos_framework::topo_governance {
         metadata_hash: vector<u8>,
         is_multi_step_proposal: bool,
     ): u64 acquires GovernanceConfig {
-        let voting_subject =
-            if (staking_registry::registry_exists()) {
-                // registry 模式下忽略传入的 stake_pool 参数。
-                // 原因：registry 模式中不存在 stake_pool → proposer 的间接关系，
-                // 提案权严格绑定到 signer 自己的有效 power，
-                // 因此 voting_subject 必须是 proposer 自身地址。
-                signer::address_of(proposer)
-            } else {
-                stake_pool
-            };
+        let _unused_stake_pool = stake_pool;
         create_proposal_v2_impl_with_voting_subject(
             proposer,
-            voting_subject,
+            signer::address_of(proposer),
             execution_hash,
             metadata_location,
             metadata_hash,
@@ -481,19 +421,6 @@ module aptos_framework::topo_governance {
         )
     }
 
-    // 已废弃（#[deprecated]）：保留旧的基于 stake_pool 的创建提案接口。
-    //
-    // 兼容策略：
-    // 该接口是旧版 aptos_governance 中 `create_proposal` 的带 stake_pool 参数版本。
-    // 在 registry 模式上线后，外部调用方（如 SDK、钱包、DApp）可能尚未迁移到新接口，
-    // 仍然会传入 stake_pool 地址。为了平滑过渡，保留此接口但标记为 deprecated。
-    //
-    // 在 registry 模式下，无论外部传入什么 stake_pool 地址，
-    // 内部都会将提案主体（voting_subject）强制收敛为 proposer 自身地址，
-    // 确保提案权始终绑定到签名者本人的有效 power。
-    //
-    // 调用方应尽快迁移到 `create_proposal` 或 `create_proposal_v2`，
-    // 这些新接口不再需要传入 stake_pool 参数。
     #[deprecated]
     public entry fun create_proposal_with_stake_pool(
         proposer: &signer,
@@ -512,15 +439,6 @@ module aptos_framework::topo_governance {
         );
     }
 
-    // 已废弃（#[deprecated]）：保留旧的基于 stake_pool 的创建提案 v2 接口。
-    //
-    // 兼容策略：
-    // 与 create_proposal_with_stake_pool 相同，该接口保留是为了向后兼容。
-    // 在 registry 模式下，传入的 stake_pool 参数会被忽略，
-    // voting_subject 被强制设为 proposer 自身地址。
-    //
-    // 旧模式下，stake_pool 参数仍然生效，作为提案的投票主体。
-    // 调用方应尽快迁移到不带 stake_pool 参数的新版接口。
     #[deprecated]
     public entry fun create_proposal_v2_with_stake_pool(
         proposer: &signer,
@@ -530,18 +448,10 @@ module aptos_framework::topo_governance {
         metadata_hash: vector<u8>,
         is_multi_step_proposal: bool,
     ) acquires GovernanceConfig {
-        let voting_subject =
-            if (staking_registry::registry_exists()) {
-                // 兼容旧接口：即使外部继续传 stake_pool，
-                // registry 模式也会把主体强制收敛为 proposer 地址自身。
-                // 这保证了无论调用哪个接口，registry 模式下的行为都是一致的。
-                signer::address_of(proposer)
-            } else {
-                stake_pool
-            };
+        let _unused_stake_pool = stake_pool;
         create_proposal_v2_impl_with_voting_subject(
             proposer,
-            voting_subject,
+            signer::address_of(proposer),
             execution_hash,
             metadata_location,
             metadata_hash,
@@ -549,27 +459,6 @@ module aptos_framework::topo_governance {
         );
     }
 
-    /// 创建提案的核心实现（最底层）。
-    ///
-    /// ## voting_subject 的语义
-    /// `voting_subject` 是一个统一抽象，用于屏蔽两种模式的差异：
-    /// - 在 registry 模式下，voting_subject == proposer 自身地址。
-    ///   提案人直接以自己的身份参与治理，投票权来源于注册表中的有效 power。
-    /// - 在旧模式下，voting_subject == stake_pool 地址。
-    ///   提案人通过其关联的 stake_pool 参与治理，投票权来源于 stake_pool 的质押余额。
-    ///
-    /// 上游调用方（create_proposal_v2_impl、create_proposal_v2_with_stake_pool 等）
-    /// 负责根据当前模式将 voting_subject 设置为正确的值，本函数不再关心模式切换逻辑。
-    ///
-    /// ## 该函数的完整职责
-    /// 1. 权限检查：验证 proposer 是否有治理权限（GovernancePermission）
-    /// 2. 授权检查（仅旧模式）：验证 proposer 是否是 voting_subject（stake_pool）的 delegated_voter
-    /// 3. 质押门槛检查：验证提案人的投票权 >= required_proposer_stake
-    /// 4. Lockup 检查（仅旧模式）：验证 stake_pool 的 lockup 覆盖投票期
-    /// 5. 元数据校验：创建并验证提案元数据
-    /// 6. 早决议阈值计算：registry 模式基于注册表总质押，旧模式基于全链总发行量
-    /// 7. 创建提案：调用 voting 模块创建提案
-    /// 8. 事件发射：发出 CreateProposal 事件
     fun create_proposal_v2_impl_with_voting_subject(
         proposer: &signer,
         voting_subject: address,
@@ -578,100 +467,29 @@ module aptos_framework::topo_governance {
         metadata_hash: vector<u8>,
         is_multi_step_proposal: bool,
     ): u64 acquires GovernanceConfig {
+        let _unused_voting_subject = voting_subject;
         check_governance_permission(proposer);
         let proposer_address = signer::address_of(proposer);
 
-        // ========== 步骤 1：授权检查（delegated_voter） ==========
-        // 提案人的质押必须达到最低保证金要求。
         let governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
-        let registry_enabled = staking_registry::registry_exists();
-        if (!registry_enabled) {
-            // 旧模式下，需要验证 proposer 是 voting_subject（stake_pool）的 delegated_voter。
-            // 这是因为旧模式中 stake_pool 的所有者可以将投票权委托给另一个地址，
-            // 只有被委托的地址才能代表该 stake_pool 创建提案。
-            //
-            // registry 模式下跳过此检查的原因：
-            // registry 模式中不存在 delegated_voter 的概念。
-            // 投票权直接归属于持有有效 power 的地址本身，
-            // proposer 就是治理主体，不需要任何委托关系。
-            assert!(
-                stake::get_delegated_voter(voting_subject) == proposer_address,
-                error::invalid_argument(ENOT_DELEGATED_VOTER)
-            );
-        };
-
-        // ========== 步骤 2：质押门槛检查 ==========
-        let stake_balance =
-            if (registry_enabled) {
-                // registry 模式：从注册表获取 proposer 地址的有效 power。
-                // 注意这里用的是 proposer_address 而非 voting_subject，
-                // 因为在 registry 模式下两者相同（上游已保证）。
-                staking_registry::get_effective_power(proposer_address)
-            } else {
-                // 旧模式：从 stake_pool 获取聚合后的投票权
-                // （active + pending_active + pending_inactive）。
-                get_voting_power(voting_subject)
-            };
+        let stake_balance = staking_registry::get_effective_power(proposer_address);
         assert!(
             stake_balance >= governance_config.required_proposer_stake,
             error::invalid_argument(EINSUFFICIENT_PROPOSER_STAKE),
         );
 
-        // ========== 步骤 3：Lockup 检查（仅旧模式） ==========
-        // 提案人的质押锁定期必须至少覆盖提案的投票期。
         let current_time = timestamp::now_seconds();
         let proposal_expiration = current_time + governance_config.voting_duration_secs;
-        if (!registry_enabled) {
-            // 旧模式下，要求 stake_pool 的 lockup 到期时间 > proposal_expiration。
-            // 这确保提案人在整个投票期间都保持质押承诺。
-            //
-            // registry 模式下跳过此检查的原因：
-            // 注册表本身管理了 power 的有效期。如果提案人的 power 在投票期间过期，
-            // 其投票权会自然降为 0，不需要额外的 lockup 时间约束。
-            // 而且 registry 模式的设计理念是”当前有效 power 即为投票权”，
-            // 不再要求质押锁定期与提案投票期对齐。
-            assert!(
-                stake_pool_is_eligible_to_vote(voting_subject, proposal_expiration),
-                error::invalid_argument(EINSUFFICIENT_STAKE_LOCKUP),
-            );
-        };
+        assert!(
+            stake_pool_is_eligible_to_vote(proposer_address, proposal_expiration),
+            error::invalid_argument(ENO_VOTING_POWER),
+        );
 
-        // ========== 步骤 4：创建并验证提案元数据 ==========
         let proposal_metadata = create_proposal_metadata(metadata_location, metadata_hash);
 
-        // ========== 步骤 5：计算早决议阈值（early resolution vote threshold） ==========
-        // 早决议机制：如果投票数超过阈值，提案可以在投票期结束前提前通过或否决。
-        // 这避免了明显已有结果的提案还需要等待整个投票期结束。
         let early_resolution_vote_threshold =
-            if (registry_enabled) {
-                // registry 模式下，早决议阈值 = 注册表总有效质押量 / 2 + 1。
-                //
-                // 与旧模式的关键区别：
-                // - 旧模式基于全链 TopoCoin 总发行量（coin::supply<TopoCoin>()）计算阈值。
-                //   这包括了所有流通中的代币，无论是否参与质押。
-                // - registry 模式基于注册表中的总有效质押量（get_total_staked_power()）计算。
-                //   这只包括已经注册到治理体系中的质押量。
-                //
-                // 这一变化的意义：
-                // 1. 更精确：只有实际参与治理的质押才被纳入阈值计算，
-                //    避免了大量未质押代币”稀释”投票权重的问题。
-                // 2. 更合理：阈值反映的是”治理参与者中的多数”，而非”全网持币者中的多数”。
-                // 3. 更高效：当注册表质押量远小于总发行量时，提案更容易达到早决议阈值。
-                //
-                // +1 是为了避免整除时的舍入误差，确保阈值严格超过 50%。
-                option::some((staking_registry::get_total_staked_power() as u128) / 2 + 1)
-            } else {
-                let total_voting_token_supply = coin::supply<TopoCoin>();
-                let threshold = option::none<u128>();
-                if (total_voting_token_supply.is_some()) {
-                    let total_supply = *total_voting_token_supply.borrow();
-                    // 50% + 1 to avoid rounding errors.
-                    threshold = option::some(total_supply / 2 + 1);
-                };
-                threshold
-            };
+            option::some((staking_registry::get_total_staked_power() as u128) / 2 + 1);
 
-        // ========== 步骤 6：调用 voting 模块创建提案 ==========
         let proposal_id = voting::create_proposal_v2(
             proposer_address,
             @aptos_framework,
@@ -721,16 +539,8 @@ module aptos_framework::topo_governance {
         proposal_id: u64,
         should_pass: bool,
     ) acquires ApprovedExecutionHashes, VotingRecords, VotingRecordsV2 {
-        if (staking_registry::registry_exists()) {
-            if (!stake_pools.is_empty()) {
-                // registry 模式不存在“一人携带多个独立 stake_pool 主体批量投票”的语义。
-                // 这里保留旧 API 只是为了兼容调用方，实际只按 signer 自身执行一次投票。
-                vote_internal(voter, proposal_id, MAX_U64, should_pass);
-            };
-        } else {
-            stake_pools.for_each(|stake_pool| {
-                vote_internal_with_stake_pool(voter, stake_pool, proposal_id, MAX_U64, should_pass);
-            });
+        if (!stake_pools.is_empty()) {
+            vote_internal(voter, proposal_id, MAX_U64, should_pass);
         };
     }
 
@@ -742,15 +552,8 @@ module aptos_framework::topo_governance {
         voting_power: u64,
         should_pass: bool,
     ) acquires ApprovedExecutionHashes, VotingRecords, VotingRecordsV2 {
-        if (staking_registry::registry_exists()) {
-            if (!stake_pools.is_empty()) {
-                // 同上，registry 模式下这仍然只是“signer 自己做一次部分投票”。
-                vote_internal(voter, proposal_id, voting_power, should_pass);
-            };
-        } else {
-            stake_pools.for_each(|stake_pool| {
-                vote_internal_with_stake_pool(voter, stake_pool, proposal_id, voting_power, should_pass);
-            });
+        if (!stake_pools.is_empty()) {
+            vote_internal(voter, proposal_id, voting_power, should_pass);
         };
     }
 
@@ -820,14 +623,14 @@ module aptos_framework::topo_governance {
         voting_power: u64,
         should_pass: bool,
     ) acquires ApprovedExecutionHashes, VotingRecords, VotingRecordsV2 {
-        let voting_subject =
-            if (staking_registry::registry_exists()) {
-                // 旧接口兼容层：registry 模式下最终主体仍然必须是 voter 自己。
-                signer::address_of(voter)
-            } else {
-                stake_pool
-            };
-        vote_internal_impl(voter, voting_subject, proposal_id, voting_power, should_pass);
+        let _unused_stake_pool = stake_pool;
+        vote_internal_impl(
+            voter,
+            signer::address_of(voter),
+            proposal_id,
+            voting_power,
+            should_pass,
+        );
     }
 
     fun vote_internal_impl(
@@ -839,14 +642,6 @@ module aptos_framework::topo_governance {
     ) acquires ApprovedExecutionHashes, VotingRecords, VotingRecordsV2 {
         permissioned_signer::assert_master_signer(voter);
         let voter_address = signer::address_of(voter);
-        if (!staking_registry::registry_exists()) {
-            assert!(
-                stake::get_delegated_voter(voting_subject) == voter_address,
-                error::invalid_argument(ENOT_DELEGATED_VOTER),
-            );
-        };
-        // `voting_subject` 在 registry 模式下表示 voter 地址，
-        // 在旧模式下表示 stake_pool 地址。后续剩余票数计算与投票记录都统一围绕它展开。
         assert_proposal_expiration(voting_subject, proposal_id);
 
         // If a stake pool has already voted on a proposal before partial governance voting is enabled,
@@ -1018,21 +813,7 @@ module aptos_framework::topo_governance {
     #[view]
     /// Return the voting power a stake pool has with respect to governance proposals.
     public fun get_voting_power(pool_address: address): u64 {
-        if (staking_registry::registry_exists()) {
-            staking_registry::get_effective_power(pool_address)
-        } else {
-            let allow_validator_set_change =
-                staking_config::get_allow_validator_set_change(&staking_config::get());
-            if (allow_validator_set_change) {
-                let (active, _, pending_active, pending_inactive) = stake::get_stake(pool_address);
-                // We calculate the voting power as total non-inactive stakes of the pool. Even if the validator is not in the
-                // active validator set, as long as they have a lockup (separately checked in create_proposal and voting), their
-                // stake would still count in their voting power for governance proposals.
-                active + pending_active + pending_inactive
-            } else {
-                stake::get_current_epoch_voting_power(pool_address)
-            }
-        }
+        staking_registry::get_effective_power(pool_address)
     }
 
     /// Return a signer for making changes to 0x1 as part of on-chain governance proposal process.

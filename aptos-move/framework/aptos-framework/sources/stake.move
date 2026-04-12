@@ -448,51 +448,16 @@ module aptos_framework::stake {
 
     #[view]
     /// Return the voting power of the validator in the current epoch.
-    /// This is the same as the validator's total active and pending_inactive stake.
+    /// This is the validator's total effective power in staking_registry.
     public fun get_current_epoch_voting_power(
         pool_address: address
-    ): u64 acquires StakePool, ValidatorSet {
+    ): u64 acquires ValidatorSet {
         assert_stake_pool_exists(pool_address);
         let validator_state = get_validator_state(pool_address);
         // Both active and pending inactive validators can still vote in the current epoch.
         if (validator_state == VALIDATOR_STATUS_ACTIVE
             || validator_state == VALIDATOR_STATUS_PENDING_INACTIVE) {
-            // ========== 投票权计算的双模式分支 ==========
-            //
-            // 【registry 模式（新模式）】
-            //   投票权不再由 StakePool 中锁定的 TopoCoin 余额决定，
-            //   而是由 staking_registry 汇总该验证者名下所有委托人的"有效 power"得出。
-            //   有效 power 的计算公式为：
-            //     effective_power = min(raw_power, deposit / octas_per_power)
-            //   其中 raw_power 来自 poc_power_store（PoC 贡献证明），
-            //   deposit 是用户在注册表中托管的 TopoCoin 余额。
-            //   这意味着投票权同时受到"贡献证明"和"经济担保"的双重约束，
-            //   防止无资金担保的 power 膨胀投票权。
-            //
-            //   调用 get_validator_total_power 会遍历该验证者的所有委托人，
-            //   逐一计算有效 power 并求和，返回值即为该验证者在当前 epoch 的投票权。
-            //
-            // 【旧模式（传统 StakePool 模式）】
-            //   投票权 = active 余额 + pending_inactive 余额。
-            //   这两部分都是当前 epoch 仍然有效的质押：
-            //   - active：正常参与共识的质押；
-            //   - pending_inactive：已请求退出但在本 epoch 结束前仍有效的质押。
-            //   pending_active 不计入，因为它要到下个 epoch 才生效。
-            //
-            // 【为什么要改】
-            //   旧模式下投票权完全由锁定的 coin 数量决定，无法区分不同委托人的贡献，
-            //   也无法引入 PoC power 这种非资金维度的权重。
-            //   registry 模式将"谁贡献了多少"和"谁担保了多少"解耦，
-            //   使得投票权可以更精细地反映每个参与者的实际贡献和经济承诺。
-            if (staking_registry::registry_exists()) {
-                staking_registry::get_validator_total_power(pool_address)
-            } else {
-                let active_stake =
-                    coin::value(&borrow_global<StakePool>(pool_address).active);
-                let pending_inactive_stake =
-                    coin::value(&borrow_global<StakePool>(pool_address).pending_inactive);
-                active_stake + pending_inactive_stake
-            }
+            staking_registry::get_validator_total_power(pool_address)
         } else { 0 }
     }
 
@@ -633,36 +598,7 @@ module aptos_framework::stake {
                 let validator_info =
                     active_validators.swap_remove(*validator_index.borrow());
                 pending_inactive.push_back(validator_info);
-                // ========== 治理强制移除验证者时的 registry 状态同步 ==========
-                //
-                // 【为什么需要这个分支】
-                //   remove_validators 是链上治理（governance）强制将验证者从 active 集合移到
-                //   pending_inactive 队列的入口。在 ValidatorSet 层面，验证者已经被移动了，
-                //   但 registry 侧的 ValidatorPool.status 仍然是 ACTIVE。
-                //   如果不同步更新，registry 中该验证者的委托人在本 epoch 结束前仍会被视为
-                //   "委托给 active 验证者"，其有效 power 计算不受影响——这本身是正确的，
-                //   因为 pending_inactive 验证者在当前 epoch 仍然有效。
-                //   但关键是：registry 侧的状态必须与 ValidatorSet 保持一致，
-                //   这样 on_new_epoch 在处理 pending_inactive 队列时才能正确地将其转为 inactive。
-                //
-                // 【具体行为】
-                //   调用 staking_registry::set_validator_pending_inactive(validator)，
-                //   将 registry 中该验证者的 status 从 ACTIVE 改为 PENDING_INACTIVE。
-                //   pending_inactive 状态下，委托人的有效 power 仍然有效（因为 get_effective_power
-                //   对 ACTIVE 和 PENDING_INACTIVE 都返回非零值），所以不影响当前 epoch 的投票。
-                //
-                // 【旧模式对比】
-                //   旧模式下不存在 registry，验证者状态完全由 ValidatorSet 中的队列位置决定，
-                //   不需要额外的状态同步。registry 模式引入了独立的状态字段，
-                //   因此每次 ValidatorSet 发生变更时都必须同步更新 registry 侧的状态。
-                //
-                // 【安全考量】
-                //   此函数只能由 aptos_framework signer 调用（治理提案执行），
-                //   普通用户无法触发。registry_exists() 的检查确保在 registry 未初始化时
-                //   不会尝试访问不存在的全局资源。
-                if (staking_registry::registry_exists()) {
-                    staking_registry::set_validator_pending_inactive(validator);
-                };
+                staking_registry::set_validator_pending_inactive(validator);
                 spec {
                     update ghost_active_num = ghost_active_num - 1;
                     update ghost_pending_inactive_num = ghost_pending_inactive_num + 1;
@@ -1161,14 +1097,9 @@ module aptos_framework::stake {
 
         let config = staking_config::get();
         let (minimum_stake, maximum_stake) = staking_config::get_required_stake(&config);
-        let voting_power =
-            if (staking_registry::registry_exists()) {
-                let self_power = staking_registry::get_validator_joining_power(pool_address);
-                assert!(self_power > 0, error::invalid_argument(ESTAKE_TOO_LOW));
-                staking_registry::get_validator_total_power(pool_address)
-            } else {
-                get_next_epoch_voting_power(stake_pool)
-            };
+        let self_power = staking_registry::get_validator_joining_power(pool_address);
+        assert!(self_power > 0, error::invalid_argument(ESTAKE_TOO_LOW));
+        let voting_power = staking_registry::get_validator_total_power(pool_address);
         assert!(voting_power >= minimum_stake, error::invalid_argument(ESTAKE_TOO_LOW));
         assert!(voting_power <= maximum_stake, error::invalid_argument(ESTAKE_TOO_HIGH));
 
@@ -1185,7 +1116,7 @@ module aptos_framework::stake {
         // Validate the current validator set size has not exceeded the limit.
         let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
         validator_set.pending_active.push_back(
-            generate_validator_info(pool_address, stake_pool, *validator_config)
+            generate_validator_info(pool_address, *validator_config)
         );
         let validator_set_size =
             validator_set.active_validators.length()
@@ -1194,9 +1125,7 @@ module aptos_framework::stake {
             validator_set_size <= MAX_VALIDATOR_SET_SIZE,
             error::invalid_argument(EVALIDATOR_SET_TOO_LARGE)
         );
-        if (staking_registry::registry_exists()) {
-            staking_registry::set_validator_pending_active(pool_address);
-        };
+        staking_registry::set_validator_pending_active(pool_address);
 
         event::emit(JoinValidatorSet { pool_address });
     }
@@ -1305,11 +1234,7 @@ module aptos_framework::stake {
             // to join. Now that they changed their mind, their voting power should not affect the joining limit of this
             // epoch.
             let validator_stake =
-                if (staking_registry::registry_exists()) {
-                    staking_registry::get_validator_total_power(pool_address) as u128
-                } else {
-                    get_next_epoch_voting_power(stake_pool) as u128
-                };
+                staking_registry::get_validator_total_power(pool_address) as u128;
             // total_joining_power should be larger than validator_stake but just in case there has been a small
             // rounding error somewhere that can lead to an underflow, we still want to allow this transaction to
             // succeed.
@@ -1318,9 +1243,7 @@ module aptos_framework::stake {
             } else {
                 validator_set.total_joining_power = 0;
             };
-            if (staking_registry::registry_exists()) {
-                staking_registry::set_validator_inactive(pool_address);
-            };
+            staking_registry::set_validator_inactive(pool_address);
         } else {
             // Validate that the validator is already part of the validator set.
             let maybe_active_index =
@@ -1333,9 +1256,7 @@ module aptos_framework::stake {
                 error::invalid_state(ELAST_VALIDATOR)
             );
             validator_set.pending_inactive.push_back(validator_info);
-            if (staking_registry::registry_exists()) {
-                staking_registry::set_validator_pending_inactive(pool_address);
-            };
+            staking_registry::set_validator_pending_inactive(pool_address);
 
             event::emit(LeaveValidatorSet { pool_address });
         };
@@ -1423,7 +1344,6 @@ module aptos_framework::stake {
         let config = staking_config::get();
         let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
 
-        let registry_enabled = staking_registry::registry_exists();
         let (rewards_rate, rewards_rate_denominator) =
             staking_config::get_reward_rate(&config);
 
@@ -1431,21 +1351,19 @@ module aptos_framework::stake {
         validator_set.active_validators.for_each_ref(|validator| {
             let validator: &ValidatorInfo = validator;
             update_stake_pool(validator_perf, validator.addr, &config);
-            if (registry_enabled) {
-                let validator_config = borrow_global<ValidatorConfig>(validator.addr);
-                let current_perf =
-                    validator_perf.validators.borrow(validator_config.validator_index);
-                let num_successful_proposals = current_perf.successful_proposals;
-                let num_total_proposals =
-                    current_perf.successful_proposals + current_perf.failed_proposals;
-                staking_registry::distribute_epoch_rewards(
-                    validator.addr,
-                    num_successful_proposals,
-                    num_total_proposals,
-                    rewards_rate,
-                    rewards_rate_denominator,
-                );
-            };
+            let validator_config = borrow_global<ValidatorConfig>(validator.addr);
+            let current_perf =
+                validator_perf.validators.borrow(validator_config.validator_index);
+            let num_successful_proposals = current_perf.successful_proposals;
+            let num_total_proposals =
+                current_perf.successful_proposals + current_perf.failed_proposals;
+            staking_registry::distribute_epoch_rewards(
+                validator.addr,
+                num_successful_proposals,
+                num_total_proposals,
+                rewards_rate,
+                rewards_rate_denominator,
+            );
         });
 
         // Process pending stake and distribute transaction fees and rewards for each currently pending_inactive validator
@@ -1453,33 +1371,29 @@ module aptos_framework::stake {
         validator_set.pending_inactive.for_each_ref(|validator| {
             let validator: &ValidatorInfo = validator;
             update_stake_pool(validator_perf, validator.addr, &config);
-            if (registry_enabled) {
-                let validator_config = borrow_global<ValidatorConfig>(validator.addr);
-                let current_perf =
-                    validator_perf.validators.borrow(validator_config.validator_index);
-                let num_successful_proposals = current_perf.successful_proposals;
-                let num_total_proposals =
-                    current_perf.successful_proposals + current_perf.failed_proposals;
-                staking_registry::distribute_epoch_rewards(
-                    validator.addr,
-                    num_successful_proposals,
-                    num_total_proposals,
-                    rewards_rate,
-                    rewards_rate_denominator,
-                );
-            };
+            let validator_config = borrow_global<ValidatorConfig>(validator.addr);
+            let current_perf =
+                validator_perf.validators.borrow(validator_config.validator_index);
+            let num_successful_proposals = current_perf.successful_proposals;
+            let num_total_proposals =
+                current_perf.successful_proposals + current_perf.failed_proposals;
+            staking_registry::distribute_epoch_rewards(
+                validator.addr,
+                num_successful_proposals,
+                num_total_proposals,
+                rewards_rate,
+                rewards_rate_denominator,
+            );
         });
 
-        if (registry_enabled) {
-            validator_set.pending_active.for_each_ref(|validator| {
-                let validator: &ValidatorInfo = validator;
-                staking_registry::set_validator_active(validator.addr);
-            });
-            validator_set.pending_inactive.for_each_ref(|validator| {
-                let validator: &ValidatorInfo = validator;
-                staking_registry::set_validator_inactive(validator.addr);
-            });
-        };
+        validator_set.pending_active.for_each_ref(|validator| {
+            let validator: &ValidatorInfo = validator;
+            staking_registry::set_validator_active(validator.addr);
+        });
+        validator_set.pending_inactive.for_each_ref(|validator| {
+            let validator: &ValidatorInfo = validator;
+            staking_registry::set_validator_inactive(validator.addr);
+        });
 
         // Activate currently pending_active validators.
         append(&mut validator_set.active_validators, &mut validator_set.pending_active);
@@ -1506,9 +1420,8 @@ module aptos_framework::stake {
             let old_validator_info = validator_set.active_validators.borrow_mut(i);
             let pool_address = old_validator_info.addr;
             let validator_config = borrow_global<ValidatorConfig>(pool_address);
-            let stake_pool = borrow_global<StakePool>(pool_address);
             let new_validator_info =
-                generate_validator_info(pool_address, stake_pool, *validator_config);
+                generate_validator_info(pool_address, *validator_config);
 
             // A validator needs at least the min stake required to join the validator set.
             if (new_validator_info.voting_power >= minimum_stake) {
@@ -1518,7 +1431,7 @@ module aptos_framework::stake {
                 };
                 total_voting_power +=(new_validator_info.voting_power as u128);
                 next_epoch_validators.push_back(new_validator_info);
-            } else if (registry_enabled) {
+            } else {
                 dropped_validators.push_back(pool_address);
             };
             i += 1;
@@ -1528,11 +1441,9 @@ module aptos_framework::stake {
         // Instead of transitioning to an empty validator set—which would render the network inoperable—the protocol retains the previous active validator set and recomputes the total voting power from it.
         // A ValidatorSetLivenessFallback event is emitted to signal this critical governance and economic security failure.
         if (!next_epoch_validators.is_empty()) {
-            if (registry_enabled) {
-                dropped_validators.for_each_ref(|addr| {
-                    staking_registry::set_validator_inactive(*addr);
-                });
-            };
+            dropped_validators.for_each_ref(|addr| {
+                staking_registry::set_validator_inactive(*addr);
+            });
             validator_set.active_validators = next_epoch_validators;
             validator_set.total_voting_power = total_voting_power;
         } else {
@@ -1551,9 +1462,8 @@ module aptos_framework::stake {
                     validator_set.active_validators.borrow(fallback_i);
                 let pool_address = old_validator_info.addr;
                 let validator_config = &ValidatorConfig[pool_address];
-                let stake_pool = &StakePool[pool_address];
                 let new_validator_info =
-                    generate_validator_info(pool_address, stake_pool, *validator_config);
+                    generate_validator_info(pool_address, *validator_config);
                 refreshed_validators.push_back(new_validator_info);
                 emergency_total_voting_power +=(new_validator_info.voting_power as u128);
                 fallback_i += 1;
@@ -1569,15 +1479,13 @@ module aptos_framework::stake {
             );
         };
         validator_set.total_joining_power = 0;
-        if (registry_enabled) {
-            let total_staked_power =
-                if (validator_set.total_voting_power > MAX_U64) {
-                    MAX_U64 as u64
-                } else {
-                    validator_set.total_voting_power as u64
-                };
-            staking_registry::set_total_staked_power(total_staked_power);
-        };
+        let total_staked_power =
+            if (validator_set.total_voting_power > MAX_U64) {
+                MAX_U64 as u64
+            } else {
+                validator_set.total_voting_power as u64
+            };
+        staking_registry::set_total_staked_power(total_staked_power);
 
         // Update validator indices, reset performance scores, and renew lockups.
         validator_perf.validators = vector::empty();
@@ -2113,14 +2021,9 @@ module aptos_framework::stake {
     }
 
     fun generate_validator_info(
-        addr: address, stake_pool: &StakePool, config: ValidatorConfig
+        addr: address, config: ValidatorConfig
     ): ValidatorInfo {
-        let voting_power =
-            if (staking_registry::registry_exists()) {
-                staking_registry::get_validator_total_power(addr)
-            } else {
-                get_next_epoch_voting_power(stake_pool)
-            };
+        let voting_power = staking_registry::get_validator_total_power(addr);
         ValidatorInfo { addr, voting_power, config }
     }
 

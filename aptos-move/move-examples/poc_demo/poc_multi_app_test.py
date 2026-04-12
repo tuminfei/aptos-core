@@ -479,7 +479,7 @@ def continuous_run(app_objects, app_keys, user_keys):
                 f"{delay:>4.1f}s  {st}"
             )
 
-            #time.sleep(delay)
+            time.sleep(delay)
 
     except KeyboardInterrupt:
         elapsed = time.time() - start_time

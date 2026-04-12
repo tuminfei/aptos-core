@@ -41,7 +41,6 @@ module aptos_framework::staking_contract {
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{EventHandle, emit};
     use aptos_framework::stake::{Self, OwnerCapability};
-    use aptos_framework::staking_registry;
     use aptos_framework::staking_config;
 
     const SALT: vector<u8> = b"aptos_framework::staking_contract";
@@ -443,17 +442,7 @@ module aptos_framework::staking_contract {
             commission_percentage >= 0 && commission_percentage <= 100,
             error::invalid_argument(EINVALID_COMMISSION_PERCENTAGE)
         );
-        // The amount should be at least the min_stake_required, so the stake pool will be eligible to join the
-        // validator set.
-        let (min_stake_required, _) =
-            staking_config::get_required_stake(&staking_config::get());
         let principal = coin::value(&coins);
-        if (!staking_registry::registry_exists()) {
-            assert!(
-                principal >= min_stake_required,
-                error::invalid_argument(EINSUFFICIENT_STAKE_AMOUNT)
-            );
-        };
 
         // Initialize Store resource if this is the first time the staker has delegated to anyone.
         let staker_address = signer::address_of(staker);

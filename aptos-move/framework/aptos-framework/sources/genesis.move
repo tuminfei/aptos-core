@@ -219,34 +219,26 @@ module aptos_framework::genesis {
             poc_power_store::initialize(aptos_framework, @aptos_framework);
         };
 
-        if (!staking_registry::registry_exists()) {
-            // registry 模式需要一个统一的 cooldown 窗口。
-            // 这个窗口至少要覆盖：
-            // 1. stake 模块的 recurring lockup 周期；
-            // 2. 治理模块的投票有效期。
-            // 因此这里取两者最大值，避免用户在“仍可能影响治理/验证者状态”的时间段里
-            // 通过撤委托立刻提币绕过约束。
-            let recurring_lockup_duration =
-                staking_config::get_recurring_lockup_duration(&staking_config::get());
-            let governance_voting_duration =
-                if (topo_governance::has_governance_config()) {
-                    topo_governance::get_voting_duration_secs()
-                } else {
-                    0
-                };
-            let cooldown_secs =
-                if (recurring_lockup_duration > governance_voting_duration) {
-                    recurring_lockup_duration
-                } else {
-                    governance_voting_duration
-                };
-            staking_registry::initialize(
-                aptos_framework,
-                DEFAULT_OCTAS_PER_POWER,
-                DEFAULT_MAX_DELEGATORS_PER_VALIDATOR,
-                cooldown_secs,
-            );
-        };
+        let recurring_lockup_duration =
+            staking_config::get_recurring_lockup_duration(&staking_config::get());
+        let governance_voting_duration =
+            if (topo_governance::has_governance_config()) {
+                topo_governance::get_voting_duration_secs()
+            } else {
+                0
+            };
+        let cooldown_secs =
+            if (recurring_lockup_duration > governance_voting_duration) {
+                recurring_lockup_duration
+            } else {
+                governance_voting_duration
+            };
+        staking_registry::initialize(
+            aptos_framework,
+            DEFAULT_OCTAS_PER_POWER,
+            DEFAULT_MAX_DELEGATORS_PER_VALIDATOR,
+            cooldown_secs,
+        );
     }
 
     fun create_employee_validators(
@@ -332,20 +324,14 @@ module aptos_framework::genesis {
                 error::not_found(EACCOUNT_DOES_NOT_EXIST),
             );
             if (employee_group.validator.join_during_genesis) {
-                if (staking_registry::registry_exists()) {
-                    // 员工 vesting validator 在 registry 模式下，
-                    // 真正持有 deposit 并作为委托主体参与治理的是 vesting 合约地址本身，
-                    // 而不是外部看到的 stake pool address。
-                    // 因此创世原始 power 需要写到 `contract_address`。
-                    let genesis_power =
-                        staking_registry::calculate_genesis_power_from_stake(validator.stake_amount);
-                    poc_power_store::batch_update(
-                        &create_signer(@aptos_framework),
-                        0,
-                        vector[contract_address],
-                        vector[genesis_power],
-                    );
-                };
+                let genesis_power =
+                    staking_registry::calculate_genesis_power_from_stake(validator.stake_amount);
+                poc_power_store::batch_update(
+                    &create_signer(@aptos_framework),
+                    0,
+                    vector[contract_address],
+                    vector[genesis_power],
+                );
                 initialize_validator(pool_address, validator);
             };
         });
@@ -356,8 +342,6 @@ module aptos_framework::genesis {
         use_staking_contract: bool,
         validators: vector<ValidatorConfigurationWithCommission>,
     ) {
-        // 无论后面选择 staking_contract 还是 registry 作为质押资金承载层，
-        // 创世前都先把 power_store 和 staking_registry 的基础设施准备好。
         ensure_poc_staking_initialized(aptos_framework);
         validators.for_each_ref(|validator| {
             let validator: &ValidatorConfigurationWithCommission = validator;
@@ -401,22 +385,18 @@ module aptos_framework::genesis {
         use_staking_contract: bool,
     ) {
         let validator = &commission_config.validator_config;
-        let registry_enabled = staking_registry::registry_exists();
         let commission_percentage = commission_config.commission_percentage;
 
         let owner = &create_account(aptos_framework, validator.owner_address, validator.stake_amount);
         create_account(aptos_framework, validator.operator_address, 0);
         create_account(aptos_framework, validator.voter_address, 0);
 
-        // 先创建 stake pool 的“身份外壳”。
-        // 旧模式下 stake/staking_contract 直接持有 `stake_amount`；
-        // registry 模式下这里故意传 0，把实际资金托管、委托关系、奖励滚存都切到 staking_registry。
         let pool_address = if (use_staking_contract) {
             staking_contract::create_staking_contract(
                 owner,
                 validator.operator_address,
                 validator.voter_address,
-                if (registry_enabled) { 0 } else { validator.stake_amount },
+                0,
                 commission_percentage,
                 x"",
             );
@@ -424,36 +404,28 @@ module aptos_framework::genesis {
         } else {
             stake::initialize_stake_owner(
                 owner,
-                if (registry_enabled) { 0 } else { validator.stake_amount },
+                0,
                 validator.operator_address,
                 validator.voter_address,
             );
             validator.owner_address
         };
 
-        if (registry_enabled) {
-            // registry 模式创世流程：
-            // 1. 依据 `stake_amount * genesis_stake_power_multiplier` 生成创世原始 power；
-            // 2. 在 registry 中注册 validator，并把佣金写成 bps；
-            // 3. 把 owner 持有的 stake_amount 全额存入 registry；
-            // 4. 让 owner 把这笔 deposit 委托给对应的 pool；
-            // 5. 把 raw power 写入 power_store，后续治理再通过 effective power 做二次裁剪。
-            let genesis_power =
-                staking_registry::calculate_genesis_power_from_stake(validator.stake_amount);
-            staking_registry::register_validator_for_genesis(
-                validator.owner_address,
-                pool_address,
-                commission_percentage * 100,
-            );
-            staking_registry::deposit(owner, validator.stake_amount);
-            staking_registry::delegate(owner, pool_address);
-            poc_power_store::batch_update(
-                aptos_framework,
-                0,
-                vector[validator.owner_address],
-                vector[genesis_power],
-            );
-        };
+        let genesis_power =
+            staking_registry::calculate_genesis_power_from_stake(validator.stake_amount);
+        staking_registry::register_validator_for_genesis(
+            validator.owner_address,
+            pool_address,
+            commission_percentage * 100,
+        );
+        staking_registry::deposit(owner, validator.stake_amount);
+        staking_registry::delegate(owner, pool_address);
+        poc_power_store::batch_update(
+            aptos_framework,
+            0,
+            vector[validator.owner_address],
+            vector[genesis_power],
+        );
 
         if (commission_config.join_during_genesis) {
             initialize_validator(pool_address, validator);

@@ -4,7 +4,6 @@ module aptos_framework::staking_proxy {
     use aptos_framework::permissioned_signer;
     use aptos_framework::stake;
     use aptos_framework::staking_contract;
-    use aptos_framework::staking_registry;
     use aptos_framework::vesting;
 
     struct StakeProxyPermission has copy, drop, store {}
@@ -24,7 +23,7 @@ module aptos_framework::staking_proxy {
 
     inline fun assert_voter_proxy_supported() {
         assert!(
-            !staking_registry::registry_exists(),
+            false,
             error::invalid_state(EDEPRECATED_FUNCTION),
         );
     }

@@ -266,6 +266,20 @@ module poc_demo::poc_demo {
         get_trade(app_admin, trade_id).equity_amount
     }
 
+    /// 创建一个独立的 FA metadata 对象（仅用于测试 update_equity_token_address）
+    public entry fun create_standalone_fa(creator: &signer, seed: vector<u8>) {
+        let constructor_ref = &object::create_named_object(creator, seed);
+        primary_fungible_store::create_primary_store_enabled_fungible_asset(
+            constructor_ref,
+            option::none(),
+            string::utf8(b"Standalone Test FA"),
+            string::utf8(b"STFA"),
+            9,
+            string::utf8(b""),
+            string::utf8(b""),
+        );
+    }
+
     inline fun borrow_app(app_admin: address): &DemoApp {
         assert!(exists<DemoApp>(app_admin), error::not_found(EAPP_NOT_FOUND));
         borrow_global<DemoApp>(app_admin)

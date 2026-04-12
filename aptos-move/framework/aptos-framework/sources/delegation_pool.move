@@ -128,7 +128,6 @@ module aptos_framework::delegation_pool {
     use aptos_framework::stake;
     use aptos_framework::stake::get_operator;
     use aptos_framework::staking_config;
-    use aptos_framework::staking_registry;
     use aptos_framework::timestamp;
 
     const MODULE_SALT: vector<u8> = b"aptos_framework::delegation_pool";
@@ -859,7 +858,7 @@ module aptos_framework::delegation_pool {
 
     inline fun assert_legacy_governance_supported() {
         assert!(
-            !staking_registry::registry_exists(),
+            false,
             error::invalid_state(EDEPRECATED_FUNCTION),
         );
     }
