@@ -4,18 +4,28 @@ module aptos_framework::staking_proxy {
     use aptos_framework::permissioned_signer;
     use aptos_framework::stake;
     use aptos_framework::staking_contract;
+    use aptos_framework::staking_registry;
     use aptos_framework::vesting;
 
     struct StakeProxyPermission has copy, drop, store {}
 
     /// Signer does not have permission to perform stake proxy logic.
     const ENO_STAKE_PERMISSION: u64 = 28;
+    /// Voter proxying is deprecated once governance reads directly from staking_registry.
+    const EDEPRECATED_FUNCTION: u64 = 29;
 
     /// Permissions
     inline fun check_stake_proxy_permission(s: &signer) {
         assert!(
             permissioned_signer::check_permission_exists(s, StakeProxyPermission {}),
             error::permission_denied(ENO_STAKE_PERMISSION),
+        );
+    }
+
+    inline fun assert_voter_proxy_supported() {
+        assert!(
+            !staking_registry::registry_exists(),
+            error::invalid_state(EDEPRECATED_FUNCTION),
         );
     }
 
@@ -31,6 +41,7 @@ module aptos_framework::staking_proxy {
     }
 
     public entry fun set_voter(owner: &signer, operator: address, new_voter: address) {
+        assert_voter_proxy_supported();
         set_vesting_contract_voter(owner, operator, new_voter);
         set_staking_contract_voter(owner, operator, new_voter);
         set_stake_pool_voter(owner, new_voter);
@@ -66,7 +77,9 @@ module aptos_framework::staking_proxy {
         };
     }
 
+    #[deprecated]
     public entry fun set_vesting_contract_voter(owner: &signer, operator: address, new_voter: address) {
+        assert_voter_proxy_supported();
         check_stake_proxy_permission(owner);
         let owner_address = signer::address_of(owner);
         let vesting_contracts = &vesting::vesting_contracts(owner_address);
@@ -78,7 +91,9 @@ module aptos_framework::staking_proxy {
         });
     }
 
+    #[deprecated]
     public entry fun set_staking_contract_voter(owner: &signer, operator: address, new_voter: address) {
+        assert_voter_proxy_supported();
         check_stake_proxy_permission(owner);
         let owner_address = signer::address_of(owner);
         if (staking_contract::staking_contract_exists(owner_address, operator)) {
@@ -86,7 +101,9 @@ module aptos_framework::staking_proxy {
         };
     }
 
+    #[deprecated]
     public entry fun set_stake_pool_voter(owner: &signer, new_voter: address) {
+        assert_voter_proxy_supported();
         check_stake_proxy_permission(owner);
         if (stake::stake_pool_exists(signer::address_of(owner))) {
             stake::set_delegated_voter(owner, new_voter);

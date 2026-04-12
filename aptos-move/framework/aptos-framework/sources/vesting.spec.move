@@ -555,7 +555,11 @@ spec aptos_framework::vesting {
         include ActiveVestingContractAbortsIf;
     }
 
-    spec unlock_stake(vesting_contract: &VestingContract, amount: u64) {
+    spec unlock_stake(
+        vesting_contract: &VestingContract,
+        contract_address: address,
+        amount: u64,
+    ) {
         // TODO: Calls `staking_contract::unlock_stake` which is not verified.
         pragma verify = false;
         include UnlockStakeAbortsIf;

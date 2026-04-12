@@ -41,6 +41,7 @@ module aptos_framework::staking_contract {
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{EventHandle, emit};
     use aptos_framework::stake::{Self, OwnerCapability};
+    use aptos_framework::staking_registry;
     use aptos_framework::staking_config;
 
     const SALT: vector<u8> = b"aptos_framework::staking_contract";
@@ -399,7 +400,7 @@ module aptos_framework::staking_contract {
     /// This function MUST NOT be interpreted as a real-time or pool-level balance.
     public fun pending_attribution_snapshot(
         staker: address, operator: address, account: address
-    ): u64 {
+    ): u64 acquires Store {
         assert_staking_contract_exists(staker, operator);
         let staking_contracts = &Store[staker].staking_contracts;
         let staking_contract = staking_contracts.borrow(&operator);
@@ -447,10 +448,12 @@ module aptos_framework::staking_contract {
         let (min_stake_required, _) =
             staking_config::get_required_stake(&staking_config::get());
         let principal = coin::value(&coins);
-        assert!(
-            principal >= min_stake_required,
-            error::invalid_argument(EINSUFFICIENT_STAKE_AMOUNT)
-        );
+        if (!staking_registry::registry_exists()) {
+            assert!(
+                principal >= min_stake_required,
+                error::invalid_argument(EINSUFFICIENT_STAKE_AMOUNT)
+            );
+        };
 
         // Initialize Store resource if this is the first time the staker has delegated to anyone.
         let staker_address = signer::address_of(staker);
@@ -1014,23 +1017,17 @@ module aptos_framework::staking_contract {
             |shareholder| {
                 let shareholder: address = *shareholder;
                 if (shareholder != operator) {
-                    let shares = pool_u64::shares(distribution_pool, shareholder);
-                    let previous_worth = pool_u64::balance(distribution_pool, shareholder);
+                    let shares = distribution_pool.shares(shareholder);
+                    let previous_worth = distribution_pool.balance(shareholder);
                     let current_worth =
-                        pool_u64::shares_to_amount_with_total_coins(
-                            distribution_pool, shares, updated_total_coins
-                        );
+                        distribution_pool.shares_to_amount_with_total_coins(shares, updated_total_coins);
                     let unpaid_commission =
                         (current_worth - previous_worth) * commission_percentage / 100;
                     // Transfer shares from current shareholder to the operator as payment.
                     // The value of the shares should use the updated pool's total value.
                     let shares_to_transfer =
-                        pool_u64::amount_to_shares_with_total_coins(
-                            distribution_pool, unpaid_commission, updated_total_coins
-                        );
-                    pool_u64::transfer_shares(
-                        distribution_pool, shareholder, operator, shares_to_transfer
-                    );
+                        distribution_pool.amount_to_shares_with_total_coins(unpaid_commission, updated_total_coins);
+                    distribution_pool.transfer_shares(shareholder, operator, shares_to_transfer);
                 };
             }
         );

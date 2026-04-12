@@ -37,6 +37,8 @@ module aptos_framework::poc_power_store {
         operator: address,
         /// 用户当前最新算力
         users: Table<address, UserPowerInfo>,
+        /// 所有用户当前 raw power 的和
+        total_power: u64,
     }
 
     /// 用户当前算力信息。
@@ -78,6 +80,7 @@ module aptos_framework::poc_power_store {
             move_to(aptos_framework, PowerStore {
                 operator,
                 users: table::new(),
+                total_power: 0,
             });
         };
     }
@@ -175,6 +178,15 @@ module aptos_framework::poc_power_store {
         borrow_global<PowerStore>(@aptos_framework).operator
     }
 
+    #[view]
+    public fun get_total_power(): u64 acquires PowerStore {
+        if (!exists<PowerStore>(@aptos_framework)) {
+            0
+        } else {
+            borrow_global<PowerStore>(@aptos_framework).total_power
+        }
+    }
+
     // ========== 内部辅助函数 ==========
 
     fun assert_store_exists() {
@@ -202,14 +214,19 @@ module aptos_framework::poc_power_store {
             if (period < info.last_updated_period) {
                 return false
             };
+            let old_power = info.power;
             info.power = power;
             info.last_updated_period = period;
+            let next_total =
+                (store.total_power as u128) - (old_power as u128) + (power as u128);
+            store.total_power = next_total as u64;
             true
         } else {
             store.users.add(user, UserPowerInfo {
                 power,
                 last_updated_period: period,
             });
+            store.total_power = ((store.total_power as u128) + (power as u128)) as u64;
             true
         }
     }

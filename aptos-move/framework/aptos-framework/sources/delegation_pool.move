@@ -128,6 +128,7 @@ module aptos_framework::delegation_pool {
     use aptos_framework::stake;
     use aptos_framework::stake::get_operator;
     use aptos_framework::staking_config;
+    use aptos_framework::staking_registry;
     use aptos_framework::timestamp;
 
     const MODULE_SALT: vector<u8> = b"aptos_framework::delegation_pool";
@@ -856,15 +857,24 @@ module aptos_framework::delegation_pool {
         permissioned_signer::authorize_unlimited(master, permissioned_signer, DelegationPermission::StakeManagementPermission {})
     }
 
-    /// Initialize a delegation pool of custom fixed `operator_commission_percentage`.
-    /// A resource account is created from `owner` signer and its supplied `delegation_pool_creation_seed`
-    /// to host the delegation pool resource and own the underlying stake pool.
-    /// Ownership over setting the operator/voter is granted to `owner` who has both roles initially.
+    inline fun assert_legacy_governance_supported() {
+        assert!(
+            !staking_registry::registry_exists(),
+            error::invalid_state(EDEPRECATED_FUNCTION),
+        );
+    }
+
+    // Initialize a delegation pool of custom fixed `operator_commission_percentage`.
+    // A resource account is created from `owner` signer and its supplied `delegation_pool_creation_seed`
+    // to host the delegation pool resource and own the underlying stake pool.
+    // Ownership over setting the operator/voter is granted to `owner` who has both roles initially.
+    #[deprecated]
     public entry fun initialize_delegation_pool(
         owner: &signer,
         operator_commission_percentage: u64,
         delegation_pool_creation_seed: vector<u8>,
     ) acquires DelegationPool, GovernanceRecords, BeneficiaryForOperator, NextCommissionPercentage {
+        assert_legacy_governance_supported();
         check_delegation_pool_management_permission(owner);
         let owner_address = signer::address_of(owner);
         assert!(!owner_cap_exists(owner_address), error::already_exists(EOWNER_CAP_ALREADY_EXISTS));
@@ -915,11 +925,13 @@ module aptos_framework::delegation_pool {
         }
     }
 
-    /// Enable partial governance voting on a stake pool. The voter of this stake pool will be managed by this module.
-    /// The existing voter will be replaced. The function is permissionless.
+    // Enable partial governance voting on a stake pool. The voter of this stake pool will be managed by this module.
+    // The existing voter will be replaced. The function is permissionless.
+    #[deprecated]
     public entry fun enable_partial_governance_voting(
         pool_address: address,
     ) acquires DelegationPool, GovernanceRecords, BeneficiaryForOperator, NextCommissionPercentage {
+        assert_legacy_governance_supported();
         assert_delegation_pool_exists(pool_address);
         // synchronize delegation and stake pools before any user operation.
         synchronize_delegation_pool(pool_address);
@@ -941,11 +953,12 @@ module aptos_framework::delegation_pool {
         });
     }
 
-    /// Vote on a proposal with a voter's voting power. To successfully vote, the following conditions must be met:
-    /// 1. The voting period of the proposal hasn't ended.
-    /// 2. The delegation pool's lockup period ends after the voting period of the proposal.
-    /// 3. The voter still has spare voting power on this proposal.
-    /// 4. The delegation pool never votes on the proposal before enabling partial governance voting.
+    // Vote on a proposal with a voter's voting power. To successfully vote, the following conditions must be met:
+    // 1. The voting period of the proposal hasn't ended.
+    // 2. The delegation pool's lockup period ends after the voting period of the proposal.
+    // 3. The voter still has spare voting power on this proposal.
+    // 4. The delegation pool never votes on the proposal before enabling partial governance voting.
+    #[deprecated]
     public entry fun vote(
         voter: &signer,
         pool_address: address,
@@ -953,6 +966,7 @@ module aptos_framework::delegation_pool {
         voting_power: u64,
         should_pass: bool
     ) acquires DelegationPool, GovernanceRecords, BeneficiaryForOperator, NextCommissionPercentage {
+        assert_legacy_governance_supported();
         check_stake_management_permission(voter);
         assert_partial_governance_voting_enabled(pool_address);
         // synchronize delegation and stake pools before any user operation.
@@ -977,7 +991,13 @@ module aptos_framework::delegation_pool {
         *used_voting_power += voting_power;
 
         let pool_signer = retrieve_stake_pool_owner(borrow_global<DelegationPool>(pool_address));
-        topo_governance::partial_vote(&pool_signer, pool_address, proposal_id, voting_power, should_pass);
+        topo_governance::partial_vote_with_stake_pool(
+            &pool_signer,
+            pool_address,
+            proposal_id,
+            voting_power,
+            should_pass,
+        );
 
         event::emit(
             Vote {
@@ -990,9 +1010,10 @@ module aptos_framework::delegation_pool {
         );
     }
 
-    /// A voter could create a governance proposal by this function. To successfully create a proposal, the voter's
-    /// voting power in THIS delegation pool must be not less than the minimum required voting power specified in
-    /// `topo_governance.move`.
+    // A voter could create a governance proposal by this function. To successfully create a proposal, the voter's
+    // voting power in THIS delegation pool must be not less than the minimum required voting power specified in
+    // `topo_governance.move`.
+    #[deprecated]
     public entry fun create_proposal(
         voter: &signer,
         pool_address: address,
@@ -1001,6 +1022,7 @@ module aptos_framework::delegation_pool {
         metadata_hash: vector<u8>,
         is_multi_step_proposal: bool,
     ) acquires DelegationPool, GovernanceRecords, BeneficiaryForOperator, NextCommissionPercentage {
+        assert_legacy_governance_supported();
         check_stake_management_permission(voter);
         assert_partial_governance_voting_enabled(pool_address);
 
@@ -1355,13 +1377,15 @@ module aptos_framework::delegation_pool {
         abort ECAN_NO_LONGER_SET_DELEGATED_VOTER
     }
 
-    /// Allows a delegator to delegate its voting power to a voter. If this delegator already has a delegated voter,
-    /// this change won't take effects until the next lockup period.
+    // Allows a delegator to delegate its voting power to a voter. If this delegator already has a delegated voter,
+    // this change won't take effects until the next lockup period.
+    #[deprecated]
     public entry fun delegate_voting_power(
         delegator: &signer,
         pool_address: address,
         new_voter: address
     ) acquires DelegationPool, GovernanceRecords, BeneficiaryForOperator, NextCommissionPercentage {
+        assert_legacy_governance_supported();
         check_stake_management_permission(delegator);
         assert_partial_governance_voting_enabled(pool_address);
 

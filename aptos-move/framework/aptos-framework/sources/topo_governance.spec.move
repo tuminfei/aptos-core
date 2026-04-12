@@ -179,14 +179,13 @@ spec aptos_framework::topo_governance {
         aborts_if !exists<GovernanceConfig>(@aptos_framework);
     }
 
-    spec has_entirely_voted(stake_pool: address, proposal_id: u64): bool {
+    spec has_entirely_voted(voter: address, proposal_id: u64): bool {
         aborts_if !exists<VotingRecords>(@aptos_framework);
     }
 
     /// The same as spec of `create_proposal_v2()`.
     spec create_proposal(
         proposer: &signer,
-        stake_pool: address,
         execution_hash: vector<u8>,
         metadata_location: vector<u8>,
         metadata_hash: vector<u8>,
@@ -194,12 +193,13 @@ spec aptos_framework::topo_governance {
         use aptos_framework::chain_status;
         pragma verify_duration_estimate = 60;
         requires chain_status::is_operating();
-        include CreateProposalAbortsIf;
+        include CreateProposalAbortsIf {
+            stake_pool: signer::address_of(proposer)
+        };
     }
 
     spec create_proposal_v2(
         proposer: &signer,
-        stake_pool: address,
         execution_hash: vector<u8>,
         metadata_location: vector<u8>,
         metadata_hash: vector<u8>,
@@ -208,7 +208,9 @@ spec aptos_framework::topo_governance {
         use aptos_framework::chain_status;
         pragma verify_duration_estimate = 60;
         requires chain_status::is_operating();
-        include CreateProposalAbortsIf;
+        include CreateProposalAbortsIf {
+            stake_pool: signer::address_of(proposer)
+        };
     }
 
     spec create_proposal_v2_impl (
@@ -305,7 +307,6 @@ spec aptos_framework::topo_governance {
     /// Address @aptos_framework must exist VotingRecords and GovernanceProposal.
     spec vote (
         voter: &signer,
-        stake_pool: address,
         proposal_id: u64,
         should_pass: bool,
     ) {
@@ -314,6 +315,7 @@ spec aptos_framework::topo_governance {
 
         requires chain_status::is_operating();
         include VoteAbortIf  {
+            stake_pool: signer::address_of(voter),
             voting_power: MAX_U64
         };
     }
@@ -324,7 +326,6 @@ spec aptos_framework::topo_governance {
     /// Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting flag is enabled.
     spec partial_vote (
         voter: &signer,
-        stake_pool: address,
         proposal_id: u64,
         voting_power: u64,
         should_pass: bool,
@@ -333,7 +334,9 @@ spec aptos_framework::topo_governance {
         pragma verify_duration_estimate = 60;
 
         requires chain_status::is_operating();
-        include VoteAbortIf;
+        include VoteAbortIf {
+            stake_pool: signer::address_of(voter)
+        };
     }
 
     /// stake_pool must exist StakePool.
@@ -342,7 +345,6 @@ spec aptos_framework::topo_governance {
     /// Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting flag is enabled.
     spec vote_internal (
         voter: &signer,
-        stake_pool: address,
         proposal_id: u64,
         voting_power: u64,
         should_pass: bool,
@@ -351,7 +353,9 @@ spec aptos_framework::topo_governance {
         pragma verify_duration_estimate = 60;
 
         requires chain_status::is_operating();
-        include VoteAbortIf;
+        include VoteAbortIf {
+            stake_pool: signer::address_of(voter)
+        };
     }
 
     spec schema VoteAbortIf {
@@ -368,7 +372,7 @@ spec aptos_framework::topo_governance {
         let locked_until = global<stake::StakePool>(stake_pool).locked_until_secs;
         let remain_zero_1_cond = (spec_proposal_expiration >= locked_until || timestamp::spec_now_seconds() >= spec_proposal_expiration);
         let record_key = RecordKey {
-            stake_pool,
+            voter: stake_pool,
             proposal_id,
         };
         let entirely_voted = spec_has_entirely_voted(stake_pool, proposal_id, record_key);
@@ -639,28 +643,28 @@ spec aptos_framework::topo_governance {
         }
     }
 
-    spec get_remaining_voting_power(stake_pool: address, proposal_id: u64): u64 {
+    spec get_remaining_voting_power(voter: address, proposal_id: u64): u64 {
         aborts_if !exists<VotingRecordsV2>(@aptos_framework);
         include voting::AbortsIfNotContainProposalID<GovernanceProposal> {
             voting_forum_address: @aptos_framework
         };
-        aborts_if !exists<stake::StakePool>(stake_pool);
+        aborts_if !exists<stake::StakePool>(voter);
         aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
         let spec_proposal_expiration = voting::spec_get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
-        let locked_until = global<stake::StakePool>(stake_pool).locked_until_secs;
+        let locked_until = global<stake::StakePool>(voter).locked_until_secs;
         let remain_zero_1_cond = (spec_proposal_expiration >= locked_until || timestamp::spec_now_seconds() >= spec_proposal_expiration);
         ensures remain_zero_1_cond ==> result == 0;
         let record_key = RecordKey {
-            stake_pool,
+            voter,
             proposal_id,
         };
-        let entirely_voted = spec_has_entirely_voted(stake_pool, proposal_id, record_key);
+        let entirely_voted = spec_has_entirely_voted(voter, proposal_id, record_key);
         aborts_if !remain_zero_1_cond && !exists<VotingRecords>(@aptos_framework);
         include !remain_zero_1_cond && !entirely_voted ==> GetVotingPowerAbortsIf {
-            pool_address: stake_pool
+            pool_address: voter
         };
         let staking_config = global<staking_config::StakingConfig>(@aptos_framework);
-        let voting_power = spec_get_voting_power(stake_pool, staking_config);
+        let voting_power = spec_get_voting_power(voter, staking_config);
         let voting_records_v2 = borrow_global<VotingRecordsV2>(@aptos_framework);
         let used_voting_power = if (smart_table::spec_contains(voting_records_v2.votes, record_key)) {
             smart_table::spec_get(voting_records_v2.votes, record_key)
@@ -669,7 +673,7 @@ spec aptos_framework::topo_governance {
         };
         aborts_if !remain_zero_1_cond && !entirely_voted && used_voting_power > 0 && voting_power < used_voting_power;
 
-        ensures result == spec_get_remaining_voting_power(stake_pool, proposal_id);
+        ensures result == spec_get_remaining_voting_power(voter, proposal_id);
     }
 
     spec fun spec_get_remaining_voting_power(stake_pool: address, proposal_id: u64): u64 {
@@ -679,7 +683,7 @@ spec aptos_framework::topo_governance {
         let staking_config = global<staking_config::StakingConfig>(@aptos_framework);
         let voting_records_v2 = borrow_global<VotingRecordsV2>(@aptos_framework);
         let record_key = RecordKey {
-            stake_pool,
+            voter: stake_pool,
             proposal_id,
         };
         let entirely_voted = spec_has_entirely_voted(stake_pool, proposal_id, record_key);
@@ -836,12 +840,12 @@ spec aptos_framework::topo_governance {
         include VotingInitializationAbortIfs;
     }
 
-    spec assert_proposal_expiration(stake_pool: address, proposal_id: u64) {
+    spec assert_proposal_expiration(voter: address, proposal_id: u64) {
         include VotingInitializationAbortIfs;
         include voting::AbortsIfNotContainProposalID<GovernanceProposal>{voting_forum_address: @aptos_framework};
         let proposal_expiration = voting::spec_get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
-        aborts_if !stake::stake_pool_exists(stake_pool);
-        aborts_if proposal_expiration >= stake::spec_get_lockup_secs(stake_pool);
+        aborts_if !stake::stake_pool_exists(voter);
+        aborts_if proposal_expiration >= stake::spec_get_lockup_secs(voter);
         aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
         aborts_if timestamp::now_seconds() >= proposal_expiration;
     }
@@ -866,7 +870,6 @@ spec aptos_framework::topo_governance {
 
     spec batch_vote(
         voter: &signer,
-        stake_pools: vector<address>,
         proposal_id: u64,
         should_pass: bool,
     ) {
@@ -876,7 +879,6 @@ spec aptos_framework::topo_governance {
 
     spec batch_partial_vote(
         voter: &signer,
-        stake_pools: vector<address>,
         proposal_id: u64,
         voting_power: u64,
         should_pass: bool,

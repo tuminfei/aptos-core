@@ -50,6 +50,7 @@ module aptos_framework::vesting {
     use aptos_framework::coin::{Self, Coin};
     use aptos_framework::event::{EventHandle, emit};
     use aptos_framework::stake;
+    use aptos_framework::staking_registry;
     use aptos_framework::staking_contract;
     use aptos_framework::system_addresses;
     use aptos_framework::timestamp;
@@ -93,6 +94,8 @@ module aptos_framework::vesting {
     const EVEC_EMPTY_FOR_MANY_FUNCTION: u64 = 16;
     /// Current permissioned signer cannot perform vesting operations.
     const ENO_VESTING_PERMISSION: u64 = 17;
+    /// The requested legacy vesting operation is not supported in staking_registry mode yet.
+    const EREGISTRY_MODE_UNSUPPORTED: u64 = 18;
 
     /// Maximum number of shareholders a vesting pool can support.
     const MAXIMUM_SHAREHOLDERS: u64 = 30;
@@ -460,9 +463,21 @@ module aptos_framework::vesting {
         assert_active_vesting_contract(vesting_contract_address);
 
         let vesting_contract = borrow_global<VestingContract>(vesting_contract_address);
-        let (total_active_stake, _, commission_amount) =
-            staking_contract::staking_contract_amounts(vesting_contract_address, vesting_contract.staking.operator);
-        total_active_stake - vesting_contract.remaining_grant - commission_amount
+        if (staking_registry::registry_exists()) {
+            let (deposit, _, _) = staking_registry::get_user_stake_info(vesting_contract_address);
+            if (deposit > vesting_contract.remaining_grant) {
+                deposit - vesting_contract.remaining_grant
+            } else {
+                0
+            }
+        } else {
+            let (total_active_stake, _, commission_amount) =
+                staking_contract::staking_contract_amounts(
+                    vesting_contract_address,
+                    vesting_contract.staking.operator,
+                );
+            total_active_stake - vesting_contract.remaining_grant - commission_amount
+        }
     }
 
     #[view]
@@ -597,11 +612,38 @@ module aptos_framework::vesting {
         // Initialize the vesting contract in a new resource account. This allows the same admin to create multiple
         // pools.
         let (contract_signer, contract_signer_cap) = create_vesting_contract_account(admin, contract_creation_seed);
-        let pool_address = staking_contract::create_staking_contract_with_coins(
-            &contract_signer, operator, voter, grant, commission_percentage, contract_creation_seed);
-
         // Add the newly created vesting contract's address to the admin store.
         let contract_address = signer::address_of(&contract_signer);
+        let pool_address =
+            if (staking_registry::registry_exists()) {
+                // registry 模式下，vesting 资源账户自己就是质押主体：
+                // 1. 在 stake 模块里先建一个本金为 0 的 stake owner 外壳；
+                // 2. 在 staking_registry 中注册验证者；
+                // 3. 把 grant 全额存进 registry；
+                // 4. 再让 contract_address 把这笔 deposit 委托给自己。
+                //
+                // 这样本金、奖励和解锁资金都围绕 registry.deposit 运转，
+                // 不再走 staking_contract 内部的本金托管路径。
+                stake::initialize_stake_owner(&contract_signer, 0, operator, voter);
+                staking_registry::register_validator_for_owner(
+                    contract_address,
+                    contract_address,
+                    commission_percentage * 100,
+                );
+                staking_registry::deposit_coins(contract_address, grant);
+                staking_registry::delegate_for(contract_address, contract_address);
+                contract_address
+            } else {
+                staking_contract::create_staking_contract_with_coins(
+                    &contract_signer,
+                    operator,
+                    voter,
+                    grant,
+                    commission_percentage,
+                    contract_creation_seed,
+                )
+            };
+
         let admin_store = borrow_global_mut<AdminStore>(admin_address);
         admin_store.vesting_contracts.push_back(contract_address);
         emit(
@@ -645,7 +687,7 @@ module aptos_framework::vesting {
     public entry fun unlock_rewards(contract_address: address) acquires VestingContract {
         let accumulated_rewards = total_accumulated_rewards(contract_address);
         let vesting_contract = borrow_global<VestingContract>(contract_address);
-        unlock_stake(vesting_contract, accumulated_rewards);
+        unlock_stake(vesting_contract, contract_address, accumulated_rewards);
     }
 
     /// Call `unlock_rewards` for many vesting contracts.
@@ -699,7 +741,7 @@ module aptos_framework::vesting {
         vested_amount = min(vested_amount, vesting_contract.remaining_grant);
         vesting_contract.remaining_grant -= vested_amount;
         vesting_schedule.last_vested_period = next_period_to_vest;
-        unlock_stake(vesting_contract, vested_amount);
+        unlock_stake(vesting_contract, contract_address, vested_amount);
 
         emit(
             Vest {
@@ -785,13 +827,22 @@ module aptos_framework::vesting {
 
         let vesting_contract = borrow_global_mut<VestingContract>(contract_address);
         verify_admin(admin, vesting_contract);
-        let (active_stake, _, pending_active_stake, _) = stake::get_stake(vesting_contract.staking.pool_address);
-        assert!(pending_active_stake == 0, error::invalid_state(EPENDING_STAKE_FOUND));
-
-        // Unlock all remaining active stake.
         vesting_contract.state = VESTING_POOL_TERMINATED;
         vesting_contract.remaining_grant = 0;
-        unlock_stake(vesting_contract, active_stake);
+        if (staking_registry::registry_exists()) {
+            // registry 模式终止时需要手动收口两件事：
+            // 1. 如果还在委托，先撤销委托，避免残留 validator 归属关系；
+            // 2. 再把 registry 内剩余 deposit 全部提回合约账户，
+            //    供后续 `admin_withdraw` 一次性转给 withdrawal_address。
+            maybe_undelegate_registry_stake(contract_address);
+            withdraw_all_registry_deposit_to_contract(contract_address);
+        } else {
+            let (active_stake, _, pending_active_stake, _) = stake::get_stake(vesting_contract.staking.pool_address);
+            assert!(pending_active_stake == 0, error::invalid_state(EPENDING_STAKE_FOUND));
+
+            // Unlock all remaining active stake.
+            unlock_stake(vesting_contract, contract_address, active_stake);
+        };
 
         emit(
             Terminate {
@@ -839,7 +890,48 @@ module aptos_framework::vesting {
         verify_admin(admin, vesting_contract);
         let contract_signer = &get_vesting_account_signer_internal(vesting_contract);
         let old_operator = vesting_contract.staking.operator;
-        staking_contract::switch_operator(contract_signer, old_operator, new_operator, commission_percentage);
+        if (staking_registry::registry_exists()) {
+            // ===== registry 模式下更新 operator 的双模块更新机制 =====
+            //
+            // 在 registry 模式下，operator 的信息分散在两个模块中：
+            //   - stake 模块：维护 owner -> operator 的映射关系，决定哪个节点
+            //     运营商负责出块和签名。validator 加入验证者集合时，
+            //     共识层通过 stake 模块查询 operator 身份。
+            //   - staking_registry 模块：维护 validator 的 commission_bps（佣金基点），
+            //     每个 epoch 结算奖励时，registry 根据此参数计算并扣除佣金。
+            //
+            // 因此更新 operator 时需要同时操作两个模块：
+            //
+            // 【stake::set_operator(contract_signer, new_operator)】
+            //   更新 stake 模块中 contract_address 的 operator 为 new_operator。
+            //   这会影响共识层对该 validator 的运营商识别。
+            //   需要 contract_signer（资源账户的 signer）权限，因为只有 stake owner
+            //   才能更改自己的 operator。
+            //
+            // 【staking_registry::update_validator_commission(pool_address, commission_bps)】
+            //   更新 registry 中该 validator 的佣金比例。
+            //   commission_percentage * 100 将百分比转换为基点（bps），
+            //   例如 10% -> 1000 bps。
+            //   这是一个 friend 函数，由 vesting 模块代为调用。
+            //
+            // 【与旧模式的对比】
+            //   旧模式下，staking_contract::switch_operator 一个调用就能同时完成
+            //   operator 切换和佣金更新，因为 staking_contract 内部统一管理这两项。
+            //   registry 模式下由于职责分离（stake 管 operator，registry 管 commission），
+            //   需要分别调用两个模块的接口。
+            stake::set_operator(contract_signer, new_operator);
+            staking_registry::update_validator_commission(
+                vesting_contract.staking.pool_address,
+                commission_percentage * 100,
+            );
+        } else {
+            staking_contract::switch_operator(
+                contract_signer,
+                old_operator,
+                new_operator,
+                commission_percentage,
+            );
+        };
         vesting_contract.staking.operator = new_operator;
         vesting_contract.staking.commission_percentage = commission_percentage;
 
@@ -872,8 +964,33 @@ module aptos_framework::vesting {
         let operator = operator(contract_address);
         let vesting_contract = borrow_global_mut<VestingContract>(contract_address);
         verify_admin(admin, vesting_contract);
-        let contract_signer = &get_vesting_account_signer_internal(vesting_contract);
-        staking_contract::update_commision(contract_signer, operator, new_commission_percentage);
+        if (staking_registry::registry_exists()) {
+            // ===== registry 模式下更新佣金比例的简化逻辑 =====
+            //
+            // 【为什么 registry 模式更简单】
+            //   旧模式下，staking_contract::update_commision 不仅更新佣金比例，
+            //   还会触发一次 request_commission（按旧比例结算当前累积的佣金），
+            //   然后才将新比例生效。这是因为旧模式的佣金是"惰性计算"的——
+            //   佣金一直留在 stake pool 的 active stake 中，只有在显式 request 时
+            //   才会被分离出来。如果不先结算，切换比例会导致之前累积的奖励
+            //   按新比例计算，对 operator 不公平。
+            //
+            //   registry 模式下，佣金在每个 epoch 结算时就已经被自动扣除并发放，
+            //   不存在"累积未结算的佣金"问题。因此更新佣金比例只需要修改
+            //   registry 中的 commission_bps 记录即可，新比例从下一个 epoch 开始生效，
+            //   无需额外的结算步骤。
+            //
+            // 【update_validator_commission 的参数】
+            //   - pool_address：即 validator 地址（在 vesting 场景中等于 contract_address）
+            //   - new_commission_percentage * 100：百分比转基点（bps），例如 15% -> 1500 bps
+            staking_registry::update_validator_commission(
+                vesting_contract.staking.pool_address,
+                new_commission_percentage * 100,
+            );
+        } else {
+            let contract_signer = &get_vesting_account_signer_internal(vesting_contract);
+            staking_contract::update_commision(contract_signer, operator, new_commission_percentage);
+        };
         vesting_contract.staking.commission_percentage = new_commission_percentage;
         // This function does not emit an event. Instead, `staking_contract::update_commission_percentage`
         // emits the event for this commission percentage update.
@@ -886,6 +1003,10 @@ module aptos_framework::vesting {
     ) acquires VestingContract {
         let vesting_contract = borrow_global_mut<VestingContract>(contract_address);
         verify_admin(admin, vesting_contract);
+        assert!(
+            !staking_registry::registry_exists(),
+            error::invalid_state(EREGISTRY_MODE_UNSUPPORTED),
+        );
         let contract_signer = &get_vesting_account_signer_internal(vesting_contract);
         let old_voter = vesting_contract.staking.voter;
         staking_contract::update_voter(contract_signer, vesting_contract.staking.operator, new_voter);
@@ -908,6 +1029,10 @@ module aptos_framework::vesting {
     ) acquires VestingContract {
         let vesting_contract = borrow_global_mut<VestingContract>(contract_address);
         verify_admin(admin, vesting_contract);
+        assert!(
+            !staking_registry::registry_exists(),
+            error::invalid_state(EREGISTRY_MODE_UNSUPPORTED),
+        );
         let contract_signer = &get_vesting_account_signer_internal(vesting_contract);
         staking_contract::reset_lockup(contract_signer, vesting_contract.staking.operator);
 
@@ -1012,6 +1137,10 @@ module aptos_framework::vesting {
         operator: &signer,
         new_beneficiary: address,
     ) {
+        assert!(
+            !staking_registry::registry_exists(),
+            error::invalid_state(EREGISTRY_MODE_UNSUPPORTED),
+        );
         staking_contract::set_beneficiary_for_operator(operator, new_beneficiary);
     }
 
@@ -1075,18 +1204,61 @@ module aptos_framework::vesting {
         assert!(vesting_contract.state == VESTING_POOL_ACTIVE, error::invalid_state(EVESTING_CONTRACT_NOT_ACTIVE));
     }
 
-    fun unlock_stake(vesting_contract: &VestingContract, amount: u64) {
-        let contract_signer = &get_vesting_account_signer_internal(vesting_contract);
-        staking_contract::unlock_stake(contract_signer, vesting_contract.staking.operator, amount);
+    fun unlock_stake(
+        vesting_contract: &VestingContract,
+        contract_address: address,
+        amount: u64,
+    ) {
+        if (amount == 0) {
+            return
+        };
+
+        if (staking_registry::registry_exists()) {
+            // registry 模式没有 staking_contract 那种“先 unlock 到池内、再 distribute 到合约账户”的两段式流程。
+            // 这里直接从 registry.deposit 中切出本次需要释放的额度，并转回 vesting 合约账户。
+            let coins = staking_registry::extract_deposit_as_coins(contract_address, amount);
+            topo_account::deposit_coins(contract_address, coins);
+        } else {
+            let contract_signer = &get_vesting_account_signer_internal(vesting_contract);
+            staking_contract::unlock_stake(contract_signer, vesting_contract.staking.operator, amount);
+        };
     }
 
     fun withdraw_stake(vesting_contract: &VestingContract, contract_address: address): Coin<TopoCoin> {
-        // Claim any withdrawable distribution from the staking contract. The withdrawn coins will be sent directly to
-        // the vesting contract's account.
-        staking_contract::distribute(contract_address, vesting_contract.staking.operator);
+        if (!staking_registry::registry_exists()) {
+            // Claim any withdrawable distribution from the staking contract. The withdrawn coins will be sent directly to
+            // the vesting contract's account.
+            staking_contract::distribute(contract_address, vesting_contract.staking.operator);
+        };
         let withdrawn_coins = coin::balance<TopoCoin>(contract_address);
         let contract_signer = &get_vesting_account_signer_internal(vesting_contract);
         coin::withdraw<TopoCoin>(contract_signer, withdrawn_coins)
+    }
+
+    fun maybe_undelegate_registry_stake(contract_address: address) {
+        if (!staking_registry::registry_exists()) {
+            return
+        };
+
+        let (_, delegated_to, _) = staking_registry::get_user_stake_info(contract_address);
+        if (delegated_to != @0x0) {
+            // terminate 路径可能多次经过这里，因此先检查当前是否仍有委托关系。
+            staking_registry::undelegate_for(contract_address);
+        };
+    }
+
+    fun withdraw_all_registry_deposit_to_contract(contract_address: address) {
+        if (!staking_registry::registry_exists()) {
+            return
+        };
+
+        let (deposit, _, _) = staking_registry::get_user_stake_info(contract_address);
+        if (deposit > 0) {
+            // 把 registry 中剩余本金与未单独释放的奖励一并抽回合约账户，
+            // 后续统一由 `admin_withdraw` 发往 withdrawal_address。
+            let coins = staking_registry::extract_deposit_as_coins(contract_address, deposit);
+            topo_account::deposit_coins(contract_address, coins);
+        };
     }
 
     fun get_beneficiary(contract: &VestingContract, shareholder: address): address {
@@ -1145,6 +1317,16 @@ module aptos_framework::vesting {
 
         // In the test environment, the periodical_reward_rate_decrease feature is initially turned off.
         std::features::change_feature_flags_for_testing(aptos_framework, vector[], vector[std::features::get_periodical_reward_rate_decrease_feature()]);
+    }
+
+    #[test_only]
+    public fun setup_with_registry(aptos_framework: &signer, accounts: &vector<address>) {
+        setup(aptos_framework, accounts);
+        staking_registry::store_topo_coin_mint_cap(
+            aptos_framework,
+            stake::copy_topo_coin_mint_cap_for_test(),
+        );
+        staking_registry::initialize(aptos_framework, 100_000, 1000, 3600);
     }
 
     #[test_only]
@@ -1448,6 +1630,145 @@ module aptos_framework::vesting {
         // Calling unlock_rewards a second time shouldn't change anything as no new rewards has accumulated.
         unlock_rewards(contract_address);
         stake::assert_stake_pool(stake_pool_address, GRANT_AMOUNT, 0, 0, rewards);
+    }
+
+    #[test(
+        aptos_framework = @0x1,
+        admin = @0x123,
+        shareholder = @0x234,
+        withdrawal = @0x345,
+    )]
+    public entry fun test_registry_mode_vest_and_distribute(
+        aptos_framework: &signer,
+        admin: &signer,
+        shareholder: &signer,
+        withdrawal: &signer,
+    ) acquires AdminStore, VestingContract {
+        let admin_address = signer::address_of(admin);
+        let shareholder_address = signer::address_of(shareholder);
+        let withdrawal_address = signer::address_of(withdrawal);
+        setup_with_registry(
+            aptos_framework,
+            &vector[admin_address, shareholder_address, withdrawal_address],
+        );
+
+        let contract_address = setup_vesting_contract(
+            admin,
+            &vector[shareholder_address],
+            &vector[GRANT_AMOUNT],
+            withdrawal_address,
+            0,
+        );
+
+        assert!(staking_registry::registry_exists(), 0);
+        assert!(stake::stake_pool_exists(contract_address), 1);
+
+        let (deposit, delegated_to, cooldown_until_secs) =
+            staking_registry::get_user_stake_info(contract_address);
+        assert!(deposit == GRANT_AMOUNT, 2);
+        assert!(delegated_to == contract_address, 3);
+        assert!(cooldown_until_secs == 0, 4);
+
+        timestamp::update_global_time_for_test_secs(
+            vesting_start_secs(contract_address) + VESTING_PERIOD,
+        );
+        let vested_amount = fraction(GRANT_AMOUNT, 3, 48);
+        vest(contract_address);
+
+        let (remaining_deposit, delegated_to, cooldown_until_secs) =
+            staking_registry::get_user_stake_info(contract_address);
+        assert!(remaining_deposit == GRANT_AMOUNT - vested_amount, 5);
+        assert!(delegated_to == contract_address, 6);
+        assert!(cooldown_until_secs == 0, 7);
+        assert!(coin::balance<TopoCoin>(contract_address) == vested_amount, 8);
+
+        distribute(contract_address);
+        assert!(coin::balance<TopoCoin>(shareholder_address) == vested_amount, 9);
+        assert!(coin::balance<TopoCoin>(contract_address) == 0, 10);
+    }
+
+    #[test(
+        aptos_framework = @0x1,
+        admin = @0x123,
+        shareholder = @0x234,
+        withdrawal = @0x345,
+    )]
+    public entry fun test_registry_mode_terminate_and_admin_withdraw(
+        aptos_framework: &signer,
+        admin: &signer,
+        shareholder: &signer,
+        withdrawal: &signer,
+    ) acquires AdminStore, VestingContract {
+        let admin_address = signer::address_of(admin);
+        let shareholder_address = signer::address_of(shareholder);
+        let withdrawal_address = signer::address_of(withdrawal);
+        setup_with_registry(
+            aptos_framework,
+            &vector[admin_address, shareholder_address, withdrawal_address],
+        );
+
+        let contract_address = setup_vesting_contract(
+            admin,
+            &vector[shareholder_address],
+            &vector[GRANT_AMOUNT],
+            withdrawal_address,
+            0,
+        );
+
+        terminate_vesting_contract(admin, contract_address);
+        let (deposit, delegated_to, cooldown_until_secs) =
+            staking_registry::get_user_stake_info(contract_address);
+        assert!(deposit == 0, 0);
+        assert!(delegated_to == @0x0, 1);
+        assert!(cooldown_until_secs > 0, 2);
+        assert!(coin::balance<TopoCoin>(contract_address) == GRANT_AMOUNT, 3);
+
+        let withdrawal_balance = coin::balance<TopoCoin>(withdrawal_address);
+        admin_withdraw(admin, contract_address);
+        assert!(coin::balance<TopoCoin>(withdrawal_address) == withdrawal_balance + GRANT_AMOUNT, 4);
+        assert!(coin::balance<TopoCoin>(contract_address) == 0, 5);
+    }
+
+    #[test(
+        aptos_framework = @0x1,
+        admin = @0x123,
+        shareholder = @0x234,
+        withdrawal = @0x345,
+        operator = @0x456,
+    )]
+    public entry fun test_registry_mode_update_operator_and_commission(
+        aptos_framework: &signer,
+        admin: &signer,
+        shareholder: &signer,
+        withdrawal: &signer,
+        operator: &signer,
+    ) acquires AdminStore, VestingContract {
+        let admin_address = signer::address_of(admin);
+        let shareholder_address = signer::address_of(shareholder);
+        let withdrawal_address = signer::address_of(withdrawal);
+        let operator_address = signer::address_of(operator);
+        setup_with_registry(
+            aptos_framework,
+            &vector[admin_address, shareholder_address, withdrawal_address, operator_address],
+        );
+
+        let contract_address = setup_vesting_contract(
+            admin,
+            &vector[shareholder_address],
+            &vector[GRANT_AMOUNT],
+            withdrawal_address,
+            0,
+        );
+
+        update_operator(admin, contract_address, operator_address, 10);
+        assert!(stake::get_operator(contract_address) == operator_address, 0);
+        assert!(operator(contract_address) == operator_address, 1);
+        assert!(operator_commission_percentage(contract_address) == 10, 2);
+        assert!(staking_registry::get_validator_commission_bps(contract_address) == 1000, 3);
+
+        update_commission_percentage(admin, contract_address, 15);
+        assert!(operator_commission_percentage(contract_address) == 15, 4);
+        assert!(staking_registry::get_validator_commission_bps(contract_address) == 1500, 5);
     }
 
     #[test(aptos_framework = @0x1, admin = @0x123, shareholder = @0x234, operator = @0x345)]

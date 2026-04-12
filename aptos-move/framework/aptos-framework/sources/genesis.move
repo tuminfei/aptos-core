@@ -19,8 +19,10 @@ module aptos_framework::genesis {
     use aptos_framework::create_signer::create_signer;
     use aptos_framework::gas_schedule;
     use aptos_framework::nonce_validation;
+    use aptos_framework::poc_power_store;
     use aptos_framework::reconfiguration;
     use aptos_framework::stake;
+    use aptos_framework::staking_registry;
     use aptos_framework::staking_contract;
     use aptos_framework::staking_config;
     use aptos_framework::state_storage;
@@ -33,6 +35,8 @@ module aptos_framework::genesis {
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
     const EACCOUNT_DOES_NOT_EXIST: u64 = 2;
+    const DEFAULT_OCTAS_PER_POWER: u64 = 100_000;
+    const DEFAULT_MAX_DELEGATORS_PER_VALIDATOR: u64 = 1000;
 
     struct AccountMap has drop {
         account_address: address,
@@ -100,7 +104,7 @@ module aptos_framework::genesis {
         // put reserved framework reserved accounts under aptos governance
         let framework_reserved_addresses = vector<address>[@0x2, @0x3, @0x4, @0x5, @0x6, @0x7, @0x8, @0x9, @0xa];
         while (!framework_reserved_addresses.is_empty()) {
-            let address = framework_reserved_addresses.pop_back<address>();
+            let address = framework_reserved_addresses.pop_back();
             let (_, framework_signer_cap) = account::create_framework_reserved_account(address);
             topo_governance::store_signer_cap(&aptos_framework_account, address, framework_signer_cap);
         };
@@ -143,6 +147,8 @@ module aptos_framework::genesis {
 
         // Give stake module MintCapability<TopoCoin> so it can mint rewards.
         stake::store_topo_coin_mint_cap(aptos_framework, mint_cap);
+        // Cache a copy for staking_registry so genesis can initialize it later without Rust changes.
+        staking_registry::store_topo_coin_mint_cap(aptos_framework, mint_cap);
         // Give transaction_fee module BurnCapability<TopoCoin> so it can burn gas.
         transaction_fee::store_topo_coin_burn_cap(aptos_framework, burn_cap);
         // Give transaction_fee module MintCapability<TopoCoin> so it can mint refunds.
@@ -161,6 +167,8 @@ module aptos_framework::genesis {
 
         // Give stake module MintCapability<TopoCoin> so it can mint rewards.
         stake::store_topo_coin_mint_cap(aptos_framework, mint_cap);
+        // Cache a copy for staking_registry so test-only flows can opt into the new path.
+        staking_registry::store_topo_coin_mint_cap(aptos_framework, mint_cap);
         // Give transaction_fee module BurnCapability<TopoCoin> so it can burn gas.
         transaction_fee::store_topo_coin_burn_cap(aptos_framework, burn_cap);
         // Give transaction_fee module MintCapability<TopoCoin> so it can mint refunds.
@@ -177,10 +185,10 @@ module aptos_framework::genesis {
         accounts.for_each_ref(|account_map| {
             let account_map: &AccountMap = account_map;
             assert!(
-                !vector::contains(&unique_accounts, &account_map.account_address),
+                !unique_accounts.contains(&account_map.account_address),
                 error::already_exists(EDUPLICATE_ACCOUNT),
             );
-            vector::push_back(&mut unique_accounts, account_map.account_address);
+            unique_accounts.push_back(account_map.account_address);
 
             create_account(
                 aptos_framework,
@@ -206,6 +214,41 @@ module aptos_framework::genesis {
         account
     }
 
+    fun ensure_poc_staking_initialized(aptos_framework: &signer) {
+        if (poc_power_store::get_operator() == @0x0) {
+            poc_power_store::initialize(aptos_framework, @aptos_framework);
+        };
+
+        if (!staking_registry::registry_exists()) {
+            // registry 模式需要一个统一的 cooldown 窗口。
+            // 这个窗口至少要覆盖：
+            // 1. stake 模块的 recurring lockup 周期；
+            // 2. 治理模块的投票有效期。
+            // 因此这里取两者最大值，避免用户在“仍可能影响治理/验证者状态”的时间段里
+            // 通过撤委托立刻提币绕过约束。
+            let recurring_lockup_duration =
+                staking_config::get_recurring_lockup_duration(&staking_config::get());
+            let governance_voting_duration =
+                if (topo_governance::has_governance_config()) {
+                    topo_governance::get_voting_duration_secs()
+                } else {
+                    0
+                };
+            let cooldown_secs =
+                if (recurring_lockup_duration > governance_voting_duration) {
+                    recurring_lockup_duration
+                } else {
+                    governance_voting_duration
+                };
+            staking_registry::initialize(
+                aptos_framework,
+                DEFAULT_OCTAS_PER_POWER,
+                DEFAULT_MAX_DELEGATORS_PER_VALIDATOR,
+                cooldown_secs,
+            );
+        };
+    }
+
     fun create_employee_validators(
         employee_vesting_start: u64,
         employee_vesting_period_duration: u64,
@@ -216,34 +259,34 @@ module aptos_framework::genesis {
         employees.for_each_ref(|employee_group| {
             let j = 0;
             let employee_group: &EmployeeAccountMap = employee_group;
-            let num_employees_in_group = vector::length(&employee_group.accounts);
+            let num_employees_in_group = employee_group.accounts.length();
 
             let buy_ins = simple_map::create();
 
             while (j < num_employees_in_group) {
-                let account = vector::borrow(&employee_group.accounts, j);
+                let account = employee_group.accounts.borrow(j);
                 assert!(
-                    !vector::contains(&unique_accounts, account),
+                    !unique_accounts.contains(account),
                     error::already_exists(EDUPLICATE_ACCOUNT),
                 );
-                vector::push_back(&mut unique_accounts, *account);
+                unique_accounts.push_back(*account);
 
                 let employee = create_signer(*account);
                 let total = coin::balance<TopoCoin>(*account);
                 let coins = coin::withdraw<TopoCoin>(&employee, total);
-                simple_map::add(&mut buy_ins, *account, coins);
+                buy_ins.add(*account, coins);
 
                 j += 1;
             };
 
             let j = 0;
-            let num_vesting_events = vector::length(&employee_group.vesting_schedule_numerator);
+            let num_vesting_events = employee_group.vesting_schedule_numerator.length();
             let schedule = vector::empty();
 
             while (j < num_vesting_events) {
-                let numerator = vector::borrow(&employee_group.vesting_schedule_numerator, j);
+                let numerator = employee_group.vesting_schedule_numerator.borrow(j);
                 let event = fixed_point32::create_from_rational(*numerator, employee_group.vesting_schedule_denominator);
-                vector::push_back(&mut schedule, event);
+                schedule.push_back(event);
 
                 j += 1;
             };
@@ -289,6 +332,20 @@ module aptos_framework::genesis {
                 error::not_found(EACCOUNT_DOES_NOT_EXIST),
             );
             if (employee_group.validator.join_during_genesis) {
+                if (staking_registry::registry_exists()) {
+                    // 员工 vesting validator 在 registry 模式下，
+                    // 真正持有 deposit 并作为委托主体参与治理的是 vesting 合约地址本身，
+                    // 而不是外部看到的 stake pool address。
+                    // 因此创世原始 power 需要写到 `contract_address`。
+                    let genesis_power =
+                        staking_registry::calculate_genesis_power_from_stake(validator.stake_amount);
+                    poc_power_store::batch_update(
+                        &create_signer(@aptos_framework),
+                        0,
+                        vector[contract_address],
+                        vector[genesis_power],
+                    );
+                };
                 initialize_validator(pool_address, validator);
             };
         });
@@ -299,6 +356,9 @@ module aptos_framework::genesis {
         use_staking_contract: bool,
         validators: vector<ValidatorConfigurationWithCommission>,
     ) {
+        // 无论后面选择 staking_contract 还是 registry 作为质押资金承载层，
+        // 创世前都先把 power_store 和 staking_registry 的基础设施准备好。
+        ensure_poc_staking_initialized(aptos_framework);
         validators.for_each_ref(|validator| {
             let validator: &ValidatorConfigurationWithCommission = validator;
             create_initialize_validator(aptos_framework, validator, use_staking_contract);
@@ -329,7 +389,7 @@ module aptos_framework::genesis {
                 commission_percentage: 0,
                 join_during_genesis: true,
             };
-            vector::push_back(&mut validators_with_commission, validator_with_commission);
+            validators_with_commission.push_back(validator_with_commission);
         });
 
         create_initialize_validators_with_commission(aptos_framework, false, validators_with_commission);
@@ -341,30 +401,58 @@ module aptos_framework::genesis {
         use_staking_contract: bool,
     ) {
         let validator = &commission_config.validator_config;
+        let registry_enabled = staking_registry::registry_exists();
+        let commission_percentage = commission_config.commission_percentage;
 
         let owner = &create_account(aptos_framework, validator.owner_address, validator.stake_amount);
         create_account(aptos_framework, validator.operator_address, 0);
         create_account(aptos_framework, validator.voter_address, 0);
 
-        // Initialize the stake pool and join the validator set.
+        // 先创建 stake pool 的“身份外壳”。
+        // 旧模式下 stake/staking_contract 直接持有 `stake_amount`；
+        // registry 模式下这里故意传 0，把实际资金托管、委托关系、奖励滚存都切到 staking_registry。
         let pool_address = if (use_staking_contract) {
             staking_contract::create_staking_contract(
                 owner,
                 validator.operator_address,
                 validator.voter_address,
-                validator.stake_amount,
-                commission_config.commission_percentage,
+                if (registry_enabled) { 0 } else { validator.stake_amount },
+                commission_percentage,
                 x"",
             );
             staking_contract::stake_pool_address(validator.owner_address, validator.operator_address)
         } else {
             stake::initialize_stake_owner(
                 owner,
-                validator.stake_amount,
+                if (registry_enabled) { 0 } else { validator.stake_amount },
                 validator.operator_address,
                 validator.voter_address,
             );
             validator.owner_address
+        };
+
+        if (registry_enabled) {
+            // registry 模式创世流程：
+            // 1. 依据 `stake_amount * genesis_stake_power_multiplier` 生成创世原始 power；
+            // 2. 在 registry 中注册 validator，并把佣金写成 bps；
+            // 3. 把 owner 持有的 stake_amount 全额存入 registry；
+            // 4. 让 owner 把这笔 deposit 委托给对应的 pool；
+            // 5. 把 raw power 写入 power_store，后续治理再通过 effective power 做二次裁剪。
+            let genesis_power =
+                staking_registry::calculate_genesis_power_from_stake(validator.stake_amount);
+            staking_registry::register_validator_for_genesis(
+                validator.owner_address,
+                pool_address,
+                commission_percentage * 100,
+            );
+            staking_registry::deposit(owner, validator.stake_amount);
+            staking_registry::delegate(owner, pool_address);
+            poc_power_store::batch_update(
+                aptos_framework,
+                0,
+                vector[validator.owner_address],
+                vector[genesis_power],
+            );
         };
 
         if (commission_config.join_during_genesis) {
