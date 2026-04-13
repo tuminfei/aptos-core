@@ -36,6 +36,7 @@ module aptos_framework::poc_contribution {
     use aptos_framework::event;
     use aptos_framework::fungible_asset::Metadata;
     use aptos_framework::object;
+    use aptos_framework::object::Object;
     use aptos_framework::poc_registry;
     use aptos_framework::primary_fungible_store;
 
@@ -57,10 +58,10 @@ module aptos_framework::poc_contribution {
     /// - 关键资产参数由注册表给出，非外部传入
     /// - 链下还能看到同交易的 FA 转账事实做交叉验证
     struct ContributionEvent has drop, store {
-        /// 贡献者（接收股权代币的用户地址）
         contributor: address,
-        /// 本次发放的股权代币数量（平台认可的目标到账金额）
+        equity_token: Object<Metadata>,
         equity_amount: u64,
+        app_address: address,
     }
 
     // ========== 核心函数 ==========
@@ -124,7 +125,12 @@ module aptos_framework::poc_contribution {
             let registered_custody_address = poc_registry::get_custody_address(app_admin);
             let actual_custody_address = signer::address_of(custody_actor);
             if (actual_custody_address == registered_custody_address) {
-                event::emit(ContributionEvent { contributor, equity_amount });
+                event::emit(ContributionEvent {
+                    contributor,
+                    equity_token: metadata,
+                    equity_amount,
+                    app_address
+                });
             };
         };
     }
