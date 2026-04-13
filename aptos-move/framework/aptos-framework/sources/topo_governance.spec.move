@@ -193,9 +193,7 @@ spec aptos_framework::topo_governance {
         use aptos_framework::chain_status;
         pragma verify_duration_estimate = 60;
         requires chain_status::is_operating();
-        include CreateProposalAbortsIf {
-            stake_pool: signer::address_of(proposer)
-        };
+        include CreateProposalAbortsIf;
     }
 
     spec create_proposal_v2(
@@ -208,69 +206,37 @@ spec aptos_framework::topo_governance {
         use aptos_framework::chain_status;
         pragma verify_duration_estimate = 60;
         requires chain_status::is_operating();
-        include CreateProposalAbortsIf {
-            stake_pool: signer::address_of(proposer)
-        };
-    }
-
-    spec create_proposal_v2_impl (
-        proposer: &signer,
-        stake_pool: address,
-        execution_hash: vector<u8>,
-        metadata_location: vector<u8>,
-        metadata_hash: vector<u8>,
-        is_multi_step_proposal: bool,
-    ): u64 {
-        use aptos_framework::chain_status;
-        pragma verify_duration_estimate = 60;
-        requires chain_status::is_operating();
         include CreateProposalAbortsIf;
-        // include AbortsIfPermissionedSigner { s: proposer };
     }
 
-    /// `stake_pool` must exist StakePool.
-    /// The delegated voter under the resource StakePool of the stake_pool must be the proposer address.
+    /// The proposer now uses its own address as the voting subject.
     /// Address @aptos_framework must exist GovernanceEvents.
     spec schema CreateProposalAbortsIf {
-        use aptos_framework::stake;
-
         proposer: &signer;
-        stake_pool: address;
         execution_hash: vector<u8>;
         metadata_location: vector<u8>;
         metadata_hash: vector<u8>;
 
-        include VotingGetDelegatedVoterAbortsIf { sign: proposer };
         include AbortsIfNotGovernanceConfig;
 
-        // verify get_voting_power(stake_pool)
-        include GetVotingPowerAbortsIf { pool_address: stake_pool };
-        let staking_config = global<staking_config::StakingConfig>(@aptos_framework);
-        let allow_validator_set_change = staking_config.allow_validator_set_change;
-        let stake_pool_res = global<stake::StakePool>(stake_pool);
-        // Three results of get_voting_power(stake_pool)
-        let stake_balance_0 = stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value;
-        let stake_balance_1 = stake_pool_res.active.value + stake_pool_res.pending_inactive.value;
-        let stake_balance_2 = 0;
+        let proposer_address = signer::address_of(proposer);
+        let stake_balance = staking_registry::spec_get_effective_power(proposer_address);
         let governance_config = global<GovernanceConfig>(@aptos_framework);
         let required_proposer_stake = governance_config.required_proposer_stake;
         /// [high-level-req-2]
-        // Comparison of the three results of get_voting_power(stake_pool) and required_proposer_stake
-        aborts_if allow_validator_set_change && stake_balance_0 < required_proposer_stake;
-        aborts_if !allow_validator_set_change && stake::spec_is_current_epoch_validator(stake_pool) && stake_balance_1 < required_proposer_stake;
-        aborts_if !allow_validator_set_change && !stake::spec_is_current_epoch_validator(stake_pool) && stake_balance_2 < required_proposer_stake;
+        aborts_if stake_balance < required_proposer_stake;
+        aborts_if stake_balance == 0;
 
         aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
-        let current_time = timestamp::spec_now_seconds();
-        let proposal_expiration = current_time + governance_config.voting_duration_secs;
-        aborts_if stake_pool_res.locked_until_secs <= proposal_expiration;
 
         // verify create_proposal_metadata
         include CreateProposalMetadataAbortsIf;
 
-        let addr = aptos_std::type_info::type_of<TopoCoin>().account_address;
-        aborts_if !exists<coin::CoinInfo<TopoCoin>>(addr);
-        let maybe_supply = global<coin::CoinInfo<TopoCoin>>(addr).supply;
+        let addr =
+            aptos_std::type_info::type_of<aptos_framework::topo_coin::TopoCoin>().account_address;
+        aborts_if !exists<aptos_framework::coin::CoinInfo<aptos_framework::topo_coin::TopoCoin>>(addr);
+        let maybe_supply =
+            global<aptos_framework::coin::CoinInfo<aptos_framework::topo_coin::TopoCoin>>(addr).supply;
         let supply = option::borrow(maybe_supply);
         let total_supply = aptos_framework::optional_aggregator::optional_aggregator_value(supply);
         let early_resolution_vote_threshold_value = total_supply / 2 + 1;
@@ -292,18 +258,7 @@ spec aptos_framework::topo_governance {
         aborts_if !exists<GovernanceEvents>(@aptos_framework);
     }
 
-    spec schema VotingGetDelegatedVoterAbortsIf {
-        stake_pool: address;
-        sign: signer;
-
-        let addr = signer::address_of(sign);
-        let stake_pool_res = global<stake::StakePool>(stake_pool);
-        aborts_if !exists<stake::StakePool>(stake_pool);
-        aborts_if stake_pool_res.delegated_voter != addr;
-    }
-
-    /// stake_pool must exist StakePool.
-    /// The delegated voter under the resource StakePool of the stake_pool must be the voter address.
+    /// The caller votes with its own address and effective power from staking_registry.
     /// Address @aptos_framework must exist VotingRecords and GovernanceProposal.
     spec vote (
         voter: &signer,
@@ -320,8 +275,7 @@ spec aptos_framework::topo_governance {
         };
     }
 
-    /// stake_pool must exist StakePool.
-    /// The delegated voter under the resource StakePool of the stake_pool must be the voter address.
+    /// The voter uses its own address as the voting subject.
     /// Address @aptos_framework must exist VotingRecords and GovernanceProposal.
     /// Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting flag is enabled.
     spec partial_vote (
@@ -339,8 +293,7 @@ spec aptos_framework::topo_governance {
         };
     }
 
-    /// stake_pool must exist StakePool.
-    /// The delegated voter under the resource StakePool of the stake_pool must be the voter address.
+    /// The voter uses its own address as the voting subject.
     /// Address @aptos_framework must exist VotingRecords and GovernanceProposal.
     /// Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting flag is enabled.
     spec vote_internal (
@@ -365,55 +318,38 @@ spec aptos_framework::topo_governance {
         should_pass: bool;
         voting_power: u64;
 
-        include VotingGetDelegatedVoterAbortsIf { sign: voter };
-
+        aborts_if !exists<VotingRecordsV2>(@aptos_framework);
+        aborts_if !exists<VotingRecords>(@aptos_framework);
         aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
-        let spec_proposal_expiration = voting::spec_get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
-        let locked_until = global<stake::StakePool>(stake_pool).locked_until_secs;
-        let remain_zero_1_cond = (spec_proposal_expiration >= locked_until || timestamp::spec_now_seconds() >= spec_proposal_expiration);
+        include voting::AbortsIfNotContainProposalID<GovernanceProposal> {
+            voting_forum_address: @aptos_framework
+        };
+        let spec_proposal_expiration =
+            voting::spec_get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
+        aborts_if staking_registry::spec_get_effective_power(stake_pool) == 0;
+        aborts_if timestamp::spec_now_seconds() >= spec_proposal_expiration;
         let record_key = RecordKey {
             voter: stake_pool,
             proposal_id,
         };
-        let entirely_voted = spec_has_entirely_voted(stake_pool, proposal_id, record_key);
-        aborts_if !remain_zero_1_cond && !exists<VotingRecords>(@aptos_framework);
-        include !remain_zero_1_cond && !entirely_voted ==> GetVotingPowerAbortsIf {
-            pool_address: stake_pool
-        };
-
-        let staking_config = global<staking_config::StakingConfig>(@aptos_framework);
-        let spec_voting_power = spec_get_voting_power(stake_pool, staking_config);
         let voting_records_v2 = borrow_global<VotingRecordsV2>(@aptos_framework);
         let used_voting_power = if (smart_table::spec_contains(voting_records_v2.votes, record_key)) {
             smart_table::spec_get(voting_records_v2.votes, record_key)
         } else {
             0
         };
-        aborts_if !remain_zero_1_cond && !entirely_voted && used_voting_power > 0 && spec_voting_power < used_voting_power;
-
         let remaining_power = spec_get_remaining_voting_power(stake_pool, proposal_id);
-        let real_voting_power =  min(voting_power, remaining_power);
+        let real_voting_power = min(voting_power, remaining_power);
         aborts_if !(real_voting_power > 0);
-
-        aborts_if !exists<VotingRecords>(@aptos_framework);
-        let voting_records = global<VotingRecords>(@aptos_framework);
-
-
-        // verify get_voting_power(stake_pool)
-        let allow_validator_set_change = global<staking_config::StakingConfig>(@aptos_framework).allow_validator_set_change;
-        let stake_pool_res = global<stake::StakePool>(stake_pool);
-        // Two results of get_voting_power(stake_pool) and the third one is zero.
 
         aborts_if !exists<voting::VotingForum<GovernanceProposal>>(@aptos_framework);
         let voting_forum = global<voting::VotingForum<GovernanceProposal>>(@aptos_framework);
         let proposal = table::spec_get(voting_forum.proposals, proposal_id);
         aborts_if !table::spec_contains(voting_forum.proposals, proposal_id);
         let proposal_expiration = proposal.expiration_secs;
-        let locked_until_secs = global<stake::StakePool>(stake_pool).locked_until_secs;
-        aborts_if proposal_expiration >= locked_until_secs;
 
         // verify voting::vote
-        aborts_if timestamp::now_seconds() >= proposal_expiration;
+        aborts_if timestamp::spec_now_seconds() >= proposal_expiration;
         aborts_if proposal.is_resolved;
         aborts_if !string::spec_internal_check_utf8(voting::IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY);
         let execution_key = utf8(voting::IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY);
@@ -612,90 +548,42 @@ spec aptos_framework::topo_governance {
         include GetSignerAbortsIf;
     }
 
-    /// Address @aptos_framework must exist StakingConfig.
-    /// limit addition overflow.
-    /// pool_address must exist in StakePool.
-    spec get_voting_power(pool_address: address): u64 {
-        include GetVotingPowerAbortsIf;
-
-        let staking_config = global<staking_config::StakingConfig>(@aptos_framework);
-        let allow_validator_set_change = staking_config.allow_validator_set_change;
-        let stake_pool_res = global<stake::StakePool>(pool_address);
-
-        ensures allow_validator_set_change ==> result == stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value;
-        ensures !allow_validator_set_change ==> if (stake::spec_is_current_epoch_validator(pool_address)) {
-            result == stake_pool_res.active.value + stake_pool_res.pending_inactive.value
-        } else {
-            result == 0
-        };
-        ensures result == spec_get_voting_power(pool_address, staking_config);
-    }
-
-    spec fun spec_get_voting_power(pool_address: address, staking_config: staking_config::StakingConfig): u64 {
-        let allow_validator_set_change = staking_config.allow_validator_set_change;
-        let stake_pool_res = global<stake::StakePool>(pool_address);
-        if (allow_validator_set_change) {
-            stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value
-        } else if (!allow_validator_set_change && (stake::spec_is_current_epoch_validator(pool_address))) {
-            stake_pool_res.active.value + stake_pool_res.pending_inactive.value
-        } else {
-            0
-        }
+    spec fun spec_get_voting_power(pool_address: address): u64 {
+        staking_registry::spec_get_effective_power(pool_address)
     }
 
     spec get_remaining_voting_power(voter: address, proposal_id: u64): u64 {
         aborts_if !exists<VotingRecordsV2>(@aptos_framework);
+        aborts_if !exists<VotingRecords>(@aptos_framework);
         include voting::AbortsIfNotContainProposalID<GovernanceProposal> {
             voting_forum_address: @aptos_framework
         };
-        aborts_if !exists<stake::StakePool>(voter);
         aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
-        let spec_proposal_expiration = voting::spec_get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
-        let locked_until = global<stake::StakePool>(voter).locked_until_secs;
-        let remain_zero_1_cond = (spec_proposal_expiration >= locked_until || timestamp::spec_now_seconds() >= spec_proposal_expiration);
-        ensures remain_zero_1_cond ==> result == 0;
-        let record_key = RecordKey {
-            voter,
-            proposal_id,
-        };
-        let entirely_voted = spec_has_entirely_voted(voter, proposal_id, record_key);
-        aborts_if !remain_zero_1_cond && !exists<VotingRecords>(@aptos_framework);
-        include !remain_zero_1_cond && !entirely_voted ==> GetVotingPowerAbortsIf {
-            pool_address: voter
-        };
-        let staking_config = global<staking_config::StakingConfig>(@aptos_framework);
-        let voting_power = spec_get_voting_power(voter, staking_config);
-        let voting_records_v2 = borrow_global<VotingRecordsV2>(@aptos_framework);
-        let used_voting_power = if (smart_table::spec_contains(voting_records_v2.votes, record_key)) {
-            smart_table::spec_get(voting_records_v2.votes, record_key)
-        } else {
-            0
-        };
-        aborts_if !remain_zero_1_cond && !entirely_voted && used_voting_power > 0 && voting_power < used_voting_power;
-
         ensures result == spec_get_remaining_voting_power(voter, proposal_id);
     }
 
     spec fun spec_get_remaining_voting_power(stake_pool: address, proposal_id: u64): u64 {
-        let spec_proposal_expiration = voting::spec_get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
-        let locked_until = global<stake::StakePool>(stake_pool).locked_until_secs;
-        let remain_zero_1_cond = (spec_proposal_expiration >= locked_until || timestamp::spec_now_seconds() >= spec_proposal_expiration);
-        let staking_config = global<staking_config::StakingConfig>(@aptos_framework);
+        let spec_proposal_expiration =
+            voting::spec_get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
         let voting_records_v2 = borrow_global<VotingRecordsV2>(@aptos_framework);
         let record_key = RecordKey {
             voter: stake_pool,
             proposal_id,
         };
         let entirely_voted = spec_has_entirely_voted(stake_pool, proposal_id, record_key);
-        let voting_power = spec_get_voting_power(stake_pool, staking_config);
+        let voting_power = spec_get_voting_power(stake_pool);
         let used_voting_power = if (smart_table::spec_contains(voting_records_v2.votes, record_key)) {
             smart_table::spec_get(voting_records_v2.votes, record_key)
         } else {
             0
         };
-        if (remain_zero_1_cond) {
+        if (timestamp::spec_now_seconds() >= spec_proposal_expiration) {
             0
         } else if (entirely_voted) {
+            0
+        } else if (voting_power == 0) {
+            0
+        } else if (used_voting_power >= voting_power) {
             0
         } else {
             voting_power - used_voting_power
@@ -705,19 +593,6 @@ spec aptos_framework::topo_governance {
     spec fun spec_has_entirely_voted(stake_pool: address, proposal_id: u64, record_key: RecordKey): bool {
         let voting_records = global<VotingRecords>(@aptos_framework);
         table::spec_contains(voting_records.votes, record_key)
-    }
-
-    spec schema GetVotingPowerAbortsIf {
-        pool_address: address;
-
-        let staking_config = global<staking_config::StakingConfig>(@aptos_framework);
-        aborts_if !exists<staking_config::StakingConfig>(@aptos_framework);
-        let allow_validator_set_change = staking_config.allow_validator_set_change;
-        let stake_pool_res = global<stake::StakePool>(pool_address);
-        aborts_if allow_validator_set_change && (stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value) > MAX_U64;
-        aborts_if !exists<stake::StakePool>(pool_address);
-        aborts_if !allow_validator_set_change && !exists<stake::ValidatorSet>(@aptos_framework);
-        aborts_if !allow_validator_set_change && stake::spec_is_current_epoch_validator(pool_address) && stake_pool_res.active.value + stake_pool_res.pending_inactive.value > MAX_U64;
     }
 
     spec get_signer(signer_address: address): signer {
@@ -844,8 +719,7 @@ spec aptos_framework::topo_governance {
         include VotingInitializationAbortIfs;
         include voting::AbortsIfNotContainProposalID<GovernanceProposal>{voting_forum_address: @aptos_framework};
         let proposal_expiration = voting::spec_get_proposal_expiration_secs<GovernanceProposal>(@aptos_framework, proposal_id);
-        aborts_if !stake::stake_pool_exists(voter);
-        aborts_if proposal_expiration >= stake::spec_get_lockup_secs(voter);
+        aborts_if staking_registry::spec_get_effective_power(voter) == 0;
         aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
         aborts_if timestamp::now_seconds() >= proposal_expiration;
     }
@@ -868,22 +742,4 @@ spec aptos_framework::topo_governance {
         pragma verify = false;
     }
 
-    spec batch_vote(
-        voter: &signer,
-        proposal_id: u64,
-        should_pass: bool,
-    ) {
-        // TODO: Temporary mockup. Specify the `for_each` statement.
-        pragma verify = false;
-    }
-
-    spec batch_partial_vote(
-        voter: &signer,
-        proposal_id: u64,
-        voting_power: u64,
-        should_pass: bool,
-    ) {
-        // TODO: Temporary mockup. Specify the `for_each` statement.
-        pragma verify = false;
-    }
 }

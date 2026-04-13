@@ -1,9 +1,6 @@
 module aptos_framework::genesis {
     use std::error;
-    use std::fixed_point32;
     use std::vector;
-
-    use aptos_std::simple_map;
 
     use aptos_framework::account;
     use aptos_framework::aggregator_factory;
@@ -31,7 +28,6 @@ module aptos_framework::genesis {
     use aptos_framework::transaction_fee;
     use aptos_framework::transaction_validation;
     use aptos_framework::version;
-    use aptos_framework::vesting;
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
     const EACCOUNT_DOES_NOT_EXIST: u64 = 2;
@@ -41,14 +37,6 @@ module aptos_framework::genesis {
     struct AccountMap has drop {
         account_address: address,
         balance: u64,
-    }
-
-    struct EmployeeAccountMap has copy, drop {
-        accounts: vector<address>,
-        validator: ValidatorConfigurationWithCommission,
-        vesting_schedule_numerator: vector<u64>,
-        vesting_schedule_denominator: u64,
-        beneficiary_resetter: address,
     }
 
     struct ValidatorConfiguration has copy, drop {
@@ -241,102 +229,6 @@ module aptos_framework::genesis {
         );
     }
 
-    fun create_employee_validators(
-        employee_vesting_start: u64,
-        employee_vesting_period_duration: u64,
-        employees: vector<EmployeeAccountMap>,
-    ) {
-        let unique_accounts = vector::empty();
-
-        employees.for_each_ref(|employee_group| {
-            let j = 0;
-            let employee_group: &EmployeeAccountMap = employee_group;
-            let num_employees_in_group = employee_group.accounts.length();
-
-            let buy_ins = simple_map::create();
-
-            while (j < num_employees_in_group) {
-                let account = employee_group.accounts.borrow(j);
-                assert!(
-                    !unique_accounts.contains(account),
-                    error::already_exists(EDUPLICATE_ACCOUNT),
-                );
-                unique_accounts.push_back(*account);
-
-                let employee = create_signer(*account);
-                let total = coin::balance<TopoCoin>(*account);
-                let coins = coin::withdraw<TopoCoin>(&employee, total);
-                buy_ins.add(*account, coins);
-
-                j += 1;
-            };
-
-            let j = 0;
-            let num_vesting_events = employee_group.vesting_schedule_numerator.length();
-            let schedule = vector::empty();
-
-            while (j < num_vesting_events) {
-                let numerator = employee_group.vesting_schedule_numerator.borrow(j);
-                let event = fixed_point32::create_from_rational(*numerator, employee_group.vesting_schedule_denominator);
-                schedule.push_back(event);
-
-                j += 1;
-            };
-
-            let vesting_schedule = vesting::create_vesting_schedule(
-                schedule,
-                employee_vesting_start,
-                employee_vesting_period_duration,
-            );
-
-            let admin = employee_group.validator.validator_config.owner_address;
-            let admin_signer = &create_signer(admin);
-            let contract_address = vesting::create_vesting_contract(
-                admin_signer,
-                &employee_group.accounts,
-                buy_ins,
-                vesting_schedule,
-                admin,
-                employee_group.validator.validator_config.operator_address,
-                employee_group.validator.validator_config.voter_address,
-                employee_group.validator.commission_percentage,
-                x"",
-            );
-            let pool_address = vesting::stake_pool_address(contract_address);
-
-            if (employee_group.beneficiary_resetter != @0x0) {
-                vesting::set_beneficiary_resetter(admin_signer, contract_address, employee_group.beneficiary_resetter);
-            };
-
-            let validator = &employee_group.validator.validator_config;
-            // These checks ensure that validator accounts have 0x1::Account resource.
-            // So, validator accounts can't be stateless.
-            assert!(
-                account::exists_at(validator.owner_address),
-                error::not_found(EACCOUNT_DOES_NOT_EXIST),
-            );
-            assert!(
-                account::exists_at(validator.operator_address),
-                error::not_found(EACCOUNT_DOES_NOT_EXIST),
-            );
-            assert!(
-                account::exists_at(validator.voter_address),
-                error::not_found(EACCOUNT_DOES_NOT_EXIST),
-            );
-            if (employee_group.validator.join_during_genesis) {
-                let genesis_power =
-                    staking_registry::calculate_genesis_power_from_stake(validator.stake_amount);
-                poc_power_store::batch_update(
-                    &create_signer(@aptos_framework),
-                    0,
-                    vector[contract_address],
-                    vector[genesis_power],
-                );
-                initialize_validator(pool_address, validator);
-            };
-        });
-    }
-
     fun create_initialize_validators_with_commission(
         aptos_framework: &signer,
         use_staking_contract: bool,
@@ -389,14 +281,12 @@ module aptos_framework::genesis {
 
         let owner = &create_account(aptos_framework, validator.owner_address, validator.stake_amount);
         create_account(aptos_framework, validator.operator_address, 0);
-        create_account(aptos_framework, validator.voter_address, 0);
 
         let pool_address = if (use_staking_contract) {
             staking_contract::create_staking_contract(
                 owner,
                 validator.operator_address,
-                validator.voter_address,
-                0,
+                validator.stake_amount,
                 commission_percentage,
                 x"",
             );
@@ -406,20 +296,23 @@ module aptos_framework::genesis {
                 owner,
                 0,
                 validator.operator_address,
-                validator.voter_address,
             );
             validator.owner_address
         };
 
         let genesis_power =
             staking_registry::calculate_genesis_power_from_stake(validator.stake_amount);
-        staking_registry::register_validator_for_genesis(
-            validator.owner_address,
-            pool_address,
-            commission_percentage * 100,
-        );
-        staking_registry::deposit(owner, validator.stake_amount);
-        staking_registry::delegate(owner, pool_address);
+        if (!staking_registry::validator_exists(pool_address)) {
+            staking_registry::register_validator_for_genesis(
+                validator.owner_address,
+                pool_address,
+                commission_percentage * 100,
+            );
+        };
+        if (!use_staking_contract) {
+            staking_registry::deposit(owner, validator.stake_amount);
+            staking_registry::delegate(owner, pool_address);
+        };
         poc_power_store::batch_update(
             aptos_framework,
             0,
@@ -478,9 +371,6 @@ module aptos_framework::genesis {
         required_proposer_stake: u64,
         voting_duration_secs: u64,
         accounts: vector<AccountMap>,
-        employee_vesting_start: u64,
-        employee_vesting_period_duration: u64,
-        employees: vector<EmployeeAccountMap>,
         validators: vector<ValidatorConfigurationWithCommission>
     ) {
         initialize(
@@ -507,7 +397,6 @@ module aptos_framework::genesis {
             voting_duration_secs
         );
         create_accounts(aptos_framework, accounts);
-        create_employee_validators(employee_vesting_start, employee_vesting_period_duration, employees);
         create_initialize_validators_with_commission(aptos_framework, true, validators);
         set_genesis_end(aptos_framework);
     }

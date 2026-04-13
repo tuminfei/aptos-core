@@ -18,12 +18,12 @@ spec aptos_framework::stake {
     /// Enforcement: Formally verified in the schema [high-level-req-2](ValidatorOwnerNoChange).
     ///
     /// No.: 3
-    /// Requirement: The total staked value in the stake pool should remain constant, excluding operations related to
-    /// adding and withdrawing.
+    /// Requirement: The residual local stake buckets in StakePool should conserve value across state transitions other
+    /// than reward distribution.
     /// Criticality: Low
     /// Implementation: The total staked value (TopoCoin) of a stake pool is grouped by: active, inactive,
-    /// pending_active, and pending_inactive. The stake value remains constant except during the execution of the
-    /// add_stake_with_cap or withdraw_with_cap functions or on_new_epoch (which distributes the reward).
+    /// pending_active, and pending_inactive. The value remains constant except during `on_new_epoch`, which can mint
+    /// rewards into these buckets for legacy test scaffolding.
     /// Enforcement: Formally specified in the schema [high-level-req-3](StakedValueNoChange).
     ///
     /// No.: 4
@@ -251,66 +251,6 @@ spec aptos_framework::stake {
         ensures vector::spec_contains(p_validator_set.pending_active, p_validator_info);
     }
 
-    spec withdraw(owner: &signer, withdraw_amount: u64) {
-        // TODO(fa_migration)
-        pragma verify = false;
-        include AbortsIfSignerPermissionStake { s: owner };
-        aborts_if reconfiguration_state::spec_is_in_progress();
-        let addr = signer::address_of(owner);
-        let ownership_cap = global<OwnerCapability>(addr);
-        let pool_address = ownership_cap.pool_address;
-        let stake_pool = global<StakePool>(pool_address);
-        aborts_if !exists<OwnerCapability>(addr);
-        aborts_if !exists<StakePool>(pool_address);
-        aborts_if !exists<ValidatorSet>(@aptos_framework);
-
-        let validator_set = global<ValidatorSet>(@aptos_framework);
-        let bool_find_validator = !option::is_some(
-            spec_find_validator(validator_set.active_validators, pool_address)
-        )
-            && !option::is_some(
-                spec_find_validator(validator_set.pending_inactive, pool_address)
-            )
-            && !option::is_some(
-                spec_find_validator(validator_set.pending_active, pool_address)
-            );
-        aborts_if bool_find_validator
-            && !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
-        let new_withdraw_amount_1 = min(
-            withdraw_amount,
-            stake_pool.inactive.value + stake_pool.pending_inactive.value
-        );
-        let new_withdraw_amount_2 = min(withdraw_amount, stake_pool.inactive.value);
-        aborts_if bool_find_validator
-            && timestamp::now_seconds() > stake_pool.locked_until_secs
-            && new_withdraw_amount_1 > 0
-            && stake_pool.inactive.value + stake_pool.pending_inactive.value
-                < new_withdraw_amount_1;
-        aborts_if !(
-            bool_find_validator
-                && exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework)
-        )
-            && new_withdraw_amount_2 > 0
-            && stake_pool.inactive.value < new_withdraw_amount_2;
-        aborts_if !exists<coin::CoinStore<TopoCoin>>(addr);
-        include coin::DepositAbortsIf<TopoCoin> { account_addr: addr };
-
-        let coin_store = global<coin::CoinStore<TopoCoin>>(addr);
-        let post p_coin_store = global<coin::CoinStore<TopoCoin>>(addr);
-        ensures bool_find_validator
-            && timestamp::now_seconds() > stake_pool.locked_until_secs
-            && exists<account::Account>(addr)
-            && exists<coin::CoinStore<TopoCoin>>(addr) ==>
-            coin_store.coin.value + new_withdraw_amount_1 == p_coin_store.coin.value;
-        ensures !(
-            bool_find_validator
-                && exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework)
-        )
-            && exists<account::Account>(addr)
-            && exists<coin::CoinStore<TopoCoin>>(addr) ==>
-            coin_store.coin.value + new_withdraw_amount_2 == p_coin_store.coin.value;
-    }
-
     spec leave_validator_set(operator: &signer, pool_address: address) {
         pragma disable_invariants_in_body;
         requires chain_status::is_operating();
@@ -377,23 +317,6 @@ spec aptos_framework::stake {
         ensures global<OwnerCapability>(owner_address) == owner_cap;
     }
 
-    spec unlock_with_cap(amount: u64, owner_cap: &OwnerCapability) {
-        // TODO: set because of timeout (property proved)
-        pragma verify_duration_estimate = 300;
-        let pool_address = owner_cap.pool_address;
-        let pre_stake_pool = global<StakePool>(pool_address);
-        let post stake_pool = global<StakePool>(pool_address);
-        aborts_if reconfiguration_state::spec_is_in_progress();
-        aborts_if amount != 0 && !exists<StakePool>(pool_address);
-        modifies global<StakePool>(pool_address);
-        include StakedValueNochange;
-        let min_amount = aptos_std::math64::min(amount, pre_stake_pool.active.value);
-
-        ensures stake_pool.active.value == pre_stake_pool.active.value - min_amount;
-        ensures stake_pool.pending_inactive.value
-            == pre_stake_pool.pending_inactive.value + min_amount;
-    }
-
     // Only active validator can update locked_until_secs.
     spec increase_lockup_with_cap(owner_cap: &OwnerCapability) {
         let config = global<staking_config::StakingConfig>(@aptos_framework);
@@ -445,25 +368,6 @@ spec aptos_framework::stake {
         ensures post_stake_pool.operator_address == new_operator;
     }
 
-    spec reactivate_stake_with_cap(owner_cap: &OwnerCapability, amount: u64) {
-        let pool_address = owner_cap.pool_address;
-        include StakedValueNochange;
-
-        aborts_if reconfiguration_state::spec_is_in_progress();
-        aborts_if !stake_pool_exists(pool_address);
-
-        let pre_stake_pool = global<StakePool>(pool_address);
-        let post stake_pool = global<StakePool>(pool_address);
-        modifies global<StakePool>(pool_address);
-        let min_amount = aptos_std::math64::min(
-            amount, pre_stake_pool.pending_inactive.value
-        );
-
-        ensures stake_pool.pending_inactive.value
-            == pre_stake_pool.pending_inactive.value - min_amount;
-        ensures stake_pool.active.value == pre_stake_pool.active.value + min_amount;
-    }
-
     spec rotate_consensus_key(
         operator: &signer,
         pool_address: address,
@@ -486,15 +390,6 @@ spec aptos_framework::stake {
         include StakedValueNochange;
 
         ensures validator_info.consensus_pubkey == new_consensus_pubkey;
-    }
-
-    spec set_delegated_voter_with_cap(owner_cap: &OwnerCapability, new_voter: address) {
-        let pool_address = owner_cap.pool_address;
-        let post post_stake_pool = global<StakePool>(pool_address);
-        include StakedValueNochange;
-        aborts_if !exists<StakePool>(pool_address);
-        modifies global<StakePool>(pool_address);
-        ensures post_stake_pool.delegated_voter == new_voter;
     }
 
     spec on_new_epoch {
@@ -820,28 +715,8 @@ spec aptos_framework::stake {
             );
     }
 
-    spec add_stake_with_cap {
-        pragma disable_invariants_in_body;
-        pragma verify = false;
-        include ResourceRequirement;
-        let amount = coins.value;
-        aborts_if reconfiguration_state::spec_is_in_progress();
-        include AddStakeWithCapAbortsIfAndEnsures { amount };
-    }
-
-    spec add_stake {
-        // TODO: fix
-        pragma verify = false;
-        // TODO(fa_migration)
-        pragma aborts_if_is_partial;
-        include AbortsIfSignerPermissionStake { s: owner };
-        aborts_if reconfiguration_state::spec_is_in_progress();
-        include ResourceRequirement;
-        include AddStakeAbortsIfAndEnsures;
-    }
-
     spec initialize_stake_owner(
-        owner: &signer, initial_stake_amount: u64, operator: address, voter: address
+        owner: &signer, initial_stake_amount: u64, operator: address
     ) {
         // TODO: These function failed in github CI
         pragma verify_duration_estimate = 120;
@@ -849,6 +724,7 @@ spec aptos_framework::stake {
         pragma aborts_if_is_partial;
         include AbortsIfSignerPermissionStake { s: owner };
         include ResourceRequirement;
+        aborts_if initial_stake_amount != 0;
         let addr = signer::address_of(owner);
         ensures global<ValidatorConfig>(addr)
             == ValidatorConfig {
@@ -859,12 +735,9 @@ spec aptos_framework::stake {
             };
         ensures global<OwnerCapability>(addr) == OwnerCapability { pool_address: addr };
         let post stakepool = global<StakePool>(addr);
-        let post active = stakepool.active.value;
-        let post pending_active = stakepool.pending_active.value;
-        ensures spec_is_current_epoch_validator(addr) ==>
-            pending_active == initial_stake_amount;
-        ensures !spec_is_current_epoch_validator(addr) ==>
-            active == initial_stake_amount;
+        ensures stakepool.active.value == 0;
+        ensures stakepool.pending_active.value == 0;
+        ensures stakepool.operator_address == operator;
     }
 
     spec update_voting_power_increase(increase_amount: u64) {
@@ -910,7 +783,7 @@ spec aptos_framework::stake {
     }
 
     spec validator_consensus_infos_from_validator_set(validator_set: &ValidatorSet): vector<
-        ValidatorConsensusInfo> {
+        aptos_framework::validator_consensus_info::ValidatorConsensusInfo> {
         aborts_if false;
         invariant spec_validator_indices_are_valid_config(
             validator_set.active_validators,
@@ -927,63 +800,6 @@ spec aptos_framework::stake {
     // ---------------------------------
     // Spec helper functions and schemas
     // ---------------------------------
-
-    spec schema AddStakeWithCapAbortsIfAndEnsures {
-        owner_cap: OwnerCapability;
-        amount: u64;
-
-        let pool_address = owner_cap.pool_address;
-        aborts_if !exists<StakePool>(pool_address);
-
-        let config = global<staking_config::StakingConfig>(@aptos_framework);
-        let validator_set = global<ValidatorSet>(@aptos_framework);
-        let voting_power_increase_limit = config.voting_power_increase_limit;
-        let post post_validator_set = global<ValidatorSet>(@aptos_framework);
-        let update_voting_power_increase = amount != 0
-            && (
-                spec_contains(validator_set.active_validators, pool_address)
-                    || spec_contains(validator_set.pending_active, pool_address)
-            );
-        aborts_if update_voting_power_increase
-            && validator_set.total_joining_power + amount > MAX_U128;
-        ensures update_voting_power_increase ==>
-            post_validator_set.total_joining_power
-                == validator_set.total_joining_power + amount;
-        aborts_if update_voting_power_increase
-            && validator_set.total_voting_power > 0
-            && validator_set.total_voting_power * voting_power_increase_limit
-                > MAX_U128;
-        aborts_if update_voting_power_increase
-            && validator_set.total_voting_power > 0
-            && validator_set.total_joining_power + amount
-                > validator_set.total_voting_power * voting_power_increase_limit / 100;
-        let stake_pool = global<StakePool>(pool_address);
-        let post post_stake_pool = global<StakePool>(pool_address);
-        let value_pending_active = stake_pool.pending_active.value;
-        let value_active = stake_pool.active.value;
-        ensures amount != 0 && spec_is_current_epoch_validator(pool_address) ==>
-            post_stake_pool.pending_active.value == value_pending_active + amount;
-        ensures amount != 0 && !spec_is_current_epoch_validator(pool_address) ==>
-            post_stake_pool.active.value == value_active + amount;
-        let maximum_stake = config.maximum_stake;
-        let value_pending_inactive = stake_pool.pending_inactive.value;
-        let next_epoch_voting_power = value_pending_active + value_active
-            + value_pending_inactive;
-        let voting_power = next_epoch_voting_power + amount;
-        aborts_if amount != 0 && voting_power > MAX_U64;
-        aborts_if amount != 0 && voting_power > maximum_stake;
-    }
-
-    spec schema AddStakeAbortsIfAndEnsures {
-        owner: signer;
-        amount: u64;
-
-        let owner_address = signer::address_of(owner);
-        aborts_if !exists<OwnerCapability>(owner_address);
-
-        let owner_cap = global<OwnerCapability>(owner_address);
-        include AddStakeWithCapAbortsIfAndEnsures { owner_cap };
-    }
 
     spec fun spec_is_allowed(account: address): bool {
         if (!exists<AllowedValidators>(@aptos_framework)) { true }
