@@ -244,6 +244,7 @@ module aptos_framework::topo_governance {
         governance_config.voting_duration_secs = voting_duration_secs;
         governance_config.min_voting_threshold = min_voting_threshold;
         governance_config.required_proposer_stake = required_proposer_stake;
+        staking_registry::ensure_min_cooldown_secs(aptos_framework, voting_duration_secs);
 
         event::emit(
             UpdateConfig {
@@ -404,7 +405,7 @@ module aptos_framework::topo_governance {
         let proposal_metadata = create_proposal_metadata(metadata_location, metadata_hash);
 
         let early_resolution_vote_threshold =
-            option::some((staking_registry::get_total_staked_power() as u128) / 2 + 1);
+            option::some((stake::get_current_epoch_governance_voting_power() as u128) / 2 + 1);
 
         let proposal_id = voting::create_proposal_v2(
             proposer_address,
@@ -844,6 +845,77 @@ module aptos_framework::topo_governance {
 
         let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
         assert!(*approved_hashes.borrow(&0) == vector[10u8, ], 1);
+    }
+
+    #[test(
+        aptos_framework = @aptos_framework,
+        proposer = @0x123,
+        yes_voter = @0x234,
+        no_voter = @0x345,
+        delegator = @0x456
+    )]
+    public entry fun test_update_governance_config_raises_cooldown_floor(
+        aptos_framework: signer,
+        proposer: signer,
+        yes_voter: signer,
+        no_voter: signer,
+        delegator: signer,
+    ) acquires GovernanceResponsbility, GovernanceConfig {
+        let _unused_delegator = delegator;
+
+        setup_voting_with_initialized_stake(&aptos_framework, &proposer, &yes_voter, &no_voter);
+
+        update_governance_config(&aptos_framework, 10, 100, 5000);
+        assert!(staking_registry::get_cooldown_secs() == 5000, 0);
+
+        staking_config::update_recurring_lockup_duration_secs(&aptos_framework, 6000);
+        staking_registry::ensure_min_cooldown_secs(&aptos_framework, 6000);
+        assert!(staking_registry::get_cooldown_secs() == 6000, 1);
+
+        update_governance_config(&aptos_framework, 10, 100, 3000);
+        assert!(staking_registry::get_cooldown_secs() == 6000, 2);
+    }
+
+    #[test(
+        aptos_framework = @aptos_framework,
+        proposer = @0x123,
+        yes_voter = @0x234,
+        no_voter = @0x345,
+        delegator = @0x456
+    )]
+    public entry fun test_create_proposal_uses_live_total_voting_power(
+        aptos_framework: signer,
+        proposer: signer,
+        yes_voter: signer,
+        no_voter: signer,
+        delegator: signer,
+    ) acquires GovernanceResponsbility, GovernanceConfig {
+        setup_voting_with_initialized_stake(&aptos_framework, &proposer, &yes_voter, &no_voter);
+
+        let proposer_address = signer::address_of(&proposer);
+        let delegator_address = signer::address_of(&delegator);
+        aptos_framework::account::create_account_for_test(delegator_address);
+        let target_period = aptos_framework::poc_power_store::get_current_period() + 1;
+        aptos_framework::poc_power_store::stage_batch_update(
+            &aptos_framework,
+            target_period,
+            vector[delegator_address],
+            vector[40u64],
+        );
+        stake::mint_and_add_stake(&delegator, 40);
+        stake::end_epoch();
+        staking_registry::delegate(&delegator, proposer_address);
+
+        let stale_total = staking_registry::get_total_staked_power();
+        let live_total = stake::get_current_epoch_governance_voting_power();
+        assert!(live_total > stale_total, 0);
+
+        update_governance_config(&aptos_framework, 10, 1, 1000);
+        create_proposal_for_test(&proposer, true);
+        let threshold =
+            voting::get_early_resolution_vote_threshold<GovernanceProposal>(@aptos_framework, 0);
+        assert!(threshold.is_some(), 1);
+        assert!(*threshold.borrow() == (live_total as u128) / 2 + 1, 2);
     }
 
     #[verify_only]

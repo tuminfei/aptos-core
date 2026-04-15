@@ -428,18 +428,10 @@ spec aptos_framework::stake {
 
     spec compute_simulated_validator_info(
         candidate: &ValidatorInfo,
-        validator_perf: &ValidatorPerformance,
-        rewards_rate: u64,
-        rewards_rate_denominator: u64,
         validator_index: u64,
-        include_rewards: bool
+        simulated_deposit_deltas: &SimpleMap<address, u64>,
     ): (u64, ValidatorInfo) {
-        include GetReconfigStartTimeRequirement;
-        requires rewards_rate <= staking_config::MAX_REWARDS_RATE;
-        requires rewards_rate_denominator > 0;
-        requires rewards_rate <= rewards_rate_denominator;
-        requires include_rewards ==>
-            candidate.config.validator_index < len(validator_perf.validators);
+        let _unused_simulated_deposit_deltas = simulated_deposit_deltas;
         aborts_if false;
         ensures result_2.addr == candidate.addr;
         ensures result_2.config.validator_index == validator_index;

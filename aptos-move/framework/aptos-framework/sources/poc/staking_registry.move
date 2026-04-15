@@ -3,6 +3,7 @@ module aptos_framework::staking_registry {
     use std::signer;
 
     use aptos_std::math64;
+    use aptos_std::simple_map::{Self, SimpleMap};
     use aptos_std::smart_table::{Self, SmartTable};
     use aptos_std::table::{Self, Table};
 
@@ -14,6 +15,7 @@ module aptos_framework::staking_registry {
 
     friend aptos_framework::genesis;
     friend aptos_framework::stake;
+    friend aptos_framework::topo_governance;
 
     const ENOT_VALIDATOR: u64 = 1;
     const EALREADY_VALIDATOR: u64 = 2;
@@ -74,6 +76,12 @@ module aptos_framework::staking_registry {
         deposit: Coin<TopoCoin>,
         delegated_to: address,
         cooldown_until_secs: u64,
+    }
+
+    struct ValidatorMemberPowers has copy, drop, store {
+        addresses: vector<address>,
+        powers: vector<u64>,
+        total_power: u64,
     }
 
     #[view]
@@ -144,6 +152,21 @@ module aptos_framework::staking_registry {
         let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
         registry.config.min_active_power = min_active_power;
         registry.config.force_exit_power_bps = force_exit_power_bps;
+    }
+
+    public(friend) fun ensure_min_cooldown_secs(
+        aptos_framework: &signer,
+        min_cooldown_secs: u64,
+    ) acquires StakingRegistry {
+        system_addresses::assert_aptos_framework(aptos_framework);
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return
+        };
+
+        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        if (registry.config.cooldown_secs < min_cooldown_secs) {
+            registry.config.cooldown_secs = min_cooldown_secs;
+        };
     }
 
     #[view]
@@ -336,13 +359,25 @@ module aptos_framework::staking_registry {
     public(friend) fun get_validator_total_power_for_next_epoch(
         validator_address: address,
     ): u64 acquires StakingRegistry {
+        let extra_deposit_octas_by_user = simple_map::create<address, u64>();
+        let (_, _, total_power) = get_validator_member_powers_for_next_epoch(
+            validator_address,
+            &extra_deposit_octas_by_user,
+        );
+        total_power
+    }
+
+    public(friend) fun get_validator_member_powers_for_next_epoch(
+        validator_address: address,
+        extra_deposit_octas_by_user: &SimpleMap<address, u64>,
+    ): (vector<address>, vector<u64>, u64) acquires StakingRegistry {
         if (!exists<StakingRegistry>(@aptos_framework)) {
-            return 0
+            return (vector[], vector[], 0)
         };
 
         let registry = borrow_global<StakingRegistry>(@aptos_framework);
         if (!registry.validators.contains(validator_address)) {
-            return 0
+            return (vector[], vector[], 0)
         };
 
         let maintain_threshold = calculate_force_exit_power(
@@ -350,16 +385,65 @@ module aptos_framework::staking_registry {
             registry.config.force_exit_power_bps,
         );
         let pool = registry.validators.borrow(validator_address);
+        let addresses = vector[];
+        let powers = vector[];
         let total_power = 0u128;
         pool.delegator_list.for_each_ref(|member| {
-            total_power += (get_user_effective_power_for_validator_for_next_epoch(
+            let extra_deposit_octas =
+                if (extra_deposit_octas_by_user.contains_key(member)) {
+                    *extra_deposit_octas_by_user.borrow(member)
+                } else {
+                    0
+                };
+            let power = get_user_effective_power_for_validator_for_next_epoch_with_extra_deposit(
                 registry,
                 *member,
                 validator_address,
                 maintain_threshold,
-            ) as u128);
+                extra_deposit_octas,
+            );
+            addresses.push_back(*member);
+            powers.push_back(power);
+            total_power += (power as u128);
         });
-        total_power as u64
+        (addresses, powers, total_power as u64)
+    }
+
+    public(friend) fun get_validator_member_powers_with_current_power(
+        validator_address: address,
+        extra_deposit_octas_by_user: &SimpleMap<address, u64>,
+    ): (vector<address>, vector<u64>, u64) acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return (vector[], vector[], 0)
+        };
+
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        if (!registry.validators.contains(validator_address)) {
+            return (vector[], vector[], 0)
+        };
+
+        let pool = registry.validators.borrow(validator_address);
+        let addresses = vector[];
+        let powers = vector[];
+        let total_power = 0u128;
+        pool.delegator_list.for_each_ref(|member| {
+            let extra_deposit_octas =
+                if (extra_deposit_octas_by_user.contains_key(member)) {
+                    *extra_deposit_octas_by_user.borrow(member)
+                } else {
+                    0
+                };
+            let power = get_user_effective_power_for_validator_with_extra_deposit(
+                registry,
+                *member,
+                validator_address,
+                extra_deposit_octas,
+            );
+            addresses.push_back(*member);
+            powers.push_back(power);
+            total_power += (power as u128);
+        });
+        (addresses, powers, total_power as u64)
     }
 
     #[view]
@@ -431,6 +515,15 @@ module aptos_framework::staking_registry {
             return
         };
         borrow_global_mut<StakingRegistry>(@aptos_framework).total_staked_power = total_staked_power;
+    }
+
+    #[view]
+    public fun get_cooldown_secs(): u64 acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            0
+        } else {
+            borrow_global<StakingRegistry>(@aptos_framework).config.cooldown_secs
+        }
     }
 
     public(friend) fun set_validator_pending_active(
@@ -899,6 +992,20 @@ module aptos_framework::staking_registry {
         user: address,
         validator_address: address,
     ): u64 {
+        get_user_effective_power_for_validator_with_extra_deposit(
+            registry,
+            user,
+            validator_address,
+            0,
+        )
+    }
+
+    fun get_user_effective_power_for_validator_with_extra_deposit(
+        registry: &StakingRegistry,
+        user: address,
+        validator_address: address,
+        extra_deposit_octas: u64,
+    ): u64 {
         if (!registry.users.contains(user)) {
             return 0
         };
@@ -908,7 +1015,13 @@ module aptos_framework::staking_registry {
             return 0
         };
 
-        calculate_effective_power(info, registry.config.octas_per_power, user)
+        let committed_power = poc_power_store::get_user_committed_power(user);
+        if (committed_power == 0) {
+            return 0
+        };
+        let deposit_octas = coin::value(&info.deposit) + extra_deposit_octas;
+        let deposit_cover = deposit_octas / registry.config.octas_per_power;
+        math64::min(committed_power, deposit_cover)
     }
 
     fun get_user_effective_power_for_validator_for_next_epoch(
@@ -916,6 +1029,22 @@ module aptos_framework::staking_registry {
         user: address,
         validator_address: address,
         maintain_threshold: u64,
+    ): u64 {
+        get_user_effective_power_for_validator_for_next_epoch_with_extra_deposit(
+            registry,
+            user,
+            validator_address,
+            maintain_threshold,
+            0,
+        )
+    }
+
+    fun get_user_effective_power_for_validator_for_next_epoch_with_extra_deposit(
+        registry: &StakingRegistry,
+        user: address,
+        validator_address: address,
+        maintain_threshold: u64,
+        extra_deposit_octas: u64,
     ): u64 {
         if (!registry.users.contains(user)) {
             return 0
@@ -930,7 +1059,7 @@ module aptos_framework::staking_registry {
         if (committed_power == 0) {
             return 0
         };
-        let deposit_octas = coin::value(&info.deposit);
+        let deposit_octas = coin::value(&info.deposit) + extra_deposit_octas;
         let deposit_cover = deposit_octas / registry.config.octas_per_power;
         let effective_power = math64::min(committed_power, deposit_cover);
         if (effective_power < maintain_threshold) {

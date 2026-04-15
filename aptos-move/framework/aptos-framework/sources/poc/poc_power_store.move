@@ -23,7 +23,7 @@ module aptos_framework::poc_power_store {
     const POWER_DECIMALS: u64 = 18;
     const BPS_DENOMINATOR: u64 = 10000;
     const DEFAULT_RETENTION_BPS_PER_PERIOD: u64 = 9950;
-    const DEFAULT_POWER_PERIOD_IN_EPOCHS: u64 = 1;
+    const DEFAULT_POWER_PERIOD_IN_EPOCHS: u64 = 60;
 
     // ========== 错误码 ==========
 
@@ -593,11 +593,11 @@ module aptos_framework::poc_power_store {
         commit_next_period_if_boundary();
         commit_next_period_if_boundary();
         assert!(get_current_period() == 1, 0);
-        assert!(get_user_committed_power(signer::address_of(&user1)) == 80, 1);
+        assert!(get_user_committed_power(signer::address_of(&user1)) == 99, 1);
 
         commit_next_period_if_boundary();
         assert!(get_current_period() == 2, 2);
-        assert!(get_user_committed_power(signer::address_of(&user1)) == 64, 3);
+        assert!(get_user_committed_power(signer::address_of(&user1)) == 98, 3);
     }
 
     #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB)]

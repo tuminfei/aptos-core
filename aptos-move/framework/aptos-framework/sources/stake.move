@@ -14,6 +14,7 @@ module aptos_framework::stake {
     use std::vector;
     use aptos_std::bls12381;
     use aptos_std::big_ordered_map::{Self, BigOrderedMap};
+    use aptos_std::simple_map::{Self, SimpleMap};
     use aptos_framework::aggregator_v2::{Self, Aggregator};
     use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::account;
@@ -1360,38 +1361,62 @@ module aptos_framework::stake {
         validator_consensus_infos_from_validator_set(validator_set)
     }
 
-    /// Compute simulated next-epoch voting power and ValidatorInfo for a candidate.
-    /// Current simulation reflects next-epoch registry power after boundary carry-forward / threshold sweep,
-    /// but does not pre-apply reward or fee accrual into deposit.
-    fun compute_simulated_validator_info(
-        candidate: &ValidatorInfo,
-        validator_perf: &ValidatorPerformance,
-        rewards_rate: u64,
-        rewards_rate_denominator: u64,
-        validator_index: u64,
-        include_rewards: bool
-    ): (u64, ValidatorInfo) acquires ValidatorConfig {
-        let _unused_validator_perf = validator_perf;
-        let _unused_rewards_rate = rewards_rate;
-        let _unused_rewards_rate_denominator = rewards_rate_denominator;
-        let _unused_include_rewards = include_rewards;
-        let new_voting_power =
-            staking_registry::get_validator_total_power_for_next_epoch(candidate.addr);
-        let config = *borrow_global<ValidatorConfig>(candidate.addr);
-        config.validator_index = validator_index;
-        (
-            new_voting_power,
-            ValidatorInfo { addr: candidate.addr, voting_power: new_voting_power, config }
-        )
+    public fun get_current_epoch_governance_voting_power(): u64 acquires ValidatorSet {
+        if (!exists<ValidatorSet>(@aptos_framework)) {
+            return 0
+        };
+
+        let cur_validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let total_power = 0u128;
+        cur_validator_set.active_validators.for_each_ref(|validator| {
+            let validator: &ValidatorInfo = validator;
+            total_power += (staking_registry::get_validator_total_power(validator.addr) as u128);
+        });
+        cur_validator_set.pending_inactive.for_each_ref(|validator| {
+            let validator: &ValidatorInfo = validator;
+            total_power += (staking_registry::get_validator_total_power(validator.addr) as u128);
+        });
+        if (total_power > MAX_U64) {
+            MAX_U64 as u64
+        } else {
+            total_power as u64
+        }
     }
 
-    public fun next_validator_consensus_infos(): vector<ValidatorConsensusInfo> acquires ValidatorSet, ValidatorPerformance, ValidatorConfig {
+    public fun next_validator_consensus_infos(): vector<ValidatorConsensusInfo> acquires PendingTransactionFee, TransactionFeeConfig, ValidatorSet, ValidatorPerformance, ValidatorConfig {
+        let simulated_validator_set = simulate_next_epoch_validator_set();
+        validator_consensus_infos_from_validator_set(&simulated_validator_set)
+    }
+
+    fun simulate_next_epoch_validator_set(): ValidatorSet acquires PendingTransactionFee, TransactionFeeConfig, ValidatorSet, ValidatorPerformance, ValidatorConfig {
         let cur_validator_set = borrow_global<ValidatorSet>(@aptos_framework);
-        let staking_config = staking_config::get();
+        let config = staking_config::get();
         let validator_perf = borrow_global<ValidatorPerformance>(@aptos_framework);
-        let (minimum_stake, _) = staking_config::get_required_stake(&staking_config);
+        let simulated_deposit_deltas = simple_map::create<address, u64>();
+        let (minimum_stake, _) = staking_config::get_required_stake(&config);
         let (rewards_rate, rewards_rate_denominator) =
-            staking_config::get_reward_rate(&staking_config);
+            staking_config::get_reward_rate(&config);
+
+        cur_validator_set.active_validators.for_each_ref(|validator| {
+            let validator: &ValidatorInfo = validator;
+            simulate_epoch_accruals_for_validator(
+                validator.addr,
+                validator_perf,
+                rewards_rate,
+                rewards_rate_denominator,
+                &mut simulated_deposit_deltas,
+            );
+        });
+        cur_validator_set.pending_inactive.for_each_ref(|validator| {
+            let validator: &ValidatorInfo = validator;
+            simulate_epoch_accruals_for_validator(
+                validator.addr,
+                validator_perf,
+                rewards_rate,
+                rewards_rate_denominator,
+                &mut simulated_deposit_deltas,
+            );
+        });
 
         let new_active_validators = vector[];
         let num_new_actives = 0;
@@ -1425,15 +1450,11 @@ module aptos_framework::stake {
                         num_candidates - 1 - candidate_idx
                     )
                 };
-            let (new_voting_power, new_validator_info) =
-                compute_simulated_validator_info(
-                    candidate,
-                    validator_perf,
-                    rewards_rate,
-                    rewards_rate_denominator,
-                    num_new_actives,
-                    candidate_in_current
-                );
+            let (new_voting_power, new_validator_info) = compute_simulated_validator_info(
+                candidate,
+                num_new_actives,
+                &simulated_deposit_deltas,
+            );
             if (new_voting_power >= minimum_stake) {
                 spec {
                     assume new_total_power + new_voting_power <= MAX_U128;
@@ -1460,15 +1481,11 @@ module aptos_framework::stake {
                             num_fallback - 1 - fallback_idx
                         )
                     };
-                let (new_voting_power, new_validator_info) =
-                    compute_simulated_validator_info(
-                        candidate,
-                        validator_perf,
-                        rewards_rate,
-                        rewards_rate_denominator,
-                        new_active_validators.length(),
-                        in_active
-                    );
+                let (new_voting_power, new_validator_info) = compute_simulated_validator_info(
+                    candidate,
+                    new_active_validators.length(),
+                    &simulated_deposit_deltas,
+                );
                 new_active_validators.push_back(new_validator_info);
                 new_total_power +=(new_voting_power as u128);
             };
@@ -1483,7 +1500,214 @@ module aptos_framework::stake {
             total_joining_power: 0
         };
 
-        validator_consensus_infos_from_validator_set(&new_validator_set)
+        new_validator_set
+    }
+
+    fun compute_simulated_validator_info(
+        candidate: &ValidatorInfo,
+        validator_index: u64,
+        simulated_deposit_deltas: &SimpleMap<address, u64>,
+    ): (u64, ValidatorInfo) acquires ValidatorConfig {
+        let new_voting_power = get_validator_total_power_with_extra_deposit_for_next_epoch(
+            candidate.addr,
+            simulated_deposit_deltas,
+        );
+        let config = *borrow_global<ValidatorConfig>(candidate.addr);
+        config.validator_index = validator_index;
+        (
+            new_voting_power,
+            ValidatorInfo { addr: candidate.addr, voting_power: new_voting_power, config }
+        )
+    }
+
+    fun simulate_epoch_accruals_for_validator(
+        validator_address: address,
+        validator_perf: &ValidatorPerformance,
+        rewards_rate: u64,
+        rewards_rate_denominator: u64,
+        simulated_deposit_deltas: &mut SimpleMap<address, u64>,
+    ) acquires PendingTransactionFee, TransactionFeeConfig, ValidatorConfig {
+        let validator_config = borrow_global<ValidatorConfig>(validator_address);
+        let current_perf =
+            validator_perf.validators.borrow(validator_config.validator_index);
+        let num_successful_proposals = current_perf.successful_proposals;
+        let num_total_proposals =
+            current_perf.successful_proposals + current_perf.failed_proposals;
+        let fee_amount =
+            get_pending_transaction_fee_for_validator(validator_config.validator_index);
+        if (fee_amount > 0) {
+            simulate_fee_distribution_for_validator(
+                validator_address,
+                fee_amount,
+                simulated_deposit_deltas,
+            );
+        };
+        simulate_reward_distribution_for_validator(
+            validator_address,
+            num_successful_proposals,
+            num_total_proposals,
+            rewards_rate,
+            rewards_rate_denominator,
+            simulated_deposit_deltas,
+        );
+    }
+
+    fun simulate_reward_distribution_for_validator(
+        validator_address: address,
+        num_successful_proposals: u64,
+        num_total_proposals: u64,
+        rewards_rate: u64,
+        rewards_rate_denominator: u64,
+        simulated_deposit_deltas: &mut SimpleMap<address, u64>,
+    ) {
+        let current_pool_power = staking_registry::get_validator_total_power(validator_address);
+        if (current_pool_power == 0) {
+            return
+        };
+
+        let epoch_reward = calculate_rewards_amount(
+            current_pool_power,
+            num_successful_proposals,
+            num_total_proposals,
+            rewards_rate,
+            rewards_rate_denominator,
+        );
+        if (epoch_reward == 0) {
+            return
+        };
+        simulate_registry_distribution_for_validator(
+            validator_address,
+            epoch_reward,
+            false,
+            simulated_deposit_deltas,
+        );
+    }
+
+    fun simulate_fee_distribution_for_validator(
+        validator_address: address,
+        fee_amount_octa: u64,
+        simulated_deposit_deltas: &mut SimpleMap<address, u64>,
+    ) {
+        if (fee_amount_octa == 0) {
+            return
+        };
+        simulate_registry_distribution_for_validator(
+            validator_address,
+            fee_amount_octa,
+            false,
+            simulated_deposit_deltas,
+        );
+    }
+
+    fun simulate_registry_distribution_for_validator(
+        validator_address: address,
+        total_amount_octa: u64,
+        use_next_epoch_power: bool,
+        simulated_deposit_deltas: &mut SimpleMap<address, u64>,
+    ) {
+        if (total_amount_octa == 0) {
+            return
+        };
+
+        let owner_address = staking_registry::get_validator_owner(validator_address);
+        let commission_bps = staking_registry::get_validator_commission_bps(validator_address);
+        let (member_addresses, member_effective_powers, pool_power) =
+            if (use_next_epoch_power) {
+                staking_registry::get_validator_member_powers_for_next_epoch(
+                    validator_address,
+                    simulated_deposit_deltas,
+                )
+            } else {
+                staking_registry::get_validator_member_powers_with_current_power(
+                    validator_address,
+                    simulated_deposit_deltas,
+                )
+            };
+        if (pool_power == 0) {
+            return
+        };
+
+        let commission = (((total_amount_octa as u128) * (commission_bps as u128)) / 10000) as u64;
+        let distributable = total_amount_octa - commission;
+        let distributed = 0u64;
+        let len = member_addresses.length();
+        let i = 0;
+        while (i < len) {
+            let member = *member_addresses.borrow(i);
+            let member_power = *member_effective_powers.borrow(i);
+            if (member_power > 0) {
+                let reward =
+                    (((distributable as u128) * (member_power as u128)) / (pool_power as u128))
+                        as u64;
+                if (reward > 0) {
+                    add_simulated_deposit_delta(simulated_deposit_deltas, member, reward);
+                };
+                distributed += reward;
+            };
+            i += 1;
+        };
+
+        let owner_reward = commission + (distributable - distributed);
+        if (owner_reward > 0) {
+            add_simulated_deposit_delta(simulated_deposit_deltas, owner_address, owner_reward);
+        };
+    }
+
+    fun get_validator_total_power_with_extra_deposit_for_next_epoch(
+        validator_address: address,
+        simulated_deposit_deltas: &SimpleMap<address, u64>,
+    ): u64 {
+        let (_, _, total_power) = staking_registry::get_validator_member_powers_for_next_epoch(
+            validator_address,
+            simulated_deposit_deltas,
+        );
+        total_power
+    }
+
+    fun add_simulated_deposit_delta(
+        simulated_deposit_deltas: &mut SimpleMap<address, u64>,
+        user: address,
+        amount: u64,
+    ) {
+        if (amount == 0) {
+            return
+        };
+
+        if (simulated_deposit_deltas.contains_key(&user)) {
+            let current = simulated_deposit_deltas.borrow_mut(&user);
+            *current = *current + amount;
+        } else {
+            simulated_deposit_deltas.add(user, amount);
+        };
+    }
+
+    fun get_pending_transaction_fee_for_validator(
+        validator_index: u64
+    ): u64 acquires PendingTransactionFee, TransactionFeeConfig {
+        if (!exists<PendingTransactionFee>(@aptos_framework)) {
+            return 0
+        };
+
+        let fee_limit =
+            if (exists<TransactionFeeConfig>(@aptos_framework)) {
+                let TransactionFeeConfig::V0 { max_fee_octa_allowed_per_epoch_per_pool } =
+                    borrow_global<TransactionFeeConfig>(@aptos_framework);
+                *max_fee_octa_allowed_per_epoch_per_pool
+            } else {
+                MAX_U64 as u64
+            };
+        let pending_fee_by_validator =
+            &borrow_global<PendingTransactionFee>(@aptos_framework).pending_fee_by_validator;
+        if (!pending_fee_by_validator.contains(&validator_index)) {
+            return 0
+        };
+
+        let fee_octa = pending_fee_by_validator.borrow(&validator_index).read();
+        if (fee_octa > fee_limit) {
+            fee_limit
+        } else {
+            fee_octa
+        }
     }
 
     fun validator_consensus_infos_from_validator_set(
@@ -1671,34 +1895,6 @@ module aptos_framework::stake {
         if (rewards_denominator > 0) {
             ((rewards_numerator / rewards_denominator) as u64)
         } else { 0 }
-    }
-
-    /// Mint rewards corresponding to current epoch's `stake` and `num_successful_votes`.
-    fun distribute_rewards(
-        stake: &mut Coin<TopoCoin>,
-        num_successful_proposals: u64,
-        num_total_proposals: u64,
-        rewards_rate: u64,
-        rewards_rate_denominator: u64
-    ): u64 acquires TopoCoinCapabilities {
-        let stake_amount = coin::value(stake);
-        let rewards_amount =
-            if (stake_amount > 0) {
-                calculate_rewards_amount(
-                    stake_amount,
-                    num_successful_proposals,
-                    num_total_proposals,
-                    rewards_rate,
-                    rewards_rate_denominator
-                )
-            } else { 0 };
-        if (rewards_amount > 0) {
-            let mint_cap =
-                &borrow_global<TopoCoinCapabilities>(@aptos_framework).mint_cap;
-            let rewards = coin::mint(rewards_amount, mint_cap);
-            coin::merge(stake, rewards);
-        };
-        rewards_amount
     }
 
     fun append<T>(v1: &mut vector<T>, v2: &mut vector<T>) {
@@ -2308,6 +2504,58 @@ module aptos_framework::stake {
             total_emergency_voting_power: expected_total_voting_power
         };
         assert!(event::was_event_emitted(&expected_event), 0);
+    }
+
+    #[test(aptos_framework = @aptos_framework, validator = @0x123)]
+    public entry fun test_next_validator_consensus_infos_includes_epoch_rewards(
+        aptos_framework: &signer,
+        validator: &signer,
+    ) acquires ValidatorSet, AllowedValidators, TopoCoinCapabilities, PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance {
+        initialize_for_test_custom(
+            aptos_framework,
+            100,
+            10000,
+            LOCKUP_CYCLE_SECONDS,
+            true,
+            0,
+            100,
+            1000000,
+        );
+        poc_power_store::set_retention_bps_per_period(aptos_framework, 10000);
+
+        let validator_address = signer::address_of(validator);
+        let (_sk, pk, pop) = generate_identity();
+        initialize_test_validator(aptos_framework, &pk, &pop, validator, 100, true, true);
+        staking_config::update_rewards_rate(aptos_framework, 25, 100);
+        let target_period = poc_power_store::get_current_period() + 1;
+        poc_power_store::stage_batch_update(
+            aptos_framework,
+            target_period,
+            vector[validator_address],
+            vector[120u64],
+        );
+        {
+            let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+            let perf = validator_perf.validators.borrow_mut(0);
+            perf.successful_proposals = 1;
+            perf.failed_proposals = 0;
+        };
+
+        staking_config::update_required_stake(aptos_framework, 110, 10000);
+
+        let next_infos = next_validator_consensus_infos();
+        assert!(next_infos.length() == 1, 0);
+        let next_info = next_infos.borrow(0);
+        assert!(validator_consensus_info::get_addr(next_info) == validator_address, 1);
+        assert!(validator_consensus_info::get_voting_power(next_info) == 120, 2);
+
+        end_epoch();
+
+        let cur_infos = cur_validator_consensus_infos();
+        assert!(cur_infos.length() == 1, 3);
+        let cur_info = cur_infos.borrow(0);
+        assert!(validator_consensus_info::get_addr(cur_info) == validator_address, 4);
+        assert!(validator_consensus_info::get_voting_power(cur_info) == 120, 5);
     }
 
     #[test(
