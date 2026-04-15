@@ -20,7 +20,6 @@ module aptos_framework::genesis {
     use aptos_framework::reconfiguration;
     use aptos_framework::stake;
     use aptos_framework::staking_registry;
-    use aptos_framework::staking_contract;
     use aptos_framework::staking_config;
     use aptos_framework::state_storage;
     use aptos_framework::storage_gas;
@@ -231,13 +230,12 @@ module aptos_framework::genesis {
 
     fun create_initialize_validators_with_commission(
         aptos_framework: &signer,
-        use_staking_contract: bool,
         validators: vector<ValidatorConfigurationWithCommission>,
     ) {
         ensure_poc_staking_initialized(aptos_framework);
         validators.for_each_ref(|validator| {
             let validator: &ValidatorConfigurationWithCommission = validator;
-            create_initialize_validator(aptos_framework, validator, use_staking_contract);
+            create_initialize_validator(aptos_framework, validator);
         });
 
         // Destroy the aptos framework account's ability to mint coins now that we're done with setting up the initial
@@ -268,40 +266,28 @@ module aptos_framework::genesis {
             validators_with_commission.push_back(validator_with_commission);
         });
 
-        create_initialize_validators_with_commission(aptos_framework, false, validators_with_commission);
+        create_initialize_validators_with_commission(aptos_framework, validators_with_commission);
     }
 
     fun create_initialize_validator(
         aptos_framework: &signer,
         commission_config: &ValidatorConfigurationWithCommission,
-        use_staking_contract: bool,
     ) {
         let validator = &commission_config.validator_config;
         let commission_percentage = commission_config.commission_percentage;
+        let genesis_power =
+            staking_registry::calculate_genesis_power_from_stake(validator.stake_amount);
 
         let owner = &create_account(aptos_framework, validator.owner_address, validator.stake_amount);
         create_account(aptos_framework, validator.operator_address, 0);
 
-        let pool_address = if (use_staking_contract) {
-            staking_contract::create_staking_contract(
-                owner,
-                validator.operator_address,
-                validator.stake_amount,
-                commission_percentage,
-                x"",
-            );
-            staking_contract::stake_pool_address(validator.owner_address, validator.operator_address)
-        } else {
-            stake::initialize_stake_owner(
-                owner,
-                0,
-                validator.operator_address,
-            );
-            validator.owner_address
-        };
+        stake::initialize_stake_owner(
+            owner,
+            0,
+            validator.operator_address,
+        );
+        let pool_address = validator.owner_address;
 
-        let genesis_power =
-            staking_registry::calculate_genesis_power_from_stake(validator.stake_amount);
         if (!staking_registry::validator_exists(pool_address)) {
             staking_registry::register_validator_for_genesis(
                 validator.owner_address,
@@ -309,16 +295,13 @@ module aptos_framework::genesis {
                 commission_percentage * 100,
             );
         };
-        if (!use_staking_contract) {
-            staking_registry::deposit(owner, validator.stake_amount);
-            staking_registry::delegate(owner, pool_address);
-        };
-        poc_power_store::batch_update(
+        poc_power_store::set_genesis_committed_power(
             aptos_framework,
-            0,
-            vector[validator.owner_address],
-            vector[genesis_power],
+            validator.owner_address,
+            genesis_power,
         );
+        staking_registry::deposit(owner, validator.stake_amount);
+        staking_registry::delegate(owner, pool_address);
 
         if (commission_config.join_during_genesis) {
             initialize_validator(pool_address, validator);
@@ -397,7 +380,7 @@ module aptos_framework::genesis {
             voting_duration_secs
         );
         create_accounts(aptos_framework, accounts);
-        create_initialize_validators_with_commission(aptos_framework, true, validators);
+        create_initialize_validators_with_commission(aptos_framework, validators);
         set_genesis_end(aptos_framework);
     }
 

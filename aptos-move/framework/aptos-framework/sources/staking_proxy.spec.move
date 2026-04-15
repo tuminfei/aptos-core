@@ -1,10 +1,10 @@
 spec aptos_framework::staking_proxy {
     /// <high-level-req>
     /// No.: 1
-    /// Requirement: When updating the operator through the proxy, all dependent staking wrappers should follow it.
+    /// Requirement: When updating the operator through the proxy, the direct stake pool owned by the caller should follow it.
     /// Criticality: Medium
-    /// Implementation: The proxy updates staking contracts and direct stake pools owned by the caller.
-    /// Enforcement: Audited for operator-only mutation paths and uniqueness checks inside staking contracts.
+    /// Implementation: The proxy updates the direct stake pool owned by the caller.
+    /// Enforcement: Spec schemas below constrain the mutation to the direct stake pool path.
     ///
     /// No.: 2
     /// Requirement: Proxy staking mutations should only be available to explicitly authorized permissioned signers.
@@ -24,42 +24,9 @@ spec aptos_framework::staking_proxy {
         aborts_if signer::address_of(master) != signer::address_of(permissioned_signer);
     }
 
-    spec set_operator(owner: &signer, old_operator: address, new_operator: address) {
-        pragma verify = false;
+    spec set_operator(owner: &signer, new_operator: address) {
         pragma aborts_if_is_partial;
         include SetStakePoolOperator;
-        include SetStakingContractOperator;
-    }
-
-    spec set_staking_contract_operator(owner: &signer, old_operator: address, new_operator: address) {
-        pragma aborts_if_is_partial;
-        pragma verify = false;
-        include SetStakingContractOperator;
-    }
-
-    spec schema SetStakingContractOperator {
-        use aptos_std::simple_map;
-        use aptos_framework::staking_contract::{Store};
-
-        owner: &signer;
-        old_operator: address;
-        new_operator: address;
-
-        include AbortsIfSignerPermissionStakeProxy {
-            s: owner
-        };
-
-        let owner_address = signer::address_of(owner);
-        let store = global<Store>(owner_address);
-        let staking_contract_exists =
-            exists<Store>(owner_address)
-                && simple_map::spec_contains_key(store.staking_contracts, old_operator);
-        aborts_if staking_contract_exists
-            && simple_map::spec_contains_key(store.staking_contracts, new_operator);
-
-        let post post_store = global<Store>(owner_address);
-        ensures staking_contract_exists ==> !simple_map::spec_contains_key(post_store.staking_contracts, old_operator);
-        ensures staking_contract_exists ==> simple_map::spec_contains_key(post_store.staking_contracts, new_operator);
     }
 
     spec set_stake_pool_operator(owner: &signer, new_operator: address) {

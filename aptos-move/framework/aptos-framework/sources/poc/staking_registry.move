@@ -8,14 +8,12 @@ module aptos_framework::staking_registry {
 
     use aptos_framework::coin::{Self, Coin, MintCapability};
     use aptos_framework::poc_power_store;
-    use aptos_framework::staking_config;
     use aptos_framework::system_addresses;
     use aptos_framework::timestamp;
     use aptos_framework::topo_coin::TopoCoin;
 
     friend aptos_framework::genesis;
     friend aptos_framework::stake;
-    friend aptos_framework::staking_contract;
 
     const ENOT_VALIDATOR: u64 = 1;
     const EALREADY_VALIDATOR: u64 = 2;
@@ -31,9 +29,12 @@ module aptos_framework::staking_registry {
     const EMINT_CAP_NOT_STORED: u64 = 12;
     const EINVALID_CONFIG: u64 = 13;
     const EALREADY_INITIALIZED: u64 = 14;
-    const EINCOME_LOCKED: u64 = 15;
+    const EPOWER_BELOW_MIN_ACTIVE: u64 = 15;
     const DEFAULT_GENESIS_STAKE_POWER_MULTIPLIER: u64 = 1;
+    const DEFAULT_MIN_ACTIVE_POWER: u64 = 1;
+    const DEFAULT_FORCE_EXIT_POWER_BPS: u64 = 8000;
     const MAX_U64: u128 = 18446744073709551615;
+    const BPS_DENOMINATOR: u64 = 10000;
 
     const VALIDATOR_STATUS_PENDING_ACTIVE: u64 = 1;
     const VALIDATOR_STATUS_ACTIVE: u64 = 2;
@@ -57,6 +58,8 @@ module aptos_framework::staking_registry {
         max_delegators_per_validator: u64,
         cooldown_secs: u64,
         genesis_stake_power_multiplier: u64,
+        min_active_power: u64,
+        force_exit_power_bps: u64,
     }
 
     struct ValidatorPool has store {
@@ -71,9 +74,6 @@ module aptos_framework::staking_registry {
         deposit: Coin<TopoCoin>,
         delegated_to: address,
         cooldown_until_secs: u64,
-        pending_reward_octa: u64,
-        pending_fee_octa: u64,
-        income_locked_until_secs: u64,
     }
 
     #[view]
@@ -126,8 +126,24 @@ module aptos_framework::staking_registry {
                 max_delegators_per_validator,
                 cooldown_secs,
                 genesis_stake_power_multiplier: DEFAULT_GENESIS_STAKE_POWER_MULTIPLIER,
+                min_active_power: DEFAULT_MIN_ACTIVE_POWER,
+                force_exit_power_bps: DEFAULT_FORCE_EXIT_POWER_BPS,
             },
         });
+    }
+
+    public entry fun set_active_power_thresholds(
+        aptos_framework: &signer,
+        min_active_power: u64,
+        force_exit_power_bps: u64,
+    ) acquires StakingRegistry {
+        system_addresses::assert_aptos_framework(aptos_framework);
+        assert_registry_exists();
+        assert_valid_active_power_config(min_active_power, force_exit_power_bps);
+
+        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        registry.config.min_active_power = min_active_power;
+        registry.config.force_exit_power_bps = force_exit_power_bps;
     }
 
     #[view]
@@ -136,6 +152,24 @@ module aptos_framework::staking_registry {
             0
         } else {
             borrow_global<StakingRegistry>(@aptos_framework).config.genesis_stake_power_multiplier
+        }
+    }
+
+    #[view]
+    public fun get_min_active_power(): u64 acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            0
+        } else {
+            borrow_global<StakingRegistry>(@aptos_framework).config.min_active_power
+        }
+    }
+
+    #[view]
+    public fun get_force_exit_power_bps(): u64 acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            0
+        } else {
+            borrow_global<StakingRegistry>(@aptos_framework).config.force_exit_power_bps
         }
     }
 
@@ -198,20 +232,6 @@ module aptos_framework::staking_registry {
         coin::merge(&mut info.deposit, coins);
     }
 
-    public(friend) fun deposit_coins(
-        user_address: address,
-        coins: Coin<TopoCoin>,
-    ) acquires StakingRegistry {
-        assert_registry_exists();
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
-        if (!registry.users.contains(user_address)) {
-            registry.users.add(user_address, new_user_info());
-        };
-
-        let info = registry.users.borrow_mut(user_address);
-        coin::merge(&mut info.deposit, coins);
-    }
-
     public entry fun delegate(
         user: &signer,
         validator_address: address,
@@ -229,21 +249,6 @@ module aptos_framework::staking_registry {
         undelegate_internal(user_address);
     }
 
-    public(friend) fun delegate_for(
-        user_address: address,
-        validator_address: address,
-    ) acquires StakingRegistry {
-        assert_registry_exists();
-        delegate_internal(user_address, validator_address);
-    }
-
-    public(friend) fun undelegate_for(
-        user_address: address,
-    ) acquires StakingRegistry {
-        assert_registry_exists();
-        undelegate_internal(user_address);
-    }
-
     public entry fun withdraw_deposit(
         user: &signer,
     ) acquires StakingRegistry {
@@ -251,62 +256,6 @@ module aptos_framework::staking_registry {
         let user_address = signer::address_of(user);
         let coins = extract_withdrawable_deposit(user_address);
         coin::deposit<TopoCoin>(user_address, coins);
-    }
-
-    public entry fun claim_pending_income(
-        user: &signer,
-    ) acquires StakingRegistry {
-        assert_registry_exists();
-        let user_address = signer::address_of(user);
-        let coins = claim_pending_income_as_coins(user_address);
-        coin::deposit<TopoCoin>(user_address, coins);
-    }
-
-    public(friend) fun claim_pending_income_as_coins(
-        user_address: address,
-    ): Coin<TopoCoin> acquires StakingRegistry {
-        assert_registry_exists();
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
-        if (!registry.users.contains(user_address)) {
-            return coin::zero<TopoCoin>()
-        };
-
-        let info = registry.users.borrow(user_address);
-        let total_income = info.pending_reward_octa + info.pending_fee_octa;
-        if (total_income == 0) {
-            return coin::zero<TopoCoin>()
-        };
-        assert!(
-            info.income_locked_until_secs == 0
-                || timestamp::now_seconds() >= info.income_locked_until_secs,
-            error::invalid_state(EINCOME_LOCKED),
-        );
-
-        let info = registry.users.borrow_mut(user_address);
-        let claim_amount = info.pending_reward_octa + info.pending_fee_octa;
-        info.pending_reward_octa = 0;
-        info.pending_fee_octa = 0;
-        info.income_locked_until_secs = 0;
-        coin::mint<TopoCoin>(claim_amount, &registry.mint_cap)
-    }
-
-    public(friend) fun withdraw_deposit_as_coins(
-        user_address: address,
-    ): Coin<TopoCoin> acquires StakingRegistry {
-        assert_registry_exists();
-        extract_withdrawable_deposit(user_address)
-    }
-
-    public(friend) fun extract_deposit_as_coins(
-        user_address: address,
-        amount: u64,
-    ): Coin<TopoCoin> acquires StakingRegistry {
-        assert_registry_exists();
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
-        assert!(registry.users.contains(user_address), error::not_found(EUSER_NOT_FOUND));
-
-        let info = registry.users.borrow_mut(user_address);
-        coin::extract(&mut info.deposit, amount)
     }
 
     #[view]
@@ -384,6 +333,35 @@ module aptos_framework::staking_registry {
         total_power as u64
     }
 
+    public(friend) fun get_validator_total_power_for_next_epoch(
+        validator_address: address,
+    ): u64 acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return 0
+        };
+
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        if (!registry.validators.contains(validator_address)) {
+            return 0
+        };
+
+        let maintain_threshold = calculate_force_exit_power(
+            registry.config.min_active_power,
+            registry.config.force_exit_power_bps,
+        );
+        let pool = registry.validators.borrow(validator_address);
+        let total_power = 0u128;
+        pool.delegator_list.for_each_ref(|member| {
+            total_power += (get_user_effective_power_for_validator_for_next_epoch(
+                registry,
+                *member,
+                validator_address,
+                maintain_threshold,
+            ) as u128);
+        });
+        total_power as u64
+    }
+
     #[view]
     public fun get_total_staked_power(): u64 acquires StakingRegistry {
         if (!exists<StakingRegistry>(@aptos_framework)) {
@@ -414,27 +392,6 @@ module aptos_framework::staking_registry {
 
         let info = registry.users.borrow(user);
         (coin::value(&info.deposit), info.delegated_to, info.cooldown_until_secs)
-    }
-
-    #[view]
-    public fun get_user_pending_income(
-        user: address,
-    ): (u64, u64, u64) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
-            return (0, 0, 0)
-        };
-
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
-        if (!registry.users.contains(user)) {
-            return (0, 0, 0)
-        };
-
-        let info = registry.users.borrow(user);
-        (
-            info.pending_reward_octa,
-            info.pending_fee_octa,
-            info.income_locked_until_secs
-        )
     }
 
     #[view]
@@ -500,6 +457,43 @@ module aptos_framework::staking_registry {
         set_validator_status(validator_address, VALIDATOR_STATUS_INACTIVE);
     }
 
+    public(friend) fun force_undelegate_below_threshold(
+        validator_address: address,
+    ) acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return
+        };
+
+        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        if (!registry.validators.contains(validator_address)) {
+            return
+        };
+
+        let maintain_threshold = calculate_force_exit_power(
+            registry.config.min_active_power,
+            registry.config.force_exit_power_bps,
+        );
+        let members = {
+            let pool = registry.validators.borrow(validator_address);
+            copy_addresses(&pool.delegator_list)
+        };
+
+        let len = members.length();
+        let i = 0;
+        while (i < len) {
+            let member = *members.borrow(i);
+            if (should_force_undelegate(
+                registry,
+                member,
+                validator_address,
+                maintain_threshold,
+            )) {
+                force_undelegate_member(registry, member, validator_address);
+            };
+            i += 1;
+        };
+    }
+
     public(friend) fun update_validator_commission(
         validator_address: address,
         commission_bps: u64,
@@ -563,6 +557,7 @@ module aptos_framework::staking_registry {
         let distributable = epoch_reward - commission;
 
         let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let mint_cap = &registry.mint_cap;
         let users = &mut registry.users;
 
         let sum_distributed = 0u64;
@@ -574,11 +569,7 @@ module aptos_framework::staking_registry {
             if (member_power > 0) {
                 let reward = (((distributable as u128) * (member_power as u128)) / pool_power) as u64;
                 if (reward > 0) {
-                    if (!users.contains(member)) {
-                        users.add(member, new_user_info());
-                    };
-                    let info = users.borrow_mut(member);
-                    credit_pending_reward(info, reward);
+                    mint_to_user_deposit(users, mint_cap, member, reward);
                 };
                 sum_distributed += reward;
             };
@@ -587,11 +578,7 @@ module aptos_framework::staking_registry {
 
         let owner_reward = commission + (distributable - sum_distributed);
         if (owner_reward > 0) {
-            if (!users.contains(owner_address)) {
-                users.add(owner_address, new_user_info());
-            };
-            let info = users.borrow_mut(owner_address);
-            credit_pending_reward(info, owner_reward);
+            mint_to_user_deposit(users, mint_cap, owner_address, owner_reward);
         };
     }
 
@@ -628,6 +615,7 @@ module aptos_framework::staking_registry {
         let distributable = fee_amount_octa - commission;
 
         let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let mint_cap = &registry.mint_cap;
         let users = &mut registry.users;
 
         let sum_distributed = 0u64;
@@ -640,11 +628,7 @@ module aptos_framework::staking_registry {
                 let fee_share =
                     (((distributable as u128) * (member_power as u128)) / pool_power) as u64;
                 if (fee_share > 0) {
-                    if (!users.contains(member)) {
-                        users.add(member, new_user_info());
-                    };
-                    let info = users.borrow_mut(member);
-                    credit_pending_fee(info, fee_share);
+                    mint_to_user_deposit(users, mint_cap, member, fee_share);
                 };
                 sum_distributed += fee_share;
             };
@@ -653,11 +637,7 @@ module aptos_framework::staking_registry {
 
         let owner_fee = commission + (distributable - sum_distributed);
         if (owner_fee > 0) {
-            if (!users.contains(owner_address)) {
-                users.add(owner_address, new_user_info());
-            };
-            let info = users.borrow_mut(owner_address);
-            credit_pending_fee(info, owner_fee);
+            mint_to_user_deposit(users, mint_cap, owner_address, owner_fee);
         };
     }
 
@@ -707,6 +687,12 @@ module aptos_framework::staking_registry {
             info.cooldown_until_secs == 0 || now_seconds >= info.cooldown_until_secs,
             error::invalid_state(ECOOLDOWN_ACTIVE),
         );
+        let effective_power =
+            calculate_effective_power(info, registry.config.octas_per_power, user_address);
+        assert!(
+            effective_power >= registry.config.min_active_power,
+            error::invalid_argument(EPOWER_BELOW_MIN_ACTIVE),
+        );
 
         let max_delegators = registry.config.max_delegators_per_validator;
         let pool = registry.validators.borrow_mut(validator_address);
@@ -745,6 +731,17 @@ module aptos_framework::staking_registry {
         assert!(commission_bps <= 10000, error::invalid_argument(EINVALID_COMMISSION));
     }
 
+    fun assert_valid_active_power_config(
+        min_active_power: u64,
+        force_exit_power_bps: u64,
+    ) {
+        assert!(min_active_power > 0, error::invalid_argument(EINVALID_CONFIG));
+        assert!(
+            force_exit_power_bps > 0 && force_exit_power_bps <= BPS_DENOMINATOR,
+            error::invalid_argument(EINVALID_CONFIG),
+        );
+    }
+
     fun extract_withdrawable_deposit(
         user_address: address,
     ): Coin<TopoCoin> acquires StakingRegistry {
@@ -769,35 +766,24 @@ module aptos_framework::staking_registry {
             deposit: coin::zero<TopoCoin>(),
             delegated_to: @0x0,
             cooldown_until_secs: 0,
-            pending_reward_octa: 0,
-            pending_fee_octa: 0,
-            income_locked_until_secs: 0,
         }
     }
 
-    fun credit_pending_reward(info: &mut UserStakeInfo, amount: u64) {
+    fun mint_to_user_deposit(
+        users: &mut Table<address, UserStakeInfo>,
+        mint_cap: &MintCapability<TopoCoin>,
+        user_address: address,
+        amount: u64,
+    ) {
         if (amount == 0) {
             return
         };
-        info.pending_reward_octa += amount;
-        extend_income_lockup(info);
-    }
-
-    fun credit_pending_fee(info: &mut UserStakeInfo, amount: u64) {
-        if (amount == 0) {
-            return
+        if (!users.contains(user_address)) {
+            users.add(user_address, new_user_info());
         };
-        info.pending_fee_octa += amount;
-        extend_income_lockup(info);
-    }
-
-    fun extend_income_lockup(info: &mut UserStakeInfo) {
-        let now_secs = timestamp::now_seconds();
-        let new_lockup =
-            now_secs + staking_config::get_recurring_lockup_duration(&staking_config::get());
-        if (info.income_locked_until_secs < new_lockup) {
-            info.income_locked_until_secs = new_lockup;
-        };
+        let minted = coin::mint<TopoCoin>(amount, mint_cap);
+        let info = users.borrow_mut(user_address);
+        coin::merge(&mut info.deposit, minted);
     }
 
     fun add_delegator(
@@ -853,18 +839,59 @@ module aptos_framework::staking_registry {
         registry.validators.borrow_mut(validator_address).status = status;
     }
 
+    fun calculate_force_exit_power(
+        min_active_power: u64,
+        force_exit_power_bps: u64,
+    ): u64 {
+        let numerator =
+            ((min_active_power as u128) * (force_exit_power_bps as u128))
+                + ((BPS_DENOMINATOR - 1) as u128);
+        (numerator / (BPS_DENOMINATOR as u128)) as u64
+    }
+
+    fun should_force_undelegate(
+        registry: &StakingRegistry,
+        user: address,
+        validator_address: address,
+        maintain_threshold: u64,
+    ): bool {
+        if (!registry.users.contains(user)) {
+            return false
+        };
+
+        let info = registry.users.borrow(user);
+        if (info.delegated_to != validator_address) {
+            return false
+        };
+
+        calculate_effective_power(info, registry.config.octas_per_power, user) < maintain_threshold
+    }
+
+    fun force_undelegate_member(
+        registry: &mut StakingRegistry,
+        user_address: address,
+        validator_address: address,
+    ) {
+        let pool = registry.validators.borrow_mut(validator_address);
+        remove_delegator(pool, user_address);
+
+        let info = registry.users.borrow_mut(user_address);
+        info.delegated_to = @0x0;
+        info.cooldown_until_secs = timestamp::now_seconds() + registry.config.cooldown_secs;
+    }
+
     fun calculate_effective_power(
         info: &UserStakeInfo,
         octas_per_power: u64,
         user: address,
     ): u64 {
-        let raw_power = poc_power_store::get_user_power(user);
-        if (raw_power == 0) {
+        let committed_power = poc_power_store::get_user_committed_power(user);
+        if (committed_power == 0) {
             return 0
         };
         let deposit_octas = coin::value(&info.deposit);
         let deposit_cover = deposit_octas / octas_per_power;
-        math64::min(raw_power, deposit_cover)
+        math64::min(committed_power, deposit_cover)
     }
 
     fun get_user_effective_power_for_validator(
@@ -882,6 +909,35 @@ module aptos_framework::staking_registry {
         };
 
         calculate_effective_power(info, registry.config.octas_per_power, user)
+    }
+
+    fun get_user_effective_power_for_validator_for_next_epoch(
+        registry: &StakingRegistry,
+        user: address,
+        validator_address: address,
+        maintain_threshold: u64,
+    ): u64 {
+        if (!registry.users.contains(user)) {
+            return 0
+        };
+
+        let info = registry.users.borrow(user);
+        if (info.delegated_to != validator_address) {
+            return 0
+        };
+
+        let committed_power = poc_power_store::get_user_committed_power_for_next_epoch(user);
+        if (committed_power == 0) {
+            return 0
+        };
+        let deposit_octas = coin::value(&info.deposit);
+        let deposit_cover = deposit_octas / registry.config.octas_per_power;
+        let effective_power = math64::min(committed_power, deposit_cover);
+        if (effective_power < maintain_threshold) {
+            0
+        } else {
+            effective_power
+        }
     }
 
     fun copy_addresses(addresses: &vector<address>): vector<address> {

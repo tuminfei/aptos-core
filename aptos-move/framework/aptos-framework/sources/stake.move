@@ -1,7 +1,7 @@
 ///
 /// Validator lifecycle:
 /// 1. Prepare validator metadata by calling `stake::initialize_validator`.
-/// 2. Manage principal and delegation through `staking_registry` or a wrapper such as `staking_contract`.
+/// 2. Manage principal and delegation through `staking_registry`.
 /// 3. Call `stake::join_validator_set` to enter the validator set. Changes are effective in the next epoch.
 /// 4. Rewards and transaction fees are accounted in `staking_registry`; `stake.move` only maintains validator-set state.
 /// 5. Operators may still rotate consensus keys and network/fullnode addresses through this module.
@@ -19,6 +19,7 @@ module aptos_framework::stake {
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin, MintCapability};
     use aptos_framework::event::{Self, EventHandle};
+    use aptos_framework::poc_power_store;
     use aptos_framework::timestamp;
     use aptos_framework::system_addresses;
     use aptos_framework::staking_registry;
@@ -31,7 +32,6 @@ module aptos_framework::stake {
     friend aptos_framework::genesis;
     friend aptos_framework::reconfiguration;
     friend aptos_framework::reconfiguration_with_dkg;
-    friend aptos_framework::staking_contract;
     friend aptos_framework::transaction_fee;
 
     /// Validator Config not published.
@@ -1163,6 +1163,20 @@ module aptos_framework::stake {
             );
         });
 
+        poc_power_store::commit_next_period_if_boundary();
+        validator_set.active_validators.for_each_ref(|validator| {
+            let validator: &ValidatorInfo = validator;
+            staking_registry::force_undelegate_below_threshold(validator.addr);
+        });
+        validator_set.pending_inactive.for_each_ref(|validator| {
+            let validator: &ValidatorInfo = validator;
+            staking_registry::force_undelegate_below_threshold(validator.addr);
+        });
+        validator_set.pending_active.for_each_ref(|validator| {
+            let validator: &ValidatorInfo = validator;
+            staking_registry::force_undelegate_below_threshold(validator.addr);
+        });
+
         validator_set.pending_active.for_each_ref(|validator| {
             let validator: &ValidatorInfo = validator;
             staking_registry::set_validator_active(validator.addr);
@@ -1346,8 +1360,9 @@ module aptos_framework::stake {
         validator_consensus_infos_from_validator_set(validator_set)
     }
 
-    /// Compute simulated next-epoch voting power and ValidatorInfo for a candidate (no stake updates).
-    /// If include_rewards, use validator_perf to add rewards for current validators; pending_active use false.
+    /// Compute simulated next-epoch voting power and ValidatorInfo for a candidate.
+    /// Current simulation reflects next-epoch registry power after boundary carry-forward / threshold sweep,
+    /// but does not pre-apply reward or fee accrual into deposit.
     fun compute_simulated_validator_info(
         candidate: &ValidatorInfo,
         validator_perf: &ValidatorPerformance,
@@ -1360,7 +1375,8 @@ module aptos_framework::stake {
         let _unused_rewards_rate = rewards_rate;
         let _unused_rewards_rate_denominator = rewards_rate_denominator;
         let _unused_include_rewards = include_rewards;
-        let new_voting_power = staking_registry::get_validator_total_power(candidate.addr);
+        let new_voting_power =
+            staking_registry::get_validator_total_power_for_next_epoch(candidate.addr);
         let config = *borrow_global<ValidatorConfig>(candidate.addr);
         config.validator_index = validator_index;
         (
@@ -1797,8 +1813,6 @@ module aptos_framework::stake {
 
     #[test_only]
     use aptos_framework::topo_coin;
-    #[test_only]
-    use aptos_framework::poc_power_store;
     use aptos_std::bls12381::proof_of_possession_from_bytes;
     use aptos_framework::reconfiguration_state;
     use aptos_framework::validator_consensus_info;
@@ -1927,14 +1941,14 @@ module aptos_framework::stake {
         );
 
         if (amount > 0) {
-            mint_and_add_stake(validator, amount);
-            let (deposit, _, _) = staking_registry::get_user_stake_info(validator_address);
-            poc_power_store::batch_update(
+            let genesis_power =
+                staking_registry::calculate_genesis_power_from_stake(amount);
+            poc_power_store::set_genesis_committed_power(
                 aptos_framework,
-                0,
-                vector[validator_address],
-                vector[deposit],
+                validator_address,
+                genesis_power,
             );
+            mint_and_add_stake(validator, amount);
         };
 
         if (should_join_validator_set) {
@@ -2089,6 +2103,8 @@ module aptos_framework::stake {
         let v5_addr = signer::address_of(validator_5);
 
         initialize_for_test(aptos_framework);
+        // This test focuses on validator index churn, not power decay across periods.
+        poc_power_store::set_retention_bps_per_period(aptos_framework, 10000);
 
         let (_sk_1, pk_1, pop_1) = generate_identity();
         let (_sk_2, pk_2, pop_2) = generate_identity();
@@ -2292,5 +2308,98 @@ module aptos_framework::stake {
             total_emergency_voting_power: expected_total_voting_power
         };
         assert!(event::was_event_emitted(&expected_event), 0);
+    }
+
+    #[test(
+        aptos_framework = @aptos_framework,
+        validator = @0x123,
+        delegator = @0x456
+    )]
+    #[expected_failure(abort_code = 0x1000f, location = aptos_framework::staking_registry)]
+    public entry fun test_delegate_rejects_below_min_active_power(
+        aptos_framework: &signer,
+        validator: &signer,
+        delegator: &signer,
+    ) acquires AllowedValidators, TopoCoinCapabilities, PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+        initialize_for_test(aptos_framework);
+
+        let validator_address = signer::address_of(validator);
+        let delegator_address = signer::address_of(delegator);
+        let (_validator_sk, validator_pk, validator_pop) = generate_identity();
+        initialize_test_validator(
+            aptos_framework,
+            &validator_pk,
+            &validator_pop,
+            validator,
+            100,
+            false,
+            false,
+        );
+
+        staking_registry::set_active_power_thresholds(aptos_framework, 100, 8000);
+        account::create_account_for_test(delegator_address);
+        poc_power_store::set_genesis_committed_power(
+            aptos_framework,
+            delegator_address,
+            99,
+        );
+        mint_and_add_stake(delegator, 99);
+
+        staking_registry::delegate(delegator, validator_address);
+    }
+
+    #[test(
+        aptos_framework = @aptos_framework,
+        validator = @0x123,
+        delegator = @0x456
+    )]
+    public entry fun test_force_undelegate_below_maintain_threshold(
+        aptos_framework: &signer,
+        validator: &signer,
+        delegator: &signer,
+    ) acquires AllowedValidators, TopoCoinCapabilities, PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet {
+        initialize_for_test(aptos_framework);
+
+        let validator_address = signer::address_of(validator);
+        let delegator_address = signer::address_of(delegator);
+        let (_validator_sk, validator_pk, validator_pop) = generate_identity();
+        initialize_test_validator(
+            aptos_framework,
+            &validator_pk,
+            &validator_pop,
+            validator,
+            100,
+            true,
+            false,
+        );
+
+        account::create_account_for_test(delegator_address);
+        poc_power_store::set_genesis_committed_power(
+            aptos_framework,
+            delegator_address,
+            100,
+        );
+        mint_and_add_stake(delegator, 100);
+        staking_registry::delegate(delegator, validator_address);
+        staking_registry::set_active_power_thresholds(aptos_framework, 100, 8000);
+
+        let target_period = poc_power_store::get_current_period() + 1;
+        poc_power_store::stage_batch_update(
+            aptos_framework,
+            target_period,
+            vector[delegator_address],
+            vector[79u64],
+        );
+
+        end_epoch();
+        let (_, delegated_to_before, _) = staking_registry::get_user_stake_info(delegator_address);
+        assert!(delegated_to_before == validator_address, 0);
+
+        end_epoch();
+        let (_, delegated_to_after, cooldown_until_secs) =
+            staking_registry::get_user_stake_info(delegator_address);
+        assert!(delegated_to_after == @0x0, 1);
+        assert!(cooldown_until_secs > 0, 2);
+        assert!(staking_registry::get_effective_power(delegator_address) == 0, 3);
     }
 }

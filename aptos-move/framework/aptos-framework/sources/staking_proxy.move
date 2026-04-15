@@ -3,7 +3,6 @@ module aptos_framework::staking_proxy {
     use std::signer;
     use aptos_framework::permissioned_signer;
     use aptos_framework::stake;
-    use aptos_framework::staking_contract;
 
     struct StakeProxyPermission has copy, drop, store {}
 
@@ -22,18 +21,8 @@ module aptos_framework::staking_proxy {
         permissioned_signer::authorize_unlimited(master, permissioned_signer, StakeProxyPermission {})
     }
 
-    public entry fun set_operator(owner: &signer, old_operator: address, new_operator: address) {
-        set_staking_contract_operator(owner, old_operator, new_operator);
+    public entry fun set_operator(owner: &signer, new_operator: address) {
         set_stake_pool_operator(owner, new_operator);
-    }
-
-    public entry fun set_staking_contract_operator(owner: &signer, old_operator: address, new_operator: address) {
-        check_stake_proxy_permission(owner);
-        let owner_address = signer::address_of(owner);
-        if (staking_contract::staking_contract_exists(owner_address, old_operator)) {
-            let current_commission_percentage = staking_contract::commission_percentage(owner_address, old_operator);
-            staking_contract::switch_operator(owner, old_operator, new_operator, current_commission_percentage);
-        };
     }
 
     public entry fun set_stake_pool_operator(owner: &signer, new_operator: address) {
