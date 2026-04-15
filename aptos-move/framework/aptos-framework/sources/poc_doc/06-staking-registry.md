@@ -238,7 +238,8 @@ public fun get_effective_power(user: address): u64 acquires StakingRegistry {
 ```
 
 与 `PowerStore` 的接口约定：
-- `staking_registry` 只消费当前 power period 的 committed snapshot，不直接读取 `pending_updates`。
+- `staking_registry` 只消费 `PowerStore` 的 committed power 读取接口，不直接接触 future version 写入过程。
 - 当前实现使用 `poc_power_store::get_user_committed_power(user)`；旧 `get_user_power()` / `get_user_decayed_power()` 仅作为兼容别名保留。
+- 预测下一 epoch 时，`staking_registry` 使用 `poc_power_store::get_user_committed_power_for_next_epoch(user)`，该接口会基于下一 epoch 对应的 target period 做版本选择与 retention 计算。
 - 周期边界提交由 `stake::on_new_epoch()` 内部调用 `poc_power_store::commit_next_period_if_boundary()` 驱动。
 - 在 v5 设计中，边界提交完成后还需要额外做一次 active set sweep，把跌破维持门槛的成员自动移出活跃集合。

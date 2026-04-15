@@ -64,7 +64,7 @@ stateDiagram-v2
 
 补充说明：
 - 当前周期内 `deposit` / `delegate` / `undelegate` 会改变保证金或委托状态。
-- raw power 来源只会在新的 power period 边界提交后，从 `pending_updates` + carry-forward 结果切换到新的 `committed_power`。
+- raw power 来源只会在新的 power period 边界提交后，切换到 `effective_period <= current_period` 的最新版本；历史未更新用户按 retention 惰性衰减。
 - 为限制数组规模，`delegate()` 需要先满足 `effective_power >= min_active_power`。
 - 已入场用户如果在 epoch 边界重算后跌破 `maintain_threshold = ceil(min_active_power * force_exit_power_bps / 10000)`，会被系统自动踢出到 `Cooling`。
 

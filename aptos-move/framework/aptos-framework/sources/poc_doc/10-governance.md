@@ -229,18 +229,17 @@ total_staked_power = Σ get_effective_power(member)
 
 ### 解决方案
 
-`get_effective_power()` 增加一个检查：`delegated_to` 必须是 active validator：
+当前实现已经把 `get_effective_power()` 的定义域收紧到“委托到已注册且状态为 `ACTIVE` / `PENDING_INACTIVE` 的 validator”的用户：
 
 ```move
-public fun get_effective_power(user: address): u64 {
+public fun get_effective_power(user: address): u64 acquires StakingRegistry {
     // ... 省略 registry/info 获取
     if (info.delegated_to == @0x0) return 0;
-
-    // 新增：delegated_to 必须是已注册的 validator
-    // 且该 validator 必须在 active set 中（通过 stake::get_validator_state 检查）
     if (!registry.validators.contains(info.delegated_to)) return 0;
-    if (stake::get_validator_state(info.delegated_to) != VALIDATOR_STATUS_ACTIVE
-        && stake::get_validator_state(info.delegated_to) != VALIDATOR_STATUS_PENDING_INACTIVE) {
+
+    let pool = registry.validators.borrow(info.delegated_to);
+    if (pool.status != VALIDATOR_STATUS_ACTIVE
+        && pool.status != VALIDATOR_STATUS_PENDING_INACTIVE) {
         return 0
     };
 
@@ -253,7 +252,7 @@ public fun get_effective_power(user: address): u64 {
 }
 ```
 
-治理读取的也是当前 power period committed snapshot；周期中途 stage 到 `pending_updates` 的算力不会提前进入投票权。
+治理读取的也是当前 power period committed power；周期中途 stage 出来的 future version 不会提前进入投票权。
 
 这样 `get_effective_power` 和 `total_staked_power` 的定义域完全一致：都只包含委托到 active/pending_inactive validator 的用户。
 

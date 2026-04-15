@@ -21,8 +21,8 @@
 | 保证金 | 质押量即权重 | 按算力比例存入 TopoCoin 保证金，不足则有效算力打折 |
 | 退出质押 | unlock → 等待 lockup → withdraw | undelegate → 等待冷却期 → withdraw_deposit |
 | 委托质押 | 转移 TopoCoin 到 pool | 注册地址到验证者，保证金锁定在 registry 中 |
-| 算力快照 | 无 | `PowerStore.users` 保存当前 power period 的 committed snapshot，周期中途更新先写 `pending_updates` |
-| 历史算力处理 | 无 | 只在进入新 power period 的边界时，对 committed snapshot 做 retention carry-forward，再与 `pending_updates` 合并 |
+| 算力快照 | 无 | `PowerStore.users` 为每个用户保存最近两个 period 版本，读取时按 `effective_period` 选择 committed power |
+| 历史算力处理 | 无 | 边界只推进 `current_period`；历史用户在读取时按 `target_period - effective_period` 连续做 retention 衰减 |
 | 活跃质押门槛 | 无 | 引入 `min_active_power`；只有 `effective_power >= min_active_power` 的用户才允许进入活跃质押 / 代理质押集合 |
 | 强制退出边界 | 无 | 引入 `force_exit_power_bps`；若 `effective_power < ceil(min_active_power * bps / 10000)`，则在 epoch 边界自动踢出并进入 cooldown |
 | 奖励发放 | mint TopoCoin 到 StakePool | 每 epoch 直接 mint 到用户保证金（deposit），退出时一并取回 |
@@ -31,9 +31,9 @@
 
 补充说明：
 - `power period` 是链 epoch 的整数倍；同一个 power period 内，raw power 来源固定为 `committed_power`。
-- operator 周期中途上传的算力只进入 `pending_updates`，不会立刻影响 stake、治理或奖励分配。
-- 中心化算力服务只需要上传“下一 power period 内有活动的用户”最新快照；未出现在 `pending_updates` 的历史用户，不会被立刻删除，而是在周期边界提交时按跨越的 period 数继续做 retention 衰减。
-- 当 `power_period_in_epochs > 1` 时，周期中每个 epoch 仍然允许 `deposit` / `delegate` / `undelegate` / 代理质押变化，但这些变化不会改写 `PowerStore.users`；`users` 只在新周期开始的第一个 epoch 边界统一切换。
+- operator 周期中途上传的算力会写入用户的 future version（`target_period = current_period + 1`），不会立刻影响 stake、治理或奖励分配。
+- 中心化算力服务只需要上传“下一 power period 内有活动的用户”最新快照；未上传的历史用户会在读取时继续按 retention 自动续算。
+- 当 `power_period_in_epochs > 1` 时，周期中每个 epoch 仍然允许 `deposit` / `delegate` / `undelegate` / 代理质押变化，但这些变化不会改写当前周期可见的 committed power；只有在新周期开始后，读取侧才会切到对应 future version。
 - 为控制大规模 dust 用户导致的遍历成本，`StakingRegistry` 需要区分“用户资金/委托主账本”和“可遍历的活跃质押集合”；数组只保存达到门槛的活跃成员，而不是所有存过保证金的用户。
 - `min_active_power` 是入场门槛，`force_exit_power_bps` 是维持门槛，二者形成滞回区间，避免用户在阈值附近频繁进出数组。
 - `stake::on_new_epoch()` 先用旧周期 committed snapshot 结算当期奖励，再调用 `poc_power_store::commit_next_period_if_boundary()` 在边界提交下一周期快照。

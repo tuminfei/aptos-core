@@ -6,7 +6,7 @@ v3 中 Phase 3（stake.move）依赖 Phase 5（StakingRegistry）但排在前面
 
 ```mermaid
 graph LR
-    P1["Phase 1<br/>poc_power_store<br/>+pending cache +boundary commit +friend"] --> P3
+    P1["Phase 1<br/>poc_power_store<br/>+dual-version snapshot +boundary period advance +friend"] --> P3
     P2["Phase 2<br/>staking_config<br/>语义变更"] --> P3
     P1 --> P4
     P3["Phase 3<br/>staking_registry<br/>新模块（核心）"] --> P4["Phase 4<br/>stake.move<br/>投票权+奖励迁移"]
@@ -21,7 +21,7 @@ graph LR
 
 | 阶段 | 模块 | 依赖 | 说明 | 可编译检查点 |
 |------|------|------|------|------------|
-| Phase 1 | poc_power_store.move | 无 | 新增 `users=committed snapshot`、`pending_updates`、`last_epoch`、边界提交 API、friend 声明 | `cargo check -p aptos-framework` |
+| Phase 1 | poc_power_store.move | 无 | 新增 `users=dual-version snapshot`、`effective_period`、`last_epoch`、边界推进 API、friend 声明 | `cargo check -p aptos-framework` |
 | Phase 2 | staking_config.move | 无 | 字段改名 minimum_stake → minimum_power 等 | `cargo check -p aptos-framework` |
 | Phase 3 | staking_registry.move (新) | P1 | 完整新模块：主账本 + active delegator set、`min_active_power` / `force_exit_power_bps`、deposit/delegate/undelegate/withdraw_deposit、distribute_epoch_rewards | `cargo check -p aptos-framework` |
 | Phase 4 | stake.move | P1, P2, P3 | 投票权读 registry、on_new_epoch 调 registry 并驱动 power-store 边界提交、边界后 sweep active set、移除旧奖励逻辑 | `cargo check -p aptos-framework` |
@@ -44,13 +44,13 @@ env TEST_FILTER=poc_power_store cargo test -p aptos-framework move_framework_uni
 ```
 
 验证点：
-- `users` 只保存当前 power period committed snapshot
+- `users` 为每个用户保存最近两个 power version
 - `stage_batch_update(target_period, users, powers)` 强制 `target_period == current_period + 1`
-- 周期中途 stage 不会立刻改变 `get_user_committed_power()`
-- `commit_next_period_if_boundary()` 内部推进 `last_epoch`，并在边界执行 carry-forward + pending merge
+- 周期中途 stage 不会立刻改变 `get_user_committed_power()`，而是写入 future version
+- `commit_next_period_if_boundary()` 内部推进 `last_epoch`，并在边界只推进 `current_period`
 - `batch_update()` 兼容别名与 `stage_batch_update()` 语义一致
 - `set_genesis_committed_power()` 仅能在初始化阶段调用
-- `total_power` 在每次边界提交后仍正确表示 committed snapshot 总和
+- `get_user_committed_power_for_next_epoch()` 能基于下一 epoch 的 target period 正确前瞻版本选择结果
 
 ### Phase 3: staking_registry
 
@@ -127,8 +127,8 @@ cargo test -p aptos-framework -- genesis
 | 1 | 保证金充足：deposit=0.5 TOPO, committed_power=500 | effective=500 |
 | 2 | 保证金不足：deposit=0.05 TOPO, committed_power=500 | effective=50 |
 | 3 | 周期中途上传：stage `target_period = current_period + 1` | 当前周期 `get_user_committed_power()` 不变 |
-| 4 | 周期边界提交：旧 committed + pending merge | 新周期 committed snapshot 正确生成 |
-| 5 | 连续多个 power period 无新上传 | committed power 在边界继续 carry-forward |
+| 4 | 周期边界提交：`current_period` 切换到新周期 | 新周期 committed power 由版本选择正确生效 |
+| 5 | 连续多个 power period 无新上传 | 历史 committed power 在读取时继续按 retention 衰减 |
 | 6 | 无保证金 | effective=0，不参与奖励 |
 | 7 | 未委托但有保证金 | effective=0 |
 | 8 | delegate → epoch 切换 | 奖励 mint 到 deposit，deposit 增长 |

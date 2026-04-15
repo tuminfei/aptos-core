@@ -35,7 +35,7 @@ graph LR
         OP[PoC Operator<br/>算力计算服务]
     end
     subgraph 算力层
-        PS["PocPowerStore<br/>users = committed snapshot<br/>pending_updates = next period cache<br/>current_period / last_epoch"]
+        PS["PocPowerStore<br/>users = dual-version snapshot<br/>effective_period / current_period / last_epoch"]
     end
     subgraph 质押注册
         SR["StakingRegistry<br/>users = 主账本<br/>validator.delegators[] = active set"]
@@ -62,9 +62,9 @@ graph LR
 ```
 
 说明：
-- `PowerStore.users` 表实际保存当前 power period 的 committed snapshot。
-- `pending_updates` 只保存下一周期待生效更新。
-- operator 只需要为 `target_period = current_period + 1` 上传有活动用户；未上传的历史用户在边界提交时自动 carry-forward。
+- `PowerStore.users` 表为每个用户保存最近两个版本：`older` / `newer`。
+- operator 只需要为 `target_period = current_period + 1` 上传有活动用户；同地址同周期重复上传时，覆盖 `newer` 槽位。
+- 未上传的历史用户不会在边界被全表重写；读取时按 `target_period - effective_period` 自动做 retention。
 - `StakingRegistry.users` 与 validator 的 `delegator_list` 语义分离：前者是全量主账本，后者只保存通过 `min_active_power` 门槛的 active 成员。
 - 旧 `batch_update()` 仍存在，但只是 `stage_batch_update()` 的兼容别名。
 
@@ -104,8 +104,8 @@ sequenceDiagram
 
     Chain->>PS: commit_next_period_if_boundary()
     Note over PS: 内部 last_epoch += 1
-    Note over PS: 若进入新 power period 的第一个 epoch，则 carry-forward + pending merge
-    Note over PS: 合并后结果固定为整个新周期的 committed snapshot
+    Note over PS: 若进入新 power period 的第一个 epoch，则只推进 current_period
+    Note over PS: 整个新周期的 committed snapshot 由版本选择 + retention 惰性读取得到
     Chain->>SR: sweep active_delegator_list
     Note over SR: 若 effective_power < ceil(min_active_power * bps / 10000)，自动 undelegate + cooldown
 
@@ -135,7 +135,7 @@ sequenceDiagram
     Note over U,Mint: 3. 多个 epoch 过去，奖励 mint 到 deposit
     Note over SR: 每 epoch: coin::mint(reward) → coin::merge(user.deposit)
     Note over SR: deposit 持续增长（本金+收益）
-    Note over SR: operator 中途上传的新算力先进入 pending_updates，下个 power period 才生效
+    Note over SR: operator 中途上传的新算力写入 future version，下个 power period 才生效
     Note over SR: 长周期中间发生的 delegate/undelegate 只改 registry，不改当期 committed snapshot
     Note over SR: 若边界重算后 effective_power < maintain_threshold，则自动踢出并进入 cooldown
 
@@ -188,7 +188,7 @@ graph TB
         SR["staking_registry.move"]
     end
     subgraph "核心改动"
-        PS["poc_power_store.move<br/>+pending cache +boundary commit +friend"]
+        PS["poc_power_store.move<br/>+dual-version snapshot +boundary period advance +friend"]
         S["stake.move<br/>投票权→算力<br/>奖励→registry"]
         G["topo_governance.move<br/>投票权→算力<br/>移除lockup检查"]
     end
