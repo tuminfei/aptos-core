@@ -236,7 +236,7 @@ period_for_epoch(epoch, power_period_in_epochs):
     return (epoch - 1) / power_period_in_epochs
 ```
 
-当 `power_period_in_epochs = 1` 时，每个 epoch 都是一个新 period。
+当 `power_period_in_epochs = 60` 时，默认部署下每 60 个 epoch 才进入一个新 period。
 当 `power_period_in_epochs = 10` 时：
 
 | epoch 范围 | period |

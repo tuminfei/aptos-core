@@ -174,8 +174,8 @@ maintain_threshold = ceil(min_active_power * force_exit_power_bps / 10000)
 ## 2.5 参数与配置
 
 `OCTAS_PER_POWER` 保存在 `StakingRegistryConfig` 中；`retention_bps_per_period` 保存在 `PowerStore` 中，均可链上调整。`power_period_in_epochs` 在初始化时写入：
-- 默认入口 `poc_power_store::initialize()` / `initialize_power_store()` 使用 `DEFAULT_POWER_PERIOD_IN_EPOCHS = 1`
-- 若要部署长周期，当前实现需要在 friend / entry 可配置入口中调用 `initialize_with_power_period()` 或 `initialize_power_store_with_period()`
+- 默认入口 `poc_power_store::initialize()` / `initialize_power_store()` 使用 `DEFAULT_POWER_PERIOD_IN_EPOCHS = 60`
+- 若要使用非默认周期，仍可在 friend / entry 可配置入口中调用 `initialize_with_power_period()` 或 `initialize_power_store_with_period()`
 
 ```move
 struct StakingRegistryConfig has copy, drop, store {

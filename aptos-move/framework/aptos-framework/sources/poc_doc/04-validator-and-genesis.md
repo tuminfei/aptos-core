@@ -76,8 +76,8 @@ fun initialize_poc_staking(
     staking_registry::store_topo_coin_mint_cap(aptos_framework, mint_cap); // copy
 
     // 3. 初始化 poc_power_store
-    // 当前默认入口把 power_period_in_epochs 设为 1；
-    // 若部署长周期，需要改为 initialize_with_power_period(...) / initialize_power_store_with_period(...)
+    // 当前默认入口把 power_period_in_epochs 设为 60；
+    // 若需要非默认周期，可改为 initialize_with_power_period(...) / initialize_power_store_with_period(...)
     poc_power_store::initialize(aptos_framework, poc_operator_address);
 
     // 4. 初始化 staking_registry
@@ -173,6 +173,6 @@ struct ValidatorConfigurationWithCommission has copy, drop {
 - genesis raw power 由链上按 `stake_amount * genesis_stake_power_multiplier` 计算
 - genesis 初始算力通过 `set_genesis_committed_power()` 写入 period 0 的 committed snapshot
 - 常规运行期 operator 应调用 `stage_batch_update(target_period = current_period + 1, ...)`；旧 `batch_update()` 仅作为兼容别名保留
-- 当前代码默认 `poc_power_store::initialize()` 的 `power_period_in_epochs = 1`；如果部署长周期，需要在初始化路径显式调用可配置入口
+- 当前代码默认 `poc_power_store::initialize()` 的 `power_period_in_epochs = 60`；如果部署需要其他周期，可在初始化路径显式调用可配置入口
 - `genesis_stake_power_multiplier` 当前默认值为 `1`
 - registry 内部仍以 `commission_bps` 存储佣金，genesis 入口只在落表时做 `commission_percentage * 100`

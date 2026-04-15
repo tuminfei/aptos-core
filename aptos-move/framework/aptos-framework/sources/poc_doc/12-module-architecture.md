@@ -69,7 +69,7 @@ struct UserPowerInfo has store, drop, copy {
 |------|--------|------|
 | `POWER_DECIMALS` | 18 | 算力精度 |
 | `DEFAULT_RETENTION_BPS_PER_PERIOD` | 8000 | 每周期保留 80%，衰减 20% |
-| `DEFAULT_POWER_PERIOD_IN_EPOCHS` | 1 | 默认 1 epoch = 1 power period |
+| `DEFAULT_POWER_PERIOD_IN_EPOCHS` | 60 | 默认 60 epochs = 1 power period |
 
 ### 12.3.2 staking_registry 核心结构
 
