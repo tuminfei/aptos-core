@@ -1927,18 +1927,6 @@ module aptos_framework::stake {
         ValidatorInfo { addr, voting_power, config }
     }
 
-    /// Returns validator's next epoch voting power, including pending_active, active, and pending_inactive stake.
-    fun get_next_epoch_voting_power(stake_pool: &StakePool): u64 {
-        let value_pending_active = coin::value(&stake_pool.pending_active);
-        let value_active = coin::value(&stake_pool.active);
-        let value_pending_inactive = coin::value(&stake_pool.pending_inactive);
-        spec {
-            assume value_pending_active + value_active + value_pending_inactive
-                <= MAX_U64;
-        };
-        value_pending_active + value_active + value_pending_inactive
-    }
-
     fun update_voting_power_increase(increase_amount: u64) acquires ValidatorSet {
         let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
         let voting_power_increase_limit =

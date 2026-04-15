@@ -91,20 +91,20 @@ public(friend) fun commit_next_period_if_boundary() acquires PowerStore
   - 结果：
     - `A.newer = (1, 900)`，`A.older = (0, 1000)`
     - `C.newer = (1, 300)`
-- `retention_bps_per_period = 8000`
+- `retention_bps_per_period = 9950`
 
 则在第 4 个 epoch 进入前执行边界提交后，`current_period` 从 0 进入 1；对 period 1 的读取结果为：
 
 | 用户 | 选中的版本 | retention 次数 | committed_power(period=1) |
 |------|------------|----------------|---------------------------|
 | A | `(1, 900)` | 0 | 900 |
-| B | `(0, 500)` | 1 | 400 |
+| B | `(0, 500)` | 1 | 497 |
 | C | `(1, 300)` | 0 | 300 |
 
 如果下一周期仍没有任何更新，则在 period 2 读取时：
-- `A: 900 -> 720`
-- `B: 400 -> 320`
-- `C: 300 -> 240`
+- `A: 900 -> 895`
+- `B: 497 -> 494`
+- `C: 300 -> 298`
 
 这意味着：
 - 链下只算活动用户即可，静默用户由链上按 retention 自动续算。

@@ -206,7 +206,7 @@ apply_retention(power, periods_elapsed, retention_bps_per_period):
     return retained
 ```
 
-默认 `retention_bps_per_period = 8000`（80%），即每个 period 保留 80%，衰减 20%。
+默认 `retention_bps_per_period = 9950`（99.5%），即每个 period 保留 99.5%，衰减 0.5%。
 
 这里的 retention 不再发生在 epoch 边界全表重写时，而是发生在读取时：
 
@@ -224,9 +224,9 @@ apply_retention(power, periods_elapsed, retention_bps_per_period):
 示例：
 | 初始 power | 经过 1 period | 经过 2 periods | 经过 3 periods |
 |-----------|--------------|---------------|---------------|
-| 100 | 80 | 64 | 51 |
-| 50 | 40 | 32 | 25 |
-| 10 | 8 | 6 | 4 |
+| 100 | 99 | 98 | 97 |
+| 50 | 49 | 48 | 47 |
+| 10 | 9 | 8 | 7 |
 
 ### 15.3.3 epoch 到 period 的映射
 

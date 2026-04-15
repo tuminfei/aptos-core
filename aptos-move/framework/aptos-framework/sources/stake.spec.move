@@ -215,12 +215,10 @@ spec aptos_framework::stake {
             );
 
         let config = staking_config::get();
-        let voting_power = get_next_epoch_voting_power(stake_pool);
-
+        // Voting power is now derived from staking_registry (effective_power),
+        // not from StakePool coin balances. The exact value is opaque to this spec.
         let minimum_stake = config.minimum_stake;
         let maximum_stake = config.maximum_stake;
-        aborts_if voting_power < minimum_stake;
-        aborts_if voting_power > maximum_stake;
 
         let validator_config = global<ValidatorConfig>(pool_address);
         aborts_if vector::is_empty(validator_config.consensus_pubkey);
@@ -289,11 +287,7 @@ spec aptos_framework::stake {
             && vector::length(validator_set.pending_active)
                 <= option::borrow(spec_find_validator(pending_active, pool_address));
         let post p_validator_set = global<ValidatorSet>(@aptos_framework);
-        let validator_stake = (get_next_epoch_voting_power(stake_pool) as u128);
-        ensures validator_find_bool
-            && validator_set.total_joining_power > validator_stake ==>
-            p_validator_set.total_joining_power
-                == validator_set.total_joining_power - validator_stake;
+        // Voting power is now derived from staking_registry, not StakePool coin balances.
         ensures !validator_find_bool ==>
             !option::is_some(
                 spec_find_validator(p_validator_set.pending_active, pool_address)
@@ -458,49 +452,22 @@ spec aptos_framework::stake {
         include UpdateStakePoolAbortsIf;
 
         let stake_pool = global<StakePool>(pool_address);
-        let validator_config = global<ValidatorConfig>(pool_address);
-        let cur_validator_perf = validator_perf.validators[validator_config.validator_index];
-        let num_successful_proposals = cur_validator_perf.successful_proposals;
-        let num_total_proposals = cur_validator_perf.successful_proposals
-            + cur_validator_perf.failed_proposals;
-        let rewards_rate = spec_get_reward_rate_1(staking_config);
-        let rewards_rate_denominator = spec_get_reward_rate_2(staking_config);
-        let rewards_amount_1 = if (stake_pool.active.value > 0) {
-            spec_rewards_amount(
-                stake_pool.active.value,
-                num_successful_proposals,
-                num_total_proposals,
-                rewards_rate,
-                rewards_rate_denominator
-            )
-        } else { 0 };
-        let rewards_amount_2 = if (stake_pool.pending_inactive.value > 0) {
-            spec_rewards_amount(
-                stake_pool.pending_inactive.value,
-                num_successful_proposals,
-                num_total_proposals,
-                rewards_rate,
-                rewards_rate_denominator
-            )
-        } else { 0 };
         let post post_stake_pool = global<StakePool>(pool_address);
         let post post_active_value = post_stake_pool.active.value;
         let post post_pending_inactive_value = post_stake_pool.pending_inactive.value;
         let post post_inactive_value = post_stake_pool.inactive.value;
         ensures post_stake_pool.pending_active.value == 0;
-        // the amount stored in the stake pool should not changed after the update
+        // Rewards are now distributed via staking_registry, not into StakePool coin buckets.
+        // update_stake_pool only merges pending coins.
         ensures post_active_value
-            == stake_pool.active.value + rewards_amount_1
-                + stake_pool.pending_active.value;
-        // when current lockup cycle has expired, pending inactive should be fully unlocked and moved into inactive
+            == stake_pool.active.value + stake_pool.pending_active.value;
         ensures if (spec_get_reconfig_start_time_secs() >= stake_pool.locked_until_secs) {
             post_pending_inactive_value == 0
                 && post_inactive_value
                     == stake_pool.inactive.value + stake_pool.pending_inactive.value
-                        + rewards_amount_2
         } else {
             post_pending_inactive_value
-                == stake_pool.pending_inactive.value + rewards_amount_2
+                == stake_pool.pending_inactive.value
         };
     }
 
@@ -512,8 +479,6 @@ spec aptos_framework::stake {
     }
 
     spec schema UpdateStakePoolAbortsIf {
-        use aptos_std::type_info;
-
         pool_address: address;
         validator_perf: ValidatorPerformance;
 
@@ -521,75 +486,9 @@ spec aptos_framework::stake {
         aborts_if !exists<ValidatorConfig>(pool_address);
         aborts_if global<ValidatorConfig>(pool_address).validator_index
             >= len(validator_perf.validators);
-
-        let aptos_addr = type_info::type_of<TopoCoin>().account_address;
-
-        let stake_pool = global<StakePool>(pool_address);
-
-        include DistributeRewardsAbortsIf { stake: stake_pool.active };
-        include DistributeRewardsAbortsIf { stake: stake_pool.pending_inactive };
     }
 
-    spec distribute_rewards {
-        pragma aborts_if_is_partial;
-        include ResourceRequirement;
-        requires rewards_rate <= MAX_REWARDS_RATE;
-        requires rewards_rate_denominator > 0;
-        requires rewards_rate <= rewards_rate_denominator;
-        requires num_successful_proposals <= num_total_proposals;
-
-        include DistributeRewardsAbortsIf;
-
-        ensures old(stake.value) > 0 ==>
-            result
-                == spec_rewards_amount(
-                    old(stake.value),
-                    num_successful_proposals,
-                    num_total_proposals,
-                    rewards_rate,
-                    rewards_rate_denominator
-                );
-        ensures old(stake.value) > 0 ==>
-            stake.value
-                == old(stake.value)
-                    + spec_rewards_amount(
-                        old(stake.value),
-                        num_successful_proposals,
-                        num_total_proposals,
-                        rewards_rate,
-                        rewards_rate_denominator
-                    );
-        ensures old(stake.value) == 0 ==> result == 0;
-        ensures old(stake.value) == 0 ==>
-            stake.value == old(stake.value);
-    }
-
-    spec schema DistributeRewardsAbortsIf {
-        use aptos_std::type_info;
-
-        stake: Coin<TopoCoin>;
-        num_successful_proposals: num;
-        num_total_proposals: num;
-        rewards_rate: num;
-        rewards_rate_denominator: num;
-
-        let stake_amount = coin::value(stake);
-        let rewards_amount = if (stake_amount > 0) {
-            spec_rewards_amount(
-                stake_amount,
-                num_successful_proposals,
-                num_total_proposals,
-                rewards_rate,
-                rewards_rate_denominator
-            )
-        } else { 0 };
-        let amount = rewards_amount;
-        let addr = type_info::type_of<TopoCoin>().account_address;
-        aborts_if (rewards_amount > 0) && !exists<coin::CoinInfo<TopoCoin>>(addr);
-        modifies global<coin::CoinInfo<TopoCoin>>(addr);
-        include (rewards_amount > 0) ==>
-            coin::CoinAddAbortsIf<TopoCoin> { amount: amount };
-    }
+    // distribute_rewards has been removed — rewards are now distributed via staking_registry.
 
     spec get_reconfig_start_time_secs(): u64 {
         include GetReconfigStartTimeRequirement;
