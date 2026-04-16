@@ -78,12 +78,6 @@ module aptos_framework::staking_registry {
         cooldown_until_secs: u64,
     }
 
-    struct ValidatorMemberPowers has copy, drop, store {
-        addresses: vector<address>,
-        powers: vector<u64>,
-        total_power: u64,
-    }
-
     #[view]
     public fun registry_exists(): bool {
         exists<StakingRegistry>(@aptos_framework)
@@ -167,33 +161,6 @@ module aptos_framework::staking_registry {
         if (registry.config.cooldown_secs < min_cooldown_secs) {
             registry.config.cooldown_secs = min_cooldown_secs;
         };
-    }
-
-    #[view]
-    public fun get_genesis_stake_power_multiplier(): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
-            0
-        } else {
-            borrow_global<StakingRegistry>(@aptos_framework).config.genesis_stake_power_multiplier
-        }
-    }
-
-    #[view]
-    public fun get_min_active_power(): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
-            0
-        } else {
-            borrow_global<StakingRegistry>(@aptos_framework).config.min_active_power
-        }
-    }
-
-    #[view]
-    public fun get_force_exit_power_bps(): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
-            0
-        } else {
-            borrow_global<StakingRegistry>(@aptos_framework).config.force_exit_power_bps
-        }
     }
 
     public(friend) fun calculate_genesis_power_from_stake(

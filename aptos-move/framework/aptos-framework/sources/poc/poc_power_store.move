@@ -20,7 +20,6 @@ module aptos_framework::poc_power_store {
     friend aptos_framework::stake;
     friend aptos_framework::staking_registry;
 
-    const POWER_DECIMALS: u64 = 18;
     const BPS_DENOMINATOR: u64 = 10000;
     const DEFAULT_RETENTION_BPS_PER_PERIOD: u64 = 9950;
     const DEFAULT_POWER_PERIOD_IN_EPOCHS: u64 = 60;
@@ -261,11 +260,6 @@ module aptos_framework::poc_power_store {
     // ========== 查询接口 ==========
 
     #[view]
-    public fun get_power_deciamls(): u64 {
-        POWER_DECIMALS
-    }
-
-    #[view]
     public fun get_user_power(user: address): u64 acquires PowerStore {
         get_user_committed_power(user)
     }
@@ -302,18 +296,6 @@ module aptos_framework::poc_power_store {
         };
         let store = borrow_global<PowerStore>(@aptos_framework);
         get_user_power_for_period_internal(store, user, target_period)
-    }
-
-    #[view]
-    public fun get_user_power_info(user: address): UserPowerInfo acquires PowerStore {
-        if (!exists<PowerStore>(@aptos_framework)) {
-            return empty_user_power_info()
-        };
-        let store = borrow_global<PowerStore>(@aptos_framework);
-        if (!store.users.contains(user)) {
-            return empty_user_power_info()
-        };
-        *store.users.borrow(user)
     }
 
     #[view]
@@ -536,13 +518,6 @@ module aptos_framework::poc_power_store {
         PowerVersion {
             effective_period: 0,
             power: 0,
-        }
-    }
-
-    fun empty_user_power_info(): UserPowerInfo {
-        UserPowerInfo {
-            older: empty_power_version(),
-            newer: empty_power_version(),
         }
     }
 

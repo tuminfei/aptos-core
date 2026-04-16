@@ -219,6 +219,7 @@ spec aptos_framework::stake {
         // not from StakePool coin balances. The exact value is opaque to this spec.
         let minimum_stake = config.minimum_stake;
         let maximum_stake = config.maximum_stake;
+        let voting_power = staking_registry::spec_get_validator_total_power(pool_address);
 
         let validator_config = global<ValidatorConfig>(pool_address);
         aborts_if vector::is_empty(validator_config.consensus_pubkey);

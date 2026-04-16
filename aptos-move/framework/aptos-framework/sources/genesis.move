@@ -29,7 +29,6 @@ module aptos_framework::genesis {
     use aptos_framework::version;
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
-    const EACCOUNT_DOES_NOT_EXIST: u64 = 2;
     const DEFAULT_OCTAS_PER_POWER: u64 = 100_000;
     const DEFAULT_MAX_DELEGATORS_PER_VALIDATOR: u64 = 1000;
 

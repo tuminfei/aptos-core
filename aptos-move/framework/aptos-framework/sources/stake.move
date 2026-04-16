@@ -19,7 +19,7 @@ module aptos_framework::stake {
     use aptos_framework::topo_coin::TopoCoin;
     use aptos_framework::account;
     use aptos_framework::coin::{Self, Coin, MintCapability};
-    use aptos_framework::event::{Self, EventHandle};
+    use aptos_framework::event;
     use aptos_framework::poc_power_store;
     use aptos_framework::timestamp;
     use aptos_framework::system_addresses;
@@ -119,18 +119,7 @@ module aptos_framework::stake {
         // This allows the operator to be different from the original account and allow for separation of
         // the validator operations and ownership.
         // Only the account holding OwnerCapability of the staking pool can update this.
-        operator_address: address,
-
-        // The events emitted for the entire StakePool's lifecycle.
-        initialize_validator_events: EventHandle<RegisterValidatorCandidateEvent>,
-        set_operator_events: EventHandle<SetOperatorEvent>,
-        rotate_consensus_key_events: EventHandle<RotateConsensusKeyEvent>,
-        update_network_and_fullnode_addresses_events: EventHandle<
-            UpdateNetworkAndFullnodeAddressesEvent>,
-        increase_lockup_events: EventHandle<IncreaseLockupEvent>,
-        join_validator_set_events: EventHandle<JoinValidatorSetEvent>,
-        distribute_rewards_events: EventHandle<DistributeRewardsEvent>,
-        leave_validator_set_events: EventHandle<LeaveValidatorSetEvent>
+        operator_address: address
     }
 
     /// Validator info stored in validator address.
@@ -200,22 +189,7 @@ module aptos_framework::stake {
         validators: vector<IndividualValidatorPerformance>
     }
 
-    struct RegisterValidatorCandidateEvent has drop, store {
-        pool_address: address
-    }
-
     struct StakeManagementPermission has copy, drop, store {}
-
-    #[event]
-    struct RegisterValidatorCandidate has drop, store {
-        pool_address: address
-    }
-
-    struct SetOperatorEvent has drop, store {
-        pool_address: address,
-        old_operator: address,
-        new_operator: address
-    }
 
     #[event]
     struct SetOperator has drop, store {
@@ -224,25 +198,11 @@ module aptos_framework::stake {
         new_operator: address
     }
 
-    struct RotateConsensusKeyEvent has drop, store {
-        pool_address: address,
-        old_consensus_pubkey: vector<u8>,
-        new_consensus_pubkey: vector<u8>
-    }
-
     #[event]
     struct RotateConsensusKey has drop, store {
         pool_address: address,
         old_consensus_pubkey: vector<u8>,
         new_consensus_pubkey: vector<u8>
-    }
-
-    struct UpdateNetworkAndFullnodeAddressesEvent has drop, store {
-        pool_address: address,
-        old_network_addresses: vector<u8>,
-        new_network_addresses: vector<u8>,
-        old_fullnode_addresses: vector<u8>,
-        new_fullnode_addresses: vector<u8>
     }
 
     #[event]
@@ -254,12 +214,6 @@ module aptos_framework::stake {
         new_fullnode_addresses: vector<u8>
     }
 
-    struct IncreaseLockupEvent has drop, store {
-        pool_address: address,
-        old_locked_until_secs: u64,
-        new_locked_until_secs: u64
-    }
-
     #[event]
     struct IncreaseLockup has drop, store {
         pool_address: address,
@@ -267,28 +221,8 @@ module aptos_framework::stake {
         new_locked_until_secs: u64
     }
 
-    struct JoinValidatorSetEvent has drop, store {
-        pool_address: address
-    }
-
     #[event]
     struct JoinValidatorSet has drop, store {
-        pool_address: address
-    }
-
-    struct DistributeRewardsEvent has drop, store {
-        pool_address: address,
-        rewards_amount: u64
-    }
-
-    #[event]
-    /// The amount includes transaction fee and staking rewards.
-    struct DistributeRewards has drop, store {
-        pool_address: address,
-        rewards_amount: u64
-    }
-
-    struct LeaveValidatorSetEvent has drop, store {
         pool_address: address
     }
 
@@ -666,26 +600,7 @@ module aptos_framework::stake {
                 pending_inactive: coin::zero<TopoCoin>(),
                 inactive: coin::zero<TopoCoin>(),
                 locked_until_secs: 0,
-                operator_address: owner_address,
-                // Events.
-                initialize_validator_events: account::new_event_handle<
-                    RegisterValidatorCandidateEvent>(owner),
-                set_operator_events: account::new_event_handle<SetOperatorEvent>(owner),
-                rotate_consensus_key_events: account::new_event_handle<
-                    RotateConsensusKeyEvent>(owner),
-                update_network_and_fullnode_addresses_events: account::new_event_handle<
-                    UpdateNetworkAndFullnodeAddressesEvent>(owner),
-                increase_lockup_events: account::new_event_handle<IncreaseLockupEvent>(
-                    owner
-                ),
-                join_validator_set_events: account::new_event_handle<JoinValidatorSetEvent>(
-                    owner
-                ),
-                distribute_rewards_events: account::new_event_handle<DistributeRewardsEvent>(
-                    owner
-                ),
-                leave_validator_set_events: account::new_event_handle<
-                    LeaveValidatorSetEvent>(owner)
+                operator_address: owner_address
             }
         );
 
@@ -2513,15 +2428,16 @@ module aptos_framework::stake {
 
         let validator_address = signer::address_of(validator);
         let (_sk, pk, pop) = generate_identity();
-        initialize_test_validator(aptos_framework, &pk, &pop, validator, 100, true, true);
-        staking_config::update_rewards_rate(aptos_framework, 25, 100);
-        let target_period = poc_power_store::get_current_period() + 1;
-        poc_power_store::stage_batch_update(
+        initialize_test_validator(aptos_framework, &pk, &pop, validator, 100, true, false);
+        // Keep the committed power above the current deposit cover so the next-epoch
+        // simulation must include rewards to raise voting power from 100 to 120.
+        poc_power_store::set_genesis_committed_power(
             aptos_framework,
-            target_period,
-            vector[validator_address],
-            vector[120u64],
+            validator_address,
+            120,
         );
+        end_epoch();
+        staking_config::update_rewards_rate(aptos_framework, 25, 100);
         {
             let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
             let perf = validator_perf.validators.borrow_mut(0);
@@ -2631,7 +2547,9 @@ module aptos_framework::stake {
         let (_, delegated_to_before, _) = staking_registry::get_user_stake_info(delegator_address);
         assert!(delegated_to_before == validator_address, 0);
 
-        end_epoch();
+        while (poc_power_store::get_current_period() < target_period) {
+            end_epoch();
+        };
         let (_, delegated_to_after, cooldown_until_secs) =
             staking_registry::get_user_stake_info(delegator_address);
         assert!(delegated_to_after == @0x0, 1);

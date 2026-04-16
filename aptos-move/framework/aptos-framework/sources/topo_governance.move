@@ -903,7 +903,9 @@ module aptos_framework::topo_governance {
             vector[40u64],
         );
         stake::mint_and_add_stake(&delegator, 40);
-        stake::end_epoch();
+        while (aptos_framework::poc_power_store::get_current_period() < target_period) {
+            stake::end_epoch();
+        };
         staking_registry::delegate(&delegator, proposer_address);
 
         let stale_total = staking_registry::get_total_staked_power();

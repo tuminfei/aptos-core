@@ -22,7 +22,6 @@
 // - metadata_uri：Dapp 独立应用的官网或权威信息链接
 module aptos_framework::poc_registry {
     use std::error;
-    use std::option::{Self, Option};
     use std::signer;
     use std::string::String;
 
@@ -459,63 +458,22 @@ module aptos_framework::poc_registry {
         borrow_global<Registry>(@aptos_framework).apps.contains(app_admin)
     }
 
-    // 通过合约部署地址反查管理者地址（安全版本，未找到时返回 None）。
-    public fun resolve_app_admin_by_app_address(
-        app_address: address,
-    ): Option<address> acquires Registry {
-        if (!exists<Registry>(@aptos_framework)) {
-            return option::none()
-        };
-
-        let registry = borrow_global<Registry>(@aptos_framework);
-        if (registry.app_address_to_admin.contains(app_address)) {
-            option::some(*registry.app_address_to_admin.borrow(app_address))
-        } else {
-            option::none()
-        }
-    }
-
-    // 通过托管地址反查管理者地址（安全版本，未找到时返回 None）。
-    public fun resolve_app_admin_by_custody_address(
-        custody_address: address,
-    ): Option<address> acquires Registry {
-        if (!exists<Registry>(@aptos_framework)) {
-            return option::none()
-        };
-
-        let registry = borrow_global<Registry>(@aptos_framework);
-        if (registry.custody_address_to_admin.contains(custody_address)) {
-            option::some(*registry.custody_address_to_admin.borrow(custody_address))
-        } else {
-            option::none()
-        }
-    }
-
-    // 通过股权代币地址反查管理者地址（安全版本，未找到时返回 None）。
-    public fun resolve_app_admin_by_equity_token(
-        equity_token_address: address,
-    ): Option<address> acquires Registry {
-        if (!exists<Registry>(@aptos_framework)) {
-            return option::none()
-        };
-
-        let registry = borrow_global<Registry>(@aptos_framework);
-        if (registry.equity_token_to_admin.contains(equity_token_address)) {
-            option::some(*registry.equity_token_to_admin.borrow(equity_token_address))
-        } else {
-            option::none()
-        }
-    }
-
     // 通过合约部署地址反查管理者地址（断言版本，未找到时报错）。
     // 供 poc_contribution 模块在可信贡献发放路径中使用。
     #[view]
     public fun get_app_admin_by_app_address(
         app_address: address,
     ): address acquires Registry {
-        let maybe_app_admin = resolve_app_admin_by_app_address(app_address);
-        assert!(maybe_app_admin.is_some(), error::not_found(EAPP_ADDRESS_NOT_FOUND));
-        maybe_app_admin.extract()
+        assert!(
+            exists<Registry>(@aptos_framework),
+            error::not_found(EREGISTRY_NOT_INITIALIZED),
+        );
+        let registry = borrow_global<Registry>(@aptos_framework);
+        assert!(
+            registry.app_address_to_admin.contains(app_address),
+            error::not_found(EAPP_ADDRESS_NOT_FOUND),
+        );
+        *registry.app_address_to_admin.borrow(app_address)
     }
 
     // 通过托管地址反查管理者地址（断言版本，未找到时报错）。
@@ -523,9 +481,16 @@ module aptos_framework::poc_registry {
     public fun get_app_admin_by_custody_address(
         custody_address: address,
     ): address acquires Registry {
-        let maybe_app_admin = resolve_app_admin_by_custody_address(custody_address);
-        assert!(maybe_app_admin.is_some(), error::not_found(ECUSTODY_ADDRESS_NOT_FOUND));
-        maybe_app_admin.extract()
+        assert!(
+            exists<Registry>(@aptos_framework),
+            error::not_found(EREGISTRY_NOT_INITIALIZED),
+        );
+        let registry = borrow_global<Registry>(@aptos_framework);
+        assert!(
+            registry.custody_address_to_admin.contains(custody_address),
+            error::not_found(ECUSTODY_ADDRESS_NOT_FOUND),
+        );
+        *registry.custody_address_to_admin.borrow(custody_address)
     }
 
     // 通过股权代币地址反查管理者地址（断言版本，未找到时报错）。
@@ -533,9 +498,16 @@ module aptos_framework::poc_registry {
     public fun get_app_admin_by_equity_token(
         equity_token_address: address,
     ): address acquires Registry {
-        let maybe_app_admin = resolve_app_admin_by_equity_token(equity_token_address);
-        assert!(maybe_app_admin.is_some(), error::not_found(EEQUITY_TOKEN_NOT_FOUND));
-        maybe_app_admin.extract()
+        assert!(
+            exists<Registry>(@aptos_framework),
+            error::not_found(EREGISTRY_NOT_INITIALIZED),
+        );
+        let registry = borrow_global<Registry>(@aptos_framework);
+        assert!(
+            registry.equity_token_to_admin.contains(equity_token_address),
+            error::not_found(EEQUITY_TOKEN_NOT_FOUND),
+        );
+        *registry.equity_token_to_admin.borrow(equity_token_address)
     }
 
     // 获取指定管理者地址的完整注册信息（断言版本，未找到时报错）。
@@ -597,14 +569,6 @@ module aptos_framework::poc_registry {
         get_app_info(app_admin).metadata_uri
     }
 
-    // 通过合约部署地址获取应用官网链接。
-    #[view]
-    public fun get_metadata_uri_by_app_address(
-        app_address: address,
-    ): String acquires Registry {
-        get_app_info_by_app_address(app_address).metadata_uri
-    }
-
     // 查询应用是否处于运行状态（ACTIVE）。
     // 未注册的应用返回 false。
     #[view]
@@ -637,23 +601,6 @@ module aptos_framework::poc_registry {
         let info = get_app_info(app_admin);
         info.app_state == APP_STATE_ACTIVE &&
             info.poc_listing_status == POC_LISTING_STATUS_WHITELISTED
-    }
-
-    // 断言应用有资格发起可信贡献发放（断言版本，不满足时直接报错）。
-    // 由 poc_contribution 模块在可信贡献发放路径中调用，作为最关键的准入门槛。
-    // 同时检查：
-    // - 应用自身处于运行状态（ACTIVE），否则报 EAPP_NOT_ACTIVE
-    // - 平台已将其纳入 POC 白名单（WHITELISTED），否则报 EAPP_NOT_WHITELISTED_FOR_POC
-    public fun assert_app_eligible_for_poc(app_admin: address) acquires Registry {
-        let info = get_app_info(app_admin);
-        assert!(
-            info.app_state == APP_STATE_ACTIVE,
-            error::permission_denied(EAPP_NOT_ACTIVE),
-        );
-        assert!(
-            info.poc_listing_status == POC_LISTING_STATUS_WHITELISTED,
-            error::permission_denied(EAPP_NOT_WHITELISTED_FOR_POC),
-        );
     }
 
     // ========== 内部辅助函数 ==========
@@ -807,7 +754,7 @@ module aptos_framework::poc_registry {
         assert!(get_custody_address(app_admin_address) == app_admin_address, 5);
         assert!(get_equity_token_address(app_admin_address) == metadata_address, 6);
         assert!(get_poc_listing_status(app_admin_address) == POC_LISTING_STATUS_REGISTERED, 7);
-        assert!(get_metadata_uri(app_admin_address) == get_metadata_uri_by_app_address(app_admin_address), 8);
+        assert!(get_metadata_uri(app_admin_address) == string::utf8(b"https://app.example"), 8);
         assert!(is_app_active(app_admin_address), 9);
         assert!(!is_poc_listed(app_admin_address), 10);
     }
