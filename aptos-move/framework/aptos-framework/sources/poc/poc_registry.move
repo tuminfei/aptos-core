@@ -75,6 +75,12 @@ module aptos_framework::poc_registry {
     //            Contribution events are NOT counted toward POC power during suspension.
     const POC_LISTING_STATUS_SUSPENDED: u8 = 3;
 
+    // ========== Constants ==========
+    /// Maximum effective weight in basis points (10000 = 100%)
+    const MAX_EFFECTIVE_WEIGHT_PBS: u64 = 10000;
+    /// Default effective weight in basis points (10000 = 100%)
+    const DEFAULT_EFFECTIVE_WEIGHT_PBS: u64 = 10000;
+
     // ========== Error Codes ==========
     /// Registry resource has not been initialized (genesis not executed or skipped)
     const EREGISTRY_NOT_INITIALIZED: u64 = 1;
@@ -104,6 +110,8 @@ module aptos_framework::poc_registry {
     const EAPP_NOT_WHITELISTED_FOR_POC: u64 = 13;
     /// Application has been permanently stopped; cannot be resumed
     const EAPP_STOPPED: u64 = 14;
+    /// Invalid effective weight value (must be <= MAX_EFFECTIVE_WEIGHT_PBS)
+    const EINVALID_EFFECTIVE_WEIGHT: u64 = 15;
 
     // ========== Core Data Structures ==========
 
@@ -149,6 +157,9 @@ module aptos_framework::poc_registry {
         poc_listing_status: u8,
         /// Application's official website or authoritative information link
         metadata_uri: String,
+        /// Effective weight in per-basis-points (0–10000). 10000 = 100% weight.
+        /// Controlled by @aptos_framework / DAO governance to adjust the app's actual contribution weight.
+        effective_weight_pbs: u64,
     }
 
     // ========== Governance Events ==========
@@ -201,6 +212,14 @@ module aptos_framework::poc_registry {
         app_admin: address,
         old_poc_listing_status: u8,
         new_poc_listing_status: u8,
+    }
+
+    /// Emitted when the effective weight is updated by the platform
+    #[event]
+    struct AppEffectiveWeightUpdatedEvent has drop, store {
+        app_admin: address,
+        old_effective_weight_pbs: u64,
+        new_effective_weight_pbs: u64,
     }
 
     // ========== Initialization ==========
@@ -289,6 +308,7 @@ module aptos_framework::poc_registry {
             app_state: APP_STATE_ACTIVE,
             poc_listing_status: POC_LISTING_STATUS_REGISTERED,
             metadata_uri,
+            effective_weight_pbs: DEFAULT_EFFECTIVE_WEIGHT_PBS,
         };
 
         registry.apps.add(app_admin_address, info);
@@ -513,6 +533,41 @@ module aptos_framework::poc_registry {
         set_poc_listing_status(aptos_framework, app_admin, POC_LISTING_STATUS_WHITELISTED);
     }
 
+    /// Set the effective weight for an application (in per-basis-points, 0–10000).
+    ///
+    /// Only callable by @aptos_framework (DAO governance).
+    /// 10000 means 100% weight (full contribution counted); 5000 means 50%, etc.
+    /// Idempotent: if the new value equals the current value, returns without emitting an event.
+    public entry fun set_effective_weight_pbs(
+        aptos_framework: &signer,
+        app_admin: address,
+        new_effective_weight_pbs: u64,
+    ) acquires Registry {
+        system_addresses::assert_aptos_framework(aptos_framework);
+        assert!(
+            new_effective_weight_pbs <= MAX_EFFECTIVE_WEIGHT_PBS,
+            error::invalid_argument(EINVALID_EFFECTIVE_WEIGHT),
+        );
+        assert!(
+            exists<Registry>(@aptos_framework),
+            error::not_found(EREGISTRY_NOT_INITIALIZED),
+        );
+        let registry = borrow_global_mut<Registry>(@aptos_framework);
+        let info = borrow_app_info_mut(registry, app_admin);
+        let old_effective_weight_pbs = info.effective_weight_pbs;
+        if (old_effective_weight_pbs == new_effective_weight_pbs) {
+            return
+        };
+
+        info.effective_weight_pbs = new_effective_weight_pbs;
+
+        event::emit(AppEffectiveWeightUpdatedEvent {
+            app_admin,
+            old_effective_weight_pbs,
+            new_effective_weight_pbs,
+        });
+    }
+
     // ========== Query Interface (View / Resolve) ==========
 
     /// Check whether an application is registered under the given admin address.
@@ -636,6 +691,11 @@ module aptos_framework::poc_registry {
     #[view]
     public fun get_metadata_uri(app_admin: address): String acquires Registry {
         get_app_info(app_admin).metadata_uri
+    }
+
+    #[view]
+    public fun get_effective_weight_pbs(app_admin: address): u64 acquires Registry {
+        get_app_info(app_admin).effective_weight_pbs
     }
 
     // 查询应用是否处于运行状态（ACTIVE）。
