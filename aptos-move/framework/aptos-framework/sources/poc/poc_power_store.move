@@ -1,11 +1,32 @@
-/// POC 算力存储合约 —— 每个用户保留最近两个版本，按目标 period 选择可生效版本。
+/// POC Power Store Contract — Maintains the most recent two power versions per user, selecting the effective version based on target period.
 ///
-/// 设计边界：
-/// - 链下服务负责计算最终算力结果
-/// - 链上只保存每个用户最近两个版本，不再维护全局 pending cache
-/// - 当前 power period 内，读取始终选择 `effective_period <= current_period` 的最新版本
-/// - 周期中途上传只会写入 `effective_period = current_period + 1` 的未来版本，不会影响当期 stake / governance / reward 读取
-/// - 历史未更新用户不需要在 epoch 边界全量重写；读取时按版本和 retention 惰性衰减
+/// Design Boundaries:
+/// - Off-chain service is responsible for computing final power results
+/// - On-chain storage only keeps the most recent two versions per user, no longer maintaining a global pending cache
+/// - Within the current power period, reads always select the latest version where `effective_period <= current_period`
+/// - Mid-period uploads only write to `effective_period = current_period + 1` (future version), not affecting current-period stake/governance/reward reads
+/// - Historical users without updates don't need full rewrite at epoch boundaries; reads apply lazy decay based on version and retention
+///
+/// Architecture Overview:
+/// This module serves as the on-chain power registry for the Proof of Contribution (POC) system.
+/// Power values represent a user's contribution-based voting weight, computed off-chain from ContributionEvents
+/// and uploaded periodically by a trusted operator. The two-version sliding window design ensures:
+/// 1. Current epoch reads remain stable even when next-period data is being staged
+/// 2. Smooth transitions at period boundaries without requiring atomic global updates
+/// 3. Automatic decay for inactive users via retention_bps_per_period
+///
+/// Key Concepts:
+/// - Power Period: A configurable number of on-chain epochs (default 60). Power values are updated once per period.
+/// - Effective Period: The period from which a power version becomes active. Versions with effective_period > current_period are "staged" for future use.
+/// - Retention: A decay factor (in basis points) applied per period to power values that haven't been refreshed.
+///   Default 9950 bps (99.5%) means power decays by 0.5% per period if not updated.
+///
+/// Lifecycle Example:
+/// 1. Genesis: operator uploads initial power for validators at period 0
+/// 2. Period 0 (epochs 1-60): reads return period-0 power
+/// 3. During period 0: operator stages period-1 power (effective_period=1)
+/// 4. Epoch 61 starts → period transitions to 1 → reads now return period-1 power
+/// 5. If a user's power wasn't updated for period 1, their period-0 value is read with 1-period decay applied
 module aptos_framework::poc_power_store {
     use std::error;
     use std::signer;
@@ -20,82 +41,107 @@ module aptos_framework::poc_power_store {
     friend aptos_framework::stake;
     friend aptos_framework::staking_registry;
 
+    // Basis points denominator: 10000 bps = 100%
     const BPS_DENOMINATOR: u64 = 10000;
+    // Default retention: 9950/10000 = 99.5% power retained per period (0.5% decay per period)
     const DEFAULT_RETENTION_BPS_PER_PERIOD: u64 = 9950;
+    // Default power period: 60 epochs per power period
     const DEFAULT_POWER_PERIOD_IN_EPOCHS: u64 = 60;
 
-    // ========== 错误码 ==========
+    // ========== Error Codes ==========
 
-    /// 算力存储尚未初始化
+    /// PowerStore resource has not been initialized yet
     const ESTORE_NOT_INITIALIZED: u64 = 1;
-    /// 调用者不是唯一 operator
+    /// Caller is not the designated operator
     const ENOT_OPERATOR: u64 = 2;
-    /// `users` 与 `powers` 长度不一致
+    /// `users` and `powers` vectors have different lengths in a batch update
     const EINVALID_BATCH_LENGTH: u64 = 3;
-    /// retention_bps_per_period 非法
+    /// retention_bps_per_period is out of valid range (must be > 0 and <= 10000)
     const EINVALID_RETENTION_BPS: u64 = 4;
-    /// power_period_in_epochs 非法
+    /// power_period_in_epochs must be > 0
     const EINVALID_POWER_PERIOD: u64 = 5;
-    /// target_period 必须等于 current_period + 1
+    /// target_period must equal current_period + 1; staging further ahead is not allowed
     const EINVALID_TARGET_PERIOD: u64 = 6;
-    /// genesis committed snapshot 只允许在初始化阶段写入
+    /// Genesis committed snapshots can only be written during the initialization phase (last_epoch == 0 && current_period == 0)
     const EGENESIS_COMMIT_ONLY: u64 = 7;
 
-    // ========== 核心资源 ==========
+    // ========== Core Resources ==========
 
-    /// 全局算力存储，挂在 @aptos_framework 地址下。
+    /// Global power store, stored under @aptos_framework.
+    ///
+    /// Invariants:
+    /// - Only `operator` may call `stage_batch_update`
+    /// - `current_period` only advances forward, never backward
+    /// - Each user has at most two PowerVersion slots (older + newer)
+    /// - `last_epoch` is incremented once per on-chain epoch via `commit_next_period_if_boundary`
     struct PowerStore has key {
-        /// 唯一写入者
+        /// The single trusted address allowed to upload power updates
         operator: address,
-        /// 一个 power period 包含多少个链上 epoch
+        /// Number of on-chain epochs that constitute one power period
         power_period_in_epochs: u64,
-        /// 本地记录的已进入链 epoch 数
+        /// Monotonically increasing count of epochs that have been committed
         last_epoch: u64,
-        /// 当前已进入的 power period
+        /// The current power period index; advances when last_epoch crosses a period boundary
         current_period: u64,
-        /// 用户 -> 最近两个算力版本
+        /// Per-user storage: address → two-slot power version window
         users: Table<address, UserPowerInfo>,
-        /// 用户索引，仅用于遍历测试和未来迁移
+        /// Ordered list of all users who have ever had power written; used for iteration in tests/migration
         user_list: vector<address>,
-        /// 每个 power period 的保留比例（bps）
+        /// Decay factor applied per period to stale power values (in basis points, e.g. 9950 = 99.5%)
         retention_bps_per_period: u64,
     }
 
+    /// A single versioned power snapshot for a user.
+    /// `effective_period` is the first period in which this value becomes the active reading.
     struct PowerVersion has copy, drop, store {
         effective_period: u64,
         power: u64,
     }
 
-    /// 用户最近两个可生效版本。
-    /// `newer` 总是较新的槽位；`older` 用于保留上一个版本，保证当前 period 与下一 period 可以同时被正确读取。
+    /// Two-slot sliding window of power versions per user.
+    ///
+    /// Invariant: older.effective_period <= newer.effective_period (enforced by normalize_user_power_info).
+    ///
+    /// Why two slots?
+    /// - When the operator stages period P+1 data while the chain is still in period P,
+    ///   we must keep the period-P value so current reads remain stable.
+    /// - At the period boundary, current_period advances to P+1 and reads switch to the newer slot.
+    /// - The older slot is then free to be overwritten by the next staging call.
     struct UserPowerInfo has copy, drop, store {
         older: PowerVersion,
         newer: PowerVersion,
     }
 
-    // ========== 事件 ==========
+    // ========== Events ==========
 
+    /// Emitted when the operator address is changed via `set_operator`.
     #[event]
     struct OperatorChangedEvent has drop, store {
         old_operator: address,
         new_operator: address,
     }
 
+    /// Emitted for each user entry written by `stage_batch_update`.
+    /// Allows off-chain indexers to track exactly what was staged and when.
     #[event]
     struct PowerUpdateStagedEvent has drop, store {
+        /// The period the caller requested to stage for (must equal current_period + 1)
         target_period: u64,
+        /// The period at which this power value becomes effective (equals target_period)
         effective_period: u64,
         user: address,
         power: u64,
     }
 
+    /// Emitted when `commit_next_period_if_boundary` advances current_period.
+    /// Off-chain services use this to know when a new period has started on-chain.
     #[event]
     struct PowerPeriodCommittedEvent has drop, store {
         previous_period: u64,
         current_period: u64,
     }
 
-    // ========== 初始化 ==========
+    // ========== Initialization ==========
 
     public(friend) fun initialize(aptos_framework: &signer, operator: address) {
         initialize_power_store_internal(
@@ -175,13 +221,23 @@ module aptos_framework::poc_power_store {
         });
     }
 
-    // ========== 写回 ==========
+    // ========== Write-back ==========
 
-    /// 批量写入下一 power period 的用户算力版本。
+    /// Batch-write power versions for the next power period.
     ///
-    /// 约定：
-    /// - 当链上当前 period = P 时，链下上传的是 period P-1 的计算结果
-    /// - 但该结果只能从 P+1 开始生效，因此这里写入 `effective_period = current_period + 1`
+    /// Convention:
+    /// - When on-chain current_period = P, the off-chain service uploads results computed from period P-1 data.
+    /// - However, those results only take effect starting from period P+1, so this function writes
+    ///   `effective_period = current_period + 1` (i.e., target_period).
+    ///
+    /// Constraints:
+    /// - Only the designated `operator` may call this.
+    /// - `target_period` must equal `current_period + 1`; staging further ahead is not allowed
+    ///   to prevent the operator from pre-loading multiple future periods at once.
+    /// - `users` and `powers` must have the same length.
+    ///
+    /// Idempotency: calling this multiple times for the same target_period overwrites the previous value.
+    /// This allows the operator to correct a mistake before the period boundary is crossed.
     public entry fun stage_batch_update(
         operator: &signer,
         target_period: u64,
@@ -218,7 +274,11 @@ module aptos_framework::poc_power_store {
         };
     }
 
-    /// genesis / 测试特例：直接写入当前 period 0 committed snapshot。
+    /// Genesis / test special case: directly write a committed snapshot at period 0.
+    ///
+    /// This bypasses the normal staging flow and is only valid when the chain is still at
+    /// last_epoch == 0 && current_period == 0 (i.e., during genesis initialization).
+    /// Used to seed initial validator power values before the first epoch begins.
     public entry fun set_genesis_committed_power(
         aptos_framework: &signer,
         user: address,
@@ -235,7 +295,18 @@ module aptos_framework::poc_power_store {
         upsert_power_version(store, user, 0, power);
     }
 
-    /// 在进入下一个 epoch 时推进本地 epoch 计数；若该 epoch 是新 power period 的起始，则只推进当前 period。
+    /// Advance the local epoch counter on each new on-chain epoch.
+    /// If the new epoch is the first epoch of a new power period, advance current_period.
+    ///
+    /// Called by `stake::on_new_epoch` at every epoch boundary.
+    /// This is the only place where `current_period` advances, ensuring all reads
+    /// within an epoch see a consistent period value.
+    ///
+    /// Period boundary formula: period = (epoch - 1) / power_period_in_epochs
+    /// Example with power_period_in_epochs = 60:
+    ///   epoch 1-60  → period 0
+    ///   epoch 61-120 → period 1
+    ///   epoch 121-180 → period 2
     public(friend) fun commit_next_period_if_boundary() acquires PowerStore {
         if (!exists<PowerStore>(@aptos_framework)) {
             return
@@ -257,7 +328,7 @@ module aptos_framework::poc_power_store {
         });
     }
 
-    // ========== 查询接口 ==========
+    // ========== Query Interface ==========
 
     #[view]
     public fun get_user_power(user: address): u64 acquires PowerStore {
@@ -338,7 +409,7 @@ module aptos_framework::poc_power_store {
         }
     }
 
-    // ========== 内部辅助函数 ==========
+    // ========== Internal Helpers ==========
 
     fun initialize_power_store_internal(
         aptos_framework: &signer,
@@ -391,6 +462,16 @@ module aptos_framework::poc_power_store {
         );
     }
 
+    /// Insert or update a user's power version in the two-slot window.
+    ///
+    /// Slot selection logic:
+    /// 1. User not yet in table → create a new entry with `newer` = this version (skip if power == 0)
+    /// 2. `effective_period` matches `newer` → overwrite `newer.power` in-place (idempotent update)
+    /// 3. `effective_period` matches `older` → overwrite `older.power` in-place (idempotent update)
+    /// 4. Neither slot matches → shift: `older = newer`, `newer = new version`
+    ///    (the oldest slot is evicted; only the two most recent periods are retained)
+    ///
+    /// After any write, `normalize_user_power_info` ensures older.effective_period <= newer.effective_period.
     fun upsert_power_version(
         store: &mut PowerStore,
         user: address,
@@ -425,6 +506,7 @@ module aptos_framework::poc_power_store {
             return
         };
 
+        // Evict the oldest slot and write the new version into `newer`
         info.older = info.newer;
         info.newer = PowerVersion {
             effective_period,
@@ -433,6 +515,8 @@ module aptos_framework::poc_power_store {
         normalize_user_power_info(info);
     }
 
+    /// Ensure the two slots are ordered: older.effective_period <= newer.effective_period.
+    /// Swaps the slots if they are out of order (can happen after an in-place overwrite).
     fun normalize_user_power_info(info: &mut UserPowerInfo) {
         if (info.older.effective_period > info.newer.effective_period) {
             let swapped = info.older;
@@ -441,6 +525,14 @@ module aptos_framework::poc_power_store {
         };
     }
 
+    /// Core read path: find the best power value for a given target_period and apply decay.
+    ///
+    /// Steps:
+    /// 1. Select the effective version: the slot with the highest effective_period that is <= target_period
+    /// 2. Compute periods_elapsed = target_period - base_period
+    /// 3. Apply retention decay: power * (retention_bps ^ periods_elapsed) / (BPS_DENOMINATOR ^ periods_elapsed)
+    ///
+    /// Returns 0 if the user has no record or no version is effective for target_period.
     fun get_user_power_for_period_internal(
         store: &PowerStore,
         user: address,
@@ -462,6 +554,9 @@ module aptos_framework::poc_power_store {
         )
     }
 
+    /// Select the most recent version whose effective_period <= target_period.
+    /// Prefers `newer` over `older` when both qualify (newer has higher effective_period).
+    /// Returns (0, 0) if neither slot qualifies.
     fun select_effective_version(
         info: &UserPowerInfo,
         target_period: u64,
@@ -479,10 +574,22 @@ module aptos_framework::poc_power_store {
         (0, 0)
     }
 
+    /// A PowerVersion is considered "present" if either field is non-zero.
+    /// The zero value (effective_period=0, power=0) is used as the empty sentinel.
+    /// Note: a version at period 0 with power > 0 is valid (genesis snapshot).
     fun has_power_version(version: PowerVersion): bool {
         version.effective_period > 0 || version.power > 0
     }
 
+    /// Apply per-period retention decay to a base power value.
+    ///
+    /// Formula: retained = power * (retention_bps / BPS_DENOMINATOR) ^ periods_elapsed
+    /// Computed iteratively to avoid u64 overflow in intermediate exponentiation.
+    /// Uses u128 for each multiplication step to prevent overflow before the division.
+    ///
+    /// Example: power=1000, retention_bps=9950, periods_elapsed=2
+    ///   step 1: 1000 * 9950 / 10000 = 995
+    ///   step 2: 995 * 9950 / 10000 = 990 (truncated)
     fun apply_retention(
         power: u64,
         periods_elapsed: u64,
@@ -506,6 +613,16 @@ module aptos_framework::poc_power_store {
         retained_power
     }
 
+    /// Map an on-chain epoch number to its power period index.
+    ///
+    /// Epoch 0 is a special pre-genesis state → period 0.
+    /// For epoch >= 1: period = (epoch - 1) / power_period_in_epochs
+    ///
+    /// With power_period_in_epochs = 60:
+    ///   epoch 0       → period 0  (pre-genesis)
+    ///   epoch 1..60   → period 0
+    ///   epoch 61..120 → period 1
+    ///   epoch 121..180 → period 2
     fun period_for_epoch(epoch: u64, power_period_in_epochs: u64): u64 {
         if (epoch == 0) {
             0
@@ -514,6 +631,7 @@ module aptos_framework::poc_power_store {
         }
     }
 
+    /// Returns the zero-value sentinel PowerVersion used to initialize empty slots.
     fun empty_power_version(): PowerVersion {
         PowerVersion {
             effective_period: 0,
@@ -521,7 +639,7 @@ module aptos_framework::poc_power_store {
         }
     }
 
-    // ========== 测试 ==========
+    // ========== Tests ==========
 
     #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB, user2 = @0xC)]
     public entry fun test_stage_update_commits_on_boundary(

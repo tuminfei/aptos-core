@@ -1,3 +1,45 @@
+/// Genesis module — bootstraps the entire Topo chain from a blank state.
+///
+/// ## Responsibilities
+///
+/// This module is the single entry point called by the Rust genesis builder to initialize
+/// every on-chain resource before the first block is produced. It wires together all
+/// framework modules in the correct dependency order.
+///
+/// ## Initialization Sequence
+///
+/// Step 1 — `initialize`: Core framework accounts and protocol modules
+///   - Create @aptos_framework account; hand control to topo_governance
+///   - Reserve framework addresses @0x2–@0xa under governance
+///   - Initialize: consensus_config, execution_config, version, stake, staking_config,
+///     storage_gas, gas_schedule, aggregator_factory, chain_id, reconfiguration,
+///     block, state_storage, nonce_validation, transaction_validation
+///
+/// Step 2 — `initialize_topo_coin`: Mint/burn capabilities
+///   - Create TopoCoin with mint + burn caps
+///   - Distribute caps: stake (mint for rewards), staking_registry (mint for rewards),
+///     transaction_fee (burn for gas, mint for refunds)
+///
+/// Step 3 — `create_accounts`: Fund initial accounts from the genesis config
+///
+/// Step 4 — `create_initialize_validators_with_commission`: Bootstrap the validator set
+///   - `ensure_poc_staking_initialized`: Initialize poc_power_store and staking_registry
+///   - For each validator: create account, initialize stake pool, register in staking_registry,
+///     seed genesis POC power, deposit stake, delegate, join validator set
+///   - Destroy the framework mint cap (no more minting outside of reward distribution)
+///   - `stake::on_new_epoch`: activate the genesis validator set
+///
+/// Step 5 — `set_genesis_end`: Mark chain as operational
+///
+/// ## Key Design Decisions
+///
+/// - `ensure_poc_staking_initialized` is idempotent and computes cooldown_secs as
+///   max(recurring_lockup_duration, governance_voting_duration) to prevent governance attacks.
+/// - Genesis validators receive POC power seeded from their stake amount via
+///   `staking_registry::calculate_genesis_power_from_stake`, bootstrapping the POC system
+///   before any real contribution events have been emitted.
+/// - The framework mint cap is destroyed after genesis; all subsequent TopoCoin minting
+///   goes through the staking_registry's stored mint cap (for rewards only).
 module aptos_framework::genesis {
     use std::error;
     use std::vector;
@@ -29,7 +71,11 @@ module aptos_framework::genesis {
     use aptos_framework::version;
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
+    // Default exchange rate: 100,000 octas (0.001 TOPO) of deposit backs 1 unit of POC power.
+    // This means a user needs at least 0.001 TOPO deposited per unit of POC power they want to activate.
     const DEFAULT_OCTAS_PER_POWER: u64 = 100_000;
+    // Maximum number of delegators allowed per validator pool.
+    // Caps iteration cost during reward distribution at epoch boundaries.
     const DEFAULT_MAX_DELEGATORS_PER_VALIDATOR: u64 = 1000;
 
     struct AccountMap has drop {
@@ -55,6 +101,17 @@ module aptos_framework::genesis {
     }
 
     /// Genesis step 1: Initialize aptos framework account and core modules on chain.
+    ///
+    /// Called first by the Rust genesis builder. Sets up every protocol-level resource
+    /// that must exist before any transaction can be processed.
+    ///
+    /// Key actions:
+    /// - Creates @aptos_framework as a framework-reserved account and hands its
+    ///   SignerCapability to topo_governance (decentralized on-chain governance owns the framework).
+    /// - Reserves @0x2–@0xa under governance as well (future protocol expansion slots).
+    /// - Initializes staking_config with the genesis validator set parameters
+    ///   (minimum/maximum stake, lockup duration, rewards rate, voting power increase limit).
+    /// - Initializes block module with epoch_interval_microsecs (controls epoch length).
     fun initialize(
         gas_schedule: vector<u8>,
         chain_id: u8,
@@ -124,7 +181,15 @@ module aptos_framework::genesis {
         nonce_validation::initialize(&aptos_framework_account);
     }
 
-    /// Genesis step 2: Initialize Topo coin.
+    /// Genesis step 2: Initialize Topo coin and distribute mint/burn capabilities.
+    ///
+    /// Creates TopoCoin with both mint and burn capabilities, then distributes them:
+    /// - stake module gets MintCapability to mint staking rewards each epoch
+    /// - staking_registry gets a copy of MintCapability for its own reward distribution path
+    /// - transaction_fee module gets BurnCapability (to burn gas fees) and MintCapability (to mint refunds)
+    ///
+    /// After `create_initialize_validators_with_commission` completes, the framework's
+    /// own mint cap is destroyed — no entity outside of the stored caps can mint TopoCoin.
     fun initialize_topo_coin(aptos_framework: &signer) {
         let (burn_cap, mint_cap) = topo_coin::initialize(aptos_framework);
 
@@ -200,6 +265,17 @@ module aptos_framework::genesis {
         account
     }
 
+    /// Initialize poc_power_store and staking_registry if not already done.
+    ///
+    /// Idempotent: safe to call multiple times (both sub-initializations guard themselves).
+    ///
+    /// cooldown_secs is set to max(recurring_lockup_duration, governance_voting_duration).
+    /// This ensures a user who undelegates cannot re-delegate and vote again within the same
+    /// governance proposal window, preventing double-influence attacks.
+    ///
+    /// poc_power_store is initialized with @aptos_framework as the operator, meaning only
+    /// the framework (via governance) can upload power updates initially. The operator can
+    /// be changed later via `poc_power_store::set_operator`.
     fun ensure_poc_staking_initialized(aptos_framework: &signer) {
         if (poc_power_store::get_operator() == @0x0) {
             poc_power_store::initialize(aptos_framework, @aptos_framework);
@@ -213,6 +289,7 @@ module aptos_framework::genesis {
             } else {
                 0
             };
+        // Use the longer of the two durations to prevent governance timing attacks
         let cooldown_secs =
             if (recurring_lockup_duration > governance_voting_duration) {
                 recurring_lockup_duration
@@ -268,6 +345,24 @@ module aptos_framework::genesis {
         create_initialize_validators_with_commission(aptos_framework, validators_with_commission);
     }
 
+    /// Initialize a single genesis validator: create accounts, register in staking_registry,
+    /// seed POC power, deposit stake, delegate, and optionally join the validator set.
+    ///
+    /// Full sequence for each genesis validator:
+    /// 1. Create owner account funded with stake_amount TopoCoin
+    /// 2. Create operator account (zero balance; operator earns via commission)
+    /// 3. Initialize stake pool (StakePool + ValidatorConfig resources at owner address)
+    /// 4. Register validator pool in staking_registry (if not already registered)
+    /// 5. Seed genesis POC power: poc_power_store gets a period-0 committed snapshot
+    ///    derived from stake_amount * genesis_stake_power_multiplier
+    /// 6. Deposit stake_amount into staking_registry (owner's deposit balance)
+    /// 7. Delegate owner's deposit to their own validator pool
+    /// 8. If join_during_genesis: set consensus key + network addresses, then join validator set
+    ///
+    /// Why seed POC power from stake?
+    /// At genesis there are no ContributionEvents yet, so the POC power store is empty.
+    /// Seeding from stake bootstraps the system so validators have non-zero effective power
+    /// from day one, allowing the first epoch to proceed normally.
     fun create_initialize_validator(
         aptos_framework: &signer,
         commission_config: &ValidatorConfigurationWithCommission,

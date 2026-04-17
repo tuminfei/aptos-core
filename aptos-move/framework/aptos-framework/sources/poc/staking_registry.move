@@ -1,3 +1,44 @@
+/// Staking Registry — Delegation, power accounting, and reward distribution for the POC validator set.
+///
+/// ## Overview
+///
+/// This module is the economic heart of the Topo chain's Proof-of-Contribution (POC) staking system.
+/// It replaces the traditional "stake amount = voting power" model with a hybrid model where a user's
+/// effective voting power is the MINIMUM of:
+///   1. Their committed POC power (from `poc_power_store`) — contribution-based weight
+///   2. Their deposit coverage (deposit_octas / octas_per_power) — economic skin-in-the-game
+///
+/// This dual-constraint design ensures that:
+/// - Pure capital holders without contribution history cannot dominate governance
+/// - Pure contributors without economic stake cannot dominate governance
+/// - Both dimensions must be maintained to retain voting influence
+///
+/// ## Key Concepts
+///
+/// - ValidatorPool: A pool owned by a validator. Delegators stake behind a pool to lend it their power.
+/// - UserStakeInfo: Per-user record of deposited TOPO coins, current delegation target, and cooldown state.
+/// - Effective Power: min(committed_poc_power, deposit_octas / octas_per_power)
+/// - Commission: Validators earn a percentage of epoch rewards and transaction fees from their pool.
+/// - Cooldown: After undelegating, users must wait `cooldown_secs` before they can re-delegate or withdraw.
+///   This prevents rapid stake-hopping that could destabilize the validator set.
+/// - Force Undelegate: If a user's effective power drops below `maintain_threshold` (a fraction of
+///   `min_active_power`), they are automatically removed from the pool at epoch boundaries.
+///
+/// ## Reward Flow
+///
+/// At each epoch boundary (`on_new_epoch` in stake.move):
+/// 1. `distribute_epoch_rewards` is called for each active/pending_inactive validator
+/// 2. Rewards are minted proportionally to each delegator's effective power share
+/// 3. Commission is taken first; remainder is split pro-rata among delegators
+/// 4. Rewards are deposited directly into each user's `deposit` balance (auto-compounding)
+/// 5. Transaction fees follow the same distribution path via `distribute_transaction_fees`
+///
+/// ## Validator Lifecycle (as seen by this module)
+///
+/// INACTIVE → PENDING_ACTIVE (join_validator_set) → ACTIVE (on_new_epoch)
+///         → PENDING_INACTIVE (leave_validator_set) → INACTIVE (on_new_epoch)
+///
+/// Only ACTIVE and PENDING_INACTIVE validators contribute to effective power reads.
 module aptos_framework::staking_registry {
     use std::error;
     use std::signer;
@@ -17,64 +58,126 @@ module aptos_framework::staking_registry {
     friend aptos_framework::stake;
     friend aptos_framework::topo_governance;
 
+    // ========== Error Codes ==========
+    /// Target address is not a registered validator pool
     const ENOT_VALIDATOR: u64 = 1;
+    /// Validator pool already exists for this address
     const EALREADY_VALIDATOR: u64 = 2;
+    /// User is already delegated to a validator; must undelegate first
     const EALREADY_DELEGATED: u64 = 3;
+    /// User is not currently delegated to any validator
     const ENOT_DELEGATED: u64 = 4;
+    /// Deposit is locked because user is still delegated; must undelegate before withdrawing
     const EDEPOSIT_LOCKED: u64 = 5;
+    /// Cooldown period has not yet elapsed; user must wait before re-delegating or withdrawing
     const ECOOLDOWN_ACTIVE: u64 = 6;
+    /// Deposit amount must be greater than zero
     const EZERO_DEPOSIT: u64 = 7;
+    /// Validator pool has reached its maximum delegator capacity
     const EMAX_DELEGATORS: u64 = 8;
+    /// No stake info record found for this user address
     const EUSER_NOT_FOUND: u64 = 9;
+    /// Commission basis points must be in range [0, 10000]
     const EINVALID_COMMISSION: u64 = 10;
+    /// StakingRegistry resource has not been initialized
     const EREGISTRY_NOT_INITIALIZED: u64 = 11;
+    /// MintCapability for TopoCoin has not been stored yet (must call store_topo_coin_mint_cap first)
     const EMINT_CAP_NOT_STORED: u64 = 12;
+    /// Invalid configuration parameter (e.g. octas_per_power == 0)
     const EINVALID_CONFIG: u64 = 13;
+    /// Registry or PendingMintCapability already initialized
     const EALREADY_INITIALIZED: u64 = 14;
+    /// User's effective power is below the minimum required to join a validator pool
     const EPOWER_BELOW_MIN_ACTIVE: u64 = 15;
+
+    // ========== Constants ==========
+    /// At genesis, each octa of stake maps to this many units of power (default 1:1)
     const DEFAULT_GENESIS_STAKE_POWER_MULTIPLIER: u64 = 1;
+    /// Minimum effective power required to delegate to a validator pool
     const DEFAULT_MIN_ACTIVE_POWER: u64 = 1;
+    /// Users whose power falls below (min_active_power * force_exit_power_bps / 10000) are force-undelegated
     const DEFAULT_FORCE_EXIT_POWER_BPS: u64 = 8000;
     const MAX_U64: u128 = 18446744073709551615;
     const BPS_DENOMINATOR: u64 = 10000;
 
+    // Validator lifecycle status constants (mirrors stake.move)
     const VALIDATOR_STATUS_PENDING_ACTIVE: u64 = 1;
     const VALIDATOR_STATUS_ACTIVE: u64 = 2;
     const VALIDATOR_STATUS_PENDING_INACTIVE: u64 = 3;
     const VALIDATOR_STATUS_INACTIVE: u64 = 4;
 
+    // ========== Data Structures ==========
+
+    /// Temporary holding resource for the TopoCoin MintCapability during genesis.
+    /// Genesis calls `store_topo_coin_mint_cap` before `initialize`, so the cap
+    /// must be parked here until the full registry is ready to receive it.
     struct PendingMintCapability has key {
         mint_cap: MintCapability<TopoCoin>,
     }
 
+    /// The global staking registry, stored under @aptos_framework.
+    ///
+    /// Contains all validator pools, all user stake records, and the global config.
+    /// The `mint_cap` is used to mint new TOPO coins as epoch rewards and fee distributions.
     struct StakingRegistry has key {
+        /// Map from validator pool address → ValidatorPool
         validators: Table<address, ValidatorPool>,
+        /// Map from user address → UserStakeInfo
         users: Table<address, UserStakeInfo>,
+        /// Snapshot of total staked power across all active validators; updated at epoch boundaries
         total_staked_power: u64,
+        /// Capability to mint TopoCoin for reward distribution
         mint_cap: MintCapability<TopoCoin>,
         config: StakingRegistryConfig,
     }
 
+    /// Tunable parameters for the staking system.
     struct StakingRegistryConfig has copy, drop, store {
+        /// How many octas (smallest TOPO unit) of deposit are required to back one unit of POC power.
+        /// Effective power = min(poc_power, deposit_octas / octas_per_power)
         octas_per_power: u64,
+        /// Hard cap on the number of delegators per validator pool.
+        /// Prevents unbounded iteration cost during reward distribution.
         max_delegators_per_validator: u64,
+        /// Seconds a user must wait after undelegating before they can re-delegate or withdraw.
+        /// Set to max(recurring_lockup_duration, governance_voting_duration) at genesis.
         cooldown_secs: u64,
+        /// Multiplier applied to stake_amount when computing genesis power.
+        /// Default 1 means 1 octa of stake = 1 unit of genesis power.
         genesis_stake_power_multiplier: u64,
+        /// Minimum effective power required to join or remain in a validator pool.
         min_active_power: u64,
+        /// Users whose power falls below (min_active_power * force_exit_power_bps / 10000)
+        /// are automatically removed from the pool at epoch boundaries.
+        /// Default 8000 bps = 80% of min_active_power.
         force_exit_power_bps: u64,
     }
 
+    /// A validator's delegation pool.
+    ///
+    /// `delegator_index` is a SmartTable for O(1) membership checks and O(1) removal
+    /// (using swap-remove on `delegator_list`).
     struct ValidatorPool has store {
+        /// The owner of this pool (receives commission rewards)
         owner_address: address,
+        /// Maps delegator address → index in delegator_list (for O(1) removal)
         delegator_index: SmartTable<address, u64>,
+        /// Ordered list of all current delegators
         delegator_list: vector<address>,
+        /// Validator's commission rate in basis points (0–10000)
         commission_bps: u64,
+        /// Current lifecycle status (PENDING_ACTIVE / ACTIVE / PENDING_INACTIVE / INACTIVE)
         status: u64,
     }
 
+    /// Per-user staking state.
     struct UserStakeInfo has store {
+        /// TOPO coins deposited by this user; held in escrow by the registry
         deposit: Coin<TopoCoin>,
+        /// The validator pool this user is currently delegated to; @0x0 means not delegated
         delegated_to: address,
+        /// Unix timestamp (seconds) after which the user may re-delegate or withdraw.
+        /// Set to now + cooldown_secs when the user undelegates. 0 means no cooldown.
         cooldown_until_secs: u64,
     }
 
@@ -83,6 +186,12 @@ module aptos_framework::staking_registry {
         exists<StakingRegistry>(@aptos_framework)
     }
 
+    /// Park the TopoCoin MintCapability before the registry is fully initialized.
+    ///
+    /// Called by `genesis::initialize_topo_coin` immediately after minting capabilities are created.
+    /// The cap is stored in a temporary `PendingMintCapability` resource and consumed by `initialize`.
+    /// This two-step approach avoids a circular dependency: the registry needs the mint cap,
+    /// but the mint cap is created before the registry config parameters are known.
     public(friend) fun store_topo_coin_mint_cap(
         aptos_framework: &signer,
         mint_cap: MintCapability<TopoCoin>,
@@ -96,6 +205,11 @@ module aptos_framework::staking_registry {
         move_to(aptos_framework, PendingMintCapability { mint_cap });
     }
 
+    /// Initialize the StakingRegistry with configuration parameters.
+    ///
+    /// Consumes the `PendingMintCapability` parked by `store_topo_coin_mint_cap`.
+    /// Idempotent: if the registry already exists, returns immediately without error.
+    /// Called by `genesis::ensure_poc_staking_initialized`.
     public(friend) fun initialize(
         aptos_framework: &signer,
         octas_per_power: u64,
@@ -134,6 +248,13 @@ module aptos_framework::staking_registry {
         });
     }
 
+    /// Update the minimum active power and force-exit threshold.
+    ///
+    /// `min_active_power`: minimum effective power a user must have to join a pool.
+    /// `force_exit_power_bps`: users whose power falls below
+    ///   (min_active_power * force_exit_power_bps / 10000) are force-undelegated at epoch boundaries.
+    /// Setting force_exit_power_bps = 8000 means users are ejected when power < 80% of min_active_power,
+    /// providing a hysteresis band to prevent thrashing at the boundary.
     public entry fun set_active_power_thresholds(
         aptos_framework: &signer,
         min_active_power: u64,
@@ -148,6 +269,11 @@ module aptos_framework::staking_registry {
         registry.config.force_exit_power_bps = force_exit_power_bps;
     }
 
+    /// Ensure the cooldown period is at least `min_cooldown_secs`.
+    ///
+    /// Called during governance config updates to keep cooldown >= governance voting duration.
+    /// This prevents a user from undelegating, voting, and re-delegating within a single
+    /// governance proposal window — which would allow double-influence attacks.
     public(friend) fun ensure_min_cooldown_secs(
         aptos_framework: &signer,
         min_cooldown_secs: u64,
@@ -163,6 +289,12 @@ module aptos_framework::staking_registry {
         };
     }
 
+    /// Compute the initial POC power for a genesis validator from their stake amount.
+    ///
+    /// Formula: genesis_power = stake_amount * genesis_stake_power_multiplier
+    /// Default multiplier is 1, so 1 octa of stake = 1 unit of genesis power.
+    /// This is used in `genesis::create_initialize_validator` to seed the power store
+    /// before the first epoch begins.
     public(friend) fun calculate_genesis_power_from_stake(
         stake_amount: u64,
     ): u64 acquires StakingRegistry {
@@ -204,6 +336,14 @@ module aptos_framework::staking_registry {
         register_validator_internal(owner_address, validator_address, commission_bps);
     }
 
+    /// Deposit TOPO coins into the registry as staking collateral.
+    ///
+    /// Deposited coins are held in escrow by the registry and cannot be withdrawn
+    /// while the user is delegated to a validator. They serve as economic collateral
+    /// that backs the user's POC power: effective_power = min(poc_power, deposit / octas_per_power).
+    ///
+    /// Deposits auto-compound: epoch rewards and fee shares are minted directly into
+    /// the user's deposit balance, increasing their deposit coverage over time.
     public entry fun deposit(
         user: &signer,
         amount: u64,
@@ -222,6 +362,15 @@ module aptos_framework::staking_registry {
         coin::merge(&mut info.deposit, coins);
     }
 
+    /// Delegate the user's staked deposit to a validator pool.
+    ///
+    /// Prerequisites:
+    /// - User must not already be delegated (must call `undelegate` first)
+    /// - Cooldown period must have elapsed (if any)
+    /// - User's effective power must be >= min_active_power
+    ///
+    /// After delegation, the user's deposit backs the validator's total power,
+    /// and the user begins receiving a proportional share of epoch rewards and fees.
     public entry fun delegate(
         user: &signer,
         validator_address: address,
@@ -231,6 +380,14 @@ module aptos_framework::staking_registry {
         delegate_internal(user_address, validator_address);
     }
 
+    /// Remove the user's delegation from their current validator pool.
+    ///
+    /// The user's deposit remains in the registry but no longer backs any validator's power.
+    /// A cooldown period begins: the user must wait `cooldown_secs` before they can
+    /// re-delegate or withdraw their deposit.
+    ///
+    /// This cooldown prevents rapid stake-hopping that could destabilize the validator set
+    /// or enable governance manipulation (vote, undelegate, re-delegate, vote again).
     public entry fun undelegate(
         user: &signer,
     ) acquires StakingRegistry {
@@ -239,6 +396,13 @@ module aptos_framework::staking_registry {
         undelegate_internal(user_address);
     }
 
+    /// Withdraw the user's full deposit back to their wallet.
+    ///
+    /// Requirements:
+    /// - User must not be currently delegated (deposit is locked while delegated)
+    /// - Cooldown period must have elapsed since undelegating
+    ///
+    /// After withdrawal, the user's deposit balance becomes zero and cooldown is cleared.
     public entry fun withdraw_deposit(
         user: &signer,
     ) acquires StakingRegistry {
@@ -248,6 +412,16 @@ module aptos_framework::staking_registry {
         coin::deposit<TopoCoin>(user_address, coins);
     }
 
+    /// Return the user's current effective power.
+    ///
+    /// Effective power = min(committed_poc_power, deposit_octas / octas_per_power)
+    ///
+    /// Returns 0 if:
+    /// - User is not delegated to any validator
+    /// - The validator they are delegated to is not ACTIVE or PENDING_INACTIVE
+    /// - Either dimension (poc_power or deposit coverage) is zero
+    ///
+    /// This is the value used for governance voting weight and reward distribution.
     #[view]
     public fun get_effective_power(user: address): u64 acquires StakingRegistry {
         if (!exists<StakingRegistry>(@aptos_framework)) {
@@ -517,6 +691,19 @@ module aptos_framework::staking_registry {
         set_validator_status(validator_address, VALIDATOR_STATUS_INACTIVE);
     }
 
+    /// Force-undelegate all delegators of a validator pool whose effective power has dropped
+    /// below the maintain threshold.
+    ///
+    /// Called by `stake::on_new_epoch` for every active, pending_inactive, and pending_active pool.
+    ///
+    /// Why force-undelegate?
+    /// - A user's POC power can decay over time (retention) or drop if they stop contributing.
+    /// - If their power falls below the maintain threshold, they no longer meaningfully back
+    ///   the validator and should be removed to keep pool accounting clean.
+    /// - maintain_threshold = ceil(min_active_power * force_exit_power_bps / 10000)
+    ///   The ceiling ensures the threshold is at least 1 when min_active_power > 0.
+    ///
+    /// Force-undelegated users receive the same cooldown as voluntary undelegation.
     public(friend) fun force_undelegate_below_threshold(
         validator_address: address,
     ) acquires StakingRegistry {
@@ -570,6 +757,24 @@ module aptos_framework::staking_registry {
         registry.validators.borrow_mut(validator_address).commission_bps = commission_bps;
     }
 
+    /// Distribute epoch staking rewards to all delegators of a validator pool.
+    ///
+    /// Called by `stake::on_new_epoch` for each active and pending_inactive validator.
+    ///
+    /// Reward formula:
+    ///   epoch_reward = pool_power * rewards_rate * num_successful_proposals
+    ///                  / (rewards_rate_denominator * num_total_proposals)
+    ///
+    /// Distribution:
+    ///   commission = epoch_reward * commission_bps / 10000  → minted to owner's deposit
+    ///   distributable = epoch_reward - commission
+    ///   each delegator gets: distributable * member_power / pool_power
+    ///   rounding dust (distributable - sum_distributed) goes to the owner
+    ///
+    /// All rewards are minted as new TopoCoin and deposited directly into each user's
+    /// registry deposit balance (auto-compounding — no separate claim step needed).
+    ///
+    /// If pool_power == 0 or epoch_reward == 0, this is a no-op.
     public(friend) fun distribute_epoch_rewards(
         validator_address: address,
         num_successful_proposals: u64,
@@ -642,6 +847,18 @@ module aptos_framework::staking_registry {
         };
     }
 
+    /// Distribute transaction fees collected during an epoch to all delegators of a validator pool.
+    ///
+    /// Called by `stake::on_new_epoch` after `distribute_epoch_rewards`, for each validator
+    /// that has a non-zero fee share (requires the distribute_transaction_fee feature flag).
+    ///
+    /// Distribution logic is identical to `distribute_epoch_rewards`:
+    ///   commission = fee_amount * commission_bps / 10000  → owner's deposit
+    ///   remainder split pro-rata by effective power among delegators
+    ///   rounding dust goes to the owner
+    ///
+    /// Fees are minted as new TopoCoin (the fee was already burned at the protocol level;
+    /// this re-mints the validator's share as a reward).
     public(friend) fun distribute_transaction_fees(
         validator_address: address,
         fee_amount_octa: u64,
@@ -726,6 +943,16 @@ module aptos_framework::staking_registry {
         });
     }
 
+    /// Internal delegation logic shared by `delegate` and genesis paths.
+    ///
+    /// Checks:
+    /// 1. Validator pool must exist
+    /// 2. User must not already be delegated
+    /// 3. Cooldown must have elapsed
+    /// 4. User's effective power must be >= min_active_power
+    /// 5. Pool must not exceed max_delegators_per_validator
+    ///
+    /// On success: adds user to pool's delegator_list, sets delegated_to, clears cooldown.
     fun delegate_internal(
         user_address: address,
         validator_address: address,
@@ -846,6 +1073,10 @@ module aptos_framework::staking_registry {
         coin::merge(&mut info.deposit, minted);
     }
 
+    /// Add a delegator to a validator pool using a swap-remove index for O(1) future removal.
+    ///
+    /// The delegator_index SmartTable maps address → position in delegator_list,
+    /// enabling O(1) removal via swap-remove without scanning the full list.
     fun add_delegator(
         pool: &mut ValidatorPool,
         delegator: address,
@@ -864,6 +1095,11 @@ module aptos_framework::staking_registry {
         pool.delegator_index.add(delegator, index);
     }
 
+    /// Remove a delegator from a validator pool using swap-remove for O(1) complexity.
+    ///
+    /// Swap-remove: the target delegator's slot is filled by the last element in the list,
+    /// then the list is shrunk by one. The index table is updated accordingly.
+    /// This avoids O(n) shifting while keeping the list compact.
     fun remove_delegator(
         pool: &mut ValidatorPool,
         delegator: address,
@@ -899,6 +1135,16 @@ module aptos_framework::staking_registry {
         registry.validators.borrow_mut(validator_address).status = status;
     }
 
+    /// Compute the maintain threshold for force-undelegation using ceiling division.
+    ///
+    /// maintain_threshold = ceil(min_active_power * force_exit_power_bps / BPS_DENOMINATOR)
+    ///
+    /// Ceiling division ensures the threshold is at least 1 when min_active_power > 0,
+    /// preventing a threshold of 0 that would never trigger force-undelegation.
+    ///
+    /// Example: min_active_power=10, force_exit_power_bps=8000
+    ///   threshold = ceil(10 * 8000 / 10000) = ceil(8.0) = 8
+    ///   Users with effective_power < 8 are force-undelegated.
     fun calculate_force_exit_power(
         min_active_power: u64,
         force_exit_power_bps: u64,
@@ -940,6 +1186,19 @@ module aptos_framework::staking_registry {
         info.cooldown_until_secs = timestamp::now_seconds() + registry.config.cooldown_secs;
     }
 
+    /// Compute a user's effective power from their current stake info.
+    ///
+    /// effective_power = min(committed_poc_power, deposit_octas / octas_per_power)
+    ///
+    /// The dual-constraint design:
+    /// - `committed_poc_power` (from poc_power_store) represents contribution-based weight.
+    ///   It is computed off-chain from ContributionEvents and uploaded by the operator.
+    /// - `deposit_cover` represents economic skin-in-the-game: how much power the user's
+    ///   deposited TOPO coins can back at the current octas_per_power exchange rate.
+    ///
+    /// Taking the minimum ensures both dimensions must be maintained simultaneously.
+    /// A user who stops contributing loses poc_power (via decay) and their effective power drops.
+    /// A user who withdraws their deposit loses deposit_cover and their effective power drops.
     fun calculate_effective_power(
         info: &UserStakeInfo,
         octas_per_power: u64,
@@ -1042,6 +1301,13 @@ module aptos_framework::staking_registry {
         copied
     }
 
+    /// Compute epoch rewards for a validator pool.
+    ///
+    /// Formula: reward = pool_power * rewards_rate * num_successful_proposals
+    ///                   / (rewards_rate_denominator * num_total_proposals)
+    ///
+    /// All arithmetic is done in u128 to avoid overflow before the final division.
+    /// Returns 0 if any of pool_power, num_total_proposals, or rewards_rate is zero.
     fun calculate_rewards_amount(
         pool_power: u64,
         num_successful_proposals: u64,

@@ -1,25 +1,47 @@
-// POC 注册合约 —— Dapp 独立应用注册与治理底座
+// POC Registry Contract — Dapp application registration and governance foundation
 //
-// 本模块是 Topo 链 POC（Proof of Contribution）体系的注册中心，
-// 负责维护"谁有资格通过框架发出可信贡献事件"。
+// This module is the registration center for the Topo chain's POC (Proof of Contribution) system.
+// It maintains the authoritative record of "which applications are eligible to emit trusted
+// contribution events through the framework."
 //
-// 核心职责：
-// 1. 登记 Dapp 独立应用的基础信息（管理者地址、合约部署地址、股权代币地址、托管地址等）
-// 2. 维护应用自身运行状态（运行 / 暂停 / 停运）
-// 3. 维护平台 POC 纳入状态（自注册 / 白名单 / 挂起）
-// 4. 提供反查接口，供 `poc_contribution` 模块在发放贡献时做身份与资产校验
+// ## Core Responsibilities
+// 1. Register Dapp application identity (admin address, contract address, equity token, custody address)
+// 2. Maintain application self-managed operational state (ACTIVE / PAUSED / STOPPED)
+// 3. Maintain platform POC inclusion status (REGISTERED / WHITELISTED / SUSPENDED)
+// 4. Provide reverse-lookup interfaces for `poc_contribution` to validate identity and assets
+//    during contribution event emission
 //
-// 设计原则：
-// - 平台只管理"是否纳入 POC 可信贡献体系"，不干涉应用自身的业务逻辑
-// - 注册表中的关键地址（app_address / equity_token_address / custody_address）必须全局唯一
-// - 股权代币地址变更后，POC 纳入状态会自动重置为"自注册"，需要平台重新审核
+// ## Design Principles
+// - The platform only manages "whether an app is included in the POC trusted contribution system";
+//   it does not interfere with the application's own business logic.
+// - All key addresses (app_address / equity_token_address / custody_address) must be globally unique
+//   across all registered applications.
+// - When the equity token address changes, the POC inclusion status is automatically reset to
+//   REGISTERED, requiring platform re-review. This is a security invariant: the core asset
+//   identifier changed, so previous audit assumptions may no longer hold.
 //
-// 术语说明：
-// - app_admin：Dapp 独立应用的管理者身份地址（类似企业管理员钱包地址）
-// - app_address：Dapp 独立应用的合约部署地址（可变更，但必须绑定到同一管理者）
-// - equity_token_address：Dapp 独立应用的股权代币地址（对标以太坊 ERC20 合约地址）
-// - custody_address：托管地址，存放待发放股权代币的地址
-// - metadata_uri：Dapp 独立应用的官网或权威信息链接
+// ## Terminology
+// - app_admin: The Dapp application's administrator identity address (analogous to an enterprise admin wallet)
+// - app_address: The Dapp application's contract deployment address (the on-chain entry module address)
+// - equity_token_address: The Dapp application's equity token address (analogous to an ERC-20 contract address on Ethereum)
+// - custody_address: The custodial address holding equity tokens pending distribution
+// - metadata_uri: The application's official website or authoritative information link
+//
+// ## State Machine
+//
+// App operational state (controlled by app_admin):
+//   ACTIVE ←→ PAUSED   (pause_app / resume_app)
+//   ACTIVE → STOPPED   (stop_app, irreversible)
+//   PAUSED → STOPPED   (stop_app, irreversible)
+//
+// POC inclusion status (controlled by @aptos_framework / DAO governance):
+//   REGISTERED → WHITELISTED  (whitelist_app_for_poc)
+//   WHITELISTED → SUSPENDED   (suspend_poc_listing)
+//   SUSPENDED → WHITELISTED   (whitelist_app_for_poc)
+//   Any → REGISTERED          (set_poc_listing_status, or auto-reset on equity token change)
+//
+// An application can emit trusted ContributionEvents only when BOTH:
+//   app_state == ACTIVE  AND  poc_listing_status == WHITELISTED
 module aptos_framework::poc_registry {
     use std::error;
     use std::signer;
@@ -32,98 +54,106 @@ module aptos_framework::poc_registry {
     use aptos_framework::object;
     use aptos_framework::system_addresses;
 
-    // ========== 应用自身运行状态（由 Dapp 独立应用自行管控） ==========
-    // 运行中：应用正常运营，可以发起可信贡献发放
+    // ========== App Operational State (controlled by app_admin) ==========
+    // ACTIVE: Application is running normally; trusted contribution events can be emitted
     const APP_STATE_ACTIVE: u8 = 1;
-    // 暂停：应用主动暂停运营（如遇紧急事件），暂停期间不可发起可信贡献发放
+    // PAUSED: Application has voluntarily paused operations (e.g., emergency response);
+    //         trusted contribution events cannot be emitted while paused
     const APP_STATE_PAUSED: u8 = 2;
-    // 停运：应用永久停止运营，此状态不可逆，无法恢复为运行状态
+    // STOPPED: Application has permanently ceased operations; this state is irreversible
+    //          and cannot be restored to ACTIVE or PAUSED
     const APP_STATE_STOPPED: u8 = 3;
 
-    // ========== 平台 POC 纳入状态（由链的 DAO 治理组织 / framework 管控） ==========
-    // 自注册：应用已完成注册，但尚未被平台纳入 POC 算力体系
-    // 此状态下应用的贡献事件不会被链下扫描计入算力
+    // ========== Platform POC Inclusion Status (controlled by @aptos_framework / DAO governance) ==========
+    // REGISTERED: Application has completed registration but has not yet been included in the POC power system.
+    //             Contribution events from this app are NOT counted toward POC power by off-chain indexers.
     const POC_LISTING_STATUS_REGISTERED: u8 = 1;
-    // 白名单（激活态）：应用已被平台审核通过，纳入 POC 算力体系
-    // 此状态下应用发出的贡献事件会被链下扫描并计入算力，算力可参与投票
+    // WHITELISTED (active): Application has passed platform review and is included in the POC power system.
+    //                       Contribution events from this app ARE counted toward POC power and can participate in voting.
     const POC_LISTING_STATUS_WHITELISTED: u8 = 2;
-    // 挂起：应用被平台暂停纳入 POC（如疑似作弊等），待调查处理
-    // 挂起期间贡献事件不计入算力
+    // SUSPENDED: Application's POC inclusion has been suspended by the platform (e.g., suspected fraud, under investigation).
+    //            Contribution events are NOT counted toward POC power during suspension.
     const POC_LISTING_STATUS_SUSPENDED: u8 = 3;
 
-    // ========== 错误码 ==========
-    // 注册中心尚未初始化（genesis 未执行或被跳过）
+    // ========== Error Codes ==========
+    /// Registry resource has not been initialized (genesis not executed or skipped)
     const EREGISTRY_NOT_INITIALIZED: u64 = 1;
-    // 该管理者地址已注册过应用，不允许重复注册
+    /// An application is already registered under this admin address; duplicate registration not allowed
     const EAPP_ADMIN_ALREADY_EXISTS: u64 = 2;
-    // 该合约部署地址已被其他应用占用
+    /// This contract deployment address is already occupied by another registered application
     const EAPP_ADDRESS_ALREADY_EXISTS: u64 = 3;
-    // 该股权代币地址已被其他应用绑定
+    /// This equity token address is already bound to another registered application
     const EEQUITY_TOKEN_ALREADY_EXISTS: u64 = 4;
-    // 该托管地址已被其他应用绑定
+    /// This custody address is already bound to another registered application
     const ECUSTODY_ADDRESS_ALREADY_EXISTS: u64 = 5;
-    // 未找到该管理者地址对应的注册信息
+    /// No registration record found for this admin address
     const EAPP_ADMIN_NOT_FOUND: u64 = 6;
-    // 未找到该合约部署地址对应的注册信息
+    /// No registration record found for this contract deployment address
     const EAPP_ADDRESS_NOT_FOUND: u64 = 7;
-    // 未找到该托管地址对应的注册信息
+    /// No registration record found for this custody address
     const ECUSTODY_ADDRESS_NOT_FOUND: u64 = 8;
-    // 未找到该股权代币地址对应的注册信息
+    /// No registration record found for this equity token address
     const EEQUITY_TOKEN_NOT_FOUND: u64 = 9;
-    // 传入的应用状态值不合法（必须为 ACTIVE / PAUSED / STOPPED 之一）
+    /// Invalid app state value (must be one of APP_STATE_ACTIVE / PAUSED / STOPPED)
     const EINVALID_APP_STATE: u64 = 10;
-    // 传入的 POC 纳入状态值不合法（必须为 REGISTERED / WHITELISTED / SUSPENDED 之一）
+    /// Invalid POC listing status value (must be one of REGISTERED / WHITELISTED / SUSPENDED)
     const EINVALID_POC_LISTING_STATUS: u64 = 11;
-    // 应用当前不处于运行状态，无法发起可信贡献发放
+    /// Application is not currently in ACTIVE state; trusted contribution events cannot be emitted
     const EAPP_NOT_ACTIVE: u64 = 12;
-    // 应用尚未进入 POC 白名单，无法发起可信贡献发放
+    /// Application has not been whitelisted for POC; trusted contribution events cannot be emitted
     const EAPP_NOT_WHITELISTED_FOR_POC: u64 = 13;
-    // 应用已永久停运，不允许恢复
+    /// Application has been permanently stopped; cannot be resumed
     const EAPP_STOPPED: u64 = 14;
 
-    // ========== 核心数据结构 ==========
+    // ========== Core Data Structures ==========
 
-    // 全局注册中心，存储在 @aptos_framework 地址下，genesis 时初始化。
-    // 维护 4 张映射表，支持通过管理者地址、合约部署地址、托管地址、股权代币地址
-    // 任意一个维度反查到同一个注册主体。
+    /// Global registry, stored under @aptos_framework, initialized at genesis.
+    ///
+    /// Maintains 4 lookup tables to support reverse-lookup from any of:
+    /// admin address, contract address, custody address, or equity token address
+    /// back to the same registered entity.
+    ///
+    /// The multi-index design allows `poc_contribution` to efficiently validate
+    /// all three address dimensions (app_address, custody_address, equity_token)
+    /// in O(1) without scanning the full registry.
     struct Registry has key {
-        // 主表：管理者地址 -> 应用完整信息
+        /// Primary table: admin address → full AppInfo
         apps: Table<address, AppInfo>,
-        // 反查表：合约部署地址 -> 管理者地址
+        /// Reverse lookup: contract deployment address → admin address
         app_address_to_admin: Table<address, address>,
-        // 反查表：托管地址 -> 管理者地址
+        /// Reverse lookup: custody address → admin address
         custody_address_to_admin: Table<address, address>,
-        // 反查表：股权代币地址 -> 管理者地址
+        /// Reverse lookup: equity token address → admin address
         equity_token_to_admin: Table<address, address>,
     }
 
-    // Dapp 独立应用的注册信息
+    /// Complete registration record for a Dapp application.
     struct AppInfo has copy, drop, store {
-        // 管理者身份地址（主键），拥有该应用的最高管理权限
+        /// Administrator identity address (primary key); holds highest management authority for this app
         app_admin: address,
-        // 合约部署地址，应用在链上的入口模块地址
-        // 可由管理者更新（如合约升级重新部署），但必须全局唯一
+        /// Contract deployment address; the on-chain entry module address for this application.
+        /// Can be updated by the admin (e.g., after contract upgrade/redeployment), but must remain globally unique.
         app_address: address,
-        // 股权代币地址（对标以太坊 ERC20 合约地址）
-        // 必须是合法的 Fungible Asset Metadata 对象地址
-        // 变更后 POC 纳入状态会自动重置为"自注册"，需平台重新审核
+        /// Equity token address (analogous to an ERC-20 contract address on Ethereum).
+        /// Must be a valid Fungible Asset Metadata object address.
+        /// IMPORTANT: Changing this resets poc_listing_status to REGISTERED, requiring platform re-review.
         equity_token_address: address,
-        // 托管地址，存放待发放股权代币的钱包地址
-        // 可信贡献发放时，必须由该地址签名才能转出代币
+        /// Custody address holding equity tokens pending distribution.
+        /// During trusted contribution events, only this address's signer can transfer tokens out.
         custody_address: address,
-        // 应用自身运行状态（APP_STATE_ACTIVE / PAUSED / STOPPED）
-        // 由应用管理者自行管控
+        /// Application's self-managed operational state (APP_STATE_ACTIVE / PAUSED / STOPPED).
+        /// Controlled exclusively by the app_admin.
         app_state: u8,
-        // 平台 POC 纳入状态（POC_LISTING_STATUS_REGISTERED / WHITELISTED / SUSPENDED）
-        // 由链的 DAO 治理组织（当前为 framework 权限）管控
+        /// Platform POC inclusion status (POC_LISTING_STATUS_REGISTERED / WHITELISTED / SUSPENDED).
+        /// Controlled by the chain's DAO governance organization (currently @aptos_framework).
         poc_listing_status: u8,
-        // 应用官网或权威信息链接
+        /// Application's official website or authoritative information link
         metadata_uri: String,
     }
 
-    // ========== 治理事件 ==========
+    // ========== Governance Events ==========
 
-    // 应用注册成功事件
+    /// Emitted when a new application is successfully registered
     #[event]
     struct AppRegisteredEvent has drop, store {
         app_admin: address,
@@ -132,7 +162,7 @@ module aptos_framework::poc_registry {
         custody_address: address,
     }
 
-    // 合约部署地址变更事件（如应用升级重新部署）
+    /// Emitted when the contract deployment address is updated (e.g., after contract upgrade)
     #[event]
     struct AppAddressUpdatedEvent has drop, store {
         app_admin: address,
@@ -140,8 +170,8 @@ module aptos_framework::poc_registry {
         new_app_address: address,
     }
 
-    // 股权代币地址变更事件
-    // 注意：变更后 POC 纳入状态会自动重置为"自注册"
+    /// Emitted when the equity token address is updated.
+    /// Note: this also triggers an automatic reset of poc_listing_status to REGISTERED.
     #[event]
     struct AppEquityTokenUpdatedEvent has drop, store {
         app_admin: address,
@@ -149,7 +179,7 @@ module aptos_framework::poc_registry {
         new_equity_token_address: address,
     }
 
-    // 托管地址变更事件
+    /// Emitted when the custody address is updated
     #[event]
     struct AppCustodyUpdatedEvent has drop, store {
         app_admin: address,
@@ -157,7 +187,7 @@ module aptos_framework::poc_registry {
         new_custody_address: address,
     }
 
-    // 应用自身运行状态变更事件
+    /// Emitted when the application's self-managed operational state changes
     #[event]
     struct AppStateChangedEvent has drop, store {
         app_admin: address,
@@ -165,7 +195,7 @@ module aptos_framework::poc_registry {
         new_app_state: u8,
     }
 
-    // 平台 POC 纳入状态变更事件
+    /// Emitted when the platform POC inclusion status changes
     #[event]
     struct AppPocListingStatusChangedEvent has drop, store {
         app_admin: address,
@@ -173,16 +203,16 @@ module aptos_framework::poc_registry {
         new_poc_listing_status: u8,
     }
 
-    // ========== 初始化 ==========
+    // ========== Initialization ==========
 
-    // 由 genesis 模块调用，在链创世时初始化注册中心。
-    // 仅限 friend 模块（genesis）调用。
+    /// Called by the genesis module to initialize the registry at chain genesis.
+    /// Only callable by friend modules (genesis).
     public(friend) fun initialize(aptos_framework: &signer) {
         initialize_registry(aptos_framework);
     }
 
-    // 初始化注册中心资源。
-    // 仅限 aptos_framework 地址调用，且幂等——如果已存在则跳过。
+    /// Initialize the Registry resource.
+    /// Only callable by @aptos_framework. Idempotent — skips if already initialized.
     public entry fun initialize_registry(aptos_framework: &signer) {
         system_addresses::assert_aptos_framework(aptos_framework);
         if (!exists<Registry>(@aptos_framework)) {
@@ -195,23 +225,29 @@ module aptos_framework::poc_registry {
         };
     }
 
-    // ========== 注册入口 ==========
+    // ========== Registration Entry ==========
 
-    // Dapp 独立应用注册入口。
-    //
-    // 任何地址都可以调用此函数注册为 Dapp 独立应用管理者。
-    // 注册成功后，应用默认处于"运行"状态，POC 纳入状态为"自注册"（尚未进入白名单）。
-    //
-    // 唯一性约束：
-    // - 一个管理者地址只能注册一个应用
-    // - app_address / equity_token_address / custody_address 必须全局唯一，不能与已注册应用冲突
-    //
-    // 参数：
-    // - app_admin: 管理者签名（调用者即为管理者）
-    // - app_address: 合约部署地址
-    // - equity_token_address: 股权代币地址，必须是合法的 FA Metadata 对象
-    // - custody_address: 托管地址，存放待发放的股权代币
-    // - metadata_uri: 应用官网或权威信息链接
+    /// Dapp application registration entry point.
+    ///
+    /// Any address may call this function to register as a Dapp application administrator.
+    /// After successful registration, the application defaults to ACTIVE state with
+    /// POC listing status REGISTERED (not yet whitelisted by the platform).
+    ///
+    /// Uniqueness constraints (all enforced atomically):
+    /// - One admin address can only register one application
+    /// - app_address / equity_token_address / custody_address must each be globally unique
+    ///   across all registered applications
+    ///
+    /// The equity_token_address is validated as a real Fungible Asset Metadata object
+    /// via `object::address_to_object<Metadata>` — this aborts if the address is not
+    /// a valid FA metadata object, preventing registration with fake token addresses.
+    ///
+    /// Parameters:
+    /// - app_admin: Administrator signer (the caller becomes the admin)
+    /// - app_address: Contract deployment address (the on-chain entry module address)
+    /// - equity_token_address: Equity token address; must be a valid FA Metadata object
+    /// - custody_address: Custody address holding equity tokens pending distribution
+    /// - metadata_uri: Application's official website or authoritative information link
     public entry fun register_app(
         app_admin: &signer,
         app_address: address,
@@ -268,12 +304,15 @@ module aptos_framework::poc_registry {
         });
     }
 
-    // ========== 信息变更入口 ==========
+    // ========== Update Entry Points ==========
 
-    // 更新合约部署地址。
-    // 适用场景：应用合约升级或重新部署后，需要将新的部署地址绑定到同一管理者。
-    // 新地址必须全局唯一，不能与其他已注册应用冲突。
-    // 如果新旧地址相同则直接返回（幂等）。
+    /// Update the contract deployment address.
+    ///
+    /// Use case: after a contract upgrade or redeployment, bind the new deployment address
+    /// to the same admin. The new address must be globally unique.
+    /// Idempotent: if the new address equals the current address, returns immediately.
+    ///
+    /// This does NOT reset poc_listing_status — only equity token changes trigger a reset.
     public entry fun update_app_address(
         app_admin: &signer,
         new_app_address: address,
@@ -308,11 +347,20 @@ module aptos_framework::poc_registry {
         });
     }
 
-    // 更新股权代币地址。
-    // 新地址必须是合法的 FA Metadata 对象，且全局唯一。
-    // 重要：变更股权代币地址后，POC 纳入状态会自动重置为"自注册"（REGISTERED），
-    // 需要平台重新审核后才能恢复白名单资格。
-    // 这是因为核心资产标识变了，之前的审计假设可能不再成立。
+    /// Update the equity token address.
+    ///
+    /// The new address must be a valid FA Metadata object and globally unique.
+    ///
+    /// IMPORTANT SECURITY INVARIANT: Changing the equity token address automatically resets
+    /// poc_listing_status to REGISTERED, requiring platform re-review before the app can
+    /// regain WHITELISTED status. This is intentional:
+    /// - The equity token is the core asset identifier for the application.
+    /// - Previous platform audits were conducted against the old token; a new token means
+    ///   the audit assumptions may no longer hold (different supply, different transfer hooks, etc.).
+    /// - Requiring re-review prevents an app from swapping to a malicious token while retaining
+    ///   its trusted whitelist status.
+    ///
+    /// Idempotent: if the new address equals the current address, returns immediately.
     public entry fun update_equity_token_address(
         app_admin: &signer,
         new_equity_token_address: address,
@@ -350,9 +398,13 @@ module aptos_framework::poc_registry {
         reset_poc_listing_status_if_needed(info, app_admin_address);
     }
 
-    // 更新托管地址。
-    // 新地址必须全局唯一，不能与其他已注册应用冲突。
-    // 托管地址是可信贡献发放时签名转出代币的地址，变更后应用仍可正常使用。
+    /// Update the custody address.
+    ///
+    /// The new address must be globally unique across all registered applications.
+    /// The custody address is the signer that authorizes token transfers during trusted
+    /// contribution events. Changing it does NOT reset poc_listing_status.
+    ///
+    /// Idempotent: if the new address equals the current address, returns immediately.
     public entry fun update_custody_address(
         app_admin: &signer,
         new_custody_address: address,
@@ -387,17 +439,20 @@ module aptos_framework::poc_registry {
         });
     }
 
-    // ========== 应用自身状态管理（由应用管理者自行调用） ==========
+    // ========== App Self-Managed State (called by app_admin) ==========
 
-    // 暂停应用。应用管理者主动暂停运营（如遇紧急事件）。
-    // 暂停期间无法通过可信贡献路径发放股权代币。
-    // 可通过 resume_app 恢复（前提是未进入"停运"状态）。
+    /// Pause the application. The admin voluntarily suspends operations (e.g., emergency response).
+    ///
+    /// While paused, trusted contribution events cannot be emitted via `poc_contribution`.
+    /// The application can be resumed via `resume_app` as long as it has not been permanently stopped.
     public entry fun pause_app(app_admin: &signer) acquires Registry {
         update_app_state(signer::address_of(app_admin), APP_STATE_PAUSED);
     }
 
-    // 恢复应用运行。将应用从"暂停"状态恢复为"运行"状态。
-    // 注意：如果应用已进入"停运"状态（STOPPED），则不可恢复，调用会报错。
+    /// Resume the application from PAUSED state back to ACTIVE.
+    ///
+    /// Aborts if the application is in STOPPED state — permanent stops cannot be reversed.
+    /// This guard prevents accidental resurrection of a stopped application.
     public entry fun resume_app(app_admin: &signer) acquires Registry {
         let app_admin_address = signer::address_of(app_admin);
         assert!(
@@ -407,16 +462,23 @@ module aptos_framework::poc_registry {
         update_app_state(app_admin_address, APP_STATE_ACTIVE);
     }
 
-    // 永久停运应用。此操作不可逆，停运后无法恢复为运行或暂停状态。
+    /// Permanently stop the application. This operation is irreversible.
+    ///
+    /// Once stopped, the application cannot be restored to ACTIVE or PAUSED state.
+    /// Use this only when the application is being permanently decommissioned.
     public entry fun stop_app(app_admin: &signer) acquires Registry {
         update_app_state(signer::address_of(app_admin), APP_STATE_STOPPED);
     }
 
-    // ========== 平台 POC 纳入状态管理（由链的 DAO 治理组织 / framework 管控） ==========
+    // ========== Platform POC Inclusion Status Management (controlled by @aptos_framework / DAO governance) ==========
 
-    // 设置应用的 POC 纳入状态。
-    // 仅限 aptos_framework 地址调用（当前为中心化治理入口，后续可迁移至 DAO）。
-    // 可设置为 REGISTERED / WHITELISTED / SUSPENDED 三种状态之一。
+    /// Set the POC inclusion status for an application.
+    ///
+    /// Only callable by @aptos_framework (currently centralized governance; can be migrated to DAO later).
+    /// Valid values: REGISTERED / WHITELISTED / SUSPENDED.
+    ///
+    /// This is the master setter; `whitelist_app_for_poc` and `suspend_poc_listing` are
+    /// convenience wrappers around this function.
     public entry fun set_poc_listing_status(
         aptos_framework: &signer,
         app_admin: address,
@@ -427,9 +489,11 @@ module aptos_framework::poc_registry {
         update_poc_listing_status(app_admin, new_poc_listing_status);
     }
 
-    // 挂起应用的 POC 纳入资格（如疑似作弊、待调查等）。
-    // 挂起期间应用的贡献事件不计入算力。
-    // 仅限 aptos_framework 地址调用。
+    /// Suspend an application's POC inclusion (e.g., suspected fraud, under investigation).
+    ///
+    /// While suspended, the application's contribution events are NOT counted toward POC power.
+    /// The suspension can be lifted by calling `whitelist_app_for_poc` after investigation.
+    /// Only callable by @aptos_framework.
     public entry fun suspend_poc_listing(
         aptos_framework: &signer,
         app_admin: address,
@@ -437,9 +501,11 @@ module aptos_framework::poc_registry {
         set_poc_listing_status(aptos_framework, app_admin, POC_LISTING_STATUS_SUSPENDED);
     }
 
-    // 将应用加入 POC 白名单（激活态）。
-    // 加入白名单后，应用发出的贡献事件会被链下扫描并计入算力，算力可参与投票。
-    // 仅限 aptos_framework 地址调用。
+    /// Add an application to the POC whitelist (WHITELISTED / active state).
+    ///
+    /// After whitelisting, contribution events emitted by this application are scanned
+    /// by off-chain indexers and counted toward POC power, which can participate in governance voting.
+    /// Only callable by @aptos_framework.
     public entry fun whitelist_app_for_poc(
         aptos_framework: &signer,
         app_admin: address,
@@ -447,9 +513,9 @@ module aptos_framework::poc_registry {
         set_poc_listing_status(aptos_framework, app_admin, POC_LISTING_STATUS_WHITELISTED);
     }
 
-    // ========== 查询接口（View / Resolve） ==========
+    // ========== Query Interface (View / Resolve) ==========
 
-    // 查询指定管理者地址是否已注册应用。
+    /// Check whether an application is registered under the given admin address.
     #[view]
     public fun exists_app(app_admin: address): bool acquires Registry {
         if (!exists<Registry>(@aptos_framework)) {
@@ -458,8 +524,11 @@ module aptos_framework::poc_registry {
         borrow_global<Registry>(@aptos_framework).apps.contains(app_admin)
     }
 
-    // 通过合约部署地址反查管理者地址（断言版本，未找到时报错）。
-    // 供 poc_contribution 模块在可信贡献发放路径中使用。
+    /// Reverse-lookup: get admin address from contract deployment address.
+    ///
+    /// Aborts if the registry is not initialized or the address is not registered.
+    /// Used by `poc_contribution` in the trusted contribution path to resolve
+    /// app_signer → app_admin → equity_token / custody_address.
     #[view]
     public fun get_app_admin_by_app_address(
         app_address: address,
@@ -603,9 +672,10 @@ module aptos_framework::poc_registry {
             info.poc_listing_status == POC_LISTING_STATUS_WHITELISTED
     }
 
-    // ========== 内部辅助函数 ==========
+    // ========== Internal Helpers ==========
 
-    // 从注册表中获取指定管理者的可变引用（内部使用）。
+    /// Borrow a mutable reference to an AppInfo entry by admin address (internal use only).
+    /// Aborts if the admin address is not found in the registry.
     fun borrow_app_info_mut(
         registry: &mut Registry,
         app_admin: address,
@@ -617,8 +687,8 @@ module aptos_framework::poc_registry {
         registry.apps.borrow_mut(app_admin)
     }
 
-    // 更新应用自身运行状态（内部使用）。
-    // 状态相同时幂等返回，不发事件。
+    /// Update the application's self-managed operational state (internal use only).
+    /// Idempotent: if the new state equals the current state, returns without emitting an event.
     fun update_app_state(
         app_admin: address,
         new_app_state: u8,
@@ -644,8 +714,8 @@ module aptos_framework::poc_registry {
         });
     }
 
-    // 更新平台 POC 纳入状态（内部使用）。
-    // 状态相同时幂等返回，不发事件。
+    /// Update the platform POC inclusion status (internal use only).
+    /// Idempotent: if the new status equals the current status, returns without emitting an event.
     fun update_poc_listing_status(
         app_admin: address,
         new_poc_listing_status: u8,
@@ -670,9 +740,15 @@ module aptos_framework::poc_registry {
         });
     }
 
-    // 股权代币地址变更后，自动重置 POC 纳入状态为"自注册"（内部使用）。
-    // 如果当前已经是"自注册"状态则跳过。
-    // 设计意图：核心资产标识变了，之前的审计假设可能不再成立，需要平台重新审核。
+    /// Auto-reset POC inclusion status to REGISTERED after an equity token address change (internal use only).
+    ///
+    /// Skips if the current status is already REGISTERED.
+    ///
+    /// Design intent: the equity token is the core asset identifier for the application.
+    /// When it changes, previous platform audit assumptions may no longer hold
+    /// (different supply cap, different transfer hooks, different burn mechanics, etc.).
+    /// Requiring re-review prevents an app from swapping to a malicious token while
+    /// retaining its trusted whitelist status.
     fun reset_poc_listing_status_if_needed(
         info: &mut AppInfo,
         app_admin: address,
@@ -690,7 +766,7 @@ module aptos_framework::poc_registry {
         });
     }
 
-    // 校验应用自身运行状态值是否合法（内部使用）。
+    /// Validate that an app_state value is one of the three legal constants (internal use only).
     fun assert_valid_app_state(app_state: u8) {
         assert!(
             app_state == APP_STATE_ACTIVE ||
@@ -700,7 +776,7 @@ module aptos_framework::poc_registry {
         );
     }
 
-    // 校验平台 POC 纳入状态值是否合法（内部使用）。
+    /// Validate that a poc_listing_status value is one of the three legal constants (internal use only).
     fun assert_valid_poc_listing_status(poc_listing_status: u8) {
         assert!(
             poc_listing_status == POC_LISTING_STATUS_REGISTERED ||
@@ -710,7 +786,7 @@ module aptos_framework::poc_registry {
         );
     }
 
-    // ========== 测试 ==========
+    // ========== Tests ==========
 
     #[test_only]
     use std::string;

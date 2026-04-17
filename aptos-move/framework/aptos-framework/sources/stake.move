@@ -6,6 +6,44 @@
 /// 4. Rewards and transaction fees are accounted in `staking_registry`; `stake.move` only maintains validator-set state.
 /// 5. Operators may still rotate consensus keys and network/fullnode addresses through this module.
 /// 6. Owners may switch operators through `stake::set_operator`.
+///
+/// ## Architecture Overview
+///
+/// `stake.move` is the validator-set manager for the Topo chain. It owns the canonical `ValidatorSet`
+/// resource and orchestrates the epoch transition (`on_new_epoch`). Economic accounting (deposits,
+/// rewards, fees, power) has been fully delegated to `staking_registry` and `poc_power_store`.
+///
+/// ## Separation of Concerns
+///
+/// | Concern                        | Module              |
+/// |--------------------------------|---------------------|
+/// | Validator set membership       | stake.move          |
+/// | Consensus key / network addr   | stake.move          |
+/// | Operator / owner management    | stake.move          |
+/// | Deposit escrow & delegation    | staking_registry    |
+/// | Reward & fee distribution      | staking_registry    |
+/// | POC power versioning & decay   | poc_power_store     |
+/// | Contribution event gating      | poc_contribution    |
+/// | App identity & whitelist       | poc_registry        |
+///
+/// ## Epoch Transition (`on_new_epoch`) Flow
+///
+/// 1. For each active + pending_inactive validator:
+///    a. Merge pending_active coins into active (update_stake_pool)
+///    b. Distribute transaction fees (staking_registry::distribute_transaction_fees)
+///    c. Distribute epoch rewards (staking_registry::distribute_epoch_rewards)
+/// 2. Advance the POC power period if at a boundary (poc_power_store::commit_next_period_if_boundary)
+/// 3. Force-undelegate users below the maintain threshold across all pools
+/// 4. Activate pending_active validators; deactivate pending_inactive validators
+/// 5. Recompute voting power for all active validators; drop those below minimum_stake
+/// 6. Emergency liveness fallback: if the new active set would be empty, retain the previous set
+/// 7. Reset performance counters; renew lockups; rebuild the PendingTransactionFee aggregator map
+///
+/// ## Voting Power Model
+///
+/// A validator's voting_power in ValidatorSet = staking_registry::get_validator_total_power(pool_address)
+/// = sum of effective_power for all delegators in the pool
+/// = sum of min(poc_power_i, deposit_i / octas_per_power) for each delegator i
 module aptos_framework::stake {
     use std::error;
     use std::features;
@@ -98,70 +136,104 @@ module aptos_framework::stake {
     /// Capability that represents ownership and can be used to control the validator and the associated stake pool.
     /// Having this be separate from the signer for the account that the validator resources are hosted at allows
     /// modules to have control over a validator.
+    ///
+    /// Holding this capability grants the right to:
+    /// - Change the operator address (set_operator / set_operator_with_cap)
+    /// - Extend the lockup period (increase_lockup / increase_lockup_with_cap)
+    /// - Transfer ownership to another account (extract_owner_cap / deposit_owner_cap)
     struct OwnerCapability has key, store {
         pool_address: address
     }
 
-    /// Each validator has a separate StakePool resource.
-    /// Validator power and economic balances are derived from `staking_registry`.
-    /// The local coin buckets below remain only for the residual epoch/test scaffolding in this module.
+    /// Per-validator stake pool resource, stored at the validator's address.
+    ///
+    /// NOTE: In the Topo POC redesign, actual economic balances (deposits, rewards) are managed
+    /// by `staking_registry`. The coin buckets here are retained for lockup tracking and
+    /// backward-compatible scaffolding only. They do NOT represent the validator's true stake.
+    ///
+    /// Coin lifecycle within this struct:
+    ///   pending_active → active  (at epoch boundary, via update_stake_pool)
+    ///   active → pending_inactive (when leave_validator_set is called)
+    ///   pending_inactive → inactive (at epoch boundary, if lockup has expired)
     struct StakePool has key {
-        // active stake
+        // Active stake (kept for lockup tracking; economic value is in staking_registry)
         active: Coin<TopoCoin>,
-        // inactive stake, can be withdrawn
+        // Inactive stake that can be withdrawn (post-lockup)
         inactive: Coin<TopoCoin>,
-        // pending activation for next epoch
+        // Stake pending activation in the next epoch
         pending_active: Coin<TopoCoin>,
-        // pending deactivation for next epoch
+        // Stake pending deactivation in the next epoch
         pending_inactive: Coin<TopoCoin>,
+        // Unix timestamp (seconds) until which the stake is locked.
+        // Automatically renewed for validators that remain active across epoch boundaries.
         locked_until_secs: u64,
-        // Track the current operator of the validator node.
-        // This allows the operator to be different from the original account and allow for separation of
-        // the validator operations and ownership.
-        // Only the account holding OwnerCapability of the staking pool can update this.
+        // The operator address authorized to manage consensus keys and network addresses.
+        // Separated from the owner to allow professional node operators to run validators
+        // on behalf of token holders without holding the owner's private key.
         operator_address: address
     }
 
-    /// Validator info stored in validator address.
+    /// Validator configuration stored at the validator's address.
+    /// Contains the BLS12-381 consensus public key and network addresses.
     struct ValidatorConfig has key, copy, store, drop {
         consensus_pubkey: vector<u8>,
         network_addresses: vector<u8>,
         // to make it compatible with previous definition, remove later
         fullnode_addresses: vector<u8>,
         // Index in the active set if the validator corresponding to this stake pool is active.
+        // Used to look up performance stats in ValidatorPerformance.validators[validator_index].
         validator_index: u64
     }
 
-    /// Consensus information per validator, stored in ValidatorSet.
+    /// Snapshot of a validator's identity and voting power, stored inside ValidatorSet.
+    /// Refreshed at each epoch boundary from the live ValidatorConfig and staking_registry power.
     struct ValidatorInfo has copy, store, drop {
         addr: address,
         voting_power: u64,
         config: ValidatorConfig
     }
 
-    /// Full ValidatorSet, stored in @aptos_framework.
-    /// 1. join_validator_set adds to pending_active queue.
-    /// 2. leave_valdiator_set moves from active to pending_inactive queue.
-    /// 3. on_new_epoch processes two pending queues and refresh ValidatorInfo from the owner's address.
+    /// The canonical validator set, stored at @aptos_framework.
+    ///
+    /// State machine:
+    ///   join_validator_set  → pending_active
+    ///   on_new_epoch        → pending_active becomes active (if power >= minimum_stake)
+    ///   leave_validator_set → active becomes pending_inactive
+    ///   on_new_epoch        → pending_inactive is removed (rewards distributed first)
+    ///
+    /// total_voting_power and total_joining_power are used to enforce the
+    /// voting_power_increase_limit: no single epoch can increase total power by more than
+    /// voting_power_increase_limit% of the current total, preventing sudden validator set takeovers.
     struct ValidatorSet has copy, key, drop, store {
         consensus_scheme: u8,
         // Active validators for the current epoch.
         active_validators: vector<ValidatorInfo>,
-        // Pending validators to leave in next epoch (still active).
+        // Pending validators to leave in next epoch (still active for rewards/voting).
         pending_inactive: vector<ValidatorInfo>,
         // Pending validators to join in next epoch.
         pending_active: vector<ValidatorInfo>,
-        // Current total voting power.
+        // Current total voting power (sum of all active + pending_inactive validators).
         total_voting_power: u128,
-        // Total voting power waiting to join in the next epoch.
+        // Total voting power of validators waiting to join in the next epoch.
+        // Used to enforce the per-epoch voting power increase limit.
         total_joining_power: u128
     }
 
-    /// Transaction fee that is collected in current epoch, indexed by validator_index.
+    /// Per-epoch transaction fee accumulator, indexed by validator_index.
+    ///
+    /// The VM calls `record_fee` during block execution to credit each validator's share
+    /// of transaction fees. At epoch end, `collect_transaction_fee_for_validator` drains
+    /// each entry and passes the amount to `staking_registry::distribute_transaction_fees`.
+    ///
+    /// Uses `BigOrderedMap<u64, Aggregator<u64>>` so that concurrent transactions can
+    /// increment fee counters without write conflicts (aggregators are conflict-free).
     struct PendingTransactionFee has key, store {
         pending_fee_by_validator: BigOrderedMap<u64, Aggregator<u64>>
     }
 
+    /// Optional cap on how many octas of transaction fees a single validator pool can
+    /// receive per epoch. Prevents a single high-traffic validator from accumulating
+    /// disproportionate fees relative to its staking contribution.
     enum TransactionFeeConfig has drop, key, store {
         V0 {
             max_fee_octa_allowed_per_epoch_per_pool: u64
@@ -823,6 +895,18 @@ module aptos_framework::stake {
     /// epoch starts (eligibility will be rechecked).
     ///
     /// This internal version can only be called by the Genesis module during Genesis.
+    ///
+    /// Joining checks (in order):
+    /// 1. No reconfiguration in progress
+    /// 2. Operator signature matches pool's operator_address
+    /// 3. Validator is currently INACTIVE (not already pending or active)
+    /// 4. Validator's own joining power > 0 (owner must have deposited and delegated)
+    /// 5. Total pool power >= minimum_stake and <= maximum_stake
+    /// 6. Per-epoch voting power increase limit not exceeded
+    /// 7. Consensus pubkey is non-empty
+    /// 8. Validator set size <= MAX_VALIDATOR_SET_SIZE (65536)
+    ///
+    /// On success: validator is added to pending_active and staking_registry status is set to PENDING_ACTIVE.
     public(friend) fun join_validator_set_internal(
         operator: &signer, pool_address: address
     ) acquires StakePool, ValidatorConfig, ValidatorSet {
@@ -1006,14 +1090,46 @@ module aptos_framework::stake {
 
     /// Triggered during a reconfiguration. This function shouldn't abort.
     ///
-    /// 1. Distribute transaction fees and rewards to stake pools of active and pending inactive validators (requested
-    /// to leave but not yet removed).
-    /// 2. Officially move pending active stake to active and move pending inactive stake to inactive.
-    /// The staking pool's voting power in this new epoch will be updated to the total active stake.
-    /// 3. Add pending active validators to the active set if they satisfy requirements so they can vote and remove
-    /// pending inactive validators so they no longer can vote.
-    /// 4. The validator's voting power in the validator set is updated to be the corresponding staking pool's voting
-    /// power.
+    /// Full epoch transition sequence:
+    ///
+    /// Phase 1 — Reward & fee distribution (active + pending_inactive validators):
+    ///   For each validator:
+    ///   a. update_stake_pool: merge pending_active coins into active; unlock pending_inactive if lockup expired
+    ///   b. collect_transaction_fee_for_validator: drain the fee aggregator for this validator index
+    ///   c. staking_registry::distribute_transaction_fees: split fees among delegators by power share
+    ///   d. staking_registry::distribute_epoch_rewards: mint and distribute staking rewards
+    ///
+    /// Phase 2 — POC power period advancement:
+    ///   poc_power_store::commit_next_period_if_boundary: if this epoch crosses a period boundary,
+    ///   advance current_period so staged power versions become effective.
+    ///
+    /// Phase 3 — Force-undelegate below-threshold users:
+    ///   For every pool (active, pending_inactive, pending_active):
+    ///   staking_registry::force_undelegate_below_threshold: eject delegators whose effective power
+    ///   has dropped below the maintain threshold (due to POC power decay or deposit withdrawal).
+    ///
+    /// Phase 4 — Validator set state transitions:
+    ///   - pending_active validators → ACTIVE in staking_registry
+    ///   - pending_inactive validators → INACTIVE in staking_registry
+    ///   - Merge pending_active into active_validators; clear pending_inactive
+    ///
+    /// Phase 5 — Recompute active set for next epoch:
+    ///   For each candidate in active_validators:
+    ///   - Recompute voting_power from staking_registry (reflects rewards just distributed)
+    ///   - Keep if voting_power >= minimum_stake; otherwise drop (set INACTIVE)
+    ///
+    /// Phase 6 — Emergency liveness fallback:
+    ///   If the resulting active set is empty (no validator meets minimum_stake),
+    ///   retain the previous active set to keep the chain alive.
+    ///   Emit ValidatorSetLivenessFallback event to signal the critical condition.
+    ///
+    /// Phase 7 — Housekeeping:
+    ///   - Reset total_joining_power to 0
+    ///   - Update total_staked_power in staking_registry
+    ///   - Reassign validator indices; reset performance counters
+    ///   - Renew lockups for validators remaining in the active set
+    ///   - Rebuild PendingTransactionFee aggregator map for the new active set
+    ///   - Optionally update rewards rate (periodical_reward_rate_decrease feature)
     public(friend) fun on_new_epoch() acquires PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet {
         let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
         let config = staking_config::get();
@@ -1717,13 +1833,17 @@ module aptos_framework::stake {
         })
     }
 
-    /// Calculate the stake amount of a stake pool for the next epoch.
-    /// Update individual validator's stake pool if `commit == true`.
+    /// Advance the coin buckets in a StakePool at epoch boundary.
     ///
-    /// 1. distribute transaction fees to active/pending_inactive delegations
-    /// 2. distribute rewards to active/pending_inactive delegations
-    /// 3. process pending_active, pending_inactive correspondingly
-    /// This function shouldn't abort.
+    /// This function handles the coin-level state transitions within the StakePool struct.
+    /// Note: actual economic rewards are handled by staking_registry, not here.
+    ///
+    /// Transitions:
+    /// - pending_active → active (always, at every epoch boundary)
+    /// - pending_inactive → inactive (only if locked_until_secs <= reconfig_start_time)
+    ///   If the lockup has not yet expired, pending_inactive coins remain locked for another epoch.
+    ///
+    /// This function should not abort; it is called inside on_new_epoch which must complete.
     fun update_stake_pool(
         validator_perf: &ValidatorPerformance,
         pool_address: address,
@@ -1785,7 +1905,16 @@ module aptos_framework::stake {
         }
     }
 
-    /// Calculate the rewards amount.
+    /// Calculate the rewards amount for a stake pool based on performance and rate.
+    ///
+    /// Formula: reward = stake_amount * rewards_rate * num_successful_proposals
+    ///                   / (rewards_rate_denominator * num_total_proposals)
+    ///
+    /// The performance multiplier (num_successful / num_total) penalizes validators that
+    /// miss proposals. A validator that proposes 90% of its assigned slots earns 90% of
+    /// the maximum reward for its stake weight.
+    ///
+    /// All arithmetic uses u128 to avoid overflow before the final division.
     fun calculate_rewards_amount(
         stake_amount: u64,
         num_successful_proposals: u64,
