@@ -674,15 +674,6 @@ pub enum EntryFunctionCall {
         new_operator: AccountAddress,
     },
 
-    /// Update the power-period length used to advance `current_period`.
-    ///
-    /// This is a framework-governed operational parameter. Production deployments can
-    /// keep the default long period, while tests can shorten it to make staged power
-    /// updates become live after fewer epoch transitions.
-    PocPowerStoreSetPowerPeriodInEpochs {
-        power_period_in_epochs: u64,
-    },
-
     PocPowerStoreSetRetentionBpsPerPeriod {
         retention_bps_per_period: u64,
     },
@@ -1116,19 +1107,6 @@ pub enum EntryFunctionCall {
     /// since such updates are applied whenever we enter an new epoch.
     TopoGovernanceReconfigure {},
 
-    /// Test-only wrapper that lets `@core_resources` shorten the power period
-    /// without compiling an auxiliary Move script in smoke tests.
-    TopoGovernanceSetPowerPeriodInEpochsTestOnly {
-        power_period_in_epochs: u64,
-    },
-
-    /// Test-only wrapper that stages a single user power update for the next
-    /// period using the framework signer delegated to `@core_resources`.
-    TopoGovernanceStagePowerUpdateTestOnly {
-        user: AccountAddress,
-        power: u64,
-    },
-
     /// Vote on proposal with `proposal_id` and all voting power from the caller.
     TopoGovernanceVote {
         proposal_id: u64,
@@ -1518,9 +1496,6 @@ impl EntryFunctionCall {
                 poc_power_store_set_genesis_committed_power(user, power)
             },
             PocPowerStoreSetOperator { new_operator } => poc_power_store_set_operator(new_operator),
-            PocPowerStoreSetPowerPeriodInEpochs {
-                power_period_in_epochs,
-            } => poc_power_store_set_power_period_in_epochs(power_period_in_epochs),
             PocPowerStoreSetRetentionBpsPerPeriod {
                 retention_bps_per_period,
             } => poc_power_store_set_retention_bps_per_period(retention_bps_per_period),
@@ -1698,12 +1673,6 @@ impl EntryFunctionCall {
                 should_pass,
             } => topo_governance_partial_vote(proposal_id, voting_power, should_pass),
             TopoGovernanceReconfigure {} => topo_governance_reconfigure(),
-            TopoGovernanceSetPowerPeriodInEpochsTestOnly {
-                power_period_in_epochs,
-            } => topo_governance_set_power_period_in_epochs_test_only(power_period_in_epochs),
-            TopoGovernanceStagePowerUpdateTestOnly { user, power } => {
-                topo_governance_stage_power_update_test_only(user, power)
-            },
             TopoGovernanceVote {
                 proposal_id,
                 should_pass,
@@ -3392,28 +3361,6 @@ pub fn poc_power_store_set_operator(new_operator: AccountAddress) -> Transaction
     ))
 }
 
-/// Update the power-period length used to advance `current_period`.
-///
-/// This is a framework-governed operational parameter. Production deployments can
-/// keep the default long period, while tests can shorten it to make staged power
-/// updates become live after fewer epoch transitions.
-pub fn poc_power_store_set_power_period_in_epochs(
-    power_period_in_epochs: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("poc_power_store").to_owned(),
-        ),
-        ident_str!("set_power_period_in_epochs").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&power_period_in_epochs).unwrap()],
-    ))
-}
-
 pub fn poc_power_store_set_retention_bps_per_period(
     retention_bps_per_period: u64,
 ) -> TransactionPayload {
@@ -4536,48 +4483,6 @@ pub fn topo_governance_reconfigure() -> TransactionPayload {
     ))
 }
 
-/// Test-only wrapper that lets `@core_resources` shorten the power period
-/// without compiling an auxiliary Move script in smoke tests.
-pub fn topo_governance_set_power_period_in_epochs_test_only(
-    power_period_in_epochs: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("topo_governance").to_owned(),
-        ),
-        ident_str!("set_power_period_in_epochs_test_only").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&power_period_in_epochs).unwrap()],
-    ))
-}
-
-/// Test-only wrapper that stages a single user power update for the next
-/// period using the framework signer delegated to `@core_resources`.
-pub fn topo_governance_stage_power_update_test_only(
-    user: AccountAddress,
-    power: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("topo_governance").to_owned(),
-        ),
-        ident_str!("stage_power_update_test_only").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&user).unwrap(),
-            bcs::to_bytes(&power).unwrap(),
-        ],
-    ))
-}
-
 /// Vote on proposal with `proposal_id` and all voting power from the caller.
 pub fn topo_governance_vote(proposal_id: u64, should_pass: bool) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -5564,18 +5469,6 @@ mod decoder {
         }
     }
 
-    pub fn poc_power_store_set_power_period_in_epochs(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::PocPowerStoreSetPowerPeriodInEpochs {
-                power_period_in_epochs: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn poc_power_store_set_retention_bps_per_period(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -6164,33 +6057,6 @@ mod decoder {
         }
     }
 
-    pub fn topo_governance_set_power_period_in_epochs_test_only(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(
-                EntryFunctionCall::TopoGovernanceSetPowerPeriodInEpochsTestOnly {
-                    power_period_in_epochs: bcs::from_bytes(script.args().get(0)?).ok()?,
-                },
-            )
-        } else {
-            None
-        }
-    }
-
-    pub fn topo_governance_stage_power_update_test_only(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::TopoGovernanceStagePowerUpdateTestOnly {
-                user: bcs::from_bytes(script.args().get(0)?).ok()?,
-                power: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn topo_governance_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::TopoGovernanceVote {
@@ -6524,10 +6390,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::poc_power_store_set_operator),
         );
         map.insert(
-            "poc_power_store_set_power_period_in_epochs".to_string(),
-            Box::new(decoder::poc_power_store_set_power_period_in_epochs),
-        );
-        map.insert(
             "poc_power_store_set_retention_bps_per_period".to_string(),
             Box::new(decoder::poc_power_store_set_retention_bps_per_period),
         );
@@ -6730,14 +6592,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "topo_governance_reconfigure".to_string(),
             Box::new(decoder::topo_governance_reconfigure),
-        );
-        map.insert(
-            "topo_governance_set_power_period_in_epochs_test_only".to_string(),
-            Box::new(decoder::topo_governance_set_power_period_in_epochs_test_only),
-        );
-        map.insert(
-            "topo_governance_stage_power_update_test_only".to_string(),
-            Box::new(decoder::topo_governance_stage_power_update_test_only),
         );
         map.insert(
             "topo_governance_vote".to_string(),
