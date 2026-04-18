@@ -385,7 +385,6 @@ impl CliCommand<ProposalSubmissionSummary> for SubmitProposal {
             self.args
                 .txn_options
                 .submit_transaction(aptos_stdlib::topo_governance_create_proposal_v2(
-                    self.pool_address_args.pool_address,
                     script_hash.to_vec(),
                     self.args.metadata_url.to_string().as_bytes().to_vec(),
                     metadata_hash.to_hex().as_bytes().to_vec(),
@@ -396,7 +395,6 @@ impl CliCommand<ProposalSubmissionSummary> for SubmitProposal {
             self.args
                 .txn_options
                 .submit_transaction(aptos_stdlib::topo_governance_create_proposal(
-                    self.pool_address_args.pool_address,
                     script_hash.to_vec(),
                     self.args.metadata_url.to_string().as_bytes().to_vec(),
                     metadata_hash.to_hex().as_bytes().to_vec(),
@@ -535,8 +533,7 @@ impl SubmitVote {
                 CORE_CODE_ADDRESS,
                 "0x1::topo_governance::VotingRecords",
             )
-            .await
-            .unwrap()
+            .await?
             .into_inner()
             .votes;
 
@@ -583,7 +580,6 @@ impl SubmitVote {
                 self.args
                     .txn_options
                     .submit_transaction(aptos_stdlib::topo_governance_vote(
-                    *pool_address,
                     proposal_id,
                     vote,
                 ))
@@ -678,7 +674,6 @@ impl SubmitVote {
                 self.args
                     .txn_options
                     .submit_transaction(aptos_stdlib::topo_governance_partial_vote(
-                    *pool_address,
                     proposal_id,
                     voting_power,
                     vote,

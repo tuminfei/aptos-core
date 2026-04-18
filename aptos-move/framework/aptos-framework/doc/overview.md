@@ -32,7 +32,6 @@ This is the reference documentation of the Aptos framework.
 -  [`0x1::consensus_config`](consensus_config.md#0x1_consensus_config)
 -  [`0x1::create_signer`](create_signer.md#0x1_create_signer)
 -  [`0x1::decryption`](decryption.md#0x1_decryption)
--  [`0x1::delegation_pool`](delegation_pool.md#0x1_delegation_pool)
 -  [`0x1::dispatchable_fungible_asset`](dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset)
 -  [`0x1::dkg`](dkg.md#0x1_dkg)
 -  [`0x1::ethereum_derivable_account`](ethereum_derivable_account.md#0x1_ethereum_derivable_account)
@@ -72,8 +71,8 @@ This is the reference documentation of the Aptos framework.
 -  [`0x1::solana_derivable_account`](solana_derivable_account.md#0x1_solana_derivable_account)
 -  [`0x1::stake`](stake.md#0x1_stake)
 -  [`0x1::staking_config`](staking_config.md#0x1_staking_config)
--  [`0x1::staking_contract`](staking_contract.md#0x1_staking_contract)
 -  [`0x1::staking_proxy`](staking_proxy.md#0x1_staking_proxy)
+-  [`0x1::staking_registry`](staking_registry.md#0x1_staking_registry)
 -  [`0x1::state_storage`](state_storage.md#0x1_state_storage)
 -  [`0x1::storage_gas`](storage_gas.md#0x1_storage_gas)
 -  [`0x1::sui_derivable_account`](sui_derivable_account.md#0x1_sui_derivable_account)
@@ -88,7 +87,6 @@ This is the reference documentation of the Aptos framework.
 -  [`0x1::util`](util.md#0x1_util)
 -  [`0x1::validator_consensus_info`](validator_consensus_info.md#0x1_validator_consensus_info)
 -  [`0x1::version`](version.md#0x1_version)
--  [`0x1::vesting`](vesting.md#0x1_vesting)
 -  [`0x1::voting`](voting.md#0x1_voting)
 
 

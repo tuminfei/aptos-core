@@ -55,39 +55,11 @@ impl CliCommand<ProposalSubmissionSummary> for SubmitProposal {
     }
 
     async fn execute(mut self) -> CliTypedResult<ProposalSubmissionSummary> {
-        let mut summaries = vec![];
-        if let Some(txn_summary) = delegation_pool_governance_precheck(
-            &self.args.txn_options,
-            self.delegation_pool_address,
-        )
-        .await?
-        {
-            summaries.push(txn_summary);
-        };
-        // Validate the proposal metadata
-        let (script_hash, metadata_hash) = self.args.compile_proposals().await?;
-        prompt_yes_with_override(
-            "Do you want to submit this proposal?",
-            self.args.txn_options.prompt_options,
-        )?;
-
-        let txn: Transaction = self
-            .args
-            .txn_options
-            .submit_transaction(aptos_stdlib::delegation_pool_create_proposal(
-                self.delegation_pool_address,
-                script_hash.to_vec(),
-                self.args.metadata_url.to_string().as_bytes().to_vec(),
-                metadata_hash.to_hex().as_bytes().to_vec(),
-                self.args.is_multi_step,
-            ))
-            .await?;
-        let proposal_id = extract_proposal_id(&txn)?;
-        summaries.push(TransactionSummary::from(&txn));
-        Ok(ProposalSubmissionSummary {
-            proposal_id,
-            txn_summaries: summaries,
-        })
+        let _ = (&self.args, self.delegation_pool_address);
+        Err(CliError::UnexpectedError(
+            "Delegation pool governance is not supported under the current POC framework"
+                .to_string(),
+        ))
     }
 }
 
@@ -113,62 +85,11 @@ impl CliCommand<Vec<TransactionSummary>> for SubmitVote {
     }
 
     async fn execute(mut self) -> CliTypedResult<Vec<TransactionSummary>> {
-        // The vote option is a group, so only one of yes and no must be true.
-        let vote = self.args.yes;
-        let mut summaries: Vec<TransactionSummary> = vec![];
-        if let Some(txn_summary) = delegation_pool_governance_precheck(
-            &self.args.txn_options,
-            self.delegation_pool_address,
-        )
-        .await?
-        {
-            summaries.push(txn_summary);
-        };
-
-        let client = &self
-            .args
-            .txn_options
-            .rest_options
-            .client(&self.args.txn_options.profile_options)?;
-        let voter_address = self.args.txn_options.profile_options.account_address()?;
-        let remaining_voting_power = get_remaining_voting_power(
-            client,
-            self.delegation_pool_address,
-            voter_address,
-            self.args.proposal_id,
-        )
-        .await?;
-        if remaining_voting_power == 0 {
-            return Err(CliError::CommandArgumentError(
-                "Voter has no voting power left on this proposal".to_string(),
-            ));
-        };
-        let voting_power =
-            check_remaining_voting_power(remaining_voting_power, self.args.voting_power);
-        prompt_yes_with_override(
-            &format!(
-                "Vote {} with voting power = {} from stake pool {} on proposal {}?",
-                vote_to_string(vote),
-                voting_power,
-                self.delegation_pool_address,
-                self.args.proposal_id,
-            ),
-            self.args.txn_options.prompt_options,
-        )?;
-        summaries.push(
-            self.args
-                .txn_options
-                .submit_transaction(aptos_stdlib::delegation_pool_vote(
-                    self.delegation_pool_address,
-                    self.args.proposal_id,
-                    voting_power,
-                    vote,
-                ))
-                .await
-                .map(TransactionSummary::from)?,
-        );
-
-        Ok(summaries)
+        let _ = (&self.args, self.delegation_pool_address);
+        Err(CliError::UnexpectedError(
+            "Delegation pool governance is not supported under the current POC framework"
+                .to_string(),
+        ))
     }
 }
 
@@ -179,32 +100,11 @@ async fn delegation_pool_governance_precheck(
     txn_options: &TransactionOptions,
     pool_address: AccountAddress,
 ) -> CliTypedResult<Option<TransactionSummary>> {
-    let client = &txn_options
-        .rest_options
-        .client(&txn_options.profile_options)?;
-    if !is_partial_governance_voting_enabled(client).await? {
-        return Err(CliError::CommandArgumentError(
-            "Partial governance voting feature flag is not enabled".to_string(),
-        ));
-    };
-    if !is_delegation_pool_partial_governance_voting_enabled(client).await? {
-        return Err(CliError::CommandArgumentError(
-            "Delegation pool partial governance voting feature flag is not enabled".to_string(),
-        ));
-    };
-    if is_partial_governance_voting_enabled_for_delegation_pool(client, pool_address).await? {
-        Ok(None)
-    } else {
-        println!("Partial governance voting for delegation pool {} hasn't been enabled yet. Enabling it now...",
-                 pool_address);
-        let txn_summary = txn_options
-            .submit_transaction(
-                aptos_stdlib::delegation_pool_enable_partial_governance_voting(pool_address),
-            )
-            .await
-            .map(TransactionSummary::from)?;
-        Ok(Some(txn_summary))
-    }
+    let _ = (txn_options, pool_address);
+    Err(CliError::UnexpectedError(
+        "Delegation pool governance is not supported under the current POC framework"
+            .to_string(),
+    ))
 }
 
 async fn is_partial_governance_voting_enabled_for_delegation_pool(

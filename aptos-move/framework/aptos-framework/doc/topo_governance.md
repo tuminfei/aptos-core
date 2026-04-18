@@ -5,8 +5,7 @@
 
 
 TopoGovernance represents the on-chain governance of the Aptos network. Voting power is calculated based on the
-current epoch's voting power of the proposer or voter's backing stake pool. In addition, for it to count,
-the stake pool's lockup needs to be at least as long as the proposal's duration.
+current effective power of the proposer or voter in <code><a href="staking_registry.md#0x1_staking_registry">staking_registry</a></code>.
 
 It provides the following flow:
 1. Proposers can create a proposal by calling TopoGovernance::create_proposal. The proposer's backing stake pool
@@ -38,6 +37,7 @@ on a proposal multiple times as long as the total voting power of these votes do
 -  [Function `update_governance_config`](#0x1_topo_governance_update_governance_config)
 -  [Function `initialize_partial_voting`](#0x1_topo_governance_initialize_partial_voting)
 -  [Function `get_voting_duration_secs`](#0x1_topo_governance_get_voting_duration_secs)
+-  [Function `has_governance_config`](#0x1_topo_governance_has_governance_config)
 -  [Function `get_min_voting_threshold`](#0x1_topo_governance_get_min_voting_threshold)
 -  [Function `get_required_proposer_stake`](#0x1_topo_governance_get_required_proposer_stake)
 -  [Function `has_entirely_voted`](#0x1_topo_governance_has_entirely_voted)
@@ -47,9 +47,6 @@ on a proposal multiple times as long as the total voting power of these votes do
 -  [Function `is_proposal_expired`](#0x1_topo_governance_is_proposal_expired)
 -  [Function `create_proposal`](#0x1_topo_governance_create_proposal)
 -  [Function `create_proposal_v2`](#0x1_topo_governance_create_proposal_v2)
--  [Function `create_proposal_v2_impl`](#0x1_topo_governance_create_proposal_v2_impl)
--  [Function `batch_vote`](#0x1_topo_governance_batch_vote)
--  [Function `batch_partial_vote`](#0x1_topo_governance_batch_partial_vote)
 -  [Function `vote`](#0x1_topo_governance_vote)
 -  [Function `partial_vote`](#0x1_topo_governance_partial_vote)
 -  [Function `vote_internal`](#0x1_topo_governance_vote_internal)
@@ -63,7 +60,6 @@ on a proposal multiple times as long as the total voting power of these votes do
 -  [Function `force_end_epoch_test_only`](#0x1_topo_governance_force_end_epoch_test_only)
 -  [Function `toggle_features`](#0x1_topo_governance_toggle_features)
 -  [Function `get_signer_testnet_only`](#0x1_topo_governance_get_signer_testnet_only)
--  [Function `get_voting_power`](#0x1_topo_governance_get_voting_power)
 -  [Function `get_signer`](#0x1_topo_governance_get_signer)
 -  [Function `create_proposal_metadata`](#0x1_topo_governance_create_proposal_metadata)
 -  [Function `assert_voting_initialization`](#0x1_topo_governance_assert_voting_initialization)
@@ -82,9 +78,6 @@ on a proposal multiple times as long as the total voting power of these votes do
     -  [Function `assert_proposal_expiration`](#@Specification_1_assert_proposal_expiration)
     -  [Function `create_proposal`](#@Specification_1_create_proposal)
     -  [Function `create_proposal_v2`](#@Specification_1_create_proposal_v2)
-    -  [Function `create_proposal_v2_impl`](#@Specification_1_create_proposal_v2_impl)
-    -  [Function `batch_vote`](#@Specification_1_batch_vote)
-    -  [Function `batch_partial_vote`](#@Specification_1_batch_partial_vote)
     -  [Function `vote`](#@Specification_1_vote)
     -  [Function `partial_vote`](#@Specification_1_partial_vote)
     -  [Function `vote_internal`](#@Specification_1_vote_internal)
@@ -98,7 +91,6 @@ on a proposal multiple times as long as the total voting power of these votes do
     -  [Function `force_end_epoch_test_only`](#@Specification_1_force_end_epoch_test_only)
     -  [Function `toggle_features`](#@Specification_1_toggle_features)
     -  [Function `get_signer_testnet_only`](#@Specification_1_get_signer_testnet_only)
-    -  [Function `get_voting_power`](#@Specification_1_get_voting_power)
     -  [Function `get_signer`](#@Specification_1_get_signer)
     -  [Function `create_proposal_metadata`](#@Specification_1_create_proposal_metadata)
     -  [Function `assert_voting_initialization`](#@Specification_1_assert_voting_initialization)
@@ -106,14 +98,11 @@ on a proposal multiple times as long as the total voting power of these votes do
 
 <pre><code><b>use</b> <a href="account.md#0x1_account">0x1::account</a>;
 <b>use</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config">0x1::chunky_dkg_config</a>;
-<b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
 <b>use</b> <a href="consensus_config.md#0x1_consensus_config">0x1::consensus_config</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">0x1::error</a>;
 <b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features">0x1::features</a>;
-<b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
 <b>use</b> <a href="governance_proposal.md#0x1_governance_proposal">0x1::governance_proposal</a>;
-<b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="permissioned_signer.md#0x1_permissioned_signer">0x1::permissioned_signer</a>;
 <b>use</b> <a href="randomness_config.md#0x1_randomness_config">0x1::randomness_config</a>;
@@ -122,13 +111,12 @@ on a proposal multiple times as long as the total voting power of these votes do
 <b>use</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map">0x1::simple_map</a>;
 <b>use</b> <a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table">0x1::smart_table</a>;
 <b>use</b> <a href="stake.md#0x1_stake">0x1::stake</a>;
-<b>use</b> <a href="staking_config.md#0x1_staking_config">0x1::staking_config</a>;
+<b>use</b> <a href="staking_registry.md#0x1_staking_registry">0x1::staking_registry</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
 <b>use</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
 <b>use</b> <a href="timestamp.md#0x1_timestamp">0x1::timestamp</a>;
 <b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 <b>use</b> <a href="voting.md#0x1_voting">0x1::voting</a>;
 </code></pre>
 
@@ -220,7 +208,7 @@ by this TopoGovernance module.
 
 <dl>
 <dt>
-<code>stake_pool: <b>address</b></code>
+<code>voter: <b>address</b></code>
 </dt>
 <dd>
 
@@ -385,12 +373,6 @@ Event emitted when a proposal is created.
 
 </dd>
 <dt>
-<code>stake_pool: <b>address</b></code>
-</dt>
-<dd>
-
-</dd>
-<dt>
 <code>proposal_id: u64</code>
 </dt>
 <dd>
@@ -438,12 +420,6 @@ Event emitted when there's a vote on a proposa;
 </dd>
 <dt>
 <code>voter: <b>address</b></code>
-</dt>
-<dd>
-
-</dd>
-<dt>
-<code>stake_pool: <b>address</b></code>
 </dt>
 <dd>
 
@@ -530,12 +506,6 @@ Event emitted when a proposal is created.
 
 </dd>
 <dt>
-<code>stake_pool: <b>address</b></code>
-</dt>
-<dd>
-
-</dd>
-<dt>
 <code>proposal_id: u64</code>
 </dt>
 <dd>
@@ -584,12 +554,6 @@ Event emitted when there's a vote on a proposa;
 </dd>
 <dt>
 <code>voter: <b>address</b></code>
-</dt>
-<dd>
-
-</dd>
-<dt>
-<code>stake_pool: <b>address</b></code>
 </dt>
 <dd>
 
@@ -703,32 +667,12 @@ This matches the same enum const in voting. We have to duplicate it as Move does
 
 
 
-<a id="0x1_topo_governance_EALREADY_VOTED"></a>
-
-The specified stake pool has already been used to vote on the same proposal
-
-
-<pre><code><b>const</b> <a href="topo_governance.md#0x1_topo_governance_EALREADY_VOTED">EALREADY_VOTED</a>: u64 = 4;
-</code></pre>
-
-
-
 <a id="0x1_topo_governance_EINSUFFICIENT_PROPOSER_STAKE"></a>
 
 The specified stake pool does not have sufficient stake to create a proposal
 
 
 <pre><code><b>const</b> <a href="topo_governance.md#0x1_topo_governance_EINSUFFICIENT_PROPOSER_STAKE">EINSUFFICIENT_PROPOSER_STAKE</a>: u64 = 1;
-</code></pre>
-
-
-
-<a id="0x1_topo_governance_EINSUFFICIENT_STAKE_LOCKUP"></a>
-
-The specified stake pool does not have long enough remaining lockup to create a proposal or vote
-
-
-<pre><code><b>const</b> <a href="topo_governance.md#0x1_topo_governance_EINSUFFICIENT_STAKE_LOCKUP">EINSUFFICIENT_STAKE_LOCKUP</a>: u64 = 3;
 </code></pre>
 
 
@@ -749,16 +693,6 @@ Metadata location cannot be longer than 256 chars
 
 
 <pre><code><b>const</b> <a href="topo_governance.md#0x1_topo_governance_EMETADATA_LOCATION_TOO_LONG">EMETADATA_LOCATION_TOO_LONG</a>: u64 = 9;
-</code></pre>
-
-
-
-<a id="0x1_topo_governance_ENOT_DELEGATED_VOTER"></a>
-
-This account is not the designated voter of the specified stake pool
-
-
-<pre><code><b>const</b> <a href="topo_governance.md#0x1_topo_governance_ENOT_DELEGATED_VOTER">ENOT_DELEGATED_VOTER</a>: u64 = 2;
 </code></pre>
 
 
@@ -1046,6 +980,7 @@ TopoGovernance.
     governance_config.voting_duration_secs = voting_duration_secs;
     governance_config.min_voting_threshold = min_voting_threshold;
     governance_config.required_proposer_stake = required_proposer_stake;
+    <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">staking_registry::ensure_min_cooldown_secs</a>(aptos_framework, voting_duration_secs);
 
     <a href="event.md#0x1_event_emit">event::emit</a>(
         <a href="topo_governance.md#0x1_topo_governance_UpdateConfig">UpdateConfig</a> {
@@ -1118,6 +1053,31 @@ proposals with a signer for the aptos_framework (0x1) account.
 
 </details>
 
+<a id="0x1_topo_governance_has_governance_config"></a>
+
+## Function `has_governance_config`
+
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_has_governance_config">has_governance_config</a>(): bool
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_has_governance_config">has_governance_config</a>(): bool {
+    <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework)
+}
+</code></pre>
+
+
+
+</details>
+
 <a id="0x1_topo_governance_get_min_voting_threshold"></a>
 
 ## Function `get_min_voting_threshold`
@@ -1176,7 +1136,7 @@ Return true if a stake pool has already voted on a proposal before partial gover
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_has_entirely_voted">has_entirely_voted</a>(stake_pool: <b>address</b>, proposal_id: u64): bool
+<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_has_entirely_voted">has_entirely_voted</a>(voter: <b>address</b>, proposal_id: u64): bool
 </code></pre>
 
 
@@ -1185,9 +1145,9 @@ Return true if a stake pool has already voted on a proposal before partial gover
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_has_entirely_voted">has_entirely_voted</a>(stake_pool: <b>address</b>, proposal_id: u64): bool <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a> {
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_has_entirely_voted">has_entirely_voted</a>(voter: <b>address</b>, proposal_id: u64): bool <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a> {
     <b>let</b> record_key = <a href="topo_governance.md#0x1_topo_governance_RecordKey">RecordKey</a> {
-        stake_pool,
+        voter,
         proposal_id,
     };
     // If a <a href="stake.md#0x1_stake">stake</a> pool <b>has</b> already voted on a proposal before partial governance <a href="voting.md#0x1_voting">voting</a> is enabled,
@@ -1210,7 +1170,7 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_remaining_voting_power">get_remaining_voting_power</a>(stake_pool: <b>address</b>, proposal_id: u64): u64
+<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_remaining_voting_power">get_remaining_voting_power</a>(voter: <b>address</b>, proposal_id: u64): u64
 </code></pre>
 
 
@@ -1220,7 +1180,7 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_remaining_voting_power">get_remaining_voting_power</a>(
-    stake_pool: <b>address</b>,
+    voter: <b>address</b>,
     proposal_id: u64
 ): u64 <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a> {
     <a href="topo_governance.md#0x1_topo_governance_assert_voting_initialization">assert_voting_initialization</a>();
@@ -1229,24 +1189,27 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
         @aptos_framework,
         proposal_id
     );
-    // The voter's <a href="stake.md#0x1_stake">stake</a> needs <b>to</b> be locked up at least <b>as</b> long <b>as</b> the proposal's expiration.
-    // Also no one can vote on a expired proposal.
-    <b>if</b> (!<a href="topo_governance.md#0x1_topo_governance_stake_pool_is_eligible_to_vote">stake_pool_is_eligible_to_vote</a>(stake_pool, proposal_expiration)
-        || <a href="topo_governance.md#0x1_topo_governance_is_proposal_expired">is_proposal_expired</a>(proposal_expiration)) {
+    <b>if</b> (<a href="topo_governance.md#0x1_topo_governance_is_proposal_expired">is_proposal_expired</a>(proposal_expiration)) {
         <b>return</b> 0
     };
-
-    // If a <a href="stake.md#0x1_stake">stake</a> pool <b>has</b> already voted on a proposal before partial governance <a href="voting.md#0x1_voting">voting</a> is enabled, the <a href="stake.md#0x1_stake">stake</a> pool
-    // cannot vote on the proposal even after partial governance <a href="voting.md#0x1_voting">voting</a> is enabled.
-    <b>if</b> (<a href="topo_governance.md#0x1_topo_governance_has_entirely_voted">has_entirely_voted</a>(stake_pool, proposal_id)) {
+    <b>if</b> (<a href="topo_governance.md#0x1_topo_governance_has_entirely_voted">has_entirely_voted</a>(voter, proposal_id)) {
+        <b>return</b> 0
+    };
+    <b>let</b> total_voting_power = <a href="staking_registry.md#0x1_staking_registry_get_effective_power">staking_registry::get_effective_power</a>(voter);
+    <b>if</b> (total_voting_power == 0) {
         <b>return</b> 0
     };
     <b>let</b> record_key = <a href="topo_governance.md#0x1_topo_governance_RecordKey">RecordKey</a> {
-        stake_pool,
+        voter,
         proposal_id,
     };
-    <b>let</b> used_voting_power = *<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>[@aptos_framework].votes.borrow_with_default(record_key, &0);
-    <a href="topo_governance.md#0x1_topo_governance_get_voting_power">get_voting_power</a>(stake_pool) - used_voting_power
+    <b>let</b> used_voting_power =
+        *<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>[@aptos_framework].votes.borrow_with_default(record_key, &0);
+    <b>if</b> (used_voting_power &gt;= total_voting_power) {
+        0
+    } <b>else</b> {
+        total_voting_power - used_voting_power
+    }
 }
 </code></pre>
 
@@ -1260,7 +1223,7 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_assert_proposal_expiration">assert_proposal_expiration</a>(stake_pool: <b>address</b>, proposal_id: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_assert_proposal_expiration">assert_proposal_expiration</a>(voter: <b>address</b>, proposal_id: u64)
 </code></pre>
 
 
@@ -1269,16 +1232,15 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_assert_proposal_expiration">assert_proposal_expiration</a>(stake_pool: <b>address</b>, proposal_id: u64) {
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_assert_proposal_expiration">assert_proposal_expiration</a>(voter: <b>address</b>, proposal_id: u64) {
     <a href="topo_governance.md#0x1_topo_governance_assert_voting_initialization">assert_voting_initialization</a>();
     <b>let</b> proposal_expiration = <a href="voting.md#0x1_voting_get_proposal_expiration_secs">voting::get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(
         @aptos_framework,
         proposal_id
     );
-    // The voter's <a href="stake.md#0x1_stake">stake</a> needs <b>to</b> be locked up at least <b>as</b> long <b>as</b> the proposal's expiration.
     <b>assert</b>!(
-        <a href="topo_governance.md#0x1_topo_governance_stake_pool_is_eligible_to_vote">stake_pool_is_eligible_to_vote</a>(stake_pool, proposal_expiration),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_governance.md#0x1_topo_governance_EINSUFFICIENT_STAKE_LOCKUP">EINSUFFICIENT_STAKE_LOCKUP</a>),
+        <a href="topo_governance.md#0x1_topo_governance_stake_pool_is_eligible_to_vote">stake_pool_is_eligible_to_vote</a>(voter, proposal_expiration),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_governance.md#0x1_topo_governance_ENO_VOTING_POWER">ENO_VOTING_POWER</a>),
     );
     <b>assert</b>!(
         !<a href="topo_governance.md#0x1_topo_governance_is_proposal_expired">is_proposal_expired</a>(proposal_expiration),
@@ -1297,7 +1259,7 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
 
 
 
-<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_stake_pool_is_eligible_to_vote">stake_pool_is_eligible_to_vote</a>(stake_pool: <b>address</b>, proposal_expiration: u64): bool
+<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_stake_pool_is_eligible_to_vote">stake_pool_is_eligible_to_vote</a>(stake_pool: <b>address</b>, _proposal_expiration: u64): bool
 </code></pre>
 
 
@@ -1307,13 +1269,9 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
 
 
 <pre><code>inline <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_stake_pool_is_eligible_to_vote">stake_pool_is_eligible_to_vote</a>(
-    stake_pool: <b>address</b>, proposal_expiration: u64
+    stake_pool: <b>address</b>, _proposal_expiration: u64
 ): bool {
-    // The voter's <a href="stake.md#0x1_stake">stake</a> needs <b>to</b> be locked up at least <b>as</b> long <b>as</b> the proposal's expiration.
-    // Also no one can vote on a expired proposal.
-    // Note the boundary condition must be strictly less than <b>to</b> avoid the edge case <b>where</b> the
-    // proposal expiration is equal <b>to</b> the lockup until.
-    proposal_expiration &lt; <a href="stake.md#0x1_stake_get_lockup_secs">stake::get_lockup_secs</a>(stake_pool)
+    <a href="staking_registry.md#0x1_staking_registry_get_effective_power">staking_registry::get_effective_power</a>(stake_pool) &gt; 0
 }
 </code></pre>
 
@@ -1350,12 +1308,12 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
 
 ## Function `create_proposal`
 
-Create a single-step proposal with the backing <code>stake_pool</code>.
+Create a single-step proposal with the caller's voting power.
 @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
 only the exact script with matching hash can be successfully executed.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal">create_proposal</a>(proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal">create_proposal</a>(proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -1366,12 +1324,11 @@ only the exact script with matching hash can be successfully executed.
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal">create_proposal</a>(
     proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    stake_pool: <b>address</b>,
     execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
 ) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a> {
-    <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2">create_proposal_v2</a>(proposer, stake_pool, execution_hash, metadata_location, metadata_hash, <b>false</b>);
+    <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2">create_proposal_v2</a>(proposer, execution_hash, metadata_location, metadata_hash, <b>false</b>);
 }
 </code></pre>
 
@@ -1383,12 +1340,12 @@ only the exact script with matching hash can be successfully executed.
 
 ## Function `create_proposal_v2`
 
-Create a single-step or multi-step proposal with the backing <code>stake_pool</code>.
+Create a single-step or multi-step proposal with the caller's voting power.
 @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
 only the exact script with matching hash can be successfully executed.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2">create_proposal_v2</a>(proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_multi_step_proposal: bool)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2">create_proposal_v2</a>(proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_multi_step_proposal: bool)
 </code></pre>
 
 
@@ -1399,91 +1356,32 @@ only the exact script with matching hash can be successfully executed.
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2">create_proposal_v2</a>(
     proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    stake_pool: <b>address</b>,
     execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     is_multi_step_proposal: bool,
 ) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a> {
-    <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2_impl">create_proposal_v2_impl</a>(
-        proposer,
-        stake_pool,
-        execution_hash,
-        metadata_location,
-        metadata_hash,
-        is_multi_step_proposal
-    );
-}
-</code></pre>
-
-
-
-</details>
-
-<a id="0x1_topo_governance_create_proposal_v2_impl"></a>
-
-## Function `create_proposal_v2_impl`
-
-Create a single-step or multi-step proposal with the backing <code>stake_pool</code>.
-@param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
-only the exact script with matching hash can be successfully executed.
-Return proposal_id when a proposal is successfully created.
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2_impl">create_proposal_v2_impl</a>(proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_multi_step_proposal: bool): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2_impl">create_proposal_v2_impl</a>(
-    proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    stake_pool: <b>address</b>,
-    execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    is_multi_step_proposal: bool,
-): u64 <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a> {
     <a href="topo_governance.md#0x1_topo_governance_check_governance_permission">check_governance_permission</a>(proposer);
     <b>let</b> proposer_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(proposer);
-    <b>assert</b>!(
-        <a href="stake.md#0x1_stake_get_delegated_voter">stake::get_delegated_voter</a>(stake_pool) == proposer_address,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_governance.md#0x1_topo_governance_ENOT_DELEGATED_VOTER">ENOT_DELEGATED_VOTER</a>)
-    );
 
-    // The proposer's <a href="stake.md#0x1_stake">stake</a> needs <b>to</b> be at least the required bond amount.
     <b>let</b> governance_config = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework);
-    <b>let</b> stake_balance = <a href="topo_governance.md#0x1_topo_governance_get_voting_power">get_voting_power</a>(stake_pool);
+    <b>let</b> stake_balance = <a href="staking_registry.md#0x1_staking_registry_get_effective_power">staking_registry::get_effective_power</a>(proposer_address);
     <b>assert</b>!(
         stake_balance &gt;= governance_config.required_proposer_stake,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_governance.md#0x1_topo_governance_EINSUFFICIENT_PROPOSER_STAKE">EINSUFFICIENT_PROPOSER_STAKE</a>),
     );
 
-    // The proposer's <a href="stake.md#0x1_stake">stake</a> needs <b>to</b> be locked up at least <b>as</b> long <b>as</b> the proposal's <a href="voting.md#0x1_voting">voting</a> period.
     <b>let</b> current_time = <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>();
     <b>let</b> proposal_expiration = current_time + governance_config.voting_duration_secs;
     <b>assert</b>!(
-        <a href="topo_governance.md#0x1_topo_governance_stake_pool_is_eligible_to_vote">stake_pool_is_eligible_to_vote</a>(stake_pool, proposal_expiration),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_governance.md#0x1_topo_governance_EINSUFFICIENT_STAKE_LOCKUP">EINSUFFICIENT_STAKE_LOCKUP</a>),
+        <a href="topo_governance.md#0x1_topo_governance_stake_pool_is_eligible_to_vote">stake_pool_is_eligible_to_vote</a>(proposer_address, proposal_expiration),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_governance.md#0x1_topo_governance_ENO_VOTING_POWER">ENO_VOTING_POWER</a>),
     );
 
-    // Create and validate proposal metadata.
     <b>let</b> proposal_metadata = <a href="topo_governance.md#0x1_topo_governance_create_proposal_metadata">create_proposal_metadata</a>(metadata_location, metadata_hash);
 
-    // We want <b>to</b> allow early resolution of proposals <b>if</b> more than 50% of the total supply of the network coins
-    // <b>has</b> voted. This doesn't take into subsequent inflation/deflation (rewards are issued every epoch and gas fees
-    // are burnt after every transaction), but inflation/delation is very unlikely <b>to</b> have a major impact on total
-    // supply during the <a href="voting.md#0x1_voting">voting</a> period.
-    <b>let</b> total_voting_token_supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;TopoCoin&gt;();
-    <b>let</b> early_resolution_vote_threshold = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>&lt;u128&gt;();
-    <b>if</b> (total_voting_token_supply.is_some()) {
-        <b>let</b> total_supply = *total_voting_token_supply.borrow();
-        // 50% + 1 <b>to</b> avoid rounding errors.
-        early_resolution_vote_threshold = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(total_supply / 2 + 1);
-    };
+    <b>let</b> early_resolution_vote_threshold =
+        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>((<a href="stake.md#0x1_stake_get_current_epoch_governance_voting_power">stake::get_current_epoch_governance_voting_power</a>() <b>as</b> u128) / 2 + 1);
 
     <b>let</b> proposal_id = <a href="voting.md#0x1_voting_create_proposal_v2">voting::create_proposal_v2</a>(
         proposer_address,
@@ -1501,77 +1399,10 @@ Return proposal_id when a proposal is successfully created.
         <a href="topo_governance.md#0x1_topo_governance_CreateProposal">CreateProposal</a> {
             proposal_id,
             proposer: proposer_address,
-            stake_pool,
             execution_hash,
             proposal_metadata,
         },
     );
-    proposal_id
-}
-</code></pre>
-
-
-
-</details>
-
-<a id="0x1_topo_governance_batch_vote"></a>
-
-## Function `batch_vote`
-
-Vote on proposal with proposal_id and all voting power from multiple stake_pools.
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_batch_vote">batch_vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pools: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, proposal_id: u64, should_pass: bool)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_batch_vote">batch_vote</a>(
-    voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    stake_pools: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    proposal_id: u64,
-    should_pass: bool,
-) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a> {
-    stake_pools.for_each(|stake_pool| {
-        <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(voter, stake_pool, proposal_id, <a href="topo_governance.md#0x1_topo_governance_MAX_U64">MAX_U64</a>, should_pass);
-    });
-}
-</code></pre>
-
-
-
-</details>
-
-<a id="0x1_topo_governance_batch_partial_vote"></a>
-
-## Function `batch_partial_vote`
-
-Batch vote on proposal with proposal_id and specified voting power from multiple stake_pools.
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_batch_partial_vote">batch_partial_vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pools: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, proposal_id: u64, voting_power: u64, should_pass: bool)
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_batch_partial_vote">batch_partial_vote</a>(
-    voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    stake_pools: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    proposal_id: u64,
-    voting_power: u64,
-    should_pass: bool,
-) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a> {
-    stake_pools.for_each(|stake_pool| {
-        <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(voter, stake_pool, proposal_id, voting_power, should_pass);
-    });
 }
 </code></pre>
 
@@ -1583,10 +1414,10 @@ Batch vote on proposal with proposal_id and specified voting power from multiple
 
 ## Function `vote`
 
-Vote on proposal with <code>proposal_id</code> and all voting power from <code>stake_pool</code>.
+Vote on proposal with <code>proposal_id</code> and all voting power from the caller.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_vote">vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, proposal_id: u64, should_pass: bool)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_vote">vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, proposal_id: u64, should_pass: bool)
 </code></pre>
 
 
@@ -1597,11 +1428,10 @@ Vote on proposal with <code>proposal_id</code> and all voting power from <code>s
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_vote">vote</a>(
     voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    stake_pool: <b>address</b>,
     proposal_id: u64,
     should_pass: bool,
 ) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a> {
-    <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(voter, stake_pool, proposal_id, <a href="topo_governance.md#0x1_topo_governance_MAX_U64">MAX_U64</a>, should_pass);
+    <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(voter, proposal_id, <a href="topo_governance.md#0x1_topo_governance_MAX_U64">MAX_U64</a>, should_pass);
 }
 </code></pre>
 
@@ -1613,10 +1443,10 @@ Vote on proposal with <code>proposal_id</code> and all voting power from <code>s
 
 ## Function `partial_vote`
 
-Vote on proposal with <code>proposal_id</code> and specified voting power from <code>stake_pool</code>.
+Vote on proposal with <code>proposal_id</code> and specified voting power from the caller.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_partial_vote">partial_vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, proposal_id: u64, voting_power: u64, should_pass: bool)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_partial_vote">partial_vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, proposal_id: u64, voting_power: u64, should_pass: bool)
 </code></pre>
 
 
@@ -1627,12 +1457,11 @@ Vote on proposal with <code>proposal_id</code> and specified voting power from <
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_partial_vote">partial_vote</a>(
     voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    stake_pool: <b>address</b>,
     proposal_id: u64,
     voting_power: u64,
     should_pass: bool,
 ) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a> {
-    <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(voter, stake_pool, proposal_id, voting_power, should_pass);
+    <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(voter, proposal_id, voting_power, should_pass);
 }
 </code></pre>
 
@@ -1644,13 +1473,13 @@ Vote on proposal with <code>proposal_id</code> and specified voting power from <
 
 ## Function `vote_internal`
 
-Vote on proposal with <code>proposal_id</code> and specified voting_power from <code>stake_pool</code>.
-If voting_power is more than all the left voting power of <code>stake_pool</code>, use all the left voting power.
-If a stake pool has already voted on a proposal before partial governance voting is enabled, the stake pool
+Vote on proposal with <code>proposal_id</code> and specified voting_power from the caller.
+If voting_power is more than all the left voting power of the caller, use all the left voting power.
+If a voter has already voted on a proposal before partial governance voting is enabled, the voter
 cannot vote on the proposal even after partial governance voting is enabled.
 
 
-<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, proposal_id: u64, voting_power: u64, should_pass: bool)
+<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, proposal_id: u64, voting_power: u64, should_pass: bool)
 </code></pre>
 
 
@@ -1661,20 +1490,18 @@ cannot vote on the proposal even after partial governance voting is enabled.
 
 <pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(
     voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    stake_pool: <b>address</b>,
     proposal_id: u64,
     voting_power: u64,
     should_pass: bool,
 ) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>, <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a> {
     <a href="permissioned_signer.md#0x1_permissioned_signer_assert_master_signer">permissioned_signer::assert_master_signer</a>(voter);
     <b>let</b> voter_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(voter);
-    <b>assert</b>!(<a href="stake.md#0x1_stake_get_delegated_voter">stake::get_delegated_voter</a>(stake_pool) == voter_address, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_governance.md#0x1_topo_governance_ENOT_DELEGATED_VOTER">ENOT_DELEGATED_VOTER</a>));
-
-    <a href="topo_governance.md#0x1_topo_governance_assert_proposal_expiration">assert_proposal_expiration</a>(stake_pool, proposal_id);
+    <b>let</b> voting_subject = voter_address;
+    <a href="topo_governance.md#0x1_topo_governance_assert_proposal_expiration">assert_proposal_expiration</a>(voting_subject, proposal_id);
 
     // If a <a href="stake.md#0x1_stake">stake</a> pool <b>has</b> already voted on a proposal before partial governance <a href="voting.md#0x1_voting">voting</a> is enabled,
     // `get_remaining_voting_power` returns 0.
-    <b>let</b> staking_pool_voting_power = <a href="topo_governance.md#0x1_topo_governance_get_remaining_voting_power">get_remaining_voting_power</a>(stake_pool, proposal_id);
+    <b>let</b> staking_pool_voting_power = <a href="topo_governance.md#0x1_topo_governance_get_remaining_voting_power">get_remaining_voting_power</a>(voting_subject, proposal_id);
     voting_power = <b>min</b>(voting_power, staking_pool_voting_power);
 
     // Short-circuit <b>if</b> the voter <b>has</b> no <a href="voting.md#0x1_voting">voting</a> power.
@@ -1689,7 +1516,7 @@ cannot vote on the proposal even after partial governance voting is enabled.
     );
 
     <b>let</b> record_key = <a href="topo_governance.md#0x1_topo_governance_RecordKey">RecordKey</a> {
-        stake_pool,
+        voter: voting_subject,
         proposal_id,
     };
     <b>let</b> used_voting_power = <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>[@aptos_framework].votes.borrow_mut_with_default(record_key, 0);
@@ -1700,7 +1527,6 @@ cannot vote on the proposal even after partial governance voting is enabled.
         <a href="topo_governance.md#0x1_topo_governance_Vote">Vote</a> {
             proposal_id,
             voter: voter_address,
-            stake_pool,
             num_votes: voting_power,
             should_pass,
         },
@@ -2037,41 +1863,6 @@ Only called in testnet where the core resources account exists and has been gran
     // Core resources <a href="account.md#0x1_account">account</a> only <b>has</b> mint <a href="../../aptos-stdlib/doc/capability.md#0x1_capability">capability</a> in tests/testnets.
     <b>assert</b>!(<a href="topo_coin.md#0x1_topo_coin_has_mint_capability">topo_coin::has_mint_capability</a>(core_resources), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_unauthenticated">error::unauthenticated</a>(<a href="topo_governance.md#0x1_topo_governance_EUNAUTHORIZED">EUNAUTHORIZED</a>));
     <a href="topo_governance.md#0x1_topo_governance_get_signer">get_signer</a>(signer_address)
-}
-</code></pre>
-
-
-
-</details>
-
-<a id="0x1_topo_governance_get_voting_power"></a>
-
-## Function `get_voting_power`
-
-Return the voting power a stake pool has with respect to governance proposals.
-
-
-<pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_voting_power">get_voting_power</a>(pool_address: <b>address</b>): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_voting_power">get_voting_power</a>(pool_address: <b>address</b>): u64 {
-    <b>let</b> allow_validator_set_change = <a href="staking_config.md#0x1_staking_config_get_allow_validator_set_change">staking_config::get_allow_validator_set_change</a>(&<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>());
-    <b>if</b> (allow_validator_set_change) {
-        <b>let</b> (active, _, pending_active, pending_inactive) = <a href="stake.md#0x1_stake_get_stake">stake::get_stake</a>(pool_address);
-        // We calculate the <a href="voting.md#0x1_voting">voting</a> power <b>as</b> total non-inactive stakes of the pool. Even <b>if</b> the validator is not in the
-        // active validator set, <b>as</b> long <b>as</b> they have a lockup (separately checked in create_proposal and <a href="voting.md#0x1_voting">voting</a>), their
-        // <a href="stake.md#0x1_stake">stake</a> would still count in their <a href="voting.md#0x1_voting">voting</a> power for governance proposals.
-        active + pending_active + pending_inactive
-    } <b>else</b> {
-        <a href="stake.md#0x1_stake_get_current_epoch_voting_power">stake::get_current_epoch_voting_power</a>(pool_address)
-    }
 }
 </code></pre>
 
@@ -2435,7 +2226,7 @@ Abort if structs have already been created.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_has_entirely_voted">has_entirely_voted</a>(stake_pool: <b>address</b>, proposal_id: u64): bool
+<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_has_entirely_voted">has_entirely_voted</a>(voter: <b>address</b>, proposal_id: u64): bool
 </code></pre>
 
 
@@ -2452,41 +2243,19 @@ Abort if structs have already been created.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_remaining_voting_power">get_remaining_voting_power</a>(stake_pool: <b>address</b>, proposal_id: u64): u64
+<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_remaining_voting_power">get_remaining_voting_power</a>(voter: <b>address</b>, proposal_id: u64): u64
 </code></pre>
 
 
 
 
 <pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
 <b>include</b> <a href="voting.md#0x1_voting_AbortsIfNotContainProposalID">voting::AbortsIfNotContainProposalID</a>&lt;GovernanceProposal&gt; {
     voting_forum_address: @aptos_framework
 };
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(stake_pool);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
-<b>let</b> spec_proposal_expiration = <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
-<b>let</b> locked_until = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(stake_pool).locked_until_secs;
-<b>let</b> remain_zero_1_cond = (spec_proposal_expiration &gt;= locked_until || <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>() &gt;= spec_proposal_expiration);
-<b>ensures</b> remain_zero_1_cond ==&gt; result == 0;
-<b>let</b> record_key = <a href="topo_governance.md#0x1_topo_governance_RecordKey">RecordKey</a> {
-    stake_pool,
-    proposal_id,
-};
-<b>let</b> entirely_voted = <a href="topo_governance.md#0x1_topo_governance_spec_has_entirely_voted">spec_has_entirely_voted</a>(stake_pool, proposal_id, record_key);
-<b>aborts_if</b> !remain_zero_1_cond && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
-<b>include</b> !remain_zero_1_cond && !entirely_voted ==&gt; <a href="topo_governance.md#0x1_topo_governance_GetVotingPowerAbortsIf">GetVotingPowerAbortsIf</a> {
-    pool_address: stake_pool
-};
-<b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
-<b>let</b> voting_power = <a href="topo_governance.md#0x1_topo_governance_spec_get_voting_power">spec_get_voting_power</a>(stake_pool, <a href="staking_config.md#0x1_staking_config">staking_config</a>);
-<b>let</b> voting_records_v2 = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
-<b>let</b> used_voting_power = <b>if</b> (<a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_spec_contains">smart_table::spec_contains</a>(voting_records_v2.votes, record_key)) {
-    <a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_spec_get">smart_table::spec_get</a>(voting_records_v2.votes, record_key)
-} <b>else</b> {
-    0
-};
-<b>aborts_if</b> !remain_zero_1_cond && !entirely_voted && used_voting_power &gt; 0 && voting_power &lt; used_voting_power;
-<b>ensures</b> result == <a href="topo_governance.md#0x1_topo_governance_spec_get_remaining_voting_power">spec_get_remaining_voting_power</a>(stake_pool, proposal_id);
+<b>ensures</b> result == <a href="topo_governance.md#0x1_topo_governance_spec_get_remaining_voting_power">spec_get_remaining_voting_power</a>(voter, proposal_id);
 </code></pre>
 
 
@@ -2496,25 +2265,27 @@ Abort if structs have already been created.
 
 
 <pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_spec_get_remaining_voting_power">spec_get_remaining_voting_power</a>(stake_pool: <b>address</b>, proposal_id: u64): u64 {
-   <b>let</b> spec_proposal_expiration = <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
-   <b>let</b> locked_until = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(stake_pool).locked_until_secs;
-   <b>let</b> remain_zero_1_cond = (spec_proposal_expiration &gt;= locked_until || <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>() &gt;= spec_proposal_expiration);
-   <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
+   <b>let</b> spec_proposal_expiration =
+       <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
    <b>let</b> voting_records_v2 = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
    <b>let</b> record_key = <a href="topo_governance.md#0x1_topo_governance_RecordKey">RecordKey</a> {
-       stake_pool,
+       voter: stake_pool,
        proposal_id,
    };
    <b>let</b> entirely_voted = <a href="topo_governance.md#0x1_topo_governance_spec_has_entirely_voted">spec_has_entirely_voted</a>(stake_pool, proposal_id, record_key);
-   <b>let</b> voting_power = <a href="topo_governance.md#0x1_topo_governance_spec_get_voting_power">spec_get_voting_power</a>(stake_pool, <a href="staking_config.md#0x1_staking_config">staking_config</a>);
+   <b>let</b> voting_power = <a href="topo_governance.md#0x1_topo_governance_spec_get_voting_power">spec_get_voting_power</a>(stake_pool);
    <b>let</b> used_voting_power = <b>if</b> (<a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_spec_contains">smart_table::spec_contains</a>(voting_records_v2.votes, record_key)) {
        <a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_spec_get">smart_table::spec_get</a>(voting_records_v2.votes, record_key)
    } <b>else</b> {
        0
    };
-   <b>if</b> (remain_zero_1_cond) {
+   <b>if</b> (<a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>() &gt;= spec_proposal_expiration) {
        0
    } <b>else</b> <b>if</b> (entirely_voted) {
+       0
+   } <b>else</b> <b>if</b> (voting_power == 0) {
+       0
+   } <b>else</b> <b>if</b> (used_voting_power &gt;= voting_power) {
        0
    } <b>else</b> {
        voting_power - used_voting_power
@@ -2536,31 +2307,12 @@ Abort if structs have already been created.
 
 
 
-
-<a id="0x1_topo_governance_GetVotingPowerAbortsIf"></a>
-
-
-<pre><code><b>schema</b> <a href="topo_governance.md#0x1_topo_governance_GetVotingPowerAbortsIf">GetVotingPowerAbortsIf</a> {
-    pool_address: <b>address</b>;
-    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
-    <b>let</b> allow_validator_set_change = <a href="staking_config.md#0x1_staking_config">staking_config</a>.allow_validator_set_change;
-    <b>let</b> stake_pool_res = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(pool_address);
-    <b>aborts_if</b> allow_validator_set_change && (stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value) &gt; <a href="topo_governance.md#0x1_topo_governance_MAX_U64">MAX_U64</a>;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(pool_address);
-    <b>aborts_if</b> !allow_validator_set_change && !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">stake::ValidatorSet</a>&gt;(@aptos_framework);
-    <b>aborts_if</b> !allow_validator_set_change && <a href="stake.md#0x1_stake_spec_is_current_epoch_validator">stake::spec_is_current_epoch_validator</a>(pool_address) && stake_pool_res.active.value + stake_pool_res.pending_inactive.value &gt; <a href="topo_governance.md#0x1_topo_governance_MAX_U64">MAX_U64</a>;
-}
-</code></pre>
-
-
-
 <a id="@Specification_1_assert_proposal_expiration"></a>
 
 ### Function `assert_proposal_expiration`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_assert_proposal_expiration">assert_proposal_expiration</a>(stake_pool: <b>address</b>, proposal_id: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_assert_proposal_expiration">assert_proposal_expiration</a>(voter: <b>address</b>, proposal_id: u64)
 </code></pre>
 
 
@@ -2569,8 +2321,7 @@ Abort if structs have already been created.
 <pre><code><b>include</b> <a href="topo_governance.md#0x1_topo_governance_VotingInitializationAbortIfs">VotingInitializationAbortIfs</a>;
 <b>include</b> <a href="voting.md#0x1_voting_AbortsIfNotContainProposalID">voting::AbortsIfNotContainProposalID</a>&lt;GovernanceProposal&gt;{voting_forum_address: @aptos_framework};
 <b>let</b> proposal_expiration = <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
-<b>aborts_if</b> !<a href="stake.md#0x1_stake_stake_pool_exists">stake::stake_pool_exists</a>(stake_pool);
-<b>aborts_if</b> proposal_expiration &gt;= <a href="stake.md#0x1_stake_spec_get_lockup_secs">stake::spec_get_lockup_secs</a>(stake_pool);
+<b>aborts_if</b> <a href="staking_registry.md#0x1_staking_registry_spec_get_effective_power">staking_registry::spec_get_effective_power</a>(voter) == 0;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
 <b>aborts_if</b> <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() &gt;= proposal_expiration;
 </code></pre>
@@ -2582,7 +2333,7 @@ Abort if structs have already been created.
 ### Function `create_proposal`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal">create_proposal</a>(proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal">create_proposal</a>(proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -2601,7 +2352,7 @@ The same as spec of <code><a href="topo_governance.md#0x1_topo_governance_create
 ### Function `create_proposal_v2`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2">create_proposal_v2</a>(proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_multi_step_proposal: bool)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2">create_proposal_v2</a>(proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_multi_step_proposal: bool)
 </code></pre>
 
 
@@ -2613,26 +2364,7 @@ The same as spec of <code><a href="topo_governance.md#0x1_topo_governance_create
 </code></pre>
 
 
-
-<a id="@Specification_1_create_proposal_v2_impl"></a>
-
-### Function `create_proposal_v2_impl`
-
-
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_create_proposal_v2_impl">create_proposal_v2_impl</a>(proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_multi_step_proposal: bool): u64
-</code></pre>
-
-
-
-
-<pre><code><b>pragma</b> verify_duration_estimate = 60;
-<b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
-<b>include</b> <a href="topo_governance.md#0x1_topo_governance_CreateProposalAbortsIf">CreateProposalAbortsIf</a>;
-</code></pre>
-
-
-<code>stake_pool</code> must exist StakePool.
-The delegated voter under the resource StakePool of the stake_pool must be the proposer address.
+The proposer now uses its own address as the voting subject.
 Address @aptos_framework must exist GovernanceEvents.
 
 
@@ -2641,33 +2373,24 @@ Address @aptos_framework must exist GovernanceEvents.
 
 <pre><code><b>schema</b> <a href="topo_governance.md#0x1_topo_governance_CreateProposalAbortsIf">CreateProposalAbortsIf</a> {
     proposer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
-    stake_pool: <b>address</b>;
     execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
     metadata_location: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
     metadata_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
-    <b>include</b> <a href="topo_governance.md#0x1_topo_governance_VotingGetDelegatedVoterAbortsIf">VotingGetDelegatedVoterAbortsIf</a> { sign: proposer };
     <b>include</b> <a href="topo_governance.md#0x1_topo_governance_AbortsIfNotGovernanceConfig">AbortsIfNotGovernanceConfig</a>;
-    <b>include</b> <a href="topo_governance.md#0x1_topo_governance_GetVotingPowerAbortsIf">GetVotingPowerAbortsIf</a> { pool_address: stake_pool };
-    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
-    <b>let</b> allow_validator_set_change = <a href="staking_config.md#0x1_staking_config">staking_config</a>.allow_validator_set_change;
-    <b>let</b> stake_pool_res = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(stake_pool);
-    <b>let</b> stake_balance_0 = stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value;
-    <b>let</b> stake_balance_1 = stake_pool_res.active.value + stake_pool_res.pending_inactive.value;
-    <b>let</b> stake_balance_2 = 0;
+    <b>let</b> proposer_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(proposer);
+    <b>let</b> stake_balance = <a href="staking_registry.md#0x1_staking_registry_spec_get_effective_power">staking_registry::spec_get_effective_power</a>(proposer_address);
     <b>let</b> governance_config = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework);
     <b>let</b> required_proposer_stake = governance_config.required_proposer_stake;
     // This enforces <a id="high-level-req-2" href="#high-level-req">high-level requirement 2</a>:
-    <b>aborts_if</b> allow_validator_set_change && stake_balance_0 &lt; required_proposer_stake;
-    <b>aborts_if</b> !allow_validator_set_change && <a href="stake.md#0x1_stake_spec_is_current_epoch_validator">stake::spec_is_current_epoch_validator</a>(stake_pool) && stake_balance_1 &lt; required_proposer_stake;
-    <b>aborts_if</b> !allow_validator_set_change && !<a href="stake.md#0x1_stake_spec_is_current_epoch_validator">stake::spec_is_current_epoch_validator</a>(stake_pool) && stake_balance_2 &lt; required_proposer_stake;
+    <b>aborts_if</b> stake_balance &lt; required_proposer_stake;
+    <b>aborts_if</b> stake_balance == 0;
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
-    <b>let</b> current_time = <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>();
-    <b>let</b> proposal_expiration = current_time + governance_config.voting_duration_secs;
-    <b>aborts_if</b> stake_pool_res.locked_until_secs &lt;= proposal_expiration;
     <b>include</b> <a href="topo_governance.md#0x1_topo_governance_CreateProposalMetadataAbortsIf">CreateProposalMetadataAbortsIf</a>;
-    <b>let</b> addr = aptos_std::type_info::type_of&lt;TopoCoin&gt;().account_address;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;TopoCoin&gt;&gt;(addr);
-    <b>let</b> maybe_supply = <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;TopoCoin&gt;&gt;(addr).supply;
+    <b>let</b> addr =
+        aptos_std::type_info::type_of&lt;aptos_framework::topo_coin::TopoCoin&gt;().account_address;
+    <b>aborts_if</b> !<b>exists</b>&lt;aptos_framework::coin::CoinInfo&lt;aptos_framework::topo_coin::TopoCoin&gt;&gt;(addr);
+    <b>let</b> maybe_supply =
+        <b>global</b>&lt;aptos_framework::coin::CoinInfo&lt;aptos_framework::topo_coin::TopoCoin&gt;&gt;(addr).supply;
     <b>let</b> supply = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(maybe_supply);
     <b>let</b> total_supply = aptos_framework::optional_aggregator::optional_aggregator_value(supply);
     <b>let</b> early_resolution_vote_threshold_value = total_supply / 2 + 1;
@@ -2690,71 +2413,23 @@ Address @aptos_framework must exist GovernanceEvents.
 
 
 
-
-<a id="0x1_topo_governance_VotingGetDelegatedVoterAbortsIf"></a>
-
-
-<pre><code><b>schema</b> <a href="topo_governance.md#0x1_topo_governance_VotingGetDelegatedVoterAbortsIf">VotingGetDelegatedVoterAbortsIf</a> {
-    stake_pool: <b>address</b>;
-    sign: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
-    <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(sign);
-    <b>let</b> stake_pool_res = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(stake_pool);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(stake_pool);
-    <b>aborts_if</b> stake_pool_res.delegated_voter != addr;
-}
-</code></pre>
-
-
-
-<a id="@Specification_1_batch_vote"></a>
-
-### Function `batch_vote`
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_batch_vote">batch_vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pools: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, proposal_id: u64, should_pass: bool)
-</code></pre>
-
-
-
-
-<pre><code><b>pragma</b> verify = <b>false</b>;
-</code></pre>
-
-
-
-<a id="@Specification_1_batch_partial_vote"></a>
-
-### Function `batch_partial_vote`
-
-
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_batch_partial_vote">batch_partial_vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pools: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, proposal_id: u64, voting_power: u64, should_pass: bool)
-</code></pre>
-
-
-
-
-<pre><code><b>pragma</b> verify = <b>false</b>;
-</code></pre>
-
-
-
 <a id="@Specification_1_vote"></a>
 
 ### Function `vote`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_vote">vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, proposal_id: u64, should_pass: bool)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_vote">vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, proposal_id: u64, should_pass: bool)
 </code></pre>
 
 
-stake_pool must exist StakePool.
-The delegated voter under the resource StakePool of the stake_pool must be the voter address.
+The caller votes with its own address and effective power from staking_registry.
 Address @aptos_framework must exist VotingRecords and GovernanceProposal.
 
 
 <pre><code><b>pragma</b> verify_duration_estimate = 60;
 <b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
 <b>include</b> <a href="topo_governance.md#0x1_topo_governance_VoteAbortIf">VoteAbortIf</a>  {
+    stake_pool: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(voter),
     voting_power: <a href="topo_governance.md#0x1_topo_governance_MAX_U64">MAX_U64</a>
 };
 </code></pre>
@@ -2766,19 +2441,20 @@ Address @aptos_framework must exist VotingRecords and GovernanceProposal.
 ### Function `partial_vote`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_partial_vote">partial_vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, proposal_id: u64, voting_power: u64, should_pass: bool)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_partial_vote">partial_vote</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, proposal_id: u64, voting_power: u64, should_pass: bool)
 </code></pre>
 
 
-stake_pool must exist StakePool.
-The delegated voter under the resource StakePool of the stake_pool must be the voter address.
+The voter uses its own address as the voting subject.
 Address @aptos_framework must exist VotingRecords and GovernanceProposal.
 Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting flag is enabled.
 
 
 <pre><code><b>pragma</b> verify_duration_estimate = 60;
 <b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
-<b>include</b> <a href="topo_governance.md#0x1_topo_governance_VoteAbortIf">VoteAbortIf</a>;
+<b>include</b> <a href="topo_governance.md#0x1_topo_governance_VoteAbortIf">VoteAbortIf</a> {
+    stake_pool: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(voter)
+};
 </code></pre>
 
 
@@ -2788,19 +2464,20 @@ Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting
 ### Function `vote_internal`
 
 
-<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, stake_pool: <b>address</b>, proposal_id: u64, voting_power: u64, should_pass: bool)
+<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_vote_internal">vote_internal</a>(voter: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, proposal_id: u64, voting_power: u64, should_pass: bool)
 </code></pre>
 
 
-stake_pool must exist StakePool.
-The delegated voter under the resource StakePool of the stake_pool must be the voter address.
+The voter uses its own address as the voting subject.
 Address @aptos_framework must exist VotingRecords and GovernanceProposal.
 Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting flag is enabled.
 
 
 <pre><code><b>pragma</b> verify_duration_estimate = 60;
 <b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
-<b>include</b> <a href="topo_governance.md#0x1_topo_governance_VoteAbortIf">VoteAbortIf</a>;
+<b>include</b> <a href="topo_governance.md#0x1_topo_governance_VoteAbortIf">VoteAbortIf</a> {
+    stake_pool: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(voter)
+};
 </code></pre>
 
 
@@ -2815,44 +2492,35 @@ Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting
     proposal_id: u64;
     should_pass: bool;
     voting_power: u64;
-    <b>include</b> <a href="topo_governance.md#0x1_topo_governance_VotingGetDelegatedVoterAbortsIf">VotingGetDelegatedVoterAbortsIf</a> { sign: voter };
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
-    <b>let</b> spec_proposal_expiration = <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
-    <b>let</b> locked_until = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(stake_pool).locked_until_secs;
-    <b>let</b> remain_zero_1_cond = (spec_proposal_expiration &gt;= locked_until || <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>() &gt;= spec_proposal_expiration);
+    <b>include</b> <a href="voting.md#0x1_voting_AbortsIfNotContainProposalID">voting::AbortsIfNotContainProposalID</a>&lt;GovernanceProposal&gt; {
+        voting_forum_address: @aptos_framework
+    };
+    <b>let</b> spec_proposal_expiration =
+        <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
+    <b>aborts_if</b> <a href="staking_registry.md#0x1_staking_registry_spec_get_effective_power">staking_registry::spec_get_effective_power</a>(stake_pool) == 0;
+    <b>aborts_if</b> <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>() &gt;= spec_proposal_expiration;
     <b>let</b> record_key = <a href="topo_governance.md#0x1_topo_governance_RecordKey">RecordKey</a> {
-        stake_pool,
+        voter: stake_pool,
         proposal_id,
     };
-    <b>let</b> entirely_voted = <a href="topo_governance.md#0x1_topo_governance_spec_has_entirely_voted">spec_has_entirely_voted</a>(stake_pool, proposal_id, record_key);
-    <b>aborts_if</b> !remain_zero_1_cond && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
-    <b>include</b> !remain_zero_1_cond && !entirely_voted ==&gt; <a href="topo_governance.md#0x1_topo_governance_GetVotingPowerAbortsIf">GetVotingPowerAbortsIf</a> {
-        pool_address: stake_pool
-    };
-    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
-    <b>let</b> spec_voting_power = <a href="topo_governance.md#0x1_topo_governance_spec_get_voting_power">spec_get_voting_power</a>(stake_pool, <a href="staking_config.md#0x1_staking_config">staking_config</a>);
     <b>let</b> voting_records_v2 = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
     <b>let</b> used_voting_power = <b>if</b> (<a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_spec_contains">smart_table::spec_contains</a>(voting_records_v2.votes, record_key)) {
         <a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_spec_get">smart_table::spec_get</a>(voting_records_v2.votes, record_key)
     } <b>else</b> {
         0
     };
-    <b>aborts_if</b> !remain_zero_1_cond && !entirely_voted && used_voting_power &gt; 0 && spec_voting_power &lt; used_voting_power;
     <b>let</b> remaining_power = <a href="topo_governance.md#0x1_topo_governance_spec_get_remaining_voting_power">spec_get_remaining_voting_power</a>(stake_pool, proposal_id);
-    <b>let</b> real_voting_power =  <b>min</b>(voting_power, remaining_power);
+    <b>let</b> real_voting_power = <b>min</b>(voting_power, remaining_power);
     <b>aborts_if</b> !(real_voting_power &gt; 0);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
-    <b>let</b> voting_records = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
-    <b>let</b> allow_validator_set_change = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework).allow_validator_set_change;
-    <b>let</b> stake_pool_res = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(stake_pool);
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
     <b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
     <b>let</b> proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(voting_forum.proposals, proposal_id);
     <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(voting_forum.proposals, proposal_id);
     <b>let</b> proposal_expiration = proposal.expiration_secs;
-    <b>let</b> locked_until_secs = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(stake_pool).locked_until_secs;
-    <b>aborts_if</b> proposal_expiration &gt;= locked_until_secs;
-    <b>aborts_if</b> <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() &gt;= proposal_expiration;
+    <b>aborts_if</b> <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>() &gt;= proposal_expiration;
     <b>aborts_if</b> proposal.is_resolved;
     <b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(<a href="voting.md#0x1_voting_IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY">voting::IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY</a>);
     <b>let</b> execution_key = utf8(<a href="voting.md#0x1_voting_IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY">voting::IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY</a>);
@@ -3255,50 +2923,12 @@ Address @aptos_framework must exist GovernanceResponsbility.
 
 
 
-<a id="@Specification_1_get_voting_power"></a>
-
-### Function `get_voting_power`
-
-
-<pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_voting_power">get_voting_power</a>(pool_address: <b>address</b>): u64
-</code></pre>
-
-
-Address @aptos_framework must exist StakingConfig.
-limit addition overflow.
-pool_address must exist in StakePool.
-
-
-<pre><code><b>include</b> <a href="topo_governance.md#0x1_topo_governance_GetVotingPowerAbortsIf">GetVotingPowerAbortsIf</a>;
-<b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
-<b>let</b> allow_validator_set_change = <a href="staking_config.md#0x1_staking_config">staking_config</a>.allow_validator_set_change;
-<b>let</b> stake_pool_res = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(pool_address);
-<b>ensures</b> allow_validator_set_change ==&gt; result == stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value;
-<b>ensures</b> !allow_validator_set_change ==&gt; <b>if</b> (<a href="stake.md#0x1_stake_spec_is_current_epoch_validator">stake::spec_is_current_epoch_validator</a>(pool_address)) {
-    result == stake_pool_res.active.value + stake_pool_res.pending_inactive.value
-} <b>else</b> {
-    result == 0
-};
-<b>ensures</b> result == <a href="topo_governance.md#0x1_topo_governance_spec_get_voting_power">spec_get_voting_power</a>(pool_address, <a href="staking_config.md#0x1_staking_config">staking_config</a>);
-</code></pre>
-
-
-
 
 <a id="0x1_topo_governance_spec_get_voting_power"></a>
 
 
-<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_spec_get_voting_power">spec_get_voting_power</a>(pool_address: <b>address</b>, <a href="staking_config.md#0x1_staking_config">staking_config</a>: <a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>): u64 {
-   <b>let</b> allow_validator_set_change = <a href="staking_config.md#0x1_staking_config">staking_config</a>.allow_validator_set_change;
-   <b>let</b> stake_pool_res = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(pool_address);
-   <b>if</b> (allow_validator_set_change) {
-       stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value
-   } <b>else</b> <b>if</b> (!allow_validator_set_change && (<a href="stake.md#0x1_stake_spec_is_current_epoch_validator">stake::spec_is_current_epoch_validator</a>(pool_address))) {
-       stake_pool_res.active.value + stake_pool_res.pending_inactive.value
-   } <b>else</b> {
-       0
-   }
+<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_spec_get_voting_power">spec_get_voting_power</a>(pool_address: <b>address</b>): u64 {
+   <a href="staking_registry.md#0x1_staking_registry_spec_get_effective_power">staking_registry::spec_get_effective_power</a>(pool_address)
 }
 </code></pre>
 

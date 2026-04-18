@@ -293,126 +293,6 @@ pub enum EntryFunctionCall {
         coin_type: TypeTag,
     },
 
-    /// Add `amount` of coins to the delegation pool `pool_address`.
-    DelegationPoolAddStake {
-        pool_address: AccountAddress,
-        amount: u64,
-    },
-
-    /// Allowlist a delegator as the pool owner.
-    DelegationPoolAllowlistDelegator {
-        delegator_address: AccountAddress,
-    },
-
-    /// A voter could create a governance proposal by this function. To successfully create a proposal, the voter's
-    /// voting power in THIS delegation pool must be not less than the minimum required voting power specified in
-    /// `topo_governance.move`.
-    DelegationPoolCreateProposal {
-        pool_address: AccountAddress,
-        execution_hash: Vec<u8>,
-        metadata_location: Vec<u8>,
-        metadata_hash: Vec<u8>,
-        is_multi_step_proposal: bool,
-    },
-
-    /// Allows a delegator to delegate its voting power to a voter. If this delegator already has a delegated voter,
-    /// this change won't take effects until the next lockup period.
-    DelegationPoolDelegateVotingPower {
-        pool_address: AccountAddress,
-        new_voter: AccountAddress,
-    },
-
-    /// Disable delegators allowlisting as the pool owner. The existing allowlist will be emptied.
-    DelegationPoolDisableDelegatorsAllowlisting {},
-
-    /// Enable delegators allowlisting as the pool owner.
-    DelegationPoolEnableDelegatorsAllowlisting {},
-
-    /// Enable partial governance voting on a stake pool. The voter of this stake pool will be managed by this module.
-    /// The existing voter will be replaced. The function is permissionless.
-    DelegationPoolEnablePartialGovernanceVoting {
-        pool_address: AccountAddress,
-    },
-
-    /// Evict a delegator that is not allowlisted by unlocking their entire stake.
-    DelegationPoolEvictDelegator {
-        delegator_address: AccountAddress,
-    },
-
-    /// Initialize a delegation pool of custom fixed `operator_commission_percentage`.
-    /// A resource account is created from `owner` signer and its supplied `delegation_pool_creation_seed`
-    /// to host the delegation pool resource and own the underlying stake pool.
-    /// Ownership over setting the operator/voter is granted to `owner` who has both roles initially.
-    DelegationPoolInitializeDelegationPool {
-        operator_commission_percentage: u64,
-        delegation_pool_creation_seed: Vec<u8>,
-    },
-
-    /// Move `amount` of coins from pending_inactive to active.
-    DelegationPoolReactivateStake {
-        pool_address: AccountAddress,
-        amount: u64,
-    },
-
-    /// Remove a delegator from the allowlist as the pool owner, but do not unlock their stake.
-    DelegationPoolRemoveDelegatorFromAllowlist {
-        delegator_address: AccountAddress,
-    },
-
-    /// Allows an operator to change its beneficiary. Any existing unpaid commission rewards will be paid to the new
-    /// beneficiary. To ensure payment to the current beneficiary, one should first call `synchronize_delegation_pool`
-    /// before switching the beneficiary. An operator can set one beneficiary for delegation pools, not a separate
-    /// one for each pool.
-    DelegationPoolSetBeneficiaryForOperator {
-        new_beneficiary: AccountAddress,
-    },
-
-    /// Deprecated. Use the partial governance voting flow instead.
-    DelegationPoolSetDelegatedVoter {
-        _new_voter: AccountAddress,
-    },
-
-    /// Allows an owner to change the operator of the underlying stake pool.
-    DelegationPoolSetOperator {
-        new_operator: AccountAddress,
-    },
-
-    /// Synchronize delegation and stake pools: distribute yet-undetected rewards to the corresponding internal
-    /// shares pools, assign commission to operator and eventually prepare delegation pool for a new lockup cycle.
-    DelegationPoolSynchronizeDelegationPool {
-        pool_address: AccountAddress,
-    },
-
-    /// Unlock `amount` from the active + pending_active stake of `delegator` or
-    /// at most how much active stake there is on the stake pool.
-    DelegationPoolUnlock {
-        pool_address: AccountAddress,
-        amount: u64,
-    },
-
-    /// Allows an owner to update the commission percentage for the operator of the underlying stake pool.
-    DelegationPoolUpdateCommissionPercentage {
-        new_commission_percentage: u64,
-    },
-
-    /// Vote on a proposal with a voter's voting power. To successfully vote, the following conditions must be met:
-    /// 1. The voting period of the proposal hasn't ended.
-    /// 2. The delegation pool's lockup period ends after the voting period of the proposal.
-    /// 3. The voter still has spare voting power on this proposal.
-    /// 4. The delegation pool never votes on the proposal before enabling partial governance voting.
-    DelegationPoolVote {
-        pool_address: AccountAddress,
-        proposal_id: u64,
-        voting_power: u64,
-        should_pass: bool,
-    },
-
-    /// Withdraw `amount` of owned inactive stake from the delegation pool at `pool_address`.
-    DelegationPoolWithdraw {
-        pool_address: AccountAddress,
-        amount: u64,
-    },
-
     /// This can be called to install or update a set of JWKs for a federated OIDC provider.  This function should
     /// be invoked to intially install a set of JWKs or to update a set of JWKs when a keypair is rotated.
     ///
@@ -771,36 +651,85 @@ pub enum EntryFunctionCall {
         permissions_storage_addr: AccountAddress,
     },
 
-    /// 批量更新用户算力。
-    ///
-    /// 说明：
-    /// - 本模块不做链上批次幂等
-    /// - 同一用户被再次写入时：
-    ///   - 若 `period >= last_updated_period`，则覆盖旧值和最后更新周期
-    ///   - 若 `period < last_updated_period`，则跳过该用户，防止旧周期回退覆盖
-    /// - 只有实际发生写入的用户才会发出 `PowerUpdatedEvent`
-    PocPowerStoreBatchUpdate {
-        period: u64,
-        users: Vec<AccountAddress>,
-        powers: Vec<u128>,
-    },
-
-    /// 初始化全局算力存储。
-    /// 仅限 @aptos_framework 地址调用，幂等执行。
     PocPowerStoreInitializePowerStore {
         operator: AccountAddress,
     },
 
-    /// 更新唯一 operator 地址。
-    /// 仅限 @aptos_framework 调用；新旧地址相同则幂等返回。
+    PocPowerStoreInitializePowerStoreWithPeriod {
+        operator: AccountAddress,
+        power_period_in_epochs: u64,
+    },
+
+    /// Genesis / test special case: directly write a committed snapshot at period 0.
+    ///
+    /// This bypasses the normal staging flow and is only valid when the chain is still at
+    /// last_epoch == 0 && current_period == 0 (i.e., during genesis initialization).
+    /// Used to seed initial validator power values before the first epoch begins.
+    PocPowerStoreSetGenesisCommittedPower {
+        user: AccountAddress,
+        power: u64,
+    },
+
     PocPowerStoreSetOperator {
         new_operator: AccountAddress,
     },
 
+    PocPowerStoreSetRetentionBpsPerPeriod {
+        retention_bps_per_period: u64,
+    },
+
+    /// Batch-write power versions for the next power period.
+    ///
+    /// Convention:
+    /// - When on-chain current_period = P, the off-chain service uploads results computed from period P-1 data.
+    /// - However, those results only take effect starting from period P+1, so this function writes
+    ///   `effective_period = current_period + 1` (i.e., target_period).
+    ///
+    /// Constraints:
+    /// - Only the designated `operator` may call this.
+    /// - `target_period` must equal `current_period + 1`; staging further ahead is not allowed
+    ///   to prevent the operator from pre-loading multiple future periods at once.
+    /// - `users` and `powers` must have the same length.
+    ///
+    /// Idempotency: calling this multiple times for the same target_period overwrites the previous value.
+    /// This allows the operator to correct a mistake before the period boundary is crossed.
+    PocPowerStoreStageBatchUpdate {
+        target_period: u64,
+        users: Vec<AccountAddress>,
+        powers: Vec<u64>,
+    },
+
+    /// Initialize the Registry resource.
+    /// Only callable by @aptos_framework. Idempotent — skips if already initialized.
     PocRegistryInitializeRegistry {},
 
+    /// Pause the application. The admin voluntarily suspends operations (e.g., emergency response).
+    ///
+    /// While paused, trusted contribution events cannot be emitted via `poc_contribution`.
+    /// The application can be resumed via `resume_app` as long as it has not been permanently stopped.
     PocRegistryPauseApp {},
 
+    /// Dapp application registration entry point.
+    ///
+    /// Any address may call this function to register as a Dapp application administrator.
+    /// After successful registration, the application defaults to ACTIVE state with
+    /// POC listing status REGISTERED (not yet whitelisted by the platform).
+    ///
+    /// Uniqueness constraints (all enforced atomically):
+    /// - One admin address can only register one application
+    /// - app_address / equity_token_address / custody_address must each be globally unique
+    ///   across all registered applications
+    ///
+    /// The equity_token_address is validated as a real Fungible Asset Metadata object
+    /// via `object::address_to_object<Metadata>` — this aborts if the address is not
+    /// a valid FA metadata object, preventing registration with fake token addresses.
+    ///
+    /// Parameters:
+    /// - app_admin: Administrator signer (the caller becomes the admin)
+    /// - app_address: Contract deployment address (the on-chain entry module address)
+    /// - equity_token_address: Equity token address; must be a valid FA Metadata object
+    /// - custody_address: Custody address holding equity tokens pending distribution
+    /// - metadata_uri: Application's official website or authoritative information link
     PocRegistryRegisterApp {
         app_address: AccountAddress,
         equity_token_address: AccountAddress,
@@ -808,31 +737,94 @@ pub enum EntryFunctionCall {
         metadata_uri: Vec<u8>,
     },
 
+    /// Resume the application from PAUSED state back to ACTIVE.
+    ///
+    /// Aborts if the application is in STOPPED state — permanent stops cannot be reversed.
+    /// This guard prevents accidental resurrection of a stopped application.
     PocRegistryResumeApp {},
 
+    /// Set the effective weight for an application (in per-basis-points, 0–10000).
+    ///
+    /// Only callable by @aptos_framework (DAO governance).
+    /// 10000 means 100% weight (full contribution counted); 5000 means 50%, etc.
+    /// Idempotent: if the new value equals the current value, returns without emitting an event.
+    PocRegistrySetEffectiveWeightPbs {
+        app_admin: AccountAddress,
+        new_effective_weight_pbs: u64,
+    },
+
+    /// Set the POC inclusion status for an application.
+    ///
+    /// Only callable by @aptos_framework (currently centralized governance; can be migrated to DAO later).
+    /// Valid values: REGISTERED / WHITELISTED / SUSPENDED.
+    ///
+    /// This is the master setter; `whitelist_app_for_poc` and `suspend_poc_listing` are
+    /// convenience wrappers around this function.
     PocRegistrySetPocListingStatus {
         app_admin: AccountAddress,
         new_poc_listing_status: u8,
     },
 
+    /// Permanently stop the application. This operation is irreversible.
+    ///
+    /// Once stopped, the application cannot be restored to ACTIVE or PAUSED state.
+    /// Use this only when the application is being permanently decommissioned.
     PocRegistryStopApp {},
 
+    /// Suspend an application's POC inclusion (e.g., suspected fraud, under investigation).
+    ///
+    /// While suspended, the application's contribution events are NOT counted toward POC power.
+    /// The suspension can be lifted by calling `whitelist_app_for_poc` after investigation.
+    /// Only callable by @aptos_framework.
     PocRegistrySuspendPocListing {
         app_admin: AccountAddress,
     },
 
+    /// Update the contract deployment address.
+    ///
+    /// Use case: after a contract upgrade or redeployment, bind the new deployment address
+    /// to the same admin. The new address must be globally unique.
+    /// Idempotent: if the new address equals the current address, returns immediately.
+    ///
+    /// This does NOT reset poc_listing_status — only equity token changes trigger a reset.
     PocRegistryUpdateAppAddress {
         new_app_address: AccountAddress,
     },
 
+    /// Update the custody address.
+    ///
+    /// The new address must be globally unique across all registered applications.
+    /// The custody address is the signer that authorizes token transfers during trusted
+    /// contribution events. Changing it does NOT reset poc_listing_status.
+    ///
+    /// Idempotent: if the new address equals the current address, returns immediately.
     PocRegistryUpdateCustodyAddress {
         new_custody_address: AccountAddress,
     },
 
+    /// Update the equity token address.
+    ///
+    /// The new address must be a valid FA Metadata object and globally unique.
+    ///
+    /// IMPORTANT SECURITY INVARIANT: Changing the equity token address automatically resets
+    /// poc_listing_status to REGISTERED, requiring platform re-review before the app can
+    /// regain WHITELISTED status. This is intentional:
+    /// - The equity token is the core asset identifier for the application.
+    /// - Previous platform audits were conducted against the old token; a new token means
+    ///   the audit assumptions may no longer hold (different supply, different transfer hooks, etc.).
+    /// - Requiring re-review prevents an app from swapping to a malicious token while retaining
+    ///   its trusted whitelist status.
+    ///
+    /// Idempotent: if the new address equals the current address, returns immediately.
     PocRegistryUpdateEquityTokenAddress {
         new_equity_token_address: AccountAddress,
     },
 
+    /// Add an application to the POC whitelist (WHITELISTED / active state).
+    ///
+    /// After whitelisting, contribution events emitted by this application are scanned
+    /// by off-chain indexers and counted toward POC power, which can participate in governance voting.
+    /// Only callable by @aptos_framework.
     PocRegistryWhitelistAppForPoc {
         app_admin: AccountAddress,
     },
@@ -864,11 +856,6 @@ pub enum EntryFunctionCall {
         code: Vec<Vec<u8>>,
     },
 
-    /// Add `amount` of coins from the `account` owning the StakePool.
-    StakeAddStake {
-        amount: u64,
-    },
-
     /// Similar to increase_lockup_with_cap but will use ownership capability from the signing account.
     StakeIncreaseLockup {},
 
@@ -879,7 +866,6 @@ pub enum EntryFunctionCall {
     StakeInitializeStakeOwner {
         initial_stake_amount: u64,
         operator: AccountAddress,
-        voter: AccountAddress,
     },
 
     /// Initialize the validator account and give ownership to the signing account.
@@ -905,11 +891,6 @@ pub enum EntryFunctionCall {
         pool_address: AccountAddress,
     },
 
-    /// Move `amount` of coins from pending_inactive to active.
-    StakeReactivateStake {
-        amount: u64,
-    },
-
     /// Rotate the consensus key of the validator, it'll take effect in next epoch.
     StakeRotateConsensusKey {
         pool_address: AccountAddress,
@@ -917,19 +898,9 @@ pub enum EntryFunctionCall {
         proof_of_possession: Vec<u8>,
     },
 
-    /// Allows an owner to change the delegated voter of the stake pool.
-    StakeSetDelegatedVoter {
-        new_voter: AccountAddress,
-    },
-
     /// Allows an owner to change the operator of the stake pool.
     StakeSetOperator {
         new_operator: AccountAddress,
-    },
-
-    /// Similar to unlock_with_cap but will use ownership capability from the signing account.
-    StakeUnlock {
-        amount: u64,
     },
 
     /// Update the network and full node addresses of the validator. This only takes effect in the next epoch.
@@ -939,94 +910,7 @@ pub enum EntryFunctionCall {
         new_fullnode_addresses: Vec<u8>,
     },
 
-    /// Withdraw from `account`'s inactive stake.
-    StakeWithdraw {
-        withdraw_amount: u64,
-    },
-
-    /// Add more stake to an existing staking contract.
-    StakingContractAddStake {
-        operator: AccountAddress,
-        amount: u64,
-    },
-
-    /// Staker can call this function to create a simple staking contract with a specified operator.
-    StakingContractCreateStakingContract {
-        operator: AccountAddress,
-        voter: AccountAddress,
-        amount: u64,
-        commission_percentage: u64,
-        contract_creation_seed: Vec<u8>,
-    },
-
-    /// Allow anyone to distribute already unlocked funds. This does not affect reward compounding and therefore does
-    /// not need to be restricted to just the staker or operator.
-    StakingContractDistribute {
-        staker: AccountAddress,
-        operator: AccountAddress,
-    },
-
-    /// Unlock commission amount from the stake pool. Operator needs to wait for the amount to become withdrawable
-    /// at the end of the stake pool's lockup period before they can actually can withdraw_commission.
-    ///
-    /// Only staker, operator or beneficiary can call this.
-    StakingContractRequestCommission {
-        staker: AccountAddress,
-        operator: AccountAddress,
-    },
-
-    /// Convenient function to allow the staker to reset their stake pool's lockup period to start now.
-    StakingContractResetLockup {
-        operator: AccountAddress,
-    },
-
-    /// Allows an operator to change its beneficiary. Any existing unpaid commission rewards will be paid to the new
-    /// beneficiary. To ensures payment to the current beneficiary, one should first call `distribute` before switching
-    /// the beneficiary. An operator can set one beneficiary for staking contract pools, not a separate one for each pool.
-    StakingContractSetBeneficiaryForOperator {
-        new_beneficiary: AccountAddress,
-    },
-
-    /// Allows staker to switch operator without going through the lenghthy process to unstake.
-    StakingContractSwitchOperator {
-        old_operator: AccountAddress,
-        new_operator: AccountAddress,
-        new_commission_percentage: u64,
-    },
-
-    /// Allows staker to switch operator without going through the lenghthy process to unstake, without resetting commission.
-    StakingContractSwitchOperatorWithSameCommission {
-        old_operator: AccountAddress,
-        new_operator: AccountAddress,
-    },
-
-    /// Unlock all accumulated rewards since the last recorded principals.
-    StakingContractUnlockRewards {
-        operator: AccountAddress,
-    },
-
-    /// Staker can call this to request withdrawal of part or all of their staking_contract.
-    /// This also triggers paying commission to the operator for accounting simplicity.
-    StakingContractUnlockStake {
-        operator: AccountAddress,
-        amount: u64,
-    },
-
-    /// Convenience function to allow a staker to update the commission percentage paid to the operator.
-    /// TODO: fix the typo in function name. commision -> commission
-    StakingContractUpdateCommision {
-        operator: AccountAddress,
-        new_commission_percentage: u64,
-    },
-
-    /// Convenient function to allow the staker to update the voter address in a staking contract they made.
-    StakingContractUpdateVoter {
-        operator: AccountAddress,
-        new_voter: AccountAddress,
-    },
-
     StakingProxySetOperator {
-        old_operator: AccountAddress,
         new_operator: AccountAddress,
     },
 
@@ -1034,34 +918,75 @@ pub enum EntryFunctionCall {
         new_operator: AccountAddress,
     },
 
-    StakingProxySetStakePoolVoter {
-        new_voter: AccountAddress,
+    /// Delegate the user's staked deposit to a validator pool.
+    ///
+    /// Prerequisites:
+    /// - User must not already be delegated (must call `undelegate` first)
+    /// - Cooldown period must have elapsed (if any)
+    /// - User's effective power must be >= min_active_power
+    ///
+    /// After delegation, the user's deposit backs the validator's total power,
+    /// and the user begins receiving a proportional share of epoch rewards and fees.
+    StakingRegistryDelegate {
+        validator_address: AccountAddress,
     },
 
-    StakingProxySetStakingContractOperator {
-        old_operator: AccountAddress,
-        new_operator: AccountAddress,
+    /// Deposit TOPO coins into the registry as staking collateral.
+    ///
+    /// Deposited coins are held in escrow by the registry and cannot be withdrawn
+    /// while the user is delegated to a validator. They serve as economic collateral
+    /// that backs the user's POC power: effective_power = min(poc_power, deposit / octas_per_power).
+    ///
+    /// Deposits auto-compound: epoch rewards and fee shares are minted directly into
+    /// the user's deposit balance, increasing their deposit coverage over time.
+    StakingRegistryDeposit {
+        amount: u64,
     },
 
-    StakingProxySetStakingContractVoter {
-        operator: AccountAddress,
-        new_voter: AccountAddress,
+    StakingRegistryRegisterValidator {
+        commission_bps: u64,
     },
 
-    StakingProxySetVestingContractOperator {
-        old_operator: AccountAddress,
-        new_operator: AccountAddress,
+    /// Update the minimum active power and force-exit threshold.
+    ///
+    /// `min_active_power`: minimum effective power a user must have to join a pool.
+    /// `force_exit_power_bps`: users whose power falls below
+    ///   (min_active_power * force_exit_power_bps / 10000) are force-undelegated at epoch boundaries.
+    /// Setting force_exit_power_bps = 8000 means users are ejected when power < 80% of min_active_power,
+    /// providing a hysteresis band to prevent thrashing at the boundary.
+    StakingRegistrySetActivePowerThresholds {
+        min_active_power: u64,
+        force_exit_power_bps: u64,
     },
 
-    StakingProxySetVestingContractVoter {
-        operator: AccountAddress,
-        new_voter: AccountAddress,
+    /// Update how much deposited TOPO is required to back one unit of POC power.
+    ///
+    /// Only the framework account may change this economic parameter. Lowering the value
+    /// increases the amount of committed POC power that can become effective for a fixed
+    /// deposit; raising it can reduce effective power and may cause low-coverage delegators
+    /// to be force-undelegated at the next epoch boundary.
+    StakingRegistrySetOctasPerPower {
+        octas_per_power: u64,
     },
 
-    StakingProxySetVoter {
-        operator: AccountAddress,
-        new_voter: AccountAddress,
-    },
+    /// Remove the user's delegation from their current validator pool.
+    ///
+    /// The user's deposit remains in the registry but no longer backs any validator's power.
+    /// A cooldown period begins: the user must wait `cooldown_secs` before they can
+    /// re-delegate or withdraw their deposit.
+    ///
+    /// This cooldown prevents rapid stake-hopping that could destabilize the validator set
+    /// or enable governance manipulation (vote, undelegate, re-delegate, vote again).
+    StakingRegistryUndelegate {},
+
+    /// Withdraw the user's full deposit back to their wallet.
+    ///
+    /// Requirements:
+    /// - User must not be currently delegated (deposit is locked while delegated)
+    /// - Cooldown period must have elapsed since undelegating
+    ///
+    /// After withdrawal, the user's deposit balance becomes zero and cooldown is cleared.
+    StakingRegistryWithdrawDeposit {},
 
     /// Batch version of TOPO transfer.
     TopoAccountBatchTransfer {
@@ -1133,36 +1058,19 @@ pub enum EntryFunctionCall {
         proposal_id: u64,
     },
 
-    /// Batch vote on proposal with proposal_id and specified voting power from multiple stake_pools.
-    TopoGovernanceBatchPartialVote {
-        stake_pools: Vec<AccountAddress>,
-        proposal_id: u64,
-        voting_power: u64,
-        should_pass: bool,
-    },
-
-    /// Vote on proposal with proposal_id and all voting power from multiple stake_pools.
-    TopoGovernanceBatchVote {
-        stake_pools: Vec<AccountAddress>,
-        proposal_id: u64,
-        should_pass: bool,
-    },
-
-    /// Create a single-step proposal with the backing `stake_pool`.
+    /// Create a single-step proposal with the caller's voting power.
     /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
     /// only the exact script with matching hash can be successfully executed.
     TopoGovernanceCreateProposal {
-        stake_pool: AccountAddress,
         execution_hash: Vec<u8>,
         metadata_location: Vec<u8>,
         metadata_hash: Vec<u8>,
     },
 
-    /// Create a single-step or multi-step proposal with the backing `stake_pool`.
+    /// Create a single-step or multi-step proposal with the caller's voting power.
     /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
     /// only the exact script with matching hash can be successfully executed.
     TopoGovernanceCreateProposalV2 {
-        stake_pool: AccountAddress,
         execution_hash: Vec<u8>,
         metadata_location: Vec<u8>,
         metadata_hash: Vec<u8>,
@@ -1181,9 +1089,8 @@ pub enum EntryFunctionCall {
     /// where the core resources account exists and has been granted power to mint Aptos coins.
     TopoGovernanceForceEndEpochTestOnly {},
 
-    /// Vote on proposal with `proposal_id` and specified voting power from `stake_pool`.
+    /// Vote on proposal with `proposal_id` and specified voting power from the caller.
     TopoGovernancePartialVote {
-        stake_pool: AccountAddress,
         proposal_id: u64,
         voting_power: u64,
         should_pass: bool,
@@ -1200,9 +1107,8 @@ pub enum EntryFunctionCall {
     /// since such updates are applied whenever we enter an new epoch.
     TopoGovernanceReconfigure {},
 
-    /// Vote on proposal with `proposal_id` and all voting power from `stake_pool`.
+    /// Vote on proposal with `proposal_id` and all voting power from the caller.
     TopoGovernanceVote {
-        stake_pool: AccountAddress,
         proposal_id: u64,
         should_pass: bool,
     },
@@ -1224,101 +1130,6 @@ pub enum EntryFunctionCall {
     /// TODO: update all the tests that reference this function, then disable this function.
     VersionSetVersion {
         major: u64,
-    },
-
-    /// Withdraw all funds to the preset vesting contract's withdrawal address. This can only be called if the contract
-    /// has already been terminated.
-    VestingAdminWithdraw {
-        contract_address: AccountAddress,
-    },
-
-    /// Distribute any withdrawable stake from the stake pool.
-    VestingDistribute {
-        contract_address: AccountAddress,
-    },
-
-    /// Call `distribute` for many vesting contracts.
-    VestingDistributeMany {
-        contract_addresses: Vec<AccountAddress>,
-    },
-
-    /// Remove the beneficiary for the given shareholder. All distributions will sent directly to the shareholder
-    /// account.
-    VestingResetBeneficiary {
-        contract_address: AccountAddress,
-        shareholder: AccountAddress,
-    },
-
-    VestingResetLockup {
-        contract_address: AccountAddress,
-    },
-
-    VestingSetBeneficiary {
-        contract_address: AccountAddress,
-        shareholder: AccountAddress,
-        new_beneficiary: AccountAddress,
-    },
-
-    /// Set the beneficiary for the operator.
-    VestingSetBeneficiaryForOperator {
-        new_beneficiary: AccountAddress,
-    },
-
-    VestingSetBeneficiaryResetter {
-        contract_address: AccountAddress,
-        beneficiary_resetter: AccountAddress,
-    },
-
-    VestingSetManagementRole {
-        contract_address: AccountAddress,
-        role: Vec<u8>,
-        role_holder: AccountAddress,
-    },
-
-    /// Terminate the vesting contract and send all funds back to the withdrawal address.
-    VestingTerminateVestingContract {
-        contract_address: AccountAddress,
-    },
-
-    /// Unlock any accumulated rewards.
-    VestingUnlockRewards {
-        contract_address: AccountAddress,
-    },
-
-    /// Call `unlock_rewards` for many vesting contracts.
-    VestingUnlockRewardsMany {
-        contract_addresses: Vec<AccountAddress>,
-    },
-
-    VestingUpdateCommissionPercentage {
-        contract_address: AccountAddress,
-        new_commission_percentage: u64,
-    },
-
-    VestingUpdateOperator {
-        contract_address: AccountAddress,
-        new_operator: AccountAddress,
-        commission_percentage: u64,
-    },
-
-    VestingUpdateOperatorWithSameCommission {
-        contract_address: AccountAddress,
-        new_operator: AccountAddress,
-    },
-
-    VestingUpdateVoter {
-        contract_address: AccountAddress,
-        new_voter: AccountAddress,
-    },
-
-    /// Unlock any vested portion of the grant.
-    VestingVest {
-        contract_address: AccountAddress,
-    },
-
-    /// Call `vest` for many vesting contracts.
-    VestingVestMany {
-        contract_addresses: Vec<AccountAddress>,
     },
 }
 
@@ -1467,85 +1278,6 @@ impl EntryFunctionCall {
                 amount,
             } => coin_transfer(coin_type, to, amount),
             CoinUpgradeSupply { coin_type } => coin_upgrade_supply(coin_type),
-            DelegationPoolAddStake {
-                pool_address,
-                amount,
-            } => delegation_pool_add_stake(pool_address, amount),
-            DelegationPoolAllowlistDelegator { delegator_address } => {
-                delegation_pool_allowlist_delegator(delegator_address)
-            },
-            DelegationPoolCreateProposal {
-                pool_address,
-                execution_hash,
-                metadata_location,
-                metadata_hash,
-                is_multi_step_proposal,
-            } => delegation_pool_create_proposal(
-                pool_address,
-                execution_hash,
-                metadata_location,
-                metadata_hash,
-                is_multi_step_proposal,
-            ),
-            DelegationPoolDelegateVotingPower {
-                pool_address,
-                new_voter,
-            } => delegation_pool_delegate_voting_power(pool_address, new_voter),
-            DelegationPoolDisableDelegatorsAllowlisting {} => {
-                delegation_pool_disable_delegators_allowlisting()
-            },
-            DelegationPoolEnableDelegatorsAllowlisting {} => {
-                delegation_pool_enable_delegators_allowlisting()
-            },
-            DelegationPoolEnablePartialGovernanceVoting { pool_address } => {
-                delegation_pool_enable_partial_governance_voting(pool_address)
-            },
-            DelegationPoolEvictDelegator { delegator_address } => {
-                delegation_pool_evict_delegator(delegator_address)
-            },
-            DelegationPoolInitializeDelegationPool {
-                operator_commission_percentage,
-                delegation_pool_creation_seed,
-            } => delegation_pool_initialize_delegation_pool(
-                operator_commission_percentage,
-                delegation_pool_creation_seed,
-            ),
-            DelegationPoolReactivateStake {
-                pool_address,
-                amount,
-            } => delegation_pool_reactivate_stake(pool_address, amount),
-            DelegationPoolRemoveDelegatorFromAllowlist { delegator_address } => {
-                delegation_pool_remove_delegator_from_allowlist(delegator_address)
-            },
-            DelegationPoolSetBeneficiaryForOperator { new_beneficiary } => {
-                delegation_pool_set_beneficiary_for_operator(new_beneficiary)
-            },
-            DelegationPoolSetDelegatedVoter { _new_voter } => {
-                delegation_pool_set_delegated_voter(_new_voter)
-            },
-            DelegationPoolSetOperator { new_operator } => {
-                delegation_pool_set_operator(new_operator)
-            },
-            DelegationPoolSynchronizeDelegationPool { pool_address } => {
-                delegation_pool_synchronize_delegation_pool(pool_address)
-            },
-            DelegationPoolUnlock {
-                pool_address,
-                amount,
-            } => delegation_pool_unlock(pool_address, amount),
-            DelegationPoolUpdateCommissionPercentage {
-                new_commission_percentage,
-            } => delegation_pool_update_commission_percentage(new_commission_percentage),
-            DelegationPoolVote {
-                pool_address,
-                proposal_id,
-                voting_power,
-                should_pass,
-            } => delegation_pool_vote(pool_address, proposal_id, voting_power, should_pass),
-            DelegationPoolWithdraw {
-                pool_address,
-                amount,
-            } => delegation_pool_withdraw(pool_address, amount),
             JwksUpdateFederatedJwkSet {
                 iss,
                 kid_vec,
@@ -1751,15 +1483,27 @@ impl EntryFunctionCall {
             PermissionedSignerRevokePermissionStorageAddress {
                 permissions_storage_addr,
             } => permissioned_signer_revoke_permission_storage_address(permissions_storage_addr),
-            PocPowerStoreBatchUpdate {
-                period,
-                users,
-                powers,
-            } => poc_power_store_batch_update(period, users, powers),
             PocPowerStoreInitializePowerStore { operator } => {
                 poc_power_store_initialize_power_store(operator)
             },
+            PocPowerStoreInitializePowerStoreWithPeriod {
+                operator,
+                power_period_in_epochs,
+            } => {
+                poc_power_store_initialize_power_store_with_period(operator, power_period_in_epochs)
+            },
+            PocPowerStoreSetGenesisCommittedPower { user, power } => {
+                poc_power_store_set_genesis_committed_power(user, power)
+            },
             PocPowerStoreSetOperator { new_operator } => poc_power_store_set_operator(new_operator),
+            PocPowerStoreSetRetentionBpsPerPeriod {
+                retention_bps_per_period,
+            } => poc_power_store_set_retention_bps_per_period(retention_bps_per_period),
+            PocPowerStoreStageBatchUpdate {
+                target_period,
+                users,
+                powers,
+            } => poc_power_store_stage_batch_update(target_period, users, powers),
             PocRegistryInitializeRegistry {} => poc_registry_initialize_registry(),
             PocRegistryPauseApp {} => poc_registry_pause_app(),
             PocRegistryRegisterApp {
@@ -1774,6 +1518,10 @@ impl EntryFunctionCall {
                 metadata_uri,
             ),
             PocRegistryResumeApp {} => poc_registry_resume_app(),
+            PocRegistrySetEffectiveWeightPbs {
+                app_admin,
+                new_effective_weight_pbs,
+            } => poc_registry_set_effective_weight_pbs(app_admin, new_effective_weight_pbs),
             PocRegistrySetPocListingStatus {
                 app_admin,
                 new_poc_listing_status,
@@ -1816,13 +1564,11 @@ impl EntryFunctionCall {
                 metadata_serialized,
                 code,
             ),
-            StakeAddStake { amount } => stake_add_stake(amount),
             StakeIncreaseLockup {} => stake_increase_lockup(),
             StakeInitializeStakeOwner {
                 initial_stake_amount,
                 operator,
-                voter,
-            } => stake_initialize_stake_owner(initial_stake_amount, operator, voter),
+            } => stake_initialize_stake_owner(initial_stake_amount, operator),
             StakeInitializeValidator {
                 consensus_pubkey,
                 proof_of_possession,
@@ -1836,7 +1582,6 @@ impl EntryFunctionCall {
             ),
             StakeJoinValidatorSet { pool_address } => stake_join_validator_set(pool_address),
             StakeLeaveValidatorSet { pool_address } => stake_leave_validator_set(pool_address),
-            StakeReactivateStake { amount } => stake_reactivate_stake(amount),
             StakeRotateConsensusKey {
                 pool_address,
                 new_consensus_pubkey,
@@ -1844,9 +1589,7 @@ impl EntryFunctionCall {
             } => {
                 stake_rotate_consensus_key(pool_address, new_consensus_pubkey, proof_of_possession)
             },
-            StakeSetDelegatedVoter { new_voter } => stake_set_delegated_voter(new_voter),
             StakeSetOperator { new_operator } => stake_set_operator(new_operator),
-            StakeUnlock { amount } => stake_unlock(amount),
             StakeUpdateNetworkAndFullnodeAddresses {
                 pool_address,
                 new_network_addresses,
@@ -1856,88 +1599,28 @@ impl EntryFunctionCall {
                 new_network_addresses,
                 new_fullnode_addresses,
             ),
-            StakeWithdraw { withdraw_amount } => stake_withdraw(withdraw_amount),
-            StakingContractAddStake { operator, amount } => {
-                staking_contract_add_stake(operator, amount)
-            },
-            StakingContractCreateStakingContract {
-                operator,
-                voter,
-                amount,
-                commission_percentage,
-                contract_creation_seed,
-            } => staking_contract_create_staking_contract(
-                operator,
-                voter,
-                amount,
-                commission_percentage,
-                contract_creation_seed,
-            ),
-            StakingContractDistribute { staker, operator } => {
-                staking_contract_distribute(staker, operator)
-            },
-            StakingContractRequestCommission { staker, operator } => {
-                staking_contract_request_commission(staker, operator)
-            },
-            StakingContractResetLockup { operator } => staking_contract_reset_lockup(operator),
-            StakingContractSetBeneficiaryForOperator { new_beneficiary } => {
-                staking_contract_set_beneficiary_for_operator(new_beneficiary)
-            },
-            StakingContractSwitchOperator {
-                old_operator,
-                new_operator,
-                new_commission_percentage,
-            } => staking_contract_switch_operator(
-                old_operator,
-                new_operator,
-                new_commission_percentage,
-            ),
-            StakingContractSwitchOperatorWithSameCommission {
-                old_operator,
-                new_operator,
-            } => staking_contract_switch_operator_with_same_commission(old_operator, new_operator),
-            StakingContractUnlockRewards { operator } => staking_contract_unlock_rewards(operator),
-            StakingContractUnlockStake { operator, amount } => {
-                staking_contract_unlock_stake(operator, amount)
-            },
-            StakingContractUpdateCommision {
-                operator,
-                new_commission_percentage,
-            } => staking_contract_update_commision(operator, new_commission_percentage),
-            StakingContractUpdateVoter {
-                operator,
-                new_voter,
-            } => staking_contract_update_voter(operator, new_voter),
-            StakingProxySetOperator {
-                old_operator,
-                new_operator,
-            } => staking_proxy_set_operator(old_operator, new_operator),
+            StakingProxySetOperator { new_operator } => staking_proxy_set_operator(new_operator),
             StakingProxySetStakePoolOperator { new_operator } => {
                 staking_proxy_set_stake_pool_operator(new_operator)
             },
-            StakingProxySetStakePoolVoter { new_voter } => {
-                staking_proxy_set_stake_pool_voter(new_voter)
+            StakingRegistryDelegate { validator_address } => {
+                staking_registry_delegate(validator_address)
             },
-            StakingProxySetStakingContractOperator {
-                old_operator,
-                new_operator,
-            } => staking_proxy_set_staking_contract_operator(old_operator, new_operator),
-            StakingProxySetStakingContractVoter {
-                operator,
-                new_voter,
-            } => staking_proxy_set_staking_contract_voter(operator, new_voter),
-            StakingProxySetVestingContractOperator {
-                old_operator,
-                new_operator,
-            } => staking_proxy_set_vesting_contract_operator(old_operator, new_operator),
-            StakingProxySetVestingContractVoter {
-                operator,
-                new_voter,
-            } => staking_proxy_set_vesting_contract_voter(operator, new_voter),
-            StakingProxySetVoter {
-                operator,
-                new_voter,
-            } => staking_proxy_set_voter(operator, new_voter),
+            StakingRegistryDeposit { amount } => staking_registry_deposit(amount),
+            StakingRegistryRegisterValidator { commission_bps } => {
+                staking_registry_register_validator(commission_bps)
+            },
+            StakingRegistrySetActivePowerThresholds {
+                min_active_power,
+                force_exit_power_bps,
+            } => {
+                staking_registry_set_active_power_thresholds(min_active_power, force_exit_power_bps)
+            },
+            StakingRegistrySetOctasPerPower { octas_per_power } => {
+                staking_registry_set_octas_per_power(octas_per_power)
+            },
+            StakingRegistryUndelegate {} => staking_registry_undelegate(),
+            StakingRegistryWithdrawDeposit {} => staking_registry_withdraw_deposit(),
             TopoAccountBatchTransfer {
                 recipients,
                 amounts,
@@ -1966,41 +1649,17 @@ impl EntryFunctionCall {
             TopoGovernanceAddApprovedScriptHashScript { proposal_id } => {
                 topo_governance_add_approved_script_hash_script(proposal_id)
             },
-            TopoGovernanceBatchPartialVote {
-                stake_pools,
-                proposal_id,
-                voting_power,
-                should_pass,
-            } => topo_governance_batch_partial_vote(
-                stake_pools,
-                proposal_id,
-                voting_power,
-                should_pass,
-            ),
-            TopoGovernanceBatchVote {
-                stake_pools,
-                proposal_id,
-                should_pass,
-            } => topo_governance_batch_vote(stake_pools, proposal_id, should_pass),
             TopoGovernanceCreateProposal {
-                stake_pool,
                 execution_hash,
                 metadata_location,
                 metadata_hash,
-            } => topo_governance_create_proposal(
-                stake_pool,
-                execution_hash,
-                metadata_location,
-                metadata_hash,
-            ),
+            } => topo_governance_create_proposal(execution_hash, metadata_location, metadata_hash),
             TopoGovernanceCreateProposalV2 {
-                stake_pool,
                 execution_hash,
                 metadata_location,
                 metadata_hash,
                 is_multi_step_proposal,
             } => topo_governance_create_proposal_v2(
-                stake_pool,
                 execution_hash,
                 metadata_location,
                 metadata_hash,
@@ -2009,75 +1668,20 @@ impl EntryFunctionCall {
             TopoGovernanceForceEndEpoch {} => topo_governance_force_end_epoch(),
             TopoGovernanceForceEndEpochTestOnly {} => topo_governance_force_end_epoch_test_only(),
             TopoGovernancePartialVote {
-                stake_pool,
                 proposal_id,
                 voting_power,
                 should_pass,
-            } => topo_governance_partial_vote(stake_pool, proposal_id, voting_power, should_pass),
+            } => topo_governance_partial_vote(proposal_id, voting_power, should_pass),
             TopoGovernanceReconfigure {} => topo_governance_reconfigure(),
             TopoGovernanceVote {
-                stake_pool,
                 proposal_id,
                 should_pass,
-            } => topo_governance_vote(stake_pool, proposal_id, should_pass),
+            } => topo_governance_vote(proposal_id, should_pass),
             TransactionFeeConvertToAptosFaBurnRef {} => {
                 transaction_fee_convert_to_aptos_fa_burn_ref()
             },
             VersionSetForNextEpoch { major } => version_set_for_next_epoch(major),
             VersionSetVersion { major } => version_set_version(major),
-            VestingAdminWithdraw { contract_address } => vesting_admin_withdraw(contract_address),
-            VestingDistribute { contract_address } => vesting_distribute(contract_address),
-            VestingDistributeMany { contract_addresses } => {
-                vesting_distribute_many(contract_addresses)
-            },
-            VestingResetBeneficiary {
-                contract_address,
-                shareholder,
-            } => vesting_reset_beneficiary(contract_address, shareholder),
-            VestingResetLockup { contract_address } => vesting_reset_lockup(contract_address),
-            VestingSetBeneficiary {
-                contract_address,
-                shareholder,
-                new_beneficiary,
-            } => vesting_set_beneficiary(contract_address, shareholder, new_beneficiary),
-            VestingSetBeneficiaryForOperator { new_beneficiary } => {
-                vesting_set_beneficiary_for_operator(new_beneficiary)
-            },
-            VestingSetBeneficiaryResetter {
-                contract_address,
-                beneficiary_resetter,
-            } => vesting_set_beneficiary_resetter(contract_address, beneficiary_resetter),
-            VestingSetManagementRole {
-                contract_address,
-                role,
-                role_holder,
-            } => vesting_set_management_role(contract_address, role, role_holder),
-            VestingTerminateVestingContract { contract_address } => {
-                vesting_terminate_vesting_contract(contract_address)
-            },
-            VestingUnlockRewards { contract_address } => vesting_unlock_rewards(contract_address),
-            VestingUnlockRewardsMany { contract_addresses } => {
-                vesting_unlock_rewards_many(contract_addresses)
-            },
-            VestingUpdateCommissionPercentage {
-                contract_address,
-                new_commission_percentage,
-            } => vesting_update_commission_percentage(contract_address, new_commission_percentage),
-            VestingUpdateOperator {
-                contract_address,
-                new_operator,
-                commission_percentage,
-            } => vesting_update_operator(contract_address, new_operator, commission_percentage),
-            VestingUpdateOperatorWithSameCommission {
-                contract_address,
-                new_operator,
-            } => vesting_update_operator_with_same_commission(contract_address, new_operator),
-            VestingUpdateVoter {
-                contract_address,
-                new_voter,
-            } => vesting_update_voter(contract_address, new_voter),
-            VestingVest { contract_address } => vesting_vest(contract_address),
-            VestingVestMany { contract_addresses } => vesting_vest_many(contract_addresses),
         }
     }
 
@@ -2742,387 +2346,6 @@ pub fn coin_upgrade_supply(coin_type: TypeTag) -> TransactionPayload {
         ident_str!("upgrade_supply").to_owned(),
         vec![coin_type],
         vec![],
-    ))
-}
-
-/// Add `amount` of coins to the delegation pool `pool_address`.
-pub fn delegation_pool_add_stake(pool_address: AccountAddress, amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("add_stake").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&pool_address).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-        ],
-    ))
-}
-
-/// Allowlist a delegator as the pool owner.
-pub fn delegation_pool_allowlist_delegator(
-    delegator_address: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("allowlist_delegator").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&delegator_address).unwrap()],
-    ))
-}
-
-/// A voter could create a governance proposal by this function. To successfully create a proposal, the voter's
-/// voting power in THIS delegation pool must be not less than the minimum required voting power specified in
-/// `topo_governance.move`.
-pub fn delegation_pool_create_proposal(
-    pool_address: AccountAddress,
-    execution_hash: Vec<u8>,
-    metadata_location: Vec<u8>,
-    metadata_hash: Vec<u8>,
-    is_multi_step_proposal: bool,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("create_proposal").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&pool_address).unwrap(),
-            bcs::to_bytes(&execution_hash).unwrap(),
-            bcs::to_bytes(&metadata_location).unwrap(),
-            bcs::to_bytes(&metadata_hash).unwrap(),
-            bcs::to_bytes(&is_multi_step_proposal).unwrap(),
-        ],
-    ))
-}
-
-/// Allows a delegator to delegate its voting power to a voter. If this delegator already has a delegated voter,
-/// this change won't take effects until the next lockup period.
-pub fn delegation_pool_delegate_voting_power(
-    pool_address: AccountAddress,
-    new_voter: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("delegate_voting_power").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&pool_address).unwrap(),
-            bcs::to_bytes(&new_voter).unwrap(),
-        ],
-    ))
-}
-
-/// Disable delegators allowlisting as the pool owner. The existing allowlist will be emptied.
-pub fn delegation_pool_disable_delegators_allowlisting() -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("disable_delegators_allowlisting").to_owned(),
-        vec![],
-        vec![],
-    ))
-}
-
-/// Enable delegators allowlisting as the pool owner.
-pub fn delegation_pool_enable_delegators_allowlisting() -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("enable_delegators_allowlisting").to_owned(),
-        vec![],
-        vec![],
-    ))
-}
-
-/// Enable partial governance voting on a stake pool. The voter of this stake pool will be managed by this module.
-/// The existing voter will be replaced. The function is permissionless.
-pub fn delegation_pool_enable_partial_governance_voting(
-    pool_address: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("enable_partial_governance_voting").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&pool_address).unwrap()],
-    ))
-}
-
-/// Evict a delegator that is not allowlisted by unlocking their entire stake.
-pub fn delegation_pool_evict_delegator(delegator_address: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("evict_delegator").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&delegator_address).unwrap()],
-    ))
-}
-
-/// Initialize a delegation pool of custom fixed `operator_commission_percentage`.
-/// A resource account is created from `owner` signer and its supplied `delegation_pool_creation_seed`
-/// to host the delegation pool resource and own the underlying stake pool.
-/// Ownership over setting the operator/voter is granted to `owner` who has both roles initially.
-pub fn delegation_pool_initialize_delegation_pool(
-    operator_commission_percentage: u64,
-    delegation_pool_creation_seed: Vec<u8>,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("initialize_delegation_pool").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&operator_commission_percentage).unwrap(),
-            bcs::to_bytes(&delegation_pool_creation_seed).unwrap(),
-        ],
-    ))
-}
-
-/// Move `amount` of coins from pending_inactive to active.
-pub fn delegation_pool_reactivate_stake(
-    pool_address: AccountAddress,
-    amount: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("reactivate_stake").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&pool_address).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-        ],
-    ))
-}
-
-/// Remove a delegator from the allowlist as the pool owner, but do not unlock their stake.
-pub fn delegation_pool_remove_delegator_from_allowlist(
-    delegator_address: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("remove_delegator_from_allowlist").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&delegator_address).unwrap()],
-    ))
-}
-
-/// Allows an operator to change its beneficiary. Any existing unpaid commission rewards will be paid to the new
-/// beneficiary. To ensure payment to the current beneficiary, one should first call `synchronize_delegation_pool`
-/// before switching the beneficiary. An operator can set one beneficiary for delegation pools, not a separate
-/// one for each pool.
-pub fn delegation_pool_set_beneficiary_for_operator(
-    new_beneficiary: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("set_beneficiary_for_operator").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&new_beneficiary).unwrap()],
-    ))
-}
-
-/// Deprecated. Use the partial governance voting flow instead.
-pub fn delegation_pool_set_delegated_voter(_new_voter: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("set_delegated_voter").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&_new_voter).unwrap()],
-    ))
-}
-
-/// Allows an owner to change the operator of the underlying stake pool.
-pub fn delegation_pool_set_operator(new_operator: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("set_operator").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&new_operator).unwrap()],
-    ))
-}
-
-/// Synchronize delegation and stake pools: distribute yet-undetected rewards to the corresponding internal
-/// shares pools, assign commission to operator and eventually prepare delegation pool for a new lockup cycle.
-pub fn delegation_pool_synchronize_delegation_pool(
-    pool_address: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("synchronize_delegation_pool").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&pool_address).unwrap()],
-    ))
-}
-
-/// Unlock `amount` from the active + pending_active stake of `delegator` or
-/// at most how much active stake there is on the stake pool.
-pub fn delegation_pool_unlock(pool_address: AccountAddress, amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("unlock").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&pool_address).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-        ],
-    ))
-}
-
-/// Allows an owner to update the commission percentage for the operator of the underlying stake pool.
-pub fn delegation_pool_update_commission_percentage(
-    new_commission_percentage: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("update_commission_percentage").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&new_commission_percentage).unwrap()],
-    ))
-}
-
-/// Vote on a proposal with a voter's voting power. To successfully vote, the following conditions must be met:
-/// 1. The voting period of the proposal hasn't ended.
-/// 2. The delegation pool's lockup period ends after the voting period of the proposal.
-/// 3. The voter still has spare voting power on this proposal.
-/// 4. The delegation pool never votes on the proposal before enabling partial governance voting.
-pub fn delegation_pool_vote(
-    pool_address: AccountAddress,
-    proposal_id: u64,
-    voting_power: u64,
-    should_pass: bool,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("vote").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&pool_address).unwrap(),
-            bcs::to_bytes(&proposal_id).unwrap(),
-            bcs::to_bytes(&voting_power).unwrap(),
-            bcs::to_bytes(&should_pass).unwrap(),
-        ],
-    ))
-}
-
-/// Withdraw `amount` of owned inactive stake from the delegation pool at `pool_address`.
-pub fn delegation_pool_withdraw(pool_address: AccountAddress, amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("delegation_pool").to_owned(),
-        ),
-        ident_str!("withdraw").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&pool_address).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-        ],
     ))
 }
 
@@ -4061,39 +3284,6 @@ pub fn permissioned_signer_revoke_permission_storage_address(
     ))
 }
 
-/// 批量更新用户算力。
-///
-/// 说明：
-/// - 本模块不做链上批次幂等
-/// - 同一用户被再次写入时：
-///   - 若 `period >= last_updated_period`，则覆盖旧值和最后更新周期
-///   - 若 `period < last_updated_period`，则跳过该用户，防止旧周期回退覆盖
-/// - 只有实际发生写入的用户才会发出 `PowerUpdatedEvent`
-pub fn poc_power_store_batch_update(
-    period: u64,
-    users: Vec<AccountAddress>,
-    powers: Vec<u128>,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("poc_power_store").to_owned(),
-        ),
-        ident_str!("batch_update").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&period).unwrap(),
-            bcs::to_bytes(&users).unwrap(),
-            bcs::to_bytes(&powers).unwrap(),
-        ],
-    ))
-}
-
-/// 初始化全局算力存储。
-/// 仅限 @aptos_framework 地址调用，幂等执行。
 pub fn poc_power_store_initialize_power_store(operator: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4109,8 +3299,53 @@ pub fn poc_power_store_initialize_power_store(operator: AccountAddress) -> Trans
     ))
 }
 
-/// 更新唯一 operator 地址。
-/// 仅限 @aptos_framework 调用；新旧地址相同则幂等返回。
+pub fn poc_power_store_initialize_power_store_with_period(
+    operator: AccountAddress,
+    power_period_in_epochs: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("initialize_power_store_with_period").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&operator).unwrap(),
+            bcs::to_bytes(&power_period_in_epochs).unwrap(),
+        ],
+    ))
+}
+
+/// Genesis / test special case: directly write a committed snapshot at period 0.
+///
+/// This bypasses the normal staging flow and is only valid when the chain is still at
+/// last_epoch == 0 && current_period == 0 (i.e., during genesis initialization).
+/// Used to seed initial validator power values before the first epoch begins.
+pub fn poc_power_store_set_genesis_committed_power(
+    user: AccountAddress,
+    power: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("set_genesis_committed_power").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&user).unwrap(),
+            bcs::to_bytes(&power).unwrap(),
+        ],
+    ))
+}
+
 pub fn poc_power_store_set_operator(new_operator: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4126,6 +3361,63 @@ pub fn poc_power_store_set_operator(new_operator: AccountAddress) -> Transaction
     ))
 }
 
+pub fn poc_power_store_set_retention_bps_per_period(
+    retention_bps_per_period: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("set_retention_bps_per_period").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&retention_bps_per_period).unwrap()],
+    ))
+}
+
+/// Batch-write power versions for the next power period.
+///
+/// Convention:
+/// - When on-chain current_period = P, the off-chain service uploads results computed from period P-1 data.
+/// - However, those results only take effect starting from period P+1, so this function writes
+///   `effective_period = current_period + 1` (i.e., target_period).
+///
+/// Constraints:
+/// - Only the designated `operator` may call this.
+/// - `target_period` must equal `current_period + 1`; staging further ahead is not allowed
+///   to prevent the operator from pre-loading multiple future periods at once.
+/// - `users` and `powers` must have the same length.
+///
+/// Idempotency: calling this multiple times for the same target_period overwrites the previous value.
+/// This allows the operator to correct a mistake before the period boundary is crossed.
+pub fn poc_power_store_stage_batch_update(
+    target_period: u64,
+    users: Vec<AccountAddress>,
+    powers: Vec<u64>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("stage_batch_update").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&target_period).unwrap(),
+            bcs::to_bytes(&users).unwrap(),
+            bcs::to_bytes(&powers).unwrap(),
+        ],
+    ))
+}
+
+/// Initialize the Registry resource.
+/// Only callable by @aptos_framework. Idempotent — skips if already initialized.
 pub fn poc_registry_initialize_registry() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4141,6 +3433,10 @@ pub fn poc_registry_initialize_registry() -> TransactionPayload {
     ))
 }
 
+/// Pause the application. The admin voluntarily suspends operations (e.g., emergency response).
+///
+/// While paused, trusted contribution events cannot be emitted via `poc_contribution`.
+/// The application can be resumed via `resume_app` as long as it has not been permanently stopped.
 pub fn poc_registry_pause_app() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4156,6 +3452,27 @@ pub fn poc_registry_pause_app() -> TransactionPayload {
     ))
 }
 
+/// Dapp application registration entry point.
+///
+/// Any address may call this function to register as a Dapp application administrator.
+/// After successful registration, the application defaults to ACTIVE state with
+/// POC listing status REGISTERED (not yet whitelisted by the platform).
+///
+/// Uniqueness constraints (all enforced atomically):
+/// - One admin address can only register one application
+/// - app_address / equity_token_address / custody_address must each be globally unique
+///   across all registered applications
+///
+/// The equity_token_address is validated as a real Fungible Asset Metadata object
+/// via `object::address_to_object<Metadata>` — this aborts if the address is not
+/// a valid FA metadata object, preventing registration with fake token addresses.
+///
+/// Parameters:
+/// - app_admin: Administrator signer (the caller becomes the admin)
+/// - app_address: Contract deployment address (the on-chain entry module address)
+/// - equity_token_address: Equity token address; must be a valid FA Metadata object
+/// - custody_address: Custody address holding equity tokens pending distribution
+/// - metadata_uri: Application's official website or authoritative information link
 pub fn poc_registry_register_app(
     app_address: AccountAddress,
     equity_token_address: AccountAddress,
@@ -4181,6 +3498,10 @@ pub fn poc_registry_register_app(
     ))
 }
 
+/// Resume the application from PAUSED state back to ACTIVE.
+///
+/// Aborts if the application is in STOPPED state — permanent stops cannot be reversed.
+/// This guard prevents accidental resurrection of a stopped application.
 pub fn poc_registry_resume_app() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4196,6 +3517,39 @@ pub fn poc_registry_resume_app() -> TransactionPayload {
     ))
 }
 
+/// Set the effective weight for an application (in per-basis-points, 0–10000).
+///
+/// Only callable by @aptos_framework (DAO governance).
+/// 10000 means 100% weight (full contribution counted); 5000 means 50%, etc.
+/// Idempotent: if the new value equals the current value, returns without emitting an event.
+pub fn poc_registry_set_effective_weight_pbs(
+    app_admin: AccountAddress,
+    new_effective_weight_pbs: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("set_effective_weight_pbs").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&app_admin).unwrap(),
+            bcs::to_bytes(&new_effective_weight_pbs).unwrap(),
+        ],
+    ))
+}
+
+/// Set the POC inclusion status for an application.
+///
+/// Only callable by @aptos_framework (currently centralized governance; can be migrated to DAO later).
+/// Valid values: REGISTERED / WHITELISTED / SUSPENDED.
+///
+/// This is the master setter; `whitelist_app_for_poc` and `suspend_poc_listing` are
+/// convenience wrappers around this function.
 pub fn poc_registry_set_poc_listing_status(
     app_admin: AccountAddress,
     new_poc_listing_status: u8,
@@ -4217,6 +3571,10 @@ pub fn poc_registry_set_poc_listing_status(
     ))
 }
 
+/// Permanently stop the application. This operation is irreversible.
+///
+/// Once stopped, the application cannot be restored to ACTIVE or PAUSED state.
+/// Use this only when the application is being permanently decommissioned.
 pub fn poc_registry_stop_app() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4232,6 +3590,11 @@ pub fn poc_registry_stop_app() -> TransactionPayload {
     ))
 }
 
+/// Suspend an application's POC inclusion (e.g., suspected fraud, under investigation).
+///
+/// While suspended, the application's contribution events are NOT counted toward POC power.
+/// The suspension can be lifted by calling `whitelist_app_for_poc` after investigation.
+/// Only callable by @aptos_framework.
 pub fn poc_registry_suspend_poc_listing(app_admin: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4247,6 +3610,13 @@ pub fn poc_registry_suspend_poc_listing(app_admin: AccountAddress) -> Transactio
     ))
 }
 
+/// Update the contract deployment address.
+///
+/// Use case: after a contract upgrade or redeployment, bind the new deployment address
+/// to the same admin. The new address must be globally unique.
+/// Idempotent: if the new address equals the current address, returns immediately.
+///
+/// This does NOT reset poc_listing_status — only equity token changes trigger a reset.
 pub fn poc_registry_update_app_address(new_app_address: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4262,6 +3632,13 @@ pub fn poc_registry_update_app_address(new_app_address: AccountAddress) -> Trans
     ))
 }
 
+/// Update the custody address.
+///
+/// The new address must be globally unique across all registered applications.
+/// The custody address is the signer that authorizes token transfers during trusted
+/// contribution events. Changing it does NOT reset poc_listing_status.
+///
+/// Idempotent: if the new address equals the current address, returns immediately.
 pub fn poc_registry_update_custody_address(
     new_custody_address: AccountAddress,
 ) -> TransactionPayload {
@@ -4279,6 +3656,20 @@ pub fn poc_registry_update_custody_address(
     ))
 }
 
+/// Update the equity token address.
+///
+/// The new address must be a valid FA Metadata object and globally unique.
+///
+/// IMPORTANT SECURITY INVARIANT: Changing the equity token address automatically resets
+/// poc_listing_status to REGISTERED, requiring platform re-review before the app can
+/// regain WHITELISTED status. This is intentional:
+/// - The equity token is the core asset identifier for the application.
+/// - Previous platform audits were conducted against the old token; a new token means
+///   the audit assumptions may no longer hold (different supply, different transfer hooks, etc.).
+/// - Requiring re-review prevents an app from swapping to a malicious token while retaining
+///   its trusted whitelist status.
+///
+/// Idempotent: if the new address equals the current address, returns immediately.
 pub fn poc_registry_update_equity_token_address(
     new_equity_token_address: AccountAddress,
 ) -> TransactionPayload {
@@ -4296,6 +3687,11 @@ pub fn poc_registry_update_equity_token_address(
     ))
 }
 
+/// Add an application to the POC whitelist (WHITELISTED / active state).
+///
+/// After whitelisting, contribution events emitted by this application are scanned
+/// by off-chain indexers and counted toward POC power, which can participate in governance voting.
+/// Only callable by @aptos_framework.
 pub fn poc_registry_whitelist_app_for_poc(app_admin: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4388,22 +3784,6 @@ pub fn resource_account_create_resource_account_and_publish_package(
     ))
 }
 
-/// Add `amount` of coins from the `account` owning the StakePool.
-pub fn stake_add_stake(amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("stake").to_owned(),
-        ),
-        ident_str!("add_stake").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&amount).unwrap()],
-    ))
-}
-
 /// Similar to increase_lockup_with_cap but will use ownership capability from the signing account.
 pub fn stake_increase_lockup() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -4427,7 +3807,6 @@ pub fn stake_increase_lockup() -> TransactionPayload {
 pub fn stake_initialize_stake_owner(
     initial_stake_amount: u64,
     operator: AccountAddress,
-    voter: AccountAddress,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4442,7 +3821,6 @@ pub fn stake_initialize_stake_owner(
         vec![
             bcs::to_bytes(&initial_stake_amount).unwrap(),
             bcs::to_bytes(&operator).unwrap(),
-            bcs::to_bytes(&voter).unwrap(),
         ],
     ))
 }
@@ -4510,22 +3888,6 @@ pub fn stake_leave_validator_set(pool_address: AccountAddress) -> TransactionPay
     ))
 }
 
-/// Move `amount` of coins from pending_inactive to active.
-pub fn stake_reactivate_stake(amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("stake").to_owned(),
-        ),
-        ident_str!("reactivate_stake").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&amount).unwrap()],
-    ))
-}
-
 /// Rotate the consensus key of the validator, it'll take effect in next epoch.
 pub fn stake_rotate_consensus_key(
     pool_address: AccountAddress,
@@ -4550,22 +3912,6 @@ pub fn stake_rotate_consensus_key(
     ))
 }
 
-/// Allows an owner to change the delegated voter of the stake pool.
-pub fn stake_set_delegated_voter(new_voter: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("stake").to_owned(),
-        ),
-        ident_str!("set_delegated_voter").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&new_voter).unwrap()],
-    ))
-}
-
 /// Allows an owner to change the operator of the stake pool.
 pub fn stake_set_operator(new_operator: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -4579,22 +3925,6 @@ pub fn stake_set_operator(new_operator: AccountAddress) -> TransactionPayload {
         ident_str!("set_operator").to_owned(),
         vec![],
         vec![bcs::to_bytes(&new_operator).unwrap()],
-    ))
-}
-
-/// Similar to unlock_with_cap but will use ownership capability from the signing account.
-pub fn stake_unlock(amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("stake").to_owned(),
-        ),
-        ident_str!("unlock").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&amount).unwrap()],
     ))
 }
 
@@ -4622,284 +3952,7 @@ pub fn stake_update_network_and_fullnode_addresses(
     ))
 }
 
-/// Withdraw from `account`'s inactive stake.
-pub fn stake_withdraw(withdraw_amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("stake").to_owned(),
-        ),
-        ident_str!("withdraw").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&withdraw_amount).unwrap()],
-    ))
-}
-
-/// Add more stake to an existing staking contract.
-pub fn staking_contract_add_stake(operator: AccountAddress, amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("add_stake").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&operator).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-        ],
-    ))
-}
-
-/// Staker can call this function to create a simple staking contract with a specified operator.
-pub fn staking_contract_create_staking_contract(
-    operator: AccountAddress,
-    voter: AccountAddress,
-    amount: u64,
-    commission_percentage: u64,
-    contract_creation_seed: Vec<u8>,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("create_staking_contract").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&operator).unwrap(),
-            bcs::to_bytes(&voter).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-            bcs::to_bytes(&commission_percentage).unwrap(),
-            bcs::to_bytes(&contract_creation_seed).unwrap(),
-        ],
-    ))
-}
-
-/// Allow anyone to distribute already unlocked funds. This does not affect reward compounding and therefore does
-/// not need to be restricted to just the staker or operator.
-pub fn staking_contract_distribute(
-    staker: AccountAddress,
-    operator: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("distribute").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&staker).unwrap(),
-            bcs::to_bytes(&operator).unwrap(),
-        ],
-    ))
-}
-
-/// Unlock commission amount from the stake pool. Operator needs to wait for the amount to become withdrawable
-/// at the end of the stake pool's lockup period before they can actually can withdraw_commission.
-///
-/// Only staker, operator or beneficiary can call this.
-pub fn staking_contract_request_commission(
-    staker: AccountAddress,
-    operator: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("request_commission").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&staker).unwrap(),
-            bcs::to_bytes(&operator).unwrap(),
-        ],
-    ))
-}
-
-/// Convenient function to allow the staker to reset their stake pool's lockup period to start now.
-pub fn staking_contract_reset_lockup(operator: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("reset_lockup").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&operator).unwrap()],
-    ))
-}
-
-/// Allows an operator to change its beneficiary. Any existing unpaid commission rewards will be paid to the new
-/// beneficiary. To ensures payment to the current beneficiary, one should first call `distribute` before switching
-/// the beneficiary. An operator can set one beneficiary for staking contract pools, not a separate one for each pool.
-pub fn staking_contract_set_beneficiary_for_operator(
-    new_beneficiary: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("set_beneficiary_for_operator").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&new_beneficiary).unwrap()],
-    ))
-}
-
-/// Allows staker to switch operator without going through the lenghthy process to unstake.
-pub fn staking_contract_switch_operator(
-    old_operator: AccountAddress,
-    new_operator: AccountAddress,
-    new_commission_percentage: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("switch_operator").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&old_operator).unwrap(),
-            bcs::to_bytes(&new_operator).unwrap(),
-            bcs::to_bytes(&new_commission_percentage).unwrap(),
-        ],
-    ))
-}
-
-/// Allows staker to switch operator without going through the lenghthy process to unstake, without resetting commission.
-pub fn staking_contract_switch_operator_with_same_commission(
-    old_operator: AccountAddress,
-    new_operator: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("switch_operator_with_same_commission").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&old_operator).unwrap(),
-            bcs::to_bytes(&new_operator).unwrap(),
-        ],
-    ))
-}
-
-/// Unlock all accumulated rewards since the last recorded principals.
-pub fn staking_contract_unlock_rewards(operator: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("unlock_rewards").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&operator).unwrap()],
-    ))
-}
-
-/// Staker can call this to request withdrawal of part or all of their staking_contract.
-/// This also triggers paying commission to the operator for accounting simplicity.
-pub fn staking_contract_unlock_stake(operator: AccountAddress, amount: u64) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("unlock_stake").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&operator).unwrap(),
-            bcs::to_bytes(&amount).unwrap(),
-        ],
-    ))
-}
-
-/// Convenience function to allow a staker to update the commission percentage paid to the operator.
-/// TODO: fix the typo in function name. commision -> commission
-pub fn staking_contract_update_commision(
-    operator: AccountAddress,
-    new_commission_percentage: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("update_commision").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&operator).unwrap(),
-            bcs::to_bytes(&new_commission_percentage).unwrap(),
-        ],
-    ))
-}
-
-/// Convenient function to allow the staker to update the voter address in a staking contract they made.
-pub fn staking_contract_update_voter(
-    operator: AccountAddress,
-    new_voter: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_contract").to_owned(),
-        ),
-        ident_str!("update_voter").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&operator).unwrap(),
-            bcs::to_bytes(&new_voter).unwrap(),
-        ],
-    ))
-}
-
-pub fn staking_proxy_set_operator(
-    old_operator: AccountAddress,
-    new_operator: AccountAddress,
-) -> TransactionPayload {
+pub fn staking_proxy_set_operator(new_operator: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -4910,10 +3963,7 @@ pub fn staking_proxy_set_operator(
         ),
         ident_str!("set_operator").to_owned(),
         vec![],
-        vec![
-            bcs::to_bytes(&old_operator).unwrap(),
-            bcs::to_bytes(&new_operator).unwrap(),
-        ],
+        vec![bcs::to_bytes(&new_operator).unwrap()],
     ))
 }
 
@@ -4932,24 +3982,78 @@ pub fn staking_proxy_set_stake_pool_operator(new_operator: AccountAddress) -> Tr
     ))
 }
 
-pub fn staking_proxy_set_stake_pool_voter(new_voter: AccountAddress) -> TransactionPayload {
+/// Delegate the user's staked deposit to a validator pool.
+///
+/// Prerequisites:
+/// - User must not already be delegated (must call `undelegate` first)
+/// - Cooldown period must have elapsed (if any)
+/// - User's effective power must be >= min_active_power
+///
+/// After delegation, the user's deposit backs the validator's total power,
+/// and the user begins receiving a proportional share of epoch rewards and fees.
+pub fn staking_registry_delegate(validator_address: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("staking_proxy").to_owned(),
+            ident_str!("staking_registry").to_owned(),
         ),
-        ident_str!("set_stake_pool_voter").to_owned(),
+        ident_str!("delegate").to_owned(),
         vec![],
-        vec![bcs::to_bytes(&new_voter).unwrap()],
+        vec![bcs::to_bytes(&validator_address).unwrap()],
     ))
 }
 
-pub fn staking_proxy_set_staking_contract_operator(
-    old_operator: AccountAddress,
-    new_operator: AccountAddress,
+/// Deposit TOPO coins into the registry as staking collateral.
+///
+/// Deposited coins are held in escrow by the registry and cannot be withdrawn
+/// while the user is delegated to a validator. They serve as economic collateral
+/// that backs the user's POC power: effective_power = min(poc_power, deposit / octas_per_power).
+///
+/// Deposits auto-compound: epoch rewards and fee shares are minted directly into
+/// the user's deposit balance, increasing their deposit coverage over time.
+pub fn staking_registry_deposit(amount: u64) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("staking_registry").to_owned(),
+        ),
+        ident_str!("deposit").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&amount).unwrap()],
+    ))
+}
+
+pub fn staking_registry_register_validator(commission_bps: u64) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("staking_registry").to_owned(),
+        ),
+        ident_str!("register_validator").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&commission_bps).unwrap()],
+    ))
+}
+
+/// Update the minimum active power and force-exit threshold.
+///
+/// `min_active_power`: minimum effective power a user must have to join a pool.
+/// `force_exit_power_bps`: users whose power falls below
+///   (min_active_power * force_exit_power_bps / 10000) are force-undelegated at epoch boundaries.
+/// Setting force_exit_power_bps = 8000 means users are ejected when power < 80% of min_active_power,
+/// providing a hysteresis band to prevent thrashing at the boundary.
+pub fn staking_registry_set_active_power_thresholds(
+    min_active_power: u64,
+    force_exit_power_bps: u64,
 ) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -4957,98 +4061,80 @@ pub fn staking_proxy_set_staking_contract_operator(
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("staking_proxy").to_owned(),
+            ident_str!("staking_registry").to_owned(),
         ),
-        ident_str!("set_staking_contract_operator").to_owned(),
+        ident_str!("set_active_power_thresholds").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&old_operator).unwrap(),
-            bcs::to_bytes(&new_operator).unwrap(),
+            bcs::to_bytes(&min_active_power).unwrap(),
+            bcs::to_bytes(&force_exit_power_bps).unwrap(),
         ],
     ))
 }
 
-pub fn staking_proxy_set_staking_contract_voter(
-    operator: AccountAddress,
-    new_voter: AccountAddress,
-) -> TransactionPayload {
+/// Update how much deposited TOPO is required to back one unit of POC power.
+///
+/// Only the framework account may change this economic parameter. Lowering the value
+/// increases the amount of committed POC power that can become effective for a fixed
+/// deposit; raising it can reduce effective power and may cause low-coverage delegators
+/// to be force-undelegated at the next epoch boundary.
+pub fn staking_registry_set_octas_per_power(octas_per_power: u64) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("staking_proxy").to_owned(),
+            ident_str!("staking_registry").to_owned(),
         ),
-        ident_str!("set_staking_contract_voter").to_owned(),
+        ident_str!("set_octas_per_power").to_owned(),
         vec![],
-        vec![
-            bcs::to_bytes(&operator).unwrap(),
-            bcs::to_bytes(&new_voter).unwrap(),
-        ],
+        vec![bcs::to_bytes(&octas_per_power).unwrap()],
     ))
 }
 
-pub fn staking_proxy_set_vesting_contract_operator(
-    old_operator: AccountAddress,
-    new_operator: AccountAddress,
-) -> TransactionPayload {
+/// Remove the user's delegation from their current validator pool.
+///
+/// The user's deposit remains in the registry but no longer backs any validator's power.
+/// A cooldown period begins: the user must wait `cooldown_secs` before they can
+/// re-delegate or withdraw their deposit.
+///
+/// This cooldown prevents rapid stake-hopping that could destabilize the validator set
+/// or enable governance manipulation (vote, undelegate, re-delegate, vote again).
+pub fn staking_registry_undelegate() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("staking_proxy").to_owned(),
+            ident_str!("staking_registry").to_owned(),
         ),
-        ident_str!("set_vesting_contract_operator").to_owned(),
+        ident_str!("undelegate").to_owned(),
         vec![],
-        vec![
-            bcs::to_bytes(&old_operator).unwrap(),
-            bcs::to_bytes(&new_operator).unwrap(),
-        ],
+        vec![],
     ))
 }
 
-pub fn staking_proxy_set_vesting_contract_voter(
-    operator: AccountAddress,
-    new_voter: AccountAddress,
-) -> TransactionPayload {
+/// Withdraw the user's full deposit back to their wallet.
+///
+/// Requirements:
+/// - User must not be currently delegated (deposit is locked while delegated)
+/// - Cooldown period must have elapsed since undelegating
+///
+/// After withdrawal, the user's deposit balance becomes zero and cooldown is cleared.
+pub fn staking_registry_withdraw_deposit() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 1,
             ]),
-            ident_str!("staking_proxy").to_owned(),
+            ident_str!("staking_registry").to_owned(),
         ),
-        ident_str!("set_vesting_contract_voter").to_owned(),
+        ident_str!("withdraw_deposit").to_owned(),
         vec![],
-        vec![
-            bcs::to_bytes(&operator).unwrap(),
-            bcs::to_bytes(&new_voter).unwrap(),
-        ],
-    ))
-}
-
-pub fn staking_proxy_set_voter(
-    operator: AccountAddress,
-    new_voter: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("staking_proxy").to_owned(),
-        ),
-        ident_str!("set_voter").to_owned(),
         vec![],
-        vec![
-            bcs::to_bytes(&operator).unwrap(),
-            bcs::to_bytes(&new_voter).unwrap(),
-        ],
     ))
 }
 
@@ -5257,61 +4343,10 @@ pub fn topo_governance_add_approved_script_hash_script(proposal_id: u64) -> Tran
     ))
 }
 
-/// Batch vote on proposal with proposal_id and specified voting power from multiple stake_pools.
-pub fn topo_governance_batch_partial_vote(
-    stake_pools: Vec<AccountAddress>,
-    proposal_id: u64,
-    voting_power: u64,
-    should_pass: bool,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("topo_governance").to_owned(),
-        ),
-        ident_str!("batch_partial_vote").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&stake_pools).unwrap(),
-            bcs::to_bytes(&proposal_id).unwrap(),
-            bcs::to_bytes(&voting_power).unwrap(),
-            bcs::to_bytes(&should_pass).unwrap(),
-        ],
-    ))
-}
-
-/// Vote on proposal with proposal_id and all voting power from multiple stake_pools.
-pub fn topo_governance_batch_vote(
-    stake_pools: Vec<AccountAddress>,
-    proposal_id: u64,
-    should_pass: bool,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("topo_governance").to_owned(),
-        ),
-        ident_str!("batch_vote").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&stake_pools).unwrap(),
-            bcs::to_bytes(&proposal_id).unwrap(),
-            bcs::to_bytes(&should_pass).unwrap(),
-        ],
-    ))
-}
-
-/// Create a single-step proposal with the backing `stake_pool`.
+/// Create a single-step proposal with the caller's voting power.
 /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
 /// only the exact script with matching hash can be successfully executed.
 pub fn topo_governance_create_proposal(
-    stake_pool: AccountAddress,
     execution_hash: Vec<u8>,
     metadata_location: Vec<u8>,
     metadata_hash: Vec<u8>,
@@ -5327,7 +4362,6 @@ pub fn topo_governance_create_proposal(
         ident_str!("create_proposal").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&stake_pool).unwrap(),
             bcs::to_bytes(&execution_hash).unwrap(),
             bcs::to_bytes(&metadata_location).unwrap(),
             bcs::to_bytes(&metadata_hash).unwrap(),
@@ -5335,11 +4369,10 @@ pub fn topo_governance_create_proposal(
     ))
 }
 
-/// Create a single-step or multi-step proposal with the backing `stake_pool`.
+/// Create a single-step or multi-step proposal with the caller's voting power.
 /// @param execution_hash Required. This is the hash of the resolution script. When the proposal is resolved,
 /// only the exact script with matching hash can be successfully executed.
 pub fn topo_governance_create_proposal_v2(
-    stake_pool: AccountAddress,
     execution_hash: Vec<u8>,
     metadata_location: Vec<u8>,
     metadata_hash: Vec<u8>,
@@ -5356,7 +4389,6 @@ pub fn topo_governance_create_proposal_v2(
         ident_str!("create_proposal_v2").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&stake_pool).unwrap(),
             bcs::to_bytes(&execution_hash).unwrap(),
             bcs::to_bytes(&metadata_location).unwrap(),
             bcs::to_bytes(&metadata_hash).unwrap(),
@@ -5403,9 +4435,8 @@ pub fn topo_governance_force_end_epoch_test_only() -> TransactionPayload {
     ))
 }
 
-/// Vote on proposal with `proposal_id` and specified voting power from `stake_pool`.
+/// Vote on proposal with `proposal_id` and specified voting power from the caller.
 pub fn topo_governance_partial_vote(
-    stake_pool: AccountAddress,
     proposal_id: u64,
     voting_power: u64,
     should_pass: bool,
@@ -5421,7 +4452,6 @@ pub fn topo_governance_partial_vote(
         ident_str!("partial_vote").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&stake_pool).unwrap(),
             bcs::to_bytes(&proposal_id).unwrap(),
             bcs::to_bytes(&voting_power).unwrap(),
             bcs::to_bytes(&should_pass).unwrap(),
@@ -5453,12 +4483,8 @@ pub fn topo_governance_reconfigure() -> TransactionPayload {
     ))
 }
 
-/// Vote on proposal with `proposal_id` and all voting power from `stake_pool`.
-pub fn topo_governance_vote(
-    stake_pool: AccountAddress,
-    proposal_id: u64,
-    should_pass: bool,
-) -> TransactionPayload {
+/// Vote on proposal with `proposal_id` and all voting power from the caller.
+pub fn topo_governance_vote(proposal_id: u64, should_pass: bool) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -5470,7 +4496,6 @@ pub fn topo_governance_vote(
         ident_str!("vote").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&stake_pool).unwrap(),
             bcs::to_bytes(&proposal_id).unwrap(),
             bcs::to_bytes(&should_pass).unwrap(),
         ],
@@ -5528,342 +4553,6 @@ pub fn version_set_version(major: u64) -> TransactionPayload {
         ident_str!("set_version").to_owned(),
         vec![],
         vec![bcs::to_bytes(&major).unwrap()],
-    ))
-}
-
-/// Withdraw all funds to the preset vesting contract's withdrawal address. This can only be called if the contract
-/// has already been terminated.
-pub fn vesting_admin_withdraw(contract_address: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("admin_withdraw").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&contract_address).unwrap()],
-    ))
-}
-
-/// Distribute any withdrawable stake from the stake pool.
-pub fn vesting_distribute(contract_address: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("distribute").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&contract_address).unwrap()],
-    ))
-}
-
-/// Call `distribute` for many vesting contracts.
-pub fn vesting_distribute_many(contract_addresses: Vec<AccountAddress>) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("distribute_many").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&contract_addresses).unwrap()],
-    ))
-}
-
-/// Remove the beneficiary for the given shareholder. All distributions will sent directly to the shareholder
-/// account.
-pub fn vesting_reset_beneficiary(
-    contract_address: AccountAddress,
-    shareholder: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("reset_beneficiary").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&contract_address).unwrap(),
-            bcs::to_bytes(&shareholder).unwrap(),
-        ],
-    ))
-}
-
-pub fn vesting_reset_lockup(contract_address: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("reset_lockup").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&contract_address).unwrap()],
-    ))
-}
-
-pub fn vesting_set_beneficiary(
-    contract_address: AccountAddress,
-    shareholder: AccountAddress,
-    new_beneficiary: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("set_beneficiary").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&contract_address).unwrap(),
-            bcs::to_bytes(&shareholder).unwrap(),
-            bcs::to_bytes(&new_beneficiary).unwrap(),
-        ],
-    ))
-}
-
-/// Set the beneficiary for the operator.
-pub fn vesting_set_beneficiary_for_operator(new_beneficiary: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("set_beneficiary_for_operator").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&new_beneficiary).unwrap()],
-    ))
-}
-
-pub fn vesting_set_beneficiary_resetter(
-    contract_address: AccountAddress,
-    beneficiary_resetter: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("set_beneficiary_resetter").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&contract_address).unwrap(),
-            bcs::to_bytes(&beneficiary_resetter).unwrap(),
-        ],
-    ))
-}
-
-pub fn vesting_set_management_role(
-    contract_address: AccountAddress,
-    role: Vec<u8>,
-    role_holder: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("set_management_role").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&contract_address).unwrap(),
-            bcs::to_bytes(&role).unwrap(),
-            bcs::to_bytes(&role_holder).unwrap(),
-        ],
-    ))
-}
-
-/// Terminate the vesting contract and send all funds back to the withdrawal address.
-pub fn vesting_terminate_vesting_contract(contract_address: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("terminate_vesting_contract").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&contract_address).unwrap()],
-    ))
-}
-
-/// Unlock any accumulated rewards.
-pub fn vesting_unlock_rewards(contract_address: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("unlock_rewards").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&contract_address).unwrap()],
-    ))
-}
-
-/// Call `unlock_rewards` for many vesting contracts.
-pub fn vesting_unlock_rewards_many(contract_addresses: Vec<AccountAddress>) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("unlock_rewards_many").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&contract_addresses).unwrap()],
-    ))
-}
-
-pub fn vesting_update_commission_percentage(
-    contract_address: AccountAddress,
-    new_commission_percentage: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("update_commission_percentage").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&contract_address).unwrap(),
-            bcs::to_bytes(&new_commission_percentage).unwrap(),
-        ],
-    ))
-}
-
-pub fn vesting_update_operator(
-    contract_address: AccountAddress,
-    new_operator: AccountAddress,
-    commission_percentage: u64,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("update_operator").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&contract_address).unwrap(),
-            bcs::to_bytes(&new_operator).unwrap(),
-            bcs::to_bytes(&commission_percentage).unwrap(),
-        ],
-    ))
-}
-
-pub fn vesting_update_operator_with_same_commission(
-    contract_address: AccountAddress,
-    new_operator: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("update_operator_with_same_commission").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&contract_address).unwrap(),
-            bcs::to_bytes(&new_operator).unwrap(),
-        ],
-    ))
-}
-
-pub fn vesting_update_voter(
-    contract_address: AccountAddress,
-    new_voter: AccountAddress,
-) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("update_voter").to_owned(),
-        vec![],
-        vec![
-            bcs::to_bytes(&contract_address).unwrap(),
-            bcs::to_bytes(&new_voter).unwrap(),
-        ],
-    ))
-}
-
-/// Unlock any vested portion of the grant.
-pub fn vesting_vest(contract_address: AccountAddress) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("vest").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&contract_address).unwrap()],
-    ))
-}
-
-/// Call `vest` for many vesting contracts.
-pub fn vesting_vest_many(contract_addresses: Vec<AccountAddress>) -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("vesting").to_owned(),
-        ),
-        ident_str!("vest_many").to_owned(),
-        vec![],
-        vec![bcs::to_bytes(&contract_addresses).unwrap()],
     ))
 }
 mod decoder {
@@ -6211,239 +4900,6 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::CoinUpgradeSupply {
                 coin_type: script.ty_args().get(0)?.clone(),
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_add_stake(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolAddStake {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_allowlist_delegator(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolAllowlistDelegator {
-                delegator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_create_proposal(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolCreateProposal {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                execution_hash: bcs::from_bytes(script.args().get(1)?).ok()?,
-                metadata_location: bcs::from_bytes(script.args().get(2)?).ok()?,
-                metadata_hash: bcs::from_bytes(script.args().get(3)?).ok()?,
-                is_multi_step_proposal: bcs::from_bytes(script.args().get(4)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_delegate_voting_power(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolDelegateVotingPower {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_voter: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_disable_delegators_allowlisting(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::DelegationPoolDisableDelegatorsAllowlisting {})
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_enable_delegators_allowlisting(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::DelegationPoolEnableDelegatorsAllowlisting {})
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_enable_partial_governance_voting(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(
-                EntryFunctionCall::DelegationPoolEnablePartialGovernanceVoting {
-                    pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                },
-            )
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_evict_delegator(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolEvictDelegator {
-                delegator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_initialize_delegation_pool(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolInitializeDelegationPool {
-                operator_commission_percentage: bcs::from_bytes(script.args().get(0)?).ok()?,
-                delegation_pool_creation_seed: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_reactivate_stake(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolReactivateStake {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_remove_delegator_from_allowlist(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(
-                EntryFunctionCall::DelegationPoolRemoveDelegatorFromAllowlist {
-                    delegator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                },
-            )
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_set_beneficiary_for_operator(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolSetBeneficiaryForOperator {
-                new_beneficiary: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_set_delegated_voter(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolSetDelegatedVoter {
-                _new_voter: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_set_operator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolSetOperator {
-                new_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_synchronize_delegation_pool(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolSynchronizeDelegationPool {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_unlock(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolUnlock {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_update_commission_percentage(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(
-                EntryFunctionCall::DelegationPoolUpdateCommissionPercentage {
-                    new_commission_percentage: bcs::from_bytes(script.args().get(0)?).ok()?,
-                },
-            )
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolVote {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                proposal_id: bcs::from_bytes(script.args().get(1)?).ok()?,
-                voting_power: bcs::from_bytes(script.args().get(2)?).ok()?,
-                should_pass: bcs::from_bytes(script.args().get(3)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn delegation_pool_withdraw(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::DelegationPoolWithdraw {
-                pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -6963,18 +5419,6 @@ mod decoder {
         }
     }
 
-    pub fn poc_power_store_batch_update(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::PocPowerStoreBatchUpdate {
-                period: bcs::from_bytes(script.args().get(0)?).ok()?,
-                users: bcs::from_bytes(script.args().get(1)?).ok()?,
-                powers: bcs::from_bytes(script.args().get(2)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn poc_power_store_initialize_power_store(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -6987,10 +5431,64 @@ mod decoder {
         }
     }
 
+    pub fn poc_power_store_initialize_power_store_with_period(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(
+                EntryFunctionCall::PocPowerStoreInitializePowerStoreWithPeriod {
+                    operator: bcs::from_bytes(script.args().get(0)?).ok()?,
+                    power_period_in_epochs: bcs::from_bytes(script.args().get(1)?).ok()?,
+                },
+            )
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_power_store_set_genesis_committed_power(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreSetGenesisCommittedPower {
+                user: bcs::from_bytes(script.args().get(0)?).ok()?,
+                power: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn poc_power_store_set_operator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::PocPowerStoreSetOperator {
                 new_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_power_store_set_retention_bps_per_period(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreSetRetentionBpsPerPeriod {
+                retention_bps_per_period: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_power_store_stage_batch_update(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreStageBatchUpdate {
+                target_period: bcs::from_bytes(script.args().get(0)?).ok()?,
+                users: bcs::from_bytes(script.args().get(1)?).ok()?,
+                powers: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
         } else {
             None
@@ -7031,6 +5529,19 @@ mod decoder {
     pub fn poc_registry_resume_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
             Some(EntryFunctionCall::PocRegistryResumeApp {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_set_effective_weight_pbs(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistrySetEffectiveWeightPbs {
+                app_admin: bcs::from_bytes(script.args().get(0)?).ok()?,
+                new_effective_weight_pbs: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
         } else {
             None
         }
@@ -7162,16 +5673,6 @@ mod decoder {
         }
     }
 
-    pub fn stake_add_stake(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakeAddStake {
-                amount: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn stake_increase_lockup(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
             Some(EntryFunctionCall::StakeIncreaseLockup {})
@@ -7185,7 +5686,6 @@ mod decoder {
             Some(EntryFunctionCall::StakeInitializeStakeOwner {
                 initial_stake_amount: bcs::from_bytes(script.args().get(0)?).ok()?,
                 operator: bcs::from_bytes(script.args().get(1)?).ok()?,
-                voter: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
         } else {
             None
@@ -7225,16 +5725,6 @@ mod decoder {
         }
     }
 
-    pub fn stake_reactivate_stake(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakeReactivateStake {
-                amount: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn stake_rotate_consensus_key(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeRotateConsensusKey {
@@ -7247,30 +5737,10 @@ mod decoder {
         }
     }
 
-    pub fn stake_set_delegated_voter(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakeSetDelegatedVoter {
-                new_voter: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn stake_set_operator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeSetOperator {
                 new_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn stake_unlock(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakeUnlock {
-                amount: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -7291,178 +5761,10 @@ mod decoder {
         }
     }
 
-    pub fn stake_withdraw(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakeWithdraw {
-                withdraw_amount: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_add_stake(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingContractAddStake {
-                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_create_staking_contract(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingContractCreateStakingContract {
-                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                voter: bcs::from_bytes(script.args().get(1)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(2)?).ok()?,
-                commission_percentage: bcs::from_bytes(script.args().get(3)?).ok()?,
-                contract_creation_seed: bcs::from_bytes(script.args().get(4)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_distribute(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingContractDistribute {
-                staker: bcs::from_bytes(script.args().get(0)?).ok()?,
-                operator: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_request_commission(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingContractRequestCommission {
-                staker: bcs::from_bytes(script.args().get(0)?).ok()?,
-                operator: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_reset_lockup(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingContractResetLockup {
-                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_set_beneficiary_for_operator(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(
-                EntryFunctionCall::StakingContractSetBeneficiaryForOperator {
-                    new_beneficiary: bcs::from_bytes(script.args().get(0)?).ok()?,
-                },
-            )
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_switch_operator(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingContractSwitchOperator {
-                old_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_operator: bcs::from_bytes(script.args().get(1)?).ok()?,
-                new_commission_percentage: bcs::from_bytes(script.args().get(2)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_switch_operator_with_same_commission(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(
-                EntryFunctionCall::StakingContractSwitchOperatorWithSameCommission {
-                    old_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                    new_operator: bcs::from_bytes(script.args().get(1)?).ok()?,
-                },
-            )
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_unlock_rewards(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingContractUnlockRewards {
-                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_unlock_stake(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingContractUnlockStake {
-                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                amount: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_update_commision(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingContractUpdateCommision {
-                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_commission_percentage: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn staking_contract_update_voter(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingContractUpdateVoter {
-                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_voter: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn staking_proxy_set_operator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakingProxySetOperator {
-                old_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_operator: bcs::from_bytes(script.args().get(1)?).ok()?,
+                new_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -7481,76 +5783,76 @@ mod decoder {
         }
     }
 
-    pub fn staking_proxy_set_stake_pool_voter(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
+    pub fn staking_registry_delegate(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingProxySetStakePoolVoter {
-                new_voter: bcs::from_bytes(script.args().get(0)?).ok()?,
+            Some(EntryFunctionCall::StakingRegistryDelegate {
+                validator_address: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
         }
     }
 
-    pub fn staking_proxy_set_staking_contract_operator(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
+    pub fn staking_registry_deposit(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingProxySetStakingContractOperator {
-                old_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_operator: bcs::from_bytes(script.args().get(1)?).ok()?,
+            Some(EntryFunctionCall::StakingRegistryDeposit {
+                amount: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
         }
     }
 
-    pub fn staking_proxy_set_staking_contract_voter(
+    pub fn staking_registry_register_validator(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingProxySetStakingContractVoter {
-                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_voter: bcs::from_bytes(script.args().get(1)?).ok()?,
+            Some(EntryFunctionCall::StakingRegistryRegisterValidator {
+                commission_bps: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
         }
     }
 
-    pub fn staking_proxy_set_vesting_contract_operator(
+    pub fn staking_registry_set_active_power_thresholds(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingProxySetVestingContractOperator {
-                old_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_operator: bcs::from_bytes(script.args().get(1)?).ok()?,
+            Some(EntryFunctionCall::StakingRegistrySetActivePowerThresholds {
+                min_active_power: bcs::from_bytes(script.args().get(0)?).ok()?,
+                force_exit_power_bps: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
         }
     }
 
-    pub fn staking_proxy_set_vesting_contract_voter(
+    pub fn staking_registry_set_octas_per_power(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingProxySetVestingContractVoter {
-                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_voter: bcs::from_bytes(script.args().get(1)?).ok()?,
+            Some(EntryFunctionCall::StakingRegistrySetOctasPerPower {
+                octas_per_power: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
         }
     }
 
-    pub fn staking_proxy_set_voter(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingProxySetVoter {
-                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_voter: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
+    pub fn staking_registry_undelegate(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::StakingRegistryUndelegate {})
+        } else {
+            None
+        }
+    }
+
+    pub fn staking_registry_withdraw_deposit(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::StakingRegistryWithdrawDeposit {})
         } else {
             None
         }
@@ -7686,42 +5988,14 @@ mod decoder {
         }
     }
 
-    pub fn topo_governance_batch_partial_vote(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::TopoGovernanceBatchPartialVote {
-                stake_pools: bcs::from_bytes(script.args().get(0)?).ok()?,
-                proposal_id: bcs::from_bytes(script.args().get(1)?).ok()?,
-                voting_power: bcs::from_bytes(script.args().get(2)?).ok()?,
-                should_pass: bcs::from_bytes(script.args().get(3)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn topo_governance_batch_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::TopoGovernanceBatchVote {
-                stake_pools: bcs::from_bytes(script.args().get(0)?).ok()?,
-                proposal_id: bcs::from_bytes(script.args().get(1)?).ok()?,
-                should_pass: bcs::from_bytes(script.args().get(2)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
     pub fn topo_governance_create_proposal(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::TopoGovernanceCreateProposal {
-                stake_pool: bcs::from_bytes(script.args().get(0)?).ok()?,
-                execution_hash: bcs::from_bytes(script.args().get(1)?).ok()?,
-                metadata_location: bcs::from_bytes(script.args().get(2)?).ok()?,
-                metadata_hash: bcs::from_bytes(script.args().get(3)?).ok()?,
+                execution_hash: bcs::from_bytes(script.args().get(0)?).ok()?,
+                metadata_location: bcs::from_bytes(script.args().get(1)?).ok()?,
+                metadata_hash: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
         } else {
             None
@@ -7733,11 +6007,10 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::TopoGovernanceCreateProposalV2 {
-                stake_pool: bcs::from_bytes(script.args().get(0)?).ok()?,
-                execution_hash: bcs::from_bytes(script.args().get(1)?).ok()?,
-                metadata_location: bcs::from_bytes(script.args().get(2)?).ok()?,
-                metadata_hash: bcs::from_bytes(script.args().get(3)?).ok()?,
-                is_multi_step_proposal: bcs::from_bytes(script.args().get(4)?).ok()?,
+                execution_hash: bcs::from_bytes(script.args().get(0)?).ok()?,
+                metadata_location: bcs::from_bytes(script.args().get(1)?).ok()?,
+                metadata_hash: bcs::from_bytes(script.args().get(2)?).ok()?,
+                is_multi_step_proposal: bcs::from_bytes(script.args().get(3)?).ok()?,
             })
         } else {
             None
@@ -7767,10 +6040,9 @@ mod decoder {
     pub fn topo_governance_partial_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::TopoGovernancePartialVote {
-                stake_pool: bcs::from_bytes(script.args().get(0)?).ok()?,
-                proposal_id: bcs::from_bytes(script.args().get(1)?).ok()?,
-                voting_power: bcs::from_bytes(script.args().get(2)?).ok()?,
-                should_pass: bcs::from_bytes(script.args().get(3)?).ok()?,
+                proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
+                voting_power: bcs::from_bytes(script.args().get(1)?).ok()?,
+                should_pass: bcs::from_bytes(script.args().get(2)?).ok()?,
             })
         } else {
             None
@@ -7788,9 +6060,8 @@ mod decoder {
     pub fn topo_governance_vote(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::TopoGovernanceVote {
-                stake_pool: bcs::from_bytes(script.args().get(0)?).ok()?,
-                proposal_id: bcs::from_bytes(script.args().get(1)?).ok()?,
-                should_pass: bcs::from_bytes(script.args().get(2)?).ok()?,
+                proposal_id: bcs::from_bytes(script.args().get(0)?).ok()?,
+                should_pass: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -7821,207 +6092,6 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VersionSetVersion {
                 major: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_admin_withdraw(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingAdminWithdraw {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_distribute(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingDistribute {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_distribute_many(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingDistributeMany {
-                contract_addresses: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_reset_beneficiary(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingResetBeneficiary {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                shareholder: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_reset_lockup(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingResetLockup {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_set_beneficiary(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingSetBeneficiary {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                shareholder: bcs::from_bytes(script.args().get(1)?).ok()?,
-                new_beneficiary: bcs::from_bytes(script.args().get(2)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_set_beneficiary_for_operator(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingSetBeneficiaryForOperator {
-                new_beneficiary: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_set_beneficiary_resetter(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingSetBeneficiaryResetter {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                beneficiary_resetter: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_set_management_role(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingSetManagementRole {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                role: bcs::from_bytes(script.args().get(1)?).ok()?,
-                role_holder: bcs::from_bytes(script.args().get(2)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_terminate_vesting_contract(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingTerminateVestingContract {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_unlock_rewards(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingUnlockRewards {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_unlock_rewards_many(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingUnlockRewardsMany {
-                contract_addresses: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_update_commission_percentage(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingUpdateCommissionPercentage {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_commission_percentage: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_update_operator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingUpdateOperator {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_operator: bcs::from_bytes(script.args().get(1)?).ok()?,
-                commission_percentage: bcs::from_bytes(script.args().get(2)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_update_operator_with_same_commission(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingUpdateOperatorWithSameCommission {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_operator: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_update_voter(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingUpdateVoter {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-                new_voter: bcs::from_bytes(script.args().get(1)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_vest(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingVest {
-                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
-            })
-        } else {
-            None
-        }
-    }
-
-    pub fn vesting_vest_many(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::VestingVestMany {
-                contract_addresses: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -8148,82 +6218,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "coin_upgrade_supply".to_string(),
             Box::new(decoder::coin_upgrade_supply),
-        );
-        map.insert(
-            "delegation_pool_add_stake".to_string(),
-            Box::new(decoder::delegation_pool_add_stake),
-        );
-        map.insert(
-            "delegation_pool_allowlist_delegator".to_string(),
-            Box::new(decoder::delegation_pool_allowlist_delegator),
-        );
-        map.insert(
-            "delegation_pool_create_proposal".to_string(),
-            Box::new(decoder::delegation_pool_create_proposal),
-        );
-        map.insert(
-            "delegation_pool_delegate_voting_power".to_string(),
-            Box::new(decoder::delegation_pool_delegate_voting_power),
-        );
-        map.insert(
-            "delegation_pool_disable_delegators_allowlisting".to_string(),
-            Box::new(decoder::delegation_pool_disable_delegators_allowlisting),
-        );
-        map.insert(
-            "delegation_pool_enable_delegators_allowlisting".to_string(),
-            Box::new(decoder::delegation_pool_enable_delegators_allowlisting),
-        );
-        map.insert(
-            "delegation_pool_enable_partial_governance_voting".to_string(),
-            Box::new(decoder::delegation_pool_enable_partial_governance_voting),
-        );
-        map.insert(
-            "delegation_pool_evict_delegator".to_string(),
-            Box::new(decoder::delegation_pool_evict_delegator),
-        );
-        map.insert(
-            "delegation_pool_initialize_delegation_pool".to_string(),
-            Box::new(decoder::delegation_pool_initialize_delegation_pool),
-        );
-        map.insert(
-            "delegation_pool_reactivate_stake".to_string(),
-            Box::new(decoder::delegation_pool_reactivate_stake),
-        );
-        map.insert(
-            "delegation_pool_remove_delegator_from_allowlist".to_string(),
-            Box::new(decoder::delegation_pool_remove_delegator_from_allowlist),
-        );
-        map.insert(
-            "delegation_pool_set_beneficiary_for_operator".to_string(),
-            Box::new(decoder::delegation_pool_set_beneficiary_for_operator),
-        );
-        map.insert(
-            "delegation_pool_set_delegated_voter".to_string(),
-            Box::new(decoder::delegation_pool_set_delegated_voter),
-        );
-        map.insert(
-            "delegation_pool_set_operator".to_string(),
-            Box::new(decoder::delegation_pool_set_operator),
-        );
-        map.insert(
-            "delegation_pool_synchronize_delegation_pool".to_string(),
-            Box::new(decoder::delegation_pool_synchronize_delegation_pool),
-        );
-        map.insert(
-            "delegation_pool_unlock".to_string(),
-            Box::new(decoder::delegation_pool_unlock),
-        );
-        map.insert(
-            "delegation_pool_update_commission_percentage".to_string(),
-            Box::new(decoder::delegation_pool_update_commission_percentage),
-        );
-        map.insert(
-            "delegation_pool_vote".to_string(),
-            Box::new(decoder::delegation_pool_vote),
-        );
-        map.insert(
-            "delegation_pool_withdraw".to_string(),
-            Box::new(decoder::delegation_pool_withdraw),
         );
         map.insert(
             "jwks_update_federated_jwk_set".to_string(),
@@ -8380,16 +6374,28 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::permissioned_signer_revoke_permission_storage_address),
         );
         map.insert(
-            "poc_power_store_batch_update".to_string(),
-            Box::new(decoder::poc_power_store_batch_update),
-        );
-        map.insert(
             "poc_power_store_initialize_power_store".to_string(),
             Box::new(decoder::poc_power_store_initialize_power_store),
         );
         map.insert(
+            "poc_power_store_initialize_power_store_with_period".to_string(),
+            Box::new(decoder::poc_power_store_initialize_power_store_with_period),
+        );
+        map.insert(
+            "poc_power_store_set_genesis_committed_power".to_string(),
+            Box::new(decoder::poc_power_store_set_genesis_committed_power),
+        );
+        map.insert(
             "poc_power_store_set_operator".to_string(),
             Box::new(decoder::poc_power_store_set_operator),
+        );
+        map.insert(
+            "poc_power_store_set_retention_bps_per_period".to_string(),
+            Box::new(decoder::poc_power_store_set_retention_bps_per_period),
+        );
+        map.insert(
+            "poc_power_store_stage_batch_update".to_string(),
+            Box::new(decoder::poc_power_store_stage_batch_update),
         );
         map.insert(
             "poc_registry_initialize_registry".to_string(),
@@ -8406,6 +6412,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "poc_registry_resume_app".to_string(),
             Box::new(decoder::poc_registry_resume_app),
+        );
+        map.insert(
+            "poc_registry_set_effective_weight_pbs".to_string(),
+            Box::new(decoder::poc_registry_set_effective_weight_pbs),
         );
         map.insert(
             "poc_registry_set_poc_listing_status".to_string(),
@@ -8448,10 +6458,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::resource_account_create_resource_account_and_publish_package),
         );
         map.insert(
-            "stake_add_stake".to_string(),
-            Box::new(decoder::stake_add_stake),
-        );
-        map.insert(
             "stake_increase_lockup".to_string(),
             Box::new(decoder::stake_increase_lockup),
         );
@@ -8472,77 +6478,16 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::stake_leave_validator_set),
         );
         map.insert(
-            "stake_reactivate_stake".to_string(),
-            Box::new(decoder::stake_reactivate_stake),
-        );
-        map.insert(
             "stake_rotate_consensus_key".to_string(),
             Box::new(decoder::stake_rotate_consensus_key),
-        );
-        map.insert(
-            "stake_set_delegated_voter".to_string(),
-            Box::new(decoder::stake_set_delegated_voter),
         );
         map.insert(
             "stake_set_operator".to_string(),
             Box::new(decoder::stake_set_operator),
         );
-        map.insert("stake_unlock".to_string(), Box::new(decoder::stake_unlock));
         map.insert(
             "stake_update_network_and_fullnode_addresses".to_string(),
             Box::new(decoder::stake_update_network_and_fullnode_addresses),
-        );
-        map.insert(
-            "stake_withdraw".to_string(),
-            Box::new(decoder::stake_withdraw),
-        );
-        map.insert(
-            "staking_contract_add_stake".to_string(),
-            Box::new(decoder::staking_contract_add_stake),
-        );
-        map.insert(
-            "staking_contract_create_staking_contract".to_string(),
-            Box::new(decoder::staking_contract_create_staking_contract),
-        );
-        map.insert(
-            "staking_contract_distribute".to_string(),
-            Box::new(decoder::staking_contract_distribute),
-        );
-        map.insert(
-            "staking_contract_request_commission".to_string(),
-            Box::new(decoder::staking_contract_request_commission),
-        );
-        map.insert(
-            "staking_contract_reset_lockup".to_string(),
-            Box::new(decoder::staking_contract_reset_lockup),
-        );
-        map.insert(
-            "staking_contract_set_beneficiary_for_operator".to_string(),
-            Box::new(decoder::staking_contract_set_beneficiary_for_operator),
-        );
-        map.insert(
-            "staking_contract_switch_operator".to_string(),
-            Box::new(decoder::staking_contract_switch_operator),
-        );
-        map.insert(
-            "staking_contract_switch_operator_with_same_commission".to_string(),
-            Box::new(decoder::staking_contract_switch_operator_with_same_commission),
-        );
-        map.insert(
-            "staking_contract_unlock_rewards".to_string(),
-            Box::new(decoder::staking_contract_unlock_rewards),
-        );
-        map.insert(
-            "staking_contract_unlock_stake".to_string(),
-            Box::new(decoder::staking_contract_unlock_stake),
-        );
-        map.insert(
-            "staking_contract_update_commision".to_string(),
-            Box::new(decoder::staking_contract_update_commision),
-        );
-        map.insert(
-            "staking_contract_update_voter".to_string(),
-            Box::new(decoder::staking_contract_update_voter),
         );
         map.insert(
             "staking_proxy_set_operator".to_string(),
@@ -8553,28 +6498,32 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::staking_proxy_set_stake_pool_operator),
         );
         map.insert(
-            "staking_proxy_set_stake_pool_voter".to_string(),
-            Box::new(decoder::staking_proxy_set_stake_pool_voter),
+            "staking_registry_delegate".to_string(),
+            Box::new(decoder::staking_registry_delegate),
         );
         map.insert(
-            "staking_proxy_set_staking_contract_operator".to_string(),
-            Box::new(decoder::staking_proxy_set_staking_contract_operator),
+            "staking_registry_deposit".to_string(),
+            Box::new(decoder::staking_registry_deposit),
         );
         map.insert(
-            "staking_proxy_set_staking_contract_voter".to_string(),
-            Box::new(decoder::staking_proxy_set_staking_contract_voter),
+            "staking_registry_register_validator".to_string(),
+            Box::new(decoder::staking_registry_register_validator),
         );
         map.insert(
-            "staking_proxy_set_vesting_contract_operator".to_string(),
-            Box::new(decoder::staking_proxy_set_vesting_contract_operator),
+            "staking_registry_set_active_power_thresholds".to_string(),
+            Box::new(decoder::staking_registry_set_active_power_thresholds),
         );
         map.insert(
-            "staking_proxy_set_vesting_contract_voter".to_string(),
-            Box::new(decoder::staking_proxy_set_vesting_contract_voter),
+            "staking_registry_set_octas_per_power".to_string(),
+            Box::new(decoder::staking_registry_set_octas_per_power),
         );
         map.insert(
-            "staking_proxy_set_voter".to_string(),
-            Box::new(decoder::staking_proxy_set_voter),
+            "staking_registry_undelegate".to_string(),
+            Box::new(decoder::staking_registry_undelegate),
+        );
+        map.insert(
+            "staking_registry_withdraw_deposit".to_string(),
+            Box::new(decoder::staking_registry_withdraw_deposit),
         );
         map.insert(
             "topo_account_batch_transfer".to_string(),
@@ -8621,14 +6570,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::topo_governance_add_approved_script_hash_script),
         );
         map.insert(
-            "topo_governance_batch_partial_vote".to_string(),
-            Box::new(decoder::topo_governance_batch_partial_vote),
-        );
-        map.insert(
-            "topo_governance_batch_vote".to_string(),
-            Box::new(decoder::topo_governance_batch_vote),
-        );
-        map.insert(
             "topo_governance_create_proposal".to_string(),
             Box::new(decoder::topo_governance_create_proposal),
         );
@@ -8667,75 +6608,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "version_set_version".to_string(),
             Box::new(decoder::version_set_version),
-        );
-        map.insert(
-            "vesting_admin_withdraw".to_string(),
-            Box::new(decoder::vesting_admin_withdraw),
-        );
-        map.insert(
-            "vesting_distribute".to_string(),
-            Box::new(decoder::vesting_distribute),
-        );
-        map.insert(
-            "vesting_distribute_many".to_string(),
-            Box::new(decoder::vesting_distribute_many),
-        );
-        map.insert(
-            "vesting_reset_beneficiary".to_string(),
-            Box::new(decoder::vesting_reset_beneficiary),
-        );
-        map.insert(
-            "vesting_reset_lockup".to_string(),
-            Box::new(decoder::vesting_reset_lockup),
-        );
-        map.insert(
-            "vesting_set_beneficiary".to_string(),
-            Box::new(decoder::vesting_set_beneficiary),
-        );
-        map.insert(
-            "vesting_set_beneficiary_for_operator".to_string(),
-            Box::new(decoder::vesting_set_beneficiary_for_operator),
-        );
-        map.insert(
-            "vesting_set_beneficiary_resetter".to_string(),
-            Box::new(decoder::vesting_set_beneficiary_resetter),
-        );
-        map.insert(
-            "vesting_set_management_role".to_string(),
-            Box::new(decoder::vesting_set_management_role),
-        );
-        map.insert(
-            "vesting_terminate_vesting_contract".to_string(),
-            Box::new(decoder::vesting_terminate_vesting_contract),
-        );
-        map.insert(
-            "vesting_unlock_rewards".to_string(),
-            Box::new(decoder::vesting_unlock_rewards),
-        );
-        map.insert(
-            "vesting_unlock_rewards_many".to_string(),
-            Box::new(decoder::vesting_unlock_rewards_many),
-        );
-        map.insert(
-            "vesting_update_commission_percentage".to_string(),
-            Box::new(decoder::vesting_update_commission_percentage),
-        );
-        map.insert(
-            "vesting_update_operator".to_string(),
-            Box::new(decoder::vesting_update_operator),
-        );
-        map.insert(
-            "vesting_update_operator_with_same_commission".to_string(),
-            Box::new(decoder::vesting_update_operator_with_same_commission),
-        );
-        map.insert(
-            "vesting_update_voter".to_string(),
-            Box::new(decoder::vesting_update_voter),
-        );
-        map.insert("vesting_vest".to_string(), Box::new(decoder::vesting_vest));
-        map.insert(
-            "vesting_vest_many".to_string(),
-            Box::new(decoder::vesting_vest_many),
         );
         map
     });

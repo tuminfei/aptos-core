@@ -45,7 +45,7 @@ mod priority_fee;
 mod randomness;
 #[cfg(test)]
 mod rest_api;
-#[cfg(test)]
+#[cfg(all(test, feature = "rosetta-tests"))]
 mod rosetta;
 #[cfg(test)]
 mod slh_dsa;

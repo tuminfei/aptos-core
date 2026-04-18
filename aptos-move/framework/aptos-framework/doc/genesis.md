@@ -3,34 +3,90 @@
 
 # Module `0x1::genesis`
 
+Genesis module — bootstraps the entire Topo chain from a blank state.
 
 
+<a id="@Responsibilities_0"></a>
+
+### Responsibilities
+
+
+This module is the single entry point called by the Rust genesis builder to initialize
+every on-chain resource before the first block is produced. It wires together all
+framework modules in the correct dependency order.
+
+
+<a id="@Initialization_Sequence_1"></a>
+
+### Initialization Sequence
+
+
+Step 1 — <code>initialize</code>: Core framework accounts and protocol modules
+- Create @aptos_framework account; hand control to topo_governance
+- Reserve framework addresses @0x2–@0xa under governance
+- Initialize: consensus_config, execution_config, version, stake, staking_config,
+storage_gas, gas_schedule, aggregator_factory, chain_id, reconfiguration,
+block, state_storage, nonce_validation, transaction_validation
+
+Step 2 — <code>initialize_topo_coin</code>: Mint/burn capabilities
+- Create TopoCoin with mint + burn caps
+- Distribute caps: stake (mint for rewards), staking_registry (mint for rewards),
+transaction_fee (burn for gas, mint for refunds)
+
+Step 3 — <code>create_accounts</code>: Fund initial accounts from the genesis config
+
+Step 4 — <code>create_initialize_validators_with_commission</code>: Bootstrap the validator set
+- <code>ensure_poc_staking_initialized</code>: Initialize poc_power_store and staking_registry
+- For each validator: create account, initialize stake pool, register in staking_registry,
+seed genesis POC power, deposit stake, delegate, join validator set
+- Destroy the framework mint cap (no more minting outside of reward distribution)
+- <code><a href="stake.md#0x1_stake_on_new_epoch">stake::on_new_epoch</a></code>: activate the genesis validator set
+
+Step 5 — <code>set_genesis_end</code>: Mark chain as operational
+
+
+<a id="@Key_Design_Decisions_2"></a>
+
+### Key Design Decisions
+
+
+- <code>ensure_poc_staking_initialized</code> is idempotent and computes cooldown_secs as
+max(recurring_lockup_duration, governance_voting_duration) to prevent governance attacks.
+- Genesis validators receive POC power seeded from their stake amount via
+<code><a href="staking_registry.md#0x1_staking_registry_calculate_genesis_power_from_stake">staking_registry::calculate_genesis_power_from_stake</a></code>, bootstrapping the POC system
+before any real contribution events have been emitted.
+- The framework mint cap is destroyed after genesis; all subsequent TopoCoin minting
+goes through the staking_registry's stored mint cap (for rewards only).
+
+
+    -  [Responsibilities](#@Responsibilities_0)
+    -  [Initialization Sequence](#@Initialization_Sequence_1)
+    -  [Key Design Decisions](#@Key_Design_Decisions_2)
 -  [Struct `AccountMap`](#0x1_genesis_AccountMap)
--  [Struct `EmployeeAccountMap`](#0x1_genesis_EmployeeAccountMap)
 -  [Struct `ValidatorConfiguration`](#0x1_genesis_ValidatorConfiguration)
 -  [Struct `ValidatorConfigurationWithCommission`](#0x1_genesis_ValidatorConfigurationWithCommission)
--  [Constants](#@Constants_0)
+-  [Constants](#@Constants_3)
 -  [Function `initialize`](#0x1_genesis_initialize)
 -  [Function `initialize_topo_coin`](#0x1_genesis_initialize_topo_coin)
 -  [Function `initialize_core_resources_and_topo_coin`](#0x1_genesis_initialize_core_resources_and_topo_coin)
 -  [Function `create_accounts`](#0x1_genesis_create_accounts)
 -  [Function `create_account`](#0x1_genesis_create_account)
--  [Function `create_employee_validators`](#0x1_genesis_create_employee_validators)
+-  [Function `ensure_poc_staking_initialized`](#0x1_genesis_ensure_poc_staking_initialized)
 -  [Function `create_initialize_validators_with_commission`](#0x1_genesis_create_initialize_validators_with_commission)
 -  [Function `create_initialize_validators`](#0x1_genesis_create_initialize_validators)
 -  [Function `create_initialize_validator`](#0x1_genesis_create_initialize_validator)
 -  [Function `initialize_validator`](#0x1_genesis_initialize_validator)
 -  [Function `set_genesis_end`](#0x1_genesis_set_genesis_end)
--  [Specification](#@Specification_1)
+-  [Specification](#@Specification_4)
     -  [High-level Requirements](#high-level-req)
     -  [Module-level Specification](#module-level-spec)
-    -  [Function `initialize`](#@Specification_1_initialize)
-    -  [Function `initialize_topo_coin`](#@Specification_1_initialize_topo_coin)
-    -  [Function `create_initialize_validators_with_commission`](#@Specification_1_create_initialize_validators_with_commission)
-    -  [Function `create_initialize_validators`](#@Specification_1_create_initialize_validators)
-    -  [Function `create_initialize_validator`](#@Specification_1_create_initialize_validator)
-    -  [Function `initialize_validator`](#@Specification_1_initialize_validator)
-    -  [Function `set_genesis_end`](#@Specification_1_set_genesis_end)
+    -  [Function `initialize`](#@Specification_4_initialize)
+    -  [Function `initialize_topo_coin`](#@Specification_4_initialize_topo_coin)
+    -  [Function `create_initialize_validators_with_commission`](#@Specification_4_create_initialize_validators_with_commission)
+    -  [Function `create_initialize_validators`](#@Specification_4_create_initialize_validators)
+    -  [Function `create_initialize_validator`](#@Specification_4_create_initialize_validator)
+    -  [Function `initialize_validator`](#@Specification_4_initialize_validator)
+    -  [Function `set_genesis_end`](#@Specification_4_set_genesis_end)
 
 
 <pre><code><b>use</b> <a href="account.md#0x1_account">0x1::account</a>;
@@ -42,21 +98,19 @@
 <b>use</b> <a href="consensus_config.md#0x1_consensus_config">0x1::consensus_config</a>;
 <b>use</b> <a href="create_signer.md#0x1_create_signer">0x1::create_signer</a>;
 <b>use</b> <a href="execution_config.md#0x1_execution_config">0x1::execution_config</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/fixed_point32.md#0x1_fixed_point32">0x1::fixed_point32</a>;
 <b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
 <b>use</b> <a href="gas_schedule.md#0x1_gas_schedule">0x1::gas_schedule</a>;
 <b>use</b> <a href="nonce_validation.md#0x1_nonce_validation">0x1::nonce_validation</a>;
 <b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
+<b>use</b> <a href="poc_power_store.md#0x1_poc_power_store">0x1::poc_power_store</a>;
 <b>use</b> <a href="primary_fungible_store.md#0x1_primary_fungible_store">0x1::primary_fungible_store</a>;
 <b>use</b> <a href="reconfiguration.md#0x1_reconfiguration">0x1::reconfiguration</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map">0x1::simple_map</a>;
 <b>use</b> <a href="stake.md#0x1_stake">0x1::stake</a>;
 <b>use</b> <a href="staking_config.md#0x1_staking_config">0x1::staking_config</a>;
-<b>use</b> <a href="staking_contract.md#0x1_staking_contract">0x1::staking_contract</a>;
+<b>use</b> <a href="staking_registry.md#0x1_staking_registry">0x1::staking_registry</a>;
 <b>use</b> <a href="state_storage.md#0x1_state_storage">0x1::state_storage</a>;
 <b>use</b> <a href="storage_gas.md#0x1_storage_gas">0x1::storage_gas</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 <b>use</b> <a href="timestamp.md#0x1_timestamp">0x1::timestamp</a>;
 <b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 <b>use</b> <a href="topo_governance.md#0x1_topo_governance">0x1::topo_governance</a>;
@@ -64,7 +118,6 @@
 <b>use</b> <a href="transaction_validation.md#0x1_transaction_validation">0x1::transaction_validation</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 <b>use</b> <a href="version.md#0x1_version">0x1::version</a>;
-<b>use</b> <a href="vesting.md#0x1_vesting">0x1::vesting</a>;
 </code></pre>
 
 
@@ -93,57 +146,6 @@
 </dd>
 <dt>
 <code>balance: u64</code>
-</dt>
-<dd>
-
-</dd>
-</dl>
-
-
-</details>
-
-<a id="0x1_genesis_EmployeeAccountMap"></a>
-
-## Struct `EmployeeAccountMap`
-
-
-
-<pre><code><b>struct</b> <a href="genesis.md#0x1_genesis_EmployeeAccountMap">EmployeeAccountMap</a> <b>has</b> <b>copy</b>, drop
-</code></pre>
-
-
-
-<details>
-<summary>Fields</summary>
-
-
-<dl>
-<dt>
-<code>accounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;</code>
-</dt>
-<dd>
-
-</dd>
-<dt>
-<code>validator: <a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a></code>
-</dt>
-<dd>
-
-</dd>
-<dt>
-<code>vesting_schedule_numerator: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
-</dt>
-<dd>
-
-</dd>
-<dt>
-<code>vesting_schedule_denominator: u64</code>
-</dt>
-<dd>
-
-</dd>
-<dt>
-<code>beneficiary_resetter: <b>address</b></code>
 </dt>
 <dd>
 
@@ -261,16 +263,25 @@
 
 </details>
 
-<a id="@Constants_0"></a>
+<a id="@Constants_3"></a>
 
 ## Constants
 
 
-<a id="0x1_genesis_EACCOUNT_DOES_NOT_EXIST"></a>
+<a id="0x1_genesis_DEFAULT_MAX_DELEGATORS_PER_VALIDATOR"></a>
 
 
 
-<pre><code><b>const</b> <a href="genesis.md#0x1_genesis_EACCOUNT_DOES_NOT_EXIST">EACCOUNT_DOES_NOT_EXIST</a>: u64 = 2;
+<pre><code><b>const</b> <a href="genesis.md#0x1_genesis_DEFAULT_MAX_DELEGATORS_PER_VALIDATOR">DEFAULT_MAX_DELEGATORS_PER_VALIDATOR</a>: u64 = 1000;
+</code></pre>
+
+
+
+<a id="0x1_genesis_DEFAULT_OCTAS_PER_POWER"></a>
+
+
+
+<pre><code><b>const</b> <a href="genesis.md#0x1_genesis_DEFAULT_OCTAS_PER_POWER">DEFAULT_OCTAS_PER_POWER</a>: u64 = 1;
 </code></pre>
 
 
@@ -289,6 +300,17 @@
 ## Function `initialize`
 
 Genesis step 1: Initialize aptos framework account and core modules on chain.
+
+Called first by the Rust genesis builder. Sets up every protocol-level resource
+that must exist before any transaction can be processed.
+
+Key actions:
+- Creates @aptos_framework as a framework-reserved account and hands its
+SignerCapability to topo_governance (decentralized on-chain governance owns the framework).
+- Reserves @0x2–@0xa under governance as well (future protocol expansion slots).
+- Initializes staking_config with the genesis validator set parameters
+(minimum/maximum stake, lockup duration, rewards rate, voting power increase limit).
+- Initializes block module with epoch_interval_microsecs (controls epoch length).
 
 
 <pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize">initialize</a>(<a href="gas_schedule.md#0x1_gas_schedule">gas_schedule</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, initial_version: u64, <a href="consensus_config.md#0x1_consensus_config">consensus_config</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="execution_config.md#0x1_execution_config">execution_config</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, epoch_interval_microsecs: u64, minimum_stake: u64, maximum_stake: u64, recurring_lockup_duration_secs: u64, allow_validator_set_change: bool, rewards_rate: u64, rewards_rate_denominator: u64, voting_power_increase_limit: u64)
@@ -335,7 +357,7 @@ Genesis step 1: Initialize aptos framework account and core modules on chain.
     // put reserved framework reserved accounts under aptos governance
     <b>let</b> framework_reserved_addresses = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;[@0x2, @0x3, @0x4, @0x5, @0x6, @0x7, @0x8, @0x9, @0xa];
     <b>while</b> (!framework_reserved_addresses.is_empty()) {
-        <b>let</b> <b>address</b> = framework_reserved_addresses.pop_back&lt;<b>address</b>&gt;();
+        <b>let</b> <b>address</b> = framework_reserved_addresses.pop_back();
         <b>let</b> (_, framework_signer_cap) = <a href="account.md#0x1_account_create_framework_reserved_account">account::create_framework_reserved_account</a>(<b>address</b>);
         <a href="topo_governance.md#0x1_topo_governance_store_signer_cap">topo_governance::store_signer_cap</a>(&aptos_framework_account, <b>address</b>, framework_signer_cap);
     };
@@ -378,7 +400,15 @@ Genesis step 1: Initialize aptos framework account and core modules on chain.
 
 ## Function `initialize_topo_coin`
 
-Genesis step 2: Initialize Topo coin.
+Genesis step 2: Initialize Topo coin and distribute mint/burn capabilities.
+
+Creates TopoCoin with both mint and burn capabilities, then distributes them:
+- stake module gets MintCapability to mint staking rewards each epoch
+- staking_registry gets a copy of MintCapability for its own reward distribution path
+- transaction_fee module gets BurnCapability (to burn gas fees) and MintCapability (to mint refunds)
+
+After <code>create_initialize_validators_with_commission</code> completes, the framework's
+own mint cap is destroyed — no entity outside of the stored caps can mint TopoCoin.
 
 
 <pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize_topo_coin">initialize_topo_coin</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
@@ -398,6 +428,8 @@ Genesis step 2: Initialize Topo coin.
 
     // Give <a href="stake.md#0x1_stake">stake</a> <b>module</b> MintCapability&lt;TopoCoin&gt; so it can mint rewards.
     <a href="stake.md#0x1_stake_store_topo_coin_mint_cap">stake::store_topo_coin_mint_cap</a>(aptos_framework, mint_cap);
+    // Cache a <b>copy</b> for <a href="staking_registry.md#0x1_staking_registry">staking_registry</a> so <a href="genesis.md#0x1_genesis">genesis</a> can initialize it later without Rust changes.
+    <a href="staking_registry.md#0x1_staking_registry_store_topo_coin_mint_cap">staking_registry::store_topo_coin_mint_cap</a>(aptos_framework, mint_cap);
     // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> BurnCapability&lt;TopoCoin&gt; so it can burn gas.
     <a href="transaction_fee.md#0x1_transaction_fee_store_topo_coin_burn_cap">transaction_fee::store_topo_coin_burn_cap</a>(aptos_framework, burn_cap);
     // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> MintCapability&lt;TopoCoin&gt; so it can mint refunds.
@@ -436,6 +468,8 @@ Only called for testnets and e2e tests.
 
     // Give <a href="stake.md#0x1_stake">stake</a> <b>module</b> MintCapability&lt;TopoCoin&gt; so it can mint rewards.
     <a href="stake.md#0x1_stake_store_topo_coin_mint_cap">stake::store_topo_coin_mint_cap</a>(aptos_framework, mint_cap);
+    // Cache a <b>copy</b> for <a href="staking_registry.md#0x1_staking_registry">staking_registry</a> so test-only flows can opt into the new path.
+    <a href="staking_registry.md#0x1_staking_registry_store_topo_coin_mint_cap">staking_registry::store_topo_coin_mint_cap</a>(aptos_framework, mint_cap);
     // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> BurnCapability&lt;TopoCoin&gt; so it can burn gas.
     <a href="transaction_fee.md#0x1_transaction_fee_store_topo_coin_burn_cap">transaction_fee::store_topo_coin_burn_cap</a>(aptos_framework, burn_cap);
     // Give <a href="transaction_fee.md#0x1_transaction_fee">transaction_fee</a> <b>module</b> MintCapability&lt;TopoCoin&gt; so it can mint refunds.
@@ -472,10 +506,10 @@ Only called for testnets and e2e tests.
     accounts.for_each_ref(|account_map| {
         <b>let</b> account_map: &<a href="genesis.md#0x1_genesis_AccountMap">AccountMap</a> = account_map;
         <b>assert</b>!(
-            !<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_contains">vector::contains</a>(&unique_accounts, &account_map.account_address),
+            !unique_accounts.contains(&account_map.account_address),
             <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="genesis.md#0x1_genesis_EDUPLICATE_ACCOUNT">EDUPLICATE_ACCOUNT</a>),
         );
-        <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> unique_accounts, account_map.account_address);
+        unique_accounts.push_back(account_map.account_address);
 
         <a href="genesis.md#0x1_genesis_create_account">create_account</a>(
             aptos_framework,
@@ -526,13 +560,24 @@ If it exists, it just returns the signer.
 
 </details>
 
-<a id="0x1_genesis_create_employee_validators"></a>
+<a id="0x1_genesis_ensure_poc_staking_initialized"></a>
 
-## Function `create_employee_validators`
+## Function `ensure_poc_staking_initialized`
+
+Initialize poc_power_store and staking_registry if not already done.
+
+Idempotent: safe to call multiple times (both sub-initializations guard themselves).
+
+cooldown_secs is set to max(recurring_lockup_duration, governance_voting_duration).
+This ensures a user who undelegates cannot re-delegate and vote again within the same
+governance proposal window, preventing double-influence attacks.
+
+poc_power_store is initialized with @aptos_framework as the operator, meaning only
+the framework (via governance) can upload power updates initially. The operator can
+be changed later via <code><a href="poc_power_store.md#0x1_poc_power_store_set_operator">poc_power_store::set_operator</a></code>.
 
 
-
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_employee_validators">create_employee_validators</a>(employee_vesting_start: u64, employee_vesting_period_duration: u64, employees: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_EmployeeAccountMap">genesis::EmployeeAccountMap</a>&gt;)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">ensure_poc_staking_initialized</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -541,92 +586,32 @@ If it exists, it just returns the signer.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_employee_validators">create_employee_validators</a>(
-    employee_vesting_start: u64,
-    employee_vesting_period_duration: u64,
-    employees: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_EmployeeAccountMap">EmployeeAccountMap</a>&gt;,
-) {
-    <b>let</b> unique_accounts = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">ensure_poc_staking_initialized</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+    <b>if</b> (<a href="poc_power_store.md#0x1_poc_power_store_get_operator">poc_power_store::get_operator</a>() == @0x0) {
+        <a href="poc_power_store.md#0x1_poc_power_store_initialize">poc_power_store::initialize</a>(aptos_framework, @aptos_framework);
+    };
 
-    employees.for_each_ref(|employee_group| {
-        <b>let</b> j = 0;
-        <b>let</b> employee_group: &<a href="genesis.md#0x1_genesis_EmployeeAccountMap">EmployeeAccountMap</a> = employee_group;
-        <b>let</b> num_employees_in_group = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(&employee_group.accounts);
-
-        <b>let</b> buy_ins = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_create">simple_map::create</a>();
-
-        <b>while</b> (j &lt; num_employees_in_group) {
-            <b>let</b> <a href="account.md#0x1_account">account</a> = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_borrow">vector::borrow</a>(&employee_group.accounts, j);
-            <b>assert</b>!(
-                !<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_contains">vector::contains</a>(&unique_accounts, <a href="account.md#0x1_account">account</a>),
-                <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="genesis.md#0x1_genesis_EDUPLICATE_ACCOUNT">EDUPLICATE_ACCOUNT</a>),
-            );
-            <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> unique_accounts, *<a href="account.md#0x1_account">account</a>);
-
-            <b>let</b> employee = <a href="create_signer.md#0x1_create_signer">create_signer</a>(*<a href="account.md#0x1_account">account</a>);
-            <b>let</b> total = <a href="coin.md#0x1_coin_balance">coin::balance</a>&lt;TopoCoin&gt;(*<a href="account.md#0x1_account">account</a>);
-            <b>let</b> coins = <a href="coin.md#0x1_coin_withdraw">coin::withdraw</a>&lt;TopoCoin&gt;(&employee, total);
-            <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_add">simple_map::add</a>(&<b>mut</b> buy_ins, *<a href="account.md#0x1_account">account</a>, coins);
-
-            j += 1;
+    <b>let</b> recurring_lockup_duration =
+        <a href="staking_config.md#0x1_staking_config_get_recurring_lockup_duration">staking_config::get_recurring_lockup_duration</a>(&<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>());
+    <b>let</b> governance_voting_duration =
+        <b>if</b> (<a href="topo_governance.md#0x1_topo_governance_has_governance_config">topo_governance::has_governance_config</a>()) {
+            <a href="topo_governance.md#0x1_topo_governance_get_voting_duration_secs">topo_governance::get_voting_duration_secs</a>()
+        } <b>else</b> {
+            0
         };
-
-        <b>let</b> j = 0;
-        <b>let</b> num_vesting_events = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(&employee_group.vesting_schedule_numerator);
-        <b>let</b> schedule = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
-
-        <b>while</b> (j &lt; num_vesting_events) {
-            <b>let</b> numerator = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_borrow">vector::borrow</a>(&employee_group.vesting_schedule_numerator, j);
-            <b>let</b> <a href="event.md#0x1_event">event</a> = <a href="../../aptos-stdlib/../move-stdlib/doc/fixed_point32.md#0x1_fixed_point32_create_from_rational">fixed_point32::create_from_rational</a>(*numerator, employee_group.vesting_schedule_denominator);
-            <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> schedule, <a href="event.md#0x1_event">event</a>);
-
-            j += 1;
+    // Use the longer of the two durations <b>to</b> prevent governance timing attacks
+    <b>let</b> cooldown_secs =
+        <b>if</b> (recurring_lockup_duration &gt; governance_voting_duration) {
+            recurring_lockup_duration
+        } <b>else</b> {
+            governance_voting_duration
         };
-
-        <b>let</b> vesting_schedule = <a href="vesting.md#0x1_vesting_create_vesting_schedule">vesting::create_vesting_schedule</a>(
-            schedule,
-            employee_vesting_start,
-            employee_vesting_period_duration,
-        );
-
-        <b>let</b> admin = employee_group.validator.validator_config.owner_address;
-        <b>let</b> admin_signer = &<a href="create_signer.md#0x1_create_signer">create_signer</a>(admin);
-        <b>let</b> contract_address = <a href="vesting.md#0x1_vesting_create_vesting_contract">vesting::create_vesting_contract</a>(
-            admin_signer,
-            &employee_group.accounts,
-            buy_ins,
-            vesting_schedule,
-            admin,
-            employee_group.validator.validator_config.operator_address,
-            employee_group.validator.validator_config.voter_address,
-            employee_group.validator.commission_percentage,
-            x"",
-        );
-        <b>let</b> pool_address = <a href="vesting.md#0x1_vesting_stake_pool_address">vesting::stake_pool_address</a>(contract_address);
-
-        <b>if</b> (employee_group.beneficiary_resetter != @0x0) {
-            <a href="vesting.md#0x1_vesting_set_beneficiary_resetter">vesting::set_beneficiary_resetter</a>(admin_signer, contract_address, employee_group.beneficiary_resetter);
-        };
-
-        <b>let</b> validator = &employee_group.validator.validator_config;
-        // These checks ensure that validator accounts have 0x1::Account resource.
-        // So, validator accounts can't be stateless.
-        <b>assert</b>!(
-            <a href="account.md#0x1_account_exists_at">account::exists_at</a>(validator.owner_address),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="genesis.md#0x1_genesis_EACCOUNT_DOES_NOT_EXIST">EACCOUNT_DOES_NOT_EXIST</a>),
-        );
-        <b>assert</b>!(
-            <a href="account.md#0x1_account_exists_at">account::exists_at</a>(validator.operator_address),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="genesis.md#0x1_genesis_EACCOUNT_DOES_NOT_EXIST">EACCOUNT_DOES_NOT_EXIST</a>),
-        );
-        <b>assert</b>!(
-            <a href="account.md#0x1_account_exists_at">account::exists_at</a>(validator.voter_address),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="genesis.md#0x1_genesis_EACCOUNT_DOES_NOT_EXIST">EACCOUNT_DOES_NOT_EXIST</a>),
-        );
-        <b>if</b> (employee_group.validator.join_during_genesis) {
-            <a href="genesis.md#0x1_genesis_initialize_validator">initialize_validator</a>(pool_address, validator);
-        };
-    });
+    <a href="staking_registry.md#0x1_staking_registry_initialize">staking_registry::initialize</a>(
+        aptos_framework,
+        <a href="genesis.md#0x1_genesis_DEFAULT_OCTAS_PER_POWER">DEFAULT_OCTAS_PER_POWER</a>,
+        <a href="genesis.md#0x1_genesis_DEFAULT_MAX_DELEGATORS_PER_VALIDATOR">DEFAULT_MAX_DELEGATORS_PER_VALIDATOR</a>,
+        cooldown_secs,
+    );
 }
 </code></pre>
 
@@ -640,7 +625,7 @@ If it exists, it just returns the signer.
 
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, use_staking_contract: bool, validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>&gt;)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>&gt;)
 </code></pre>
 
 
@@ -651,12 +636,12 @@ If it exists, it just returns the signer.
 
 <pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    use_staking_contract: bool,
     validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">ValidatorConfigurationWithCommission</a>&gt;,
 ) {
+    <a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">ensure_poc_staking_initialized</a>(aptos_framework);
     validators.for_each_ref(|validator| {
         <b>let</b> validator: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">ValidatorConfigurationWithCommission</a> = validator;
-        <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(aptos_framework, validator, use_staking_contract);
+        <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(aptos_framework, validator);
     });
 
     // Destroy the aptos framework <a href="account.md#0x1_account">account</a>'s ability <b>to</b> mint coins now that we're done <b>with</b> setting up the initial
@@ -704,10 +689,10 @@ encoded in a single BCS byte array.
             commission_percentage: 0,
             join_during_genesis: <b>true</b>,
         };
-        <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> validators_with_commission, validator_with_commission);
+        validators_with_commission.push_back(validator_with_commission);
     });
 
-    <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(aptos_framework, <b>false</b>, validators_with_commission);
+    <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(aptos_framework, validators_with_commission);
 }
 </code></pre>
 
@@ -719,9 +704,27 @@ encoded in a single BCS byte array.
 
 ## Function `create_initialize_validator`
 
+Initialize a single genesis validator: create accounts, register in staking_registry,
+seed POC power, deposit stake, delegate, and optionally join the validator set.
+
+Full sequence for each genesis validator:
+1. Create owner account funded with stake_amount TopoCoin
+2. Create operator account (zero balance; operator earns via commission)
+3. Initialize stake pool (StakePool + ValidatorConfig resources at owner address)
+4. Register validator pool in staking_registry (if not already registered)
+5. Seed genesis POC power: poc_power_store gets a period-0 committed snapshot
+derived from stake_amount * genesis_stake_power_multiplier
+6. Deposit stake_amount into staking_registry (owner's deposit balance)
+7. Delegate owner's deposit to their own validator pool
+8. If join_during_genesis: set consensus key + network addresses, then join validator set
+
+Why seed POC power from stake?
+At genesis there are no ContributionEvents yet, so the POC power store is empty.
+Seeding from stake bootstraps the system so validators have non-zero effective power
+from day one, allowing the first epoch to proceed normally.
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, commission_config: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>, use_staking_contract: bool)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, commission_config: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>)
 </code></pre>
 
 
@@ -733,34 +736,36 @@ encoded in a single BCS byte array.
 <pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     commission_config: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">ValidatorConfigurationWithCommission</a>,
-    use_staking_contract: bool,
 ) {
     <b>let</b> validator = &commission_config.validator_config;
+    <b>let</b> commission_percentage = commission_config.commission_percentage;
+    <b>let</b> genesis_power =
+        <a href="staking_registry.md#0x1_staking_registry_calculate_genesis_power_from_stake">staking_registry::calculate_genesis_power_from_stake</a>(validator.stake_amount);
 
     <b>let</b> owner = &<a href="genesis.md#0x1_genesis_create_account">create_account</a>(aptos_framework, validator.owner_address, validator.stake_amount);
     <a href="genesis.md#0x1_genesis_create_account">create_account</a>(aptos_framework, validator.operator_address, 0);
-    <a href="genesis.md#0x1_genesis_create_account">create_account</a>(aptos_framework, validator.voter_address, 0);
 
-    // Initialize the <a href="stake.md#0x1_stake">stake</a> pool and join the validator set.
-    <b>let</b> pool_address = <b>if</b> (use_staking_contract) {
-        <a href="staking_contract.md#0x1_staking_contract_create_staking_contract">staking_contract::create_staking_contract</a>(
-            owner,
-            validator.operator_address,
-            validator.voter_address,
-            validator.stake_amount,
-            commission_config.commission_percentage,
-            x"",
+    <a href="stake.md#0x1_stake_initialize_stake_owner">stake::initialize_stake_owner</a>(
+        owner,
+        0,
+        validator.operator_address,
+    );
+    <b>let</b> pool_address = validator.owner_address;
+
+    <b>if</b> (!<a href="staking_registry.md#0x1_staking_registry_validator_exists">staking_registry::validator_exists</a>(pool_address)) {
+        <a href="staking_registry.md#0x1_staking_registry_register_validator_for_genesis">staking_registry::register_validator_for_genesis</a>(
+            validator.owner_address,
+            pool_address,
+            commission_percentage * 100,
         );
-        <a href="staking_contract.md#0x1_staking_contract_stake_pool_address">staking_contract::stake_pool_address</a>(validator.owner_address, validator.operator_address)
-    } <b>else</b> {
-        <a href="stake.md#0x1_stake_initialize_stake_owner">stake::initialize_stake_owner</a>(
-            owner,
-            validator.stake_amount,
-            validator.operator_address,
-            validator.voter_address,
-        );
-        validator.owner_address
     };
+    <a href="poc_power_store.md#0x1_poc_power_store_set_genesis_committed_power">poc_power_store::set_genesis_committed_power</a>(
+        aptos_framework,
+        validator.owner_address,
+        genesis_power,
+    );
+    <a href="staking_registry.md#0x1_staking_registry_deposit">staking_registry::deposit</a>(owner, validator.stake_amount);
+    <a href="staking_registry.md#0x1_staking_registry_delegate">staking_registry::delegate</a>(owner, pool_address);
 
     <b>if</b> (commission_config.join_during_genesis) {
         <a href="genesis.md#0x1_genesis_initialize_validator">initialize_validator</a>(pool_address, validator);
@@ -835,7 +840,7 @@ The last step of genesis.
 
 </details>
 
-<a id="@Specification_1"></a>
+<a id="@Specification_4"></a>
 
 ## Specification
 
@@ -905,7 +910,7 @@ The last step of genesis.
 
 
 
-<a id="@Specification_1_initialize"></a>
+<a id="@Specification_4_initialize"></a>
 
 ### Function `initialize`
 
@@ -963,7 +968,7 @@ The last step of genesis.
 
 
 
-<a id="@Specification_1_initialize_topo_coin"></a>
+<a id="@Specification_4_initialize_topo_coin"></a>
 
 ### Function `initialize_topo_coin`
 
@@ -983,12 +988,12 @@ The last step of genesis.
 
 
 
-<a id="@Specification_1_create_initialize_validators_with_commission"></a>
+<a id="@Specification_4_create_initialize_validators_with_commission"></a>
 
 ### Function `create_initialize_validators_with_commission`
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, use_staking_contract: bool, validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>&gt;)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>&gt;)
 </code></pre>
 
 
@@ -1003,7 +1008,7 @@ The last step of genesis.
 
 
 
-<a id="@Specification_1_create_initialize_validators"></a>
+<a id="@Specification_4_create_initialize_validators"></a>
 
 ### Function `create_initialize_validators`
 
@@ -1023,12 +1028,12 @@ The last step of genesis.
 
 
 
-<a id="@Specification_1_create_initialize_validator"></a>
+<a id="@Specification_4_create_initialize_validator"></a>
 
 ### Function `create_initialize_validator`
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, commission_config: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>, use_staking_contract: bool)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, commission_config: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>)
 </code></pre>
 
 
@@ -1040,7 +1045,7 @@ The last step of genesis.
 
 
 
-<a id="@Specification_1_initialize_validator"></a>
+<a id="@Specification_4_initialize_validator"></a>
 
 ### Function `initialize_validator`
 
@@ -1056,7 +1061,7 @@ The last step of genesis.
 
 
 
-<a id="@Specification_1_set_genesis_end"></a>
+<a id="@Specification_4_set_genesis_end"></a>
 
 ### Function `set_genesis_end`
 

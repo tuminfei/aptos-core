@@ -71,9 +71,11 @@ module aptos_framework::genesis {
     use aptos_framework::version;
 
     const EDUPLICATE_ACCOUNT: u64 = 1;
-    // Default exchange rate: 100,000 octas (0.001 TOPO) of deposit backs 1 unit of POC power.
-    // This means a user needs at least 0.001 TOPO deposited per unit of POC power they want to activate.
-    const DEFAULT_OCTAS_PER_POWER: u64 = 100_000;
+    // Default exchange rate: 1 octa of deposit backs 1 unit of POC power.
+    // This keeps genesis bootstrap compatible with local networks that use tiny default stakes.
+    // Governance or the framework account can raise this value after initialization through
+    // staking_registry::set_octas_per_power when a stricter economic backing ratio is required.
+    const DEFAULT_OCTAS_PER_POWER: u64 = 1;
     // Maximum number of delegators allowed per validator pool.
     // Caps iteration cost during reward distribution at epoch boundaries.
     const DEFAULT_MAX_DELEGATORS_PER_VALIDATOR: u64 = 1000;

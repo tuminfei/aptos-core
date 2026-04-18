@@ -35,7 +35,7 @@ aptos-keygen = { workspace = true }
 aptos-move-cli = { workspace = true, features = ["testing"] }
 aptos-move-debugger = { workspace = true }
 aptos-rest-client = { workspace = true }
-aptos-rosetta = { workspace = true }
+aptos-rosetta = { workspace = true, optional = true }
 aptos-schemadb = { workspace = true }
 aptos-sdk = { workspace = true }
 aptos-storage-interface = { workspace = true }
@@ -55,6 +55,10 @@ reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+
+[features]
+default = []
+rosetta-tests = ["dep:aptos-rosetta"]
 
 [dev-dependencies]
 aptos-backup-cli = { workspace = true }

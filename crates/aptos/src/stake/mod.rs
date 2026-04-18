@@ -13,13 +13,17 @@ use crate::{
 };
 use aptos_cached_packages::aptos_stdlib;
 use aptos_types::{
-    account_address::{
-        create_vesting_contract_address, default_stake_pool_address, AccountAddress,
-    },
-    vesting::VestingAdminStore,
+    account_address::AccountAddress,
 };
 use async_trait::async_trait;
 use clap::Parser;
+
+fn unsupported_pool_type(pool_type: StakePoolType, action: &str) -> CliError {
+    CliError::UnexpectedError(format!(
+        "{} is not supported for {:?} pools under the current POC/stake framework",
+        action, pool_type
+    ))
+}
 
 /// Tool for manipulating stake and stake pools
 ///
@@ -89,27 +93,21 @@ impl CliCommand<Vec<TransactionSummary>> for AddStake {
         for stake_pool in stake_pool_results {
             match stake_pool.pool_type {
                 StakePoolType::Direct => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(aptos_stdlib::stake_add_stake(amount))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Adding stake via CLI",
+                    ));
                 },
                 StakePoolType::StakingContract => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(aptos_stdlib::staking_contract_add_stake(
-                                stake_pool.operator_address,
-                                amount,
-                            ))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Adding stake via CLI",
+                    ));
                 },
                 StakePoolType::Vesting => {
-                    return Err(CliError::UnexpectedError(
-                        "Adding stake is not supported for vesting contracts".into(),
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Adding stake via CLI",
                     ))
                 },
             }
@@ -150,27 +148,21 @@ impl CliCommand<Vec<TransactionSummary>> for UnlockStake {
         for stake_pool in stake_pool_results {
             match stake_pool.pool_type {
                 StakePoolType::Direct => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(aptos_stdlib::stake_unlock(amount))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Unlocking stake via CLI",
+                    ));
                 },
                 StakePoolType::StakingContract => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(aptos_stdlib::staking_contract_unlock_stake(
-                                stake_pool.operator_address,
-                                amount,
-                            ))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Unlocking stake via CLI",
+                    ));
                 },
                 StakePoolType::Vesting => {
-                    return Err(CliError::UnexpectedError(
-                        "Unlocking stake is not supported for vesting contracts".into(),
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Unlocking stake via CLI",
                     ))
                 },
             }
@@ -214,28 +206,21 @@ impl CliCommand<Vec<TransactionSummary>> for WithdrawStake {
         for stake_pool in stake_pool_results {
             match stake_pool.pool_type {
                 StakePoolType::Direct => {
-                    transaction_summaries.push(
-                        self.node_op_options
-                            .submit_transaction(aptos_stdlib::stake_withdraw(amount))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Withdrawing stake via CLI",
+                    ));
                 },
                 StakePoolType::StakingContract => {
-                    transaction_summaries.push(
-                        self.node_op_options
-                            .submit_transaction(aptos_stdlib::staking_contract_distribute(
-                                owner_address,
-                                stake_pool.operator_address,
-                            ))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Withdrawing stake via CLI",
+                    ));
                 },
                 StakePoolType::Vesting => {
-                    return Err(CliError::UnexpectedError(
-                        "Stake withdrawal from vesting contract should use distribute-vested-coins"
-                            .into(),
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Withdrawing stake via CLI",
                     ))
                 },
             }
@@ -279,24 +264,16 @@ impl CliCommand<Vec<TransactionSummary>> for IncreaseLockup {
                     );
                 },
                 StakePoolType::StakingContract => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(aptos_stdlib::staking_contract_reset_lockup(
-                                stake_pool.operator_address,
-                            ))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Increasing lockup via CLI",
+                    ));
                 },
                 StakePoolType::Vesting => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(aptos_stdlib::vesting_reset_lockup(
-                                stake_pool.vesting_contract.unwrap(),
-                            ))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Increasing lockup via CLI",
+                    ));
                 },
             }
         }
@@ -338,7 +315,6 @@ impl CliCommand<TransactionSummary> for InitializeStakeOwner {
             .submit_transaction(aptos_stdlib::stake_initialize_stake_owner(
                 self.initial_stake_amount,
                 self.operator_address.unwrap_or(owner_address),
-                self.voter_address.unwrap_or(owner_address),
             ))
             .await
             .map(|inner| inner.into())
@@ -390,30 +366,16 @@ impl CliCommand<Vec<TransactionSummary>> for SetOperator {
                     );
                 },
                 StakePoolType::StakingContract => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(
-                                aptos_stdlib::staking_contract_switch_operator_with_same_commission(
-                                    stake_pool.operator_address,
-                                    new_operator_address,
-                                ),
-                            )
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Setting operator via CLI",
+                    ));
                 },
                 StakePoolType::Vesting => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(
-                                aptos_stdlib::vesting_update_operator_with_same_commission(
-                                    stake_pool.vesting_contract.unwrap(),
-                                    new_operator_address,
-                                ),
-                            )
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Setting operator via CLI",
+                    ));
                 },
             }
         }
@@ -456,36 +418,22 @@ impl CliCommand<Vec<TransactionSummary>> for SetDelegatedVoter {
         for stake_pool in stake_pool_results {
             match stake_pool.pool_type {
                 StakePoolType::Direct => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(aptos_stdlib::stake_set_delegated_voter(
-                                new_voter_address,
-                            ))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Setting delegated voter via CLI",
+                    ));
                 },
                 StakePoolType::StakingContract => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(aptos_stdlib::staking_contract_update_voter(
-                                stake_pool.operator_address,
-                                new_voter_address,
-                            ))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Setting delegated voter via CLI",
+                    ));
                 },
                 StakePoolType::Vesting => {
-                    transaction_summaries.push(
-                        self.txn_options
-                            .submit_transaction(aptos_stdlib::vesting_update_voter(
-                                stake_pool.vesting_contract.unwrap(),
-                                new_voter_address,
-                            ))
-                            .await
-                            .map(|inner| inner.into())?,
-                    );
+                    return Err(unsupported_pool_type(
+                        stake_pool.pool_type,
+                        "Setting delegated voter via CLI",
+                    ));
                 },
             }
         }
@@ -525,28 +473,16 @@ impl CliCommand<TransactionSummary> for CreateStakingContract {
     }
 
     async fn execute(mut self) -> CliTypedResult<TransactionSummary> {
-        let pool_address = default_stake_pool_address(
-            self.txn_options.profile_options.account_address()?,
+        let _ = (
             self.operator,
+            self.voter,
+            self.amount,
+            self.commission_percentage,
         );
-        prompt_yes_with_override(
-            &format!(
-                "Creating a new staking contract with pool address 0x{}. Confirm?",
-                pool_address
-            ),
-            self.txn_options.prompt_options,
-        )?;
-
-        self.txn_options
-            .submit_transaction(aptos_stdlib::staking_contract_create_staking_contract(
-                self.operator,
-                self.voter,
-                self.amount,
-                self.commission_percentage,
-                vec![],
-            ))
-            .await
-            .map(|inner| inner.into())
+        Err(CliError::UnexpectedError(
+            "Creating staking contracts is not supported under the current POC/stake framework"
+                .to_string(),
+        ))
     }
 }
 
@@ -571,11 +507,11 @@ impl CliCommand<TransactionSummary> for DistributeVestedCoins {
     }
 
     async fn execute(mut self) -> CliTypedResult<TransactionSummary> {
-        let vesting_contract_address = create_vesting_contract_address(self.admin_address, 0, &[]);
-        self.txn_options
-            .submit_transaction(aptos_stdlib::vesting_distribute(vesting_contract_address))
-            .await
-            .map(|inner| inner.into())
+        let _ = self.admin_address;
+        Err(CliError::UnexpectedError(
+            "Distributing vested coins is not supported under the current POC/stake framework"
+                .to_string(),
+        ))
     }
 }
 
@@ -604,11 +540,11 @@ impl CliCommand<TransactionSummary> for UnlockVestedCoins {
     }
 
     async fn execute(mut self) -> CliTypedResult<TransactionSummary> {
-        let vesting_contract_address = create_vesting_contract_address(self.admin_address, 0, &[]);
-        self.txn_options
-            .submit_transaction(aptos_stdlib::vesting_vest(vesting_contract_address))
-            .await
-            .map(|inner| inner.into())
+        let _ = self.admin_address;
+        Err(CliError::UnexpectedError(
+            "Unlocking vested coins is not supported under the current POC/stake framework"
+                .to_string(),
+        ))
     }
 }
 
@@ -638,32 +574,10 @@ impl CliCommand<TransactionSummary> for RequestCommission {
     }
 
     async fn execute(mut self) -> CliTypedResult<TransactionSummary> {
-        let client = self
-            .txn_options
-            .rest_options
-            .client(&self.txn_options.profile_options)?;
-
-        // If this is a vesting stake pool, retrieve the associated vesting contract
-        let vesting_admin_store = client
-            .get_account_resource_bcs::<VestingAdminStore>(
-                self.owner_address,
-                "0x1::vesting::AdminStore",
-            )
-            .await;
-
-        // Note: this only works if the vesting contract has exactly one staking contract
-        // associated
-        let staker_address = if let Ok(vesting_admin_store) = vesting_admin_store {
-            vesting_admin_store.into_inner().vesting_contracts[0]
-        } else {
-            self.owner_address
-        };
-        self.txn_options
-            .submit_transaction(aptos_stdlib::staking_contract_request_commission(
-                staker_address,
-                self.operator_address,
-            ))
-            .await
-            .map(|inner| inner.into())
+        let _ = (self.owner_address, self.operator_address);
+        Err(CliError::UnexpectedError(
+            "Requesting commission is not supported under the current POC/stake framework"
+                .to_string(),
+        ))
     }
 }
