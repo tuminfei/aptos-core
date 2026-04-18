@@ -269,6 +269,24 @@ module aptos_framework::staking_registry {
         registry.config.force_exit_power_bps = force_exit_power_bps;
     }
 
+    /// Update how much deposited TOPO is required to back one unit of POC power.
+    ///
+    /// Only the framework account may change this economic parameter. Lowering the value
+    /// increases the amount of committed POC power that can become effective for a fixed
+    /// deposit; raising it can reduce effective power and may cause low-coverage delegators
+    /// to be force-undelegated at the next epoch boundary.
+    public entry fun set_octas_per_power(
+        aptos_framework: &signer,
+        octas_per_power: u64,
+    ) acquires StakingRegistry {
+        system_addresses::assert_aptos_framework(aptos_framework);
+        assert_registry_exists();
+        assert!(octas_per_power > 0, error::invalid_argument(EINVALID_CONFIG));
+
+        borrow_global_mut<StakingRegistry>(@aptos_framework).config.octas_per_power =
+            octas_per_power;
+    }
+
     /// Ensure the cooldown period is at least `min_cooldown_secs`.
     ///
     /// Called during governance config updates to keep cooldown >= governance voting duration.
@@ -412,6 +430,7 @@ module aptos_framework::staking_registry {
         coin::deposit<TopoCoin>(user_address, coins);
     }
 
+    #[view]
     /// Return the user's current effective power.
     ///
     /// Effective power = min(committed_poc_power, deposit_octas / octas_per_power)
@@ -422,7 +441,6 @@ module aptos_framework::staking_registry {
     /// - Either dimension (poc_power or deposit coverage) is zero
     ///
     /// This is the value used for governance voting weight and reward distribution.
-    #[view]
     public fun get_effective_power(user: address): u64 acquires StakingRegistry {
         if (!exists<StakingRegistry>(@aptos_framework)) {
             return 0
@@ -664,6 +682,15 @@ module aptos_framework::staking_registry {
             0
         } else {
             borrow_global<StakingRegistry>(@aptos_framework).config.cooldown_secs
+        }
+    }
+
+    #[view]
+    public fun get_octas_per_power(): u64 acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            0
+        } else {
+            borrow_global<StakingRegistry>(@aptos_framework).config.octas_per_power
         }
     }
 

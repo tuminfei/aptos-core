@@ -164,8 +164,8 @@ module aptos_framework::poc_registry {
 
     // ========== Governance Events ==========
 
-    /// Emitted when a new application is successfully registered
     #[event]
+    /// Emitted when a new application is successfully registered
     struct AppRegisteredEvent has drop, store {
         app_admin: address,
         app_address: address,
@@ -173,49 +173,49 @@ module aptos_framework::poc_registry {
         custody_address: address,
     }
 
-    /// Emitted when the contract deployment address is updated (e.g., after contract upgrade)
     #[event]
+    /// Emitted when the contract deployment address is updated (e.g., after contract upgrade)
     struct AppAddressUpdatedEvent has drop, store {
         app_admin: address,
         old_app_address: address,
         new_app_address: address,
     }
 
+    #[event]
     /// Emitted when the equity token address is updated.
     /// Note: this also triggers an automatic reset of poc_listing_status to REGISTERED.
-    #[event]
     struct AppEquityTokenUpdatedEvent has drop, store {
         app_admin: address,
         old_equity_token_address: address,
         new_equity_token_address: address,
     }
 
-    /// Emitted when the custody address is updated
     #[event]
+    /// Emitted when the custody address is updated
     struct AppCustodyUpdatedEvent has drop, store {
         app_admin: address,
         old_custody_address: address,
         new_custody_address: address,
     }
 
-    /// Emitted when the application's self-managed operational state changes
     #[event]
+    /// Emitted when the application's self-managed operational state changes
     struct AppStateChangedEvent has drop, store {
         app_admin: address,
         old_app_state: u8,
         new_app_state: u8,
     }
 
-    /// Emitted when the platform POC inclusion status changes
     #[event]
+    /// Emitted when the platform POC inclusion status changes
     struct AppPocListingStatusChangedEvent has drop, store {
         app_admin: address,
         old_poc_listing_status: u8,
         new_poc_listing_status: u8,
     }
 
-    /// Emitted when the effective weight is updated by the platform
     #[event]
+    /// Emitted when the effective weight is updated by the platform
     struct AppEffectiveWeightUpdatedEvent has drop, store {
         app_admin: address,
         old_effective_weight_pbs: u64,
@@ -570,8 +570,8 @@ module aptos_framework::poc_registry {
 
     // ========== Query Interface (View / Resolve) ==========
 
-    /// Check whether an application is registered under the given admin address.
     #[view]
+    /// Check whether an application is registered under the given admin address.
     public fun exists_app(app_admin: address): bool acquires Registry {
         if (!exists<Registry>(@aptos_framework)) {
             return false
@@ -579,12 +579,12 @@ module aptos_framework::poc_registry {
         borrow_global<Registry>(@aptos_framework).apps.contains(app_admin)
     }
 
+    #[view]
     /// Reverse-lookup: get admin address from contract deployment address.
     ///
     /// Aborts if the registry is not initialized or the address is not registered.
     /// Used by `poc_contribution` in the trusted contribution path to resolve
     /// app_signer → app_admin → equity_token / custody_address.
-    #[view]
     public fun get_app_admin_by_app_address(
         app_address: address,
     ): address acquires Registry {

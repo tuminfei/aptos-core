@@ -114,16 +114,16 @@ module aptos_framework::poc_power_store {
 
     // ========== Events ==========
 
-    /// Emitted when the operator address is changed via `set_operator`.
     #[event]
+    /// Emitted when the operator address is changed via `set_operator`.
     struct OperatorChangedEvent has drop, store {
         old_operator: address,
         new_operator: address,
     }
 
+    #[event]
     /// Emitted for each user entry written by `stage_batch_update`.
     /// Allows off-chain indexers to track exactly what was staged and when.
-    #[event]
     struct PowerUpdateStagedEvent has drop, store {
         /// The period the caller requested to stage for (must equal current_period + 1)
         target_period: u64,
@@ -133,9 +133,9 @@ module aptos_framework::poc_power_store {
         power: u64,
     }
 
+    #[event]
     /// Emitted when `commit_next_period_if_boundary` advances current_period.
     /// Off-chain services use this to know when a new period has started on-chain.
-    #[event]
     struct PowerPeriodCommittedEvent has drop, store {
         previous_period: u64,
         current_period: u64,

@@ -2511,6 +2511,75 @@ module aptos_framework::stake {
         reconfiguration_state::on_reconfig_finish();
     }
 
+    #[test_only]
+    /// Override the current epoch proposal counters for a validator.
+    ///
+    /// External test modules cannot mutate `ValidatorPerformance` directly because that
+    /// resource is internal to the staking pipeline. This helper keeps tests on the real
+    /// reward path while allowing them to deterministically configure the proposal inputs
+    /// consumed by `next_validator_consensus_infos()` and `on_new_epoch()`.
+    public fun set_validator_performance_for_test(
+        validator_index: u64,
+        successful_proposals: u64,
+        failed_proposals: u64,
+    ) acquires ValidatorPerformance {
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let perf = validator_perf.validators.borrow_mut(validator_index);
+        perf.successful_proposals = successful_proposals;
+        perf.failed_proposals = failed_proposals;
+    }
+
+    #[test_only]
+    /// Thin test-only wrapper around the production fee recording path.
+    ///
+    /// The real `record_fee` entry point is restricted to the VM via a friend-only call,
+    /// which is correct for production but inaccessible from external Move test modules.
+    /// This helper preserves the exact production logic and only opens a test harness hook.
+    public fun record_fee_for_test(
+        vm: &signer,
+        fee_distribution_validator_indices: vector<u64>,
+        fee_amounts_octa: vector<u64>,
+    ) acquires PendingTransactionFee {
+        record_fee(vm, fee_distribution_validator_indices, fee_amounts_octa);
+    }
+
+    #[test_only]
+    /// Test-only probe for the emergency validator-set fallback event.
+    ///
+    /// External Move test modules cannot name `stake::ValidatorSetLivenessFallback`
+    /// directly because the event type is private to this module. This helper lets
+    /// e2e tests verify the production event without widening production visibility.
+    public fun was_validator_set_liveness_fallback_emitted(
+        minimum_stake: u64,
+        emergency_validator_count: u64,
+        total_emergency_voting_power: u128,
+    ): bool {
+        event::was_event_emitted(
+            &ValidatorSetLivenessFallback {
+                minimum_stake,
+                emergency_validator_count,
+                total_emergency_voting_power,
+            }
+        )
+    }
+
+    #[test_only]
+    /// Test-only probe for the transaction-fee distribution event.
+    ///
+    /// This mirrors the exact event emitted inside `on_new_epoch`, allowing external
+    /// Move tests to validate the Rust-visible fee path without exposing the event type.
+    public fun was_transaction_fee_distributed(
+        pool_address: address,
+        fee_amount: u64,
+    ): bool {
+        event::was_event_emitted(
+            &DistributeTransactionFee {
+                pool_address,
+                fee_amount,
+            }
+        )
+    }
+
     #[test(aptos_framework = @aptos_framework, validator = @0x123)]
     public entry fun test_validator_set_liveness_fallback(
         aptos_framework: &signer, validator: &signer
