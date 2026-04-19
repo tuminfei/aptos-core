@@ -23,12 +23,15 @@ fn fake_summary() -> TransactionSummary {
 
 #[test]
 fn publish_success_mock() {
-    let pkg = common::make_package("pub_mock", &[(
+    let pkg = common::make_package(
         "pub_mock",
-        "module 0xCAFE::pub_mock {
+        &[(
+            "pub_mock",
+            "module 0xCAFE::pub_mock {
     public fun hello(): u64 { 42 }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
 
     let (env, buffer) = common::env_with_mock(|ctx| {

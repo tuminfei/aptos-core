@@ -69,10 +69,11 @@ fn main() -> anyhow::Result<()> {
         &Path::new(&args.module_binary_path).with_extension(source_map_extension),
     )?;
     let source_path = Path::new(&args.source_file_path);
-    let source_cov = SourceCoverageBuilder::new(&coverage_map, &source_map, vec![(
-        &compiled_module,
+    let source_cov = SourceCoverageBuilder::new(
+        &coverage_map,
         &source_map,
-    )]);
+        vec![(&compiled_module, &source_map)],
+    );
 
     let mut coverage_writer: Box<dyn Write> = match &args.coverage_path {
         Some(x) => {

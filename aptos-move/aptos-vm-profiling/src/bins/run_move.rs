@@ -43,9 +43,10 @@ fn make_native_create_signer() -> NativeFunction {
 
         let address = pop_arg!(args, AccountAddress);
 
-        Ok(NativeResult::ok(0.into(), smallvec![Value::master_signer(
-            address
-        )]))
+        Ok(NativeResult::ok(
+            0.into(),
+            smallvec![Value::master_signer(address)],
+        ))
     })
 }
 

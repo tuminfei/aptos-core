@@ -30,10 +30,13 @@ fn test_events_ty_tag_size_too_large() {
         vec![],
     );
     let execution_status = assert_ok!(status.as_kept_status());
-    assert!(matches!(execution_status, ExecutionStatus::MoveAbort {
-        code: ECANNOT_CREATE_EVENT,
-        ..
-    }));
+    assert!(matches!(
+        execution_status,
+        ExecutionStatus::MoveAbort {
+            code: ECANNOT_CREATE_EVENT,
+            ..
+        }
+    ));
 
     assert_success!(h.run_entry_function(
         &acc,
@@ -48,8 +51,11 @@ fn test_events_ty_tag_size_too_large() {
         vec![],
     );
     let execution_status = assert_ok!(status.as_kept_status());
-    assert!(matches!(execution_status, ExecutionStatus::MoveAbort {
-        code: ECANNOT_CREATE_EVENT,
-        ..
-    }));
+    assert!(matches!(
+        execution_status,
+        ExecutionStatus::MoveAbort {
+            code: ECANNOT_CREATE_EVENT,
+            ..
+        }
+    ));
 }

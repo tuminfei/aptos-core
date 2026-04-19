@@ -108,16 +108,14 @@ impl TransactionGasLog {
         let mut data = Map::new();
         data.insert(
             "title".to_string(),
-            Value::String(
-                if self.num_txns > 1 {
-                    format!(
-                        "{} - aggregated across {} transactions",
-                        header, self.num_txns
-                    )
-                } else {
-                    header
-                },
-            ),
+            Value::String(if self.num_txns > 1 {
+                format!(
+                    "{} - aggregated across {} transactions",
+                    header, self.num_txns
+                )
+            } else {
+                header
+            }),
         );
 
         // Timestamp (local timezone)

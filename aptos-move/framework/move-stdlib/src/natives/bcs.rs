@@ -31,9 +31,10 @@ use std::collections::VecDeque;
 pub fn create_option_u64(enum_option_enabled: bool, value: Option<u64>) -> Value {
     if enum_option_enabled {
         match value {
-            Some(value) => Value::struct_(Struct::pack_variant(OPTION_SOME_TAG, vec![Value::u64(
-                value,
-            )])),
+            Some(value) => Value::struct_(Struct::pack_variant(
+                OPTION_SOME_TAG,
+                vec![Value::u64(value)],
+            )),
             None => Value::struct_(Struct::pack_variant(OPTION_NONE_TAG, vec![])),
         }
     } else {

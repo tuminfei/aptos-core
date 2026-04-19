@@ -287,12 +287,15 @@ fn compute_call_sites_to_inline_and_new_function_size(
                     .copied()
                     .collect::<BTreeSet<_>>();
                 let code_size = callee_size.code_size;
-                Some((sites, CalleeInfo {
-                    max_loop_depth,
-                    amortized_locals_per_site,
-                    code_size,
-                    locals_per_site,
-                }))
+                Some((
+                    sites,
+                    CalleeInfo {
+                        max_loop_depth,
+                        amortized_locals_per_site,
+                        code_size,
+                        locals_per_site,
+                    },
+                ))
             }
         })
         .collect::<Vec<_>>();

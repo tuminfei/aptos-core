@@ -341,9 +341,10 @@ fn test_account_not_exist_move_abort_with_fee_payer_out_of_gas() {
 
 #[test]
 fn test_account_not_exist_with_fee_payer_without_create_account() {
-    let mut h = MoveHarness::new_with_features(vec![FeatureFlag::GAS_PAYER_ENABLED], vec![
-        FeatureFlag::SPONSORED_AUTOMATIC_ACCOUNT_V1_CREATION,
-    ]);
+    let mut h = MoveHarness::new_with_features(
+        vec![FeatureFlag::GAS_PAYER_ENABLED],
+        vec![FeatureFlag::SPONSORED_AUTOMATIC_ACCOUNT_V1_CREATION],
+    );
 
     let alice = Account::new();
     let bob = h.new_account_at(AccountAddress::from_hex_literal("0xb0b").unwrap());

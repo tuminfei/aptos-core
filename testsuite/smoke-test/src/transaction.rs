@@ -56,10 +56,7 @@ async fn test_external_transaction_signer() {
 
     let unsigned_txn = info
         .transaction_factory()
-        .payload(aptos_stdlib::topo_coin_transfer(
-            receiver.address(),
-            amount,
-        ))
+        .payload(aptos_stdlib::topo_coin_transfer(receiver.address(), amount))
         .sender(sender_address)
         .sequence_number(test_sequence_number)
         .max_gas_amount(test_max_gas_amount)

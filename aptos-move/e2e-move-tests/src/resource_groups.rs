@@ -69,9 +69,10 @@ fn initialize_harness(
             vec![],
         );
     } else {
-        harness.enable_features(vec![], vec![
-            FeatureFlag::RESOURCE_GROUPS_SPLIT_IN_VM_CHANGE_SET,
-        ]);
+        harness.enable_features(
+            vec![],
+            vec![FeatureFlag::RESOURCE_GROUPS_SPLIT_IN_VM_CHANGE_SET],
+        );
     }
     let account = harness.new_account_at(AccountAddress::ONE);
     assert_success!(harness.publish_package_cache_building(&account, &path));

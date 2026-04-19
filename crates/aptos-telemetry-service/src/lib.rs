@@ -198,20 +198,23 @@ impl AptosTelemetryServiceArgs {
                     );
                 }
 
-                instances.insert(cc_config.name.clone(), context::CustomContractInstance {
-                    config: cc_config.on_chain_auth.clone(),
-                    static_allowlist: cc_config.static_allowlist.clone(),
-                    node_type_name: cc_config.effective_node_type_name(),
-                    allow_unknown_nodes: cc_config.allow_unknown_nodes,
-                    metrics_clients,
-                    untrusted_metrics_clients,
-                    logs_client,
-                    untrusted_logs_client,
-                    bigquery_client: cc_bigquery_client,
-                    peer_identities: cc_config.peer_identities.clone(),
-                    blacklist_peers: cc_config.blacklist_peers.clone(),
-                    extra_labels: cc_config.extra_labels.clone(),
-                });
+                instances.insert(
+                    cc_config.name.clone(),
+                    context::CustomContractInstance {
+                        config: cc_config.on_chain_auth.clone(),
+                        static_allowlist: cc_config.static_allowlist.clone(),
+                        node_type_name: cc_config.effective_node_type_name(),
+                        allow_unknown_nodes: cc_config.allow_unknown_nodes,
+                        metrics_clients,
+                        untrusted_metrics_clients,
+                        logs_client,
+                        untrusted_logs_client,
+                        bigquery_client: cc_bigquery_client,
+                        peer_identities: cc_config.peer_identities.clone(),
+                        blacklist_peers: cc_config.blacklist_peers.clone(),
+                        extra_labels: cc_config.extra_labels.clone(),
+                    },
+                );
             }
 
             Some(context::CustomContractClients { instances })

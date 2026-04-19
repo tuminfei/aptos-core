@@ -3,9 +3,9 @@
 
 pub mod aggregator;
 pub mod aggregator_v2;
-pub mod topo_governance;
 pub mod resource_groups;
 pub mod stake;
+pub mod topo_governance;
 
 pub use aptos_move_e2e_test_harness::*;
 

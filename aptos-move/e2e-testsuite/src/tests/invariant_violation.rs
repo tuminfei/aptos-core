@@ -39,17 +39,22 @@ fn invariant_violation_error() {
     );
 
     // Disable the CHARGE_INVARIANT_VIOLATION flag.
-    executor.exec("features", "change_feature_flags_internal", vec![], vec![
-        MoveValue::Signer(AccountAddress::ONE)
+    executor.exec(
+        "features",
+        "change_feature_flags_internal",
+        vec![],
+        vec![
+            MoveValue::Signer(AccountAddress::ONE)
+                .simple_serialize()
+                .unwrap(),
+            MoveValue::Vector(vec![]).simple_serialize().unwrap(),
+            MoveValue::Vector(vec![MoveValue::U64(
+                FeatureFlag::CHARGE_INVARIANT_VIOLATION as u64,
+            )])
             .simple_serialize()
             .unwrap(),
-        MoveValue::Vector(vec![]).simple_serialize().unwrap(),
-        MoveValue::Vector(vec![MoveValue::U64(
-            FeatureFlag::CHARGE_INVARIANT_VIOLATION as u64,
-        )])
-        .simple_serialize()
-        .unwrap(),
-    ]);
+        ],
+    );
 
     let output = executor.execute_transaction(txn);
 

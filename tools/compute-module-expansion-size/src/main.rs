@@ -66,10 +66,13 @@ fn extract_module_info_single(bytes: &[u8]) -> Result<(ModuleId, ModuleInfo)> {
     let expansion_size =
         move_binary_format::check_complexity::check_module_complexity(&module, u64::MAX).unwrap();
 
-    Ok((module.self_id().clone(), ModuleInfo {
-        size: bytes.len(),
-        expansion_size,
-    }))
+    Ok((
+        module.self_id().clone(),
+        ModuleInfo {
+            size: bytes.len(),
+            expansion_size,
+        },
+    ))
 }
 
 fn extract_module_info(modules: &Vec<Vec<u8>>) -> Result<Vec<(ModuleId, ModuleInfo)>> {

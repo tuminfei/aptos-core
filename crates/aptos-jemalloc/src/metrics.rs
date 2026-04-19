@@ -14,9 +14,11 @@ const COLLECTION_INTERVAL: Duration = Duration::from_secs(30);
 const ARENAS_ALL: usize = 4096;
 
 static JEMALLOC_STATS: Lazy<IntGaugeVec> = Lazy::new(|| {
-    register_int_gauge_vec!("aptos_jemalloc_stats", "jemalloc allocator statistics", &[
-        "stat"
-    ])
+    register_int_gauge_vec!(
+        "aptos_jemalloc_stats",
+        "jemalloc allocator statistics",
+        &["stat"]
+    )
     .unwrap()
 });
 

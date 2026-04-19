@@ -190,22 +190,30 @@ pub fn serialize(value: &u128) -> Vec<u8> {
 
 #[cfg(any(test, feature = "testing"))]
 pub fn delta_sub(v: u128, max_value: u128) -> DeltaOp {
-    DeltaOp::new(SignedU128::Negative(v), max_value, DeltaHistory {
-        max_achieved_positive_delta: 0,
-        min_achieved_negative_delta: v,
-        min_overflow_positive_delta: None,
-        max_underflow_negative_delta: None,
-    })
+    DeltaOp::new(
+        SignedU128::Negative(v),
+        max_value,
+        DeltaHistory {
+            max_achieved_positive_delta: 0,
+            min_achieved_negative_delta: v,
+            min_overflow_positive_delta: None,
+            max_underflow_negative_delta: None,
+        },
+    )
 }
 
 #[cfg(any(test, feature = "testing"))]
 pub fn delta_add(v: u128, max_value: u128) -> DeltaOp {
-    DeltaOp::new(SignedU128::Positive(v), max_value, DeltaHistory {
-        max_achieved_positive_delta: v,
-        min_achieved_negative_delta: 0,
-        min_overflow_positive_delta: None,
-        max_underflow_negative_delta: None,
-    })
+    DeltaOp::new(
+        SignedU128::Positive(v),
+        max_value,
+        DeltaHistory {
+            max_achieved_positive_delta: v,
+            min_achieved_negative_delta: 0,
+            min_overflow_positive_delta: None,
+            max_underflow_negative_delta: None,
+        },
+    )
 }
 
 #[cfg(test)]

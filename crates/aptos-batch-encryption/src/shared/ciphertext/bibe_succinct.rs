@@ -166,9 +166,10 @@ pub mod tests {
 
         let ct = ek.bibe_encrypt(&mut rng, &plaintext, id).unwrap();
 
-        let dk = BIBEDecryptionKey::reconstruct(&tc, &[msk_shares[0]
-            .derive_decryption_key_share(&digest)
-            .unwrap()])
+        let dk = BIBEDecryptionKey::reconstruct(
+            &tc,
+            &[msk_shares[0].derive_decryption_key_share(&digest).unwrap()],
+        )
         .unwrap();
 
         let decrypted_plaintext: String = dk

@@ -43,16 +43,20 @@ impl SourceLocation {
     ) -> fmt::Result {
         match self {
             SourceLocation::Local { path } => {
-                write!(f, "local:{}", match strip_root_path {
-                    Some(root_path) => {
-                        if let Ok(stripped) = path.strip_prefix(root_path) {
-                            stripped.display()
-                        } else {
-                            path.display()
-                        }
-                    },
-                    None => path.display(),
-                })
+                write!(
+                    f,
+                    "local:{}",
+                    match strip_root_path {
+                        Some(root_path) => {
+                            if let Ok(stripped) = path.strip_prefix(root_path) {
+                                stripped.display()
+                            } else {
+                                path.display()
+                            }
+                        },
+                        None => path.display(),
+                    }
+                )
             },
             SourceLocation::OnChain { node, package_addr } => {
                 write!(f, "onchain:{}::{}", node, package_addr)

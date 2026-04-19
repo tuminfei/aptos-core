@@ -14,13 +14,16 @@ fn prove_success() {
         return;
     }
 
-    let pkg = common::make_package("provable", &[(
+    let pkg = common::make_package(
         "provable",
-        "module 0xCAFE::provable {
+        &[(
+            "provable",
+            "module 0xCAFE::provable {
     fun add(a: u64, b: u64): u64 { a + b }
     spec add { ensures result == a + b; }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let output = common::run_cli(&[
         "prove",

@@ -1193,11 +1193,14 @@ impl FrameRefState {
         safe_assert!(access_path_tree_node.refs.insert(new_ref_id));
 
         // Connect the new reference to the `access_path_tree_node`.
-        self.ref_table.insert(new_ref_id, ReferenceInfo {
-            is_mutable,
-            poisoned: false,
-            access_path_tree_node: qualified_node_id,
-        });
+        self.ref_table.insert(
+            new_ref_id,
+            ReferenceInfo {
+                is_mutable,
+                poisoned: false,
+                access_path_tree_node: qualified_node_id,
+            },
+        );
 
         Ok(new_ref_id)
     }

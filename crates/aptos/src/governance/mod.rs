@@ -541,14 +541,14 @@ impl SubmitVote {
         for pool_address in &self.pool_addresses {
             let voting_record = client
                 .get_table_item(
-                voting_records,
-                "0x1::topo_governance::RecordKey",
-                "bool",
-                VotingRecord {
-                    proposal_id: proposal_id.to_string(),
-                    stake_pool: *pool_address,
-                },
-            )
+                    voting_records,
+                    "0x1::topo_governance::RecordKey",
+                    "bool",
+                    VotingRecord {
+                        proposal_id: proposal_id.to_string(),
+                        stake_pool: *pool_address,
+                    },
+                )
                 .await;
             let voted = if let Ok(voting_record) = voting_record {
                 voting_record.into_inner().as_bool().unwrap()
@@ -579,10 +579,7 @@ impl SubmitVote {
             summaries.push(
                 self.args
                     .txn_options
-                    .submit_transaction(aptos_stdlib::topo_governance_vote(
-                    proposal_id,
-                    vote,
-                ))
+                    .submit_transaction(aptos_stdlib::topo_governance_vote(proposal_id, vote))
                     .await
                     .map(TransactionSummary::from)?,
             );
@@ -674,10 +671,10 @@ impl SubmitVote {
                 self.args
                     .txn_options
                     .submit_transaction(aptos_stdlib::topo_governance_partial_vote(
-                    proposal_id,
-                    voting_power,
-                    vote,
-                ))
+                        proposal_id,
+                        voting_power,
+                        vote,
+                    ))
                     .await
                     .map(TransactionSummary::from)?,
             );

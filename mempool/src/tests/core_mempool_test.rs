@@ -27,10 +27,13 @@ fn test_transaction_ordering_only_seqnos() {
     let (mut mempool, mut consensus) = setup_mempool();
 
     // Default ordering: gas price
-    let mut transactions = add_txns_to_mempool(&mut mempool, vec![
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 3),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 5),
-    ]);
+    let mut transactions = add_txns_to_mempool(
+        &mut mempool,
+        vec![
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 3),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 5),
+        ],
+    );
     assert_eq!(
         consensus.get_block(&mut mempool, 1, 1024),
         vec!(transactions[1].clone())
@@ -42,28 +45,36 @@ fn test_transaction_ordering_only_seqnos() {
 
     // Second level ordering: expiration time
     let (mut mempool, mut consensus) = setup_mempool();
-    transactions = add_txns_to_mempool(&mut mempool, vec![
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1),
-    ]);
+    transactions = add_txns_to_mempool(
+        &mut mempool,
+        vec![
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1),
+        ],
+    );
     for transaction in &transactions {
-        assert_eq!(consensus.get_block(&mut mempool, 1, 1024), vec![
-            transaction.clone()
-        ]);
+        assert_eq!(
+            consensus.get_block(&mut mempool, 1, 1024),
+            vec![transaction.clone()]
+        );
     }
 
     // Last level: for same account it should be by sequence number
     let (mut mempool, mut consensus) = setup_mempool();
-    transactions = add_txns_to_mempool(&mut mempool, vec![
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 7),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 5),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(2), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 6),
-    ]);
+    transactions = add_txns_to_mempool(
+        &mut mempool,
+        vec![
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 7),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 5),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(2), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 6),
+        ],
+    );
     for transaction in &transactions {
-        assert_eq!(consensus.get_block(&mut mempool, 1, 1024), vec![
-            transaction.clone()
-        ]);
+        assert_eq!(
+            consensus.get_block(&mut mempool, 1, 1024),
+            vec![transaction.clone()]
+        );
     }
 }
 
@@ -72,13 +83,16 @@ fn test_transaction_ordering_seqnos_and_nonces() {
     let (mut mempool, mut consensus) = setup_mempool();
 
     // Default ordering: gas price
-    add_txns_to_mempool(&mut mempool, vec![
-        TestTransaction::new(0, ReplayProtector::Nonce(150), 3),
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 3),
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(1), 5),
-        TestTransaction::new(0, ReplayProtector::Nonce(100), 2),
-        TestTransaction::new(0, ReplayProtector::Nonce(200), 7),
-    ]);
+    add_txns_to_mempool(
+        &mut mempool,
+        vec![
+            TestTransaction::new(0, ReplayProtector::Nonce(150), 3),
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 3),
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(1), 5),
+            TestTransaction::new(0, ReplayProtector::Nonce(100), 2),
+            TestTransaction::new(0, ReplayProtector::Nonce(200), 7),
+        ],
+    );
 
     assert_eq!(mempool.transactions.priority_index.size(), 5);
     assert_eq!(
@@ -198,15 +212,21 @@ fn test_transaction_metrics() {
 #[test]
 fn test_update_transaction_in_mempool() {
     let (mut mempool, mut consensus) = setup_mempool();
-    let txns = add_txns_to_mempool(&mut mempool, vec![
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 2),
-        TestTransaction::new(2, ReplayProtector::Nonce(123), 3),
-    ]);
-    let fixed_txns = add_txns_to_mempool(&mut mempool, vec![
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 5),
-        TestTransaction::new(2, ReplayProtector::Nonce(123), 5),
-    ]);
+    let txns = add_txns_to_mempool(
+        &mut mempool,
+        vec![
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 2),
+            TestTransaction::new(2, ReplayProtector::Nonce(123), 3),
+        ],
+    );
+    let fixed_txns = add_txns_to_mempool(
+        &mut mempool,
+        vec![
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 5),
+            TestTransaction::new(2, ReplayProtector::Nonce(123), 5),
+        ],
+    );
 
     // Check that higher gas price transactions removes lower gas price transactions.
     assert_eq!(
@@ -219,24 +239,30 @@ fn test_update_transaction_in_mempool() {
         3
     );
     assert_eq!(mempool.transactions.priority_index.size(), 3);
-    assert_eq!(consensus.get_block(&mut mempool, 1, 1024), vec![fixed_txns
-        [0]
-    .clone()]);
-    assert_eq!(consensus.get_block(&mut mempool, 1, 1024), vec![fixed_txns
-        [1]
-    .clone()]);
-    assert_eq!(consensus.get_block(&mut mempool, 1, 1024), vec![
-        txns[1].clone()
-    ]);
+    assert_eq!(
+        consensus.get_block(&mut mempool, 1, 1024),
+        vec![fixed_txns[0].clone()]
+    );
+    assert_eq!(
+        consensus.get_block(&mut mempool, 1, 1024),
+        vec![fixed_txns[1].clone()]
+    );
+    assert_eq!(
+        consensus.get_block(&mut mempool, 1, 1024),
+        vec![txns[1].clone()]
+    );
 }
 
 #[test]
 fn test_ignore_same_transaction_submitted_to_mempool() {
     let (mut mempool, _) = setup_mempool();
-    let _ = add_txns_to_mempool(&mut mempool, vec![
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 0),
-        TestTransaction::new(0, ReplayProtector::Nonce(123), 1),
-    ]);
+    let _ = add_txns_to_mempool(
+        &mut mempool,
+        vec![
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 0),
+            TestTransaction::new(0, ReplayProtector::Nonce(123), 1),
+        ],
+    );
     let ret = add_txn(
         &mut mempool,
         TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 0),
@@ -261,10 +287,13 @@ fn test_ignore_same_transaction_submitted_to_mempool() {
 #[test]
 fn test_fail_for_same_gas_amount_and_not_same_expiration_time() {
     let (mut mempool, _) = setup_mempool();
-    let _ = add_txns_to_mempool(&mut mempool, vec![
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 0),
-        TestTransaction::new(0, ReplayProtector::Nonce(123), 1),
-    ]);
+    let _ = add_txns_to_mempool(
+        &mut mempool,
+        vec![
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 0),
+            TestTransaction::new(0, ReplayProtector::Nonce(123), 1),
+        ],
+    );
     let txn = TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 0)
         .make_signed_transaction_with_expiration_time(u64::MAX - 1000);
     let ret = add_signed_txn(&mut mempool, txn);
@@ -279,10 +308,13 @@ fn test_fail_for_same_gas_amount_and_not_same_expiration_time() {
 #[test]
 fn test_update_invalid_transaction_in_mempool() {
     let (mut mempool, mut consensus) = setup_mempool();
-    let txns = add_txns_to_mempool(&mut mempool, vec![
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 2),
-    ]);
+    let txns = add_txns_to_mempool(
+        &mut mempool,
+        vec![
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 2),
+        ],
+    );
     let updated_txn = TestTransaction::make_signed_transaction_with_max_gas_amount(
         &TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 5),
         200,
@@ -291,9 +323,10 @@ fn test_update_invalid_transaction_in_mempool() {
 
     // Since both gas price and mas gas amount were updated, the ordering should not have changed.
     // The second transaction with gas price 2 should come first.
-    assert_eq!(consensus.get_block(&mut mempool, 1, 1024), vec![
-        txns[1].clone()
-    ]);
+    assert_eq!(
+        consensus.get_block(&mut mempool, 1, 1024),
+        vec![txns[1].clone()]
+    );
     let next_tnx = consensus.get_block(&mut mempool, 1, 1024);
     assert_eq!(next_tnx, vec![txns[0].clone()]);
     assert_eq!(next_tnx[0].gas_unit_price(), 1);
@@ -304,15 +337,18 @@ fn test_commit_transaction() {
     let (mut pool, mut consensus) = setup_mempool();
 
     // Test normal flow.
-    let txns = add_txns_to_mempool(&mut pool, vec![
-        TestTransaction::new(0, ReplayProtector::Nonce(123), 1),
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 1),
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(1), 2),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(5), 12),
-        TestTransaction::new(1, ReplayProtector::Nonce(123), 12),
-        TestTransaction::new(2, ReplayProtector::Nonce(123), 2),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 4),
-    ]);
+    let txns = add_txns_to_mempool(
+        &mut pool,
+        vec![
+            TestTransaction::new(0, ReplayProtector::Nonce(123), 1),
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 1),
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(1), 2),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(5), 12),
+            TestTransaction::new(1, ReplayProtector::Nonce(123), 12),
+            TestTransaction::new(2, ReplayProtector::Nonce(123), 2),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 4),
+        ],
+    );
     assert_eq!(
         pool.transactions
             .transactions
@@ -371,12 +407,15 @@ fn test_commit_transaction() {
         1
     );
 
-    let new_txns = add_txns_to_mempool(&mut pool, vec![
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 3),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 4),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(5), 12),
-        TestTransaction::new(2, ReplayProtector::Nonce(123), 3),
-    ]);
+    let new_txns = add_txns_to_mempool(
+        &mut pool,
+        vec![
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 3),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 4),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(5), 12),
+            TestTransaction::new(2, ReplayProtector::Nonce(123), 3),
+        ],
+    );
     // (sender 1, seq number 0) is not inserted
     // (sender 1, seq number 1), (sender 2, nonce 123) are in priority index
     // (sender 1, seq number 5) is in parking lot
@@ -426,10 +465,13 @@ fn test_commit_transaction() {
 fn test_reject_transaction() {
     let (mut pool, _) = setup_mempool();
 
-    let txns = add_txns_to_mempool(&mut pool, vec![
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 1),
-        TestTransaction::new(0, ReplayProtector::SequenceNumber(1), 2),
-    ]);
+    let txns = add_txns_to_mempool(
+        &mut pool,
+        vec![
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(0), 1),
+            TestTransaction::new(0, ReplayProtector::SequenceNumber(1), 2),
+        ],
+    );
 
     // reject with wrong hash should have no effect
     pool.reject_transaction(
@@ -548,11 +590,14 @@ fn test_commit_callback() {
     // Consensus commit callback should unlock txns in parking lot.
     let mut pool = setup_mempool().0;
     // Insert transaction with sequence number 6 to pool (while last known executed transaction is 0).
-    let txns = add_txns_to_mempool(&mut pool, vec![TestTransaction::new(
-        1,
-        ReplayProtector::SequenceNumber(6),
-        1,
-    )]);
+    let txns = add_txns_to_mempool(
+        &mut pool,
+        vec![TestTransaction::new(
+            1,
+            ReplayProtector::SequenceNumber(6),
+            1,
+        )],
+    );
 
     // Check that pool is empty.
     assert!(pool.get_batch(1, 1024, true, btreemap![]).is_empty());
@@ -577,10 +622,13 @@ fn test_reset_sequence_number_on_failure() {
         .map(|txn| txn.make_signed_transaction().committed_hash())
         .collect();
     // Add two transactions for account.
-    add_txns_to_mempool(&mut pool, vec![
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 1),
-    ]);
+    add_txns_to_mempool(
+        &mut pool,
+        vec![
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 1),
+        ],
+    );
 
     // Notify mempool about failure in arbitrary order
     pool.reject_transaction(
@@ -614,12 +662,15 @@ fn view(txns: Vec<(SignedTransaction, u64)>) -> Vec<u64> {
 #[test]
 fn test_timeline() {
     let mut pool = setup_mempool().0;
-    let txns = add_txns_to_mempool(&mut pool, vec![
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(5), 1),
-    ]);
+    let txns = add_txns_to_mempool(
+        &mut pool,
+        vec![
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(5), 1),
+        ],
+    );
     let sender_bucket = sender_bucket(
         &txns[0].sender(),
         MempoolConfig::default().num_sender_buckets,
@@ -637,11 +688,14 @@ fn test_timeline() {
     assert_eq!(2, pool.get_parking_lot_size());
 
     // Add txn 2 to unblock txn3.
-    add_txns_to_mempool(&mut pool, vec![TestTransaction::new(
-        1,
-        ReplayProtector::SequenceNumber(2),
-        1,
-    )]);
+    add_txns_to_mempool(
+        &mut pool,
+        vec![TestTransaction::new(
+            1,
+            ReplayProtector::SequenceNumber(2),
+            1,
+        )],
+    );
     let (timeline, _) = pool.read_timeline(
         sender_bucket,
         &vec![0].into(),
@@ -683,12 +737,15 @@ fn test_timeline() {
 #[test]
 fn test_timeline_before() {
     let mut pool = setup_mempool().0;
-    let txns = add_txns_to_mempool(&mut pool, vec![
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 1),
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(5), 1),
-    ]);
+    let txns = add_txns_to_mempool(
+        &mut pool,
+        vec![
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 1),
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(5), 1),
+        ],
+    );
     let sender_bucket = sender_bucket(
         &txns[0].sender(),
         MempoolConfig::default().num_sender_buckets,
@@ -726,12 +783,15 @@ fn test_timeline_before() {
 #[test]
 fn test_multi_bucket_timeline() {
     let mut pool = setup_mempool_with_broadcast_buckets(vec![0, 101, 201]).0;
-    let txns = add_txns_to_mempool(&mut pool, vec![
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1), // bucket 0
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 100), // bucket 0
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 200), // bucket 1
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(5), 300), // bucket 2
-    ]);
+    let txns = add_txns_to_mempool(
+        &mut pool,
+        vec![
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1), // bucket 0
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 100), // bucket 0
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 200), // bucket 1
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(5), 300), // bucket 2
+        ],
+    );
     let sender_bucket = sender_bucket(
         &txns[0].sender(),
         MempoolConfig::default().num_sender_buckets,
@@ -749,11 +809,14 @@ fn test_multi_bucket_timeline() {
     assert_eq!(2, pool.get_parking_lot_size());
 
     // Add txn 2 to unblock txn3.
-    add_txns_to_mempool(&mut pool, vec![TestTransaction::new(
-        1,
-        ReplayProtector::SequenceNumber(2),
-        1,
-    )]);
+    add_txns_to_mempool(
+        &mut pool,
+        vec![TestTransaction::new(
+            1,
+            ReplayProtector::SequenceNumber(2),
+            1,
+        )],
+    );
     let (timeline, _) = pool.read_timeline(
         sender_bucket,
         &vec![0, 0, 0].into(),
@@ -853,12 +916,15 @@ fn test_multi_bucket_timeline() {
 #[test]
 fn test_multi_bucket_gas_ranking_update() {
     let mut pool = setup_mempool_with_broadcast_buckets(vec![0, 101, 201]).0;
-    let txns = add_txns_to_mempool(&mut pool, vec![
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1), // bucket 0
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 100), // bucket 0
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(2), 101), // bucket 1
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 200), // bucket 1
-    ]);
+    let txns = add_txns_to_mempool(
+        &mut pool,
+        vec![
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1), // bucket 0
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 100), // bucket 0
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(2), 101), // bucket 1
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 200), // bucket 1
+        ],
+    );
     let sender_bucket = sender_bucket(
         &txns[0].sender(),
         MempoolConfig::default().num_sender_buckets,
@@ -884,11 +950,14 @@ fn test_multi_bucket_gas_ranking_update() {
     assert!(view(timeline).is_empty());
 
     // resubmit with higher gas: move txn 2 to bucket 2
-    add_txns_to_mempool(&mut pool, vec![TestTransaction::new(
-        1,
-        ReplayProtector::SequenceNumber(2),
-        400,
-    )]);
+    add_txns_to_mempool(
+        &mut pool,
+        vec![TestTransaction::new(
+            1,
+            ReplayProtector::SequenceNumber(2),
+            400,
+        )],
+    );
 
     // txn 2 is now prioritized
     let (timeline, _) = pool.read_timeline(
@@ -931,12 +1000,15 @@ fn test_multi_bucket_gas_ranking_update() {
 #[test]
 fn test_multi_bucket_removal() {
     let mut pool = setup_mempool_with_broadcast_buckets(vec![0, 101, 201]).0;
-    let txns = add_txns_to_mempool(&mut pool, vec![
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1), // bucket 0
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 100), // bucket 0
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(2), 300), // bucket 2
-        TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 200), // bucket 1
-    ]);
+    let txns = add_txns_to_mempool(
+        &mut pool,
+        vec![
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(0), 1), // bucket 0
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(1), 100), // bucket 0
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(2), 300), // bucket 2
+            TestTransaction::new(1, ReplayProtector::SequenceNumber(3), 200), // bucket 1
+        ],
+    );
     let sender_bucket = sender_bucket(
         &txns[0].sender(),
         MempoolConfig::default().num_sender_buckets,
@@ -1714,9 +1786,14 @@ fn test_include_gas_upgraded() {
         ReplayProtector::SequenceNumber(low_gas_signed_txn.sequence_number()),
         low_gas_signed_txn.committed_hash(),
     );
-    let batch = pool.get_batch(10, 10240, true, btreemap! {
-        low_gas_txn => TransactionInProgress::new(low_gas_price)
-    });
+    let batch = pool.get_batch(
+        10,
+        10240,
+        true,
+        btreemap! {
+            low_gas_txn => TransactionInProgress::new(low_gas_price)
+        },
+    );
     assert_eq!(batch.len(), 0);
 
     let high_gas_price = 100;
@@ -1736,9 +1813,14 @@ fn test_include_gas_upgraded() {
     );
 
     // When the low gas txn (but not the high gas txn) is excluded, will the high gas txn be included.
-    let batch = pool.get_batch(10, 10240, true, btreemap! {
-        low_gas_txn => TransactionInProgress::new(low_gas_price)
-    });
+    let batch = pool.get_batch(
+        10,
+        10240,
+        true,
+        btreemap! {
+            low_gas_txn => TransactionInProgress::new(low_gas_price)
+        },
+    );
     assert_eq!(batch.len(), 1);
     assert_eq!(
         batch[0].sender(),
@@ -1747,14 +1829,24 @@ fn test_include_gas_upgraded() {
     assert_eq!(batch[0].sequence_number(), sequence_number);
     assert_eq!(batch[0].gas_unit_price(), high_gas_price);
 
-    let batch = pool.get_batch(10, 10240, true, btreemap! {
-        high_gas_txn => TransactionInProgress::new(high_gas_price)
-    });
+    let batch = pool.get_batch(
+        10,
+        10240,
+        true,
+        btreemap! {
+            high_gas_txn => TransactionInProgress::new(high_gas_price)
+        },
+    );
     assert_eq!(batch.len(), 0);
 
-    let batch = pool.get_batch(10, 10240, true, btreemap! {
-        low_gas_txn => TransactionInProgress::new(low_gas_price),
-        high_gas_txn => TransactionInProgress::new(high_gas_price)
-    });
+    let batch = pool.get_batch(
+        10,
+        10240,
+        true,
+        btreemap! {
+            low_gas_txn => TransactionInProgress::new(low_gas_price),
+            high_gas_txn => TransactionInProgress::new(high_gas_price)
+        },
+    );
     assert_eq!(batch.len(), 0);
 }

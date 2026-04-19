@@ -256,10 +256,10 @@ async fn test_verify_badly_formed_retrieval_responses() {
     let request = BlockRetrievalRequest::new_with_target_round(a3_r6.id(), 6, 2);
 
     // Correct SucceededWithTarget: [ A2_R3 ──> A3_R6 ]
-    let response = BlockRetrievalResponse::new(BlockRetrievalStatus::SucceededWithTarget, vec![
-        a3_r6.block().clone(),
-        a2_r3.block().clone(),
-    ]);
+    let response = BlockRetrievalResponse::new(
+        BlockRetrievalStatus::SucceededWithTarget,
+        vec![a3_r6.block().clone(), a2_r3.block().clone()],
+    );
     assert!(response.verify_inner(&request).is_ok());
 
     // Correct SucceededWithTarget, but not marked as SucceededWithTarget
@@ -273,10 +273,10 @@ async fn test_verify_badly_formed_retrieval_responses() {
     }
 
     // Insufficient SucceededWithTarget
-    let response =
-        BlockRetrievalResponse::new(BlockRetrievalStatus::SucceededWithTarget, vec![a3_r6
-            .block()
-            .clone()]);
+    let response = BlockRetrievalResponse::new(
+        BlockRetrievalStatus::SucceededWithTarget,
+        vec![a3_r6.block().clone()],
+    );
     assert!(response.verify_inner(&request).is_err());
 
     // Block returned not within target round
@@ -285,11 +285,14 @@ async fn test_verify_badly_formed_retrieval_responses() {
         BlockRetrievalStatus::Succeeded,
         BlockRetrievalStatus::NotEnoughBlocks,
     ] {
-        let response = BlockRetrievalResponse::new(status, vec![
-            a3_r6.block().clone(),
-            a2_r3.block().clone(),
-            a1_r1.block().clone(),
-        ]);
+        let response = BlockRetrievalResponse::new(
+            status,
+            vec![
+                a3_r6.block().clone(),
+                a2_r3.block().clone(),
+                a1_r1.block().clone(),
+            ],
+        );
         assert!(response.verify_inner(&request).is_err());
     }
 }

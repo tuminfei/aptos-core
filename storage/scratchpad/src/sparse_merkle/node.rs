@@ -201,10 +201,13 @@ impl SubTree {
 
     #[cfg(test)]
     pub fn is_unknown(&self) -> bool {
-        matches!(self, Self::NonEmpty {
-            root: NodeHandle::Weak(_),
-            ..
-        })
+        matches!(
+            self,
+            Self::NonEmpty {
+                root: NodeHandle::Weak(_),
+                ..
+            }
+        )
     }
 
     #[cfg(test)]

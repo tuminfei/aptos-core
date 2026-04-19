@@ -74,11 +74,14 @@ struct ModuleInfo {
 fn extract_module_info_single(bytes: &[u8]) -> Result<(ModuleId, ModuleInfo)> {
     let module = CompiledModule::deserialize(bytes)?;
 
-    Ok((module.self_id().clone(), ModuleInfo {
-        size: bytes.len(),
-        deps: module.immediate_dependencies(),
-        friends: module.immediate_friends(),
-    }))
+    Ok((
+        module.self_id().clone(),
+        ModuleInfo {
+            size: bytes.len(),
+            deps: module.immediate_dependencies(),
+            friends: module.immediate_friends(),
+        },
+    ))
 }
 
 fn extract_module_info(modules: &Vec<Vec<u8>>) -> Result<BTreeMap<ModuleId, ModuleInfo>> {

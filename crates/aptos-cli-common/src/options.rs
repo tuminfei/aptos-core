@@ -37,10 +37,14 @@ pub enum ReplayProtectionType {
 
 impl Display for ReplayProtectionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            ReplayProtectionType::Nonce => "nonce",
-            ReplayProtectionType::Seqnum => "seqnum",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                ReplayProtectionType::Nonce => "nonce",
+                ReplayProtectionType::Seqnum => "seqnum",
+            }
+        )
     }
 }
 

@@ -51,13 +51,14 @@ fn test_modify_gas_schedule_check_hash() {
         ],
     );
 
-    harness
-        .executor
-        .exec("reconfiguration_with_dkg", "finish", vec![], vec![
-            MoveValue::Signer(CORE_CODE_ADDRESS)
-                .simple_serialize()
-                .unwrap(),
-        ]);
+    harness.executor.exec(
+        "reconfiguration_with_dkg",
+        "finish",
+        vec![],
+        vec![MoveValue::Signer(CORE_CODE_ADDRESS)
+            .simple_serialize()
+            .unwrap()],
+    );
 
     let (_, gas_params) = harness.get_gas_params();
     assert_eq!(gas_params.vm.instr.nop, MAGIC.into());

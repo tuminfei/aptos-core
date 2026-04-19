@@ -467,9 +467,11 @@ pub trait ExpGenerator<'env> {
         let node_id = self.new_node(Type::Primitive(PrimitiveType::Bool), None);
         ExpData::Call(
             node_id,
-            Operation::TestVariants(struct_env.module_env.get_id(), struct_env.get_id(), vec![
-                variant,
-            ]),
+            Operation::TestVariants(
+                struct_env.module_env.get_id(),
+                struct_env.get_id(),
+                vec![variant],
+            ),
             vec![exp],
         )
         .into_exp()
@@ -706,10 +708,11 @@ pub trait ExpGenerator<'env> {
 
     /// Make a negation expression using NUM_TYPE.
     fn mk_negate(&self, e: Exp) -> Exp {
-        self.mk_call(&NUM_TYPE, Operation::Sub, vec![
-            self.mk_num_const(BigInt::zero()),
-            e,
-        ])
+        self.mk_call(
+            &NUM_TYPE,
+            Operation::Sub,
+            vec![self.mk_num_const(BigInt::zero()), e],
+        )
     }
 
     /// Make a cast expression to the target type.

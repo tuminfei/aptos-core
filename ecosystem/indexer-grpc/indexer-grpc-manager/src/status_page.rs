@@ -42,10 +42,10 @@ pub(crate) async fn status_page() -> Result<Response, Rejection> {
 
 fn render_fullnode_tab(fullnodes_info: HashMap<String, VecDeque<FullnodeInfo>>) -> Tab {
     let overview = Container::new(ContainerType::Section)
-        .with_paragraph_attr("Connected Fullnodes", [(
-            "style",
-            "font-size: 24px; font-weight: bold;",
-        )])
+        .with_paragraph_attr(
+            "Connected Fullnodes",
+            [("style", "font-size: 24px; font-weight: bold;")],
+        )
         .with_table(
             fullnodes_info.into_iter().fold(
                 Table::new()
@@ -199,10 +199,10 @@ fn render_data_service_tab<const N: usize>(
     rows: Vec<[String; N]>,
 ) -> Tab {
     let overview = Container::new(ContainerType::Section)
-        .with_paragraph_attr(format!("Connected {tab_name}"), [(
-            "style",
-            "font-size: 24px; font-weight: bold;",
-        )])
+        .with_paragraph_attr(
+            format!("Connected {tab_name}"),
+            [("style", "font-size: 24px; font-weight: bold;")],
+        )
         .with_table(
             rows.iter().fold(
                 Table::new()
@@ -353,19 +353,19 @@ fn render_stream_tab(
     historical_data_services_info: &HashMap<String, VecDeque<HistoricalDataServiceInfo>>,
 ) -> Tab {
     let overview = Container::new(ContainerType::Section)
-        .with_paragraph_attr("Connected Streams", [(
-            "style",
-            "font-size: 24px; font-weight: bold;",
-        )])
-        .with_paragraph_attr("LiveDataService Streams", [(
-            "style",
-            "font-size: 18px; font-weight: bold;",
-        )])
+        .with_paragraph_attr(
+            "Connected Streams",
+            [("style", "font-size: 24px; font-weight: bold;")],
+        )
+        .with_paragraph_attr(
+            "LiveDataService Streams",
+            [("style", "font-size: 18px; font-weight: bold;")],
+        )
         .with_table(render_live_data_service_streams(live_data_services_info))
-        .with_paragraph_attr("HistoricalDataService Streams", [(
-            "style",
-            "font-size: 18px; font-weight: bold;",
-        )])
+        .with_paragraph_attr(
+            "HistoricalDataService Streams",
+            [("style", "font-size: 18px; font-weight: bold;")],
+        )
         .with_table(render_historical_data_service_streams(
             historical_data_services_info,
         ));
@@ -378,14 +378,14 @@ fn render_stream_tab(
 
 async fn render_overview_tab(data_manager: &DataManager) -> Tab {
     let overview = Container::new(ContainerType::Section)
-        .with_paragraph_attr("Cache Stats", [(
-            "style",
-            "font-size: 24px; font-weight: bold;",
-        )])
-        .with_paragraph_attr(data_manager.cache_stats().await, [(
-            "style",
-            "font-size: 16px;",
-        )]);
+        .with_paragraph_attr(
+            "Cache Stats",
+            [("style", "font-size: 24px; font-weight: bold;")],
+        )
+        .with_paragraph_attr(
+            data_manager.cache_stats().await,
+            [("style", "font-size: 16px;")],
+        );
 
     let content = HtmlElement::new(HtmlTag::Div)
         .with_container(overview)

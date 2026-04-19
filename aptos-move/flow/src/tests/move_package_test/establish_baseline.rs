@@ -6,9 +6,11 @@ use crate::tests::common;
 #[tokio::test]
 async fn move_package_test_establish_baseline() {
     let _guard = common::serial_test_lock().await;
-    let pkg = common::make_package("test_baseline", &[(
-        "example",
-        r#"module 0xCAFE::example {
+    let pkg = common::make_package(
+        "test_baseline",
+        &[(
+            "example",
+            r#"module 0xCAFE::example {
     public fun value(): u64 { 42 }
 
     #[test]
@@ -16,7 +18,8 @@ async fn move_package_test_establish_baseline() {
         assert!(value() == 42, 0);
     }
 }"#,
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let client = common::make_client().await;
     let result = common::call_tool(

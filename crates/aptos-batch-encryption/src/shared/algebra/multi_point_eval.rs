@@ -377,12 +377,10 @@ mod tests {
         let pfour: DensePolynomial<Fr> = DenseUVPolynomial::from_coefficients_vec(vec![-four, one]);
 
         let tree = compute_mult_tree(&[one, two, three, four]);
-        assert_eq!(tree[0], &[
-            pone.clone(),
-            ptwo.clone(),
-            pthree.clone(),
-            pfour.clone()
-        ]);
+        assert_eq!(
+            tree[0],
+            &[pone.clone(), ptwo.clone(), pthree.clone(), pfour.clone()]
+        );
         assert_eq!(tree[1], &[pone.clone() * &ptwo, pthree.clone() * &pfour]);
         assert_eq!(tree[2], &[pone.clone() * ptwo * pthree * pfour]);
     }

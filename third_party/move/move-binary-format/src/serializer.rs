@@ -1003,13 +1003,11 @@ fn serialize_access_specifier(binary: &mut BinaryData, acc: &AccessSpecifier) ->
         AccessKind::Reads => SerializedAccessKind::READ,
         AccessKind::Writes => SerializedAccessKind::WRITE,
     } as u8)?;
-    binary.push(
-        if acc.negated {
-            SerializedBool::TRUE as u8
-        } else {
-            SerializedBool::FALSE as u8
-        },
-    )?;
+    binary.push(if acc.negated {
+        SerializedBool::TRUE as u8
+    } else {
+        SerializedBool::FALSE as u8
+    })?;
     serialize_resource_specifier(binary, &acc.resource)?;
     serialize_address_specifier(binary, &acc.address)
 }

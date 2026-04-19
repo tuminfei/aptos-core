@@ -102,8 +102,7 @@ async fn delegation_pool_governance_precheck(
 ) -> CliTypedResult<Option<TransactionSummary>> {
     let _ = (txn_options, pool_address);
     Err(CliError::UnexpectedError(
-        "Delegation pool governance is not supported under the current POC framework"
-            .to_string(),
+        "Delegation pool governance is not supported under the current POC framework".to_string(),
     ))
 }
 

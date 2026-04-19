@@ -377,9 +377,10 @@ impl DKGTrait for RealDKG {
             dk,
             &pub_params.pvss_config.pp,
         );
-        Ok((DealtSecretKeyShares { main: sk }, DealtPubKeyShares {
-            main: pk,
-        }))
+        Ok((
+            DealtSecretKeyShares { main: sk },
+            DealtPubKeyShares { main: pk },
+        ))
     }
 
     // Test-only function

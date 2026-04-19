@@ -496,13 +496,11 @@ impl GasMeter for GasStatus {
     fn charge_vec_borrow(&mut self, is_mut: bool) -> PartialVMResult<()> {
         use Opcodes::*;
 
-        self.charge_instr(
-            if is_mut {
-                VEC_MUT_BORROW
-            } else {
-                VEC_IMM_BORROW
-            },
-        )
+        self.charge_instr(if is_mut {
+            VEC_MUT_BORROW
+        } else {
+            VEC_IMM_BORROW
+        })
     }
 
     fn charge_vec_push_back(&mut self, val: impl ValueView) -> PartialVMResult<()> {

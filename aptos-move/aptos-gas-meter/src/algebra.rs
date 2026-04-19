@@ -261,17 +261,15 @@ where
             (u64::from(amount) as u128) * (u64::from(txn_params.gas_unit_scaling_factor) as u128),
             u64::from(gas_unit_price) as u128,
         );
-        let gas_consumed_internal = InternalGas::new(
-            if gas_consumed_internal > u64::MAX as u128 {
-                error!(
-                    "Something's wrong in the gas schedule: gas_consumed_internal ({}) > u64::MAX",
-                    gas_consumed_internal
-                );
-                u64::MAX
-            } else {
-                gas_consumed_internal as u64
-            },
-        );
+        let gas_consumed_internal = InternalGas::new(if gas_consumed_internal > u64::MAX as u128 {
+            error!(
+                "Something's wrong in the gas schedule: gas_consumed_internal ({}) > u64::MAX",
+                gas_consumed_internal
+            );
+            u64::MAX
+        } else {
+            gas_consumed_internal as u64
+        });
 
         match self.balance.checked_sub(gas_consumed_internal) {
             Some(new_balance) => {

@@ -20,11 +20,15 @@ impl Debug for Contract {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use Contract::*;
 
-        write!(f, "c{}", match self {
-            Platform => "PP".to_string(),
-            Others => "OO".to_string(),
-            User(addr) => hex::encode_upper(addr.to_be_bytes()),
-        })
+        write!(
+            f,
+            "c{}",
+            match self {
+                Platform => "PP".to_string(),
+                Others => "OO".to_string(),
+                User(addr) => hex::encode_upper(addr.to_be_bytes()),
+            }
+        )
     }
 }
 

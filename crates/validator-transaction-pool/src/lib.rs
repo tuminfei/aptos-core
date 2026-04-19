@@ -65,11 +65,14 @@ impl VTxnPoolState {
         let seq_num = pool.next_seq_num;
         pool.next_seq_num += 1;
 
-        pool.txn_queue.insert(seq_num, PoolItem {
-            topic: topic.clone(),
-            txn,
-            pull_notification_tx,
-        });
+        pool.txn_queue.insert(
+            seq_num,
+            PoolItem {
+                topic: topic.clone(),
+                txn,
+                pull_notification_tx,
+            },
+        );
 
         if let Some(old_seq_num) = pool.seq_nums_by_topic.insert(topic.clone(), seq_num) {
             pool.txn_queue.remove(&old_seq_num);

@@ -83,229 +83,259 @@ pub(crate) fn realistic_env_sweep_wrap(
 }
 
 pub(crate) fn realistic_env_load_sweep_test() -> ForgeConfig {
-    realistic_env_sweep_wrap(20, 10, LoadVsPerfBenchmark {
-        test: Box::new(PerformanceBenchmark),
-        workloads: Workloads::TPS(vec![10, 100, 1000, 3000, 5000, 7000]),
-        criteria: [
-            (9, 0.9, 1.0, 1.2, 0),
-            (95, 0.9, 1.1, 1.2, 0),
-            (950, 1.2, 1.3, 2.0, 0),
-            (2900, 1.4, 2.2, 2.5, 0),
-            (4800, 2.0, 2.5, 3.0, 0),
-            (6700, 2.5, 3.5, 5.0, 0),
-            // TODO add 9k or 10k. Allow some expired transactions (high-load)
-        ]
-        .into_iter()
-        .map(
-            |(min_tps, max_lat_p50, max_lat_p90, max_lat_p99, max_expired_tps)| {
-                SuccessCriteria::new(min_tps)
-                    .add_max_expired_tps(max_expired_tps as f64)
-                    .add_max_failed_submission_tps(0.0)
-                    .add_latency_threshold(max_lat_p50, LatencyType::P50)
-                    .add_latency_threshold(max_lat_p90, LatencyType::P90)
-                    .add_latency_threshold(max_lat_p99, LatencyType::P99)
-            },
-        )
-        .collect(),
-        background_traffic: background_traffic_for_sweep(5),
-    })
+    realistic_env_sweep_wrap(
+        20,
+        10,
+        LoadVsPerfBenchmark {
+            test: Box::new(PerformanceBenchmark),
+            workloads: Workloads::TPS(vec![10, 100, 1000, 3000, 5000, 7000]),
+            criteria: [
+                (9, 0.9, 1.0, 1.2, 0),
+                (95, 0.9, 1.1, 1.2, 0),
+                (950, 1.2, 1.3, 2.0, 0),
+                (2900, 1.4, 2.2, 2.5, 0),
+                (4800, 2.0, 2.5, 3.0, 0),
+                (6700, 2.5, 3.5, 5.0, 0),
+                // TODO add 9k or 10k. Allow some expired transactions (high-load)
+            ]
+            .into_iter()
+            .map(
+                |(min_tps, max_lat_p50, max_lat_p90, max_lat_p99, max_expired_tps)| {
+                    SuccessCriteria::new(min_tps)
+                        .add_max_expired_tps(max_expired_tps as f64)
+                        .add_max_failed_submission_tps(0.0)
+                        .add_latency_threshold(max_lat_p50, LatencyType::P50)
+                        .add_latency_threshold(max_lat_p90, LatencyType::P90)
+                        .add_latency_threshold(max_lat_p99, LatencyType::P99)
+                },
+            )
+            .collect(),
+            background_traffic: background_traffic_for_sweep(5),
+        },
+    )
 }
 
 pub(crate) fn realistic_env_workload_sweep_test() -> ForgeConfig {
-    realistic_env_sweep_wrap(7, 3, LoadVsPerfBenchmark {
-        test: Box::new(PerformanceBenchmark),
-        workloads: Workloads::TRANSACTIONS(vec![
-            TransactionWorkload::new(TransactionTypeArg::CoinTransfer, 20000),
-            TransactionWorkload::new(TransactionTypeArg::NoOp, 20000).with_num_modules(100),
-            TransactionWorkload::new(TransactionTypeArg::ModifyGlobalResource, 6000)
-                .with_transactions_per_account(1),
-            TransactionWorkload::new(TransactionTypeArg::TokenV2AmbassadorMint, 20000)
-                .with_unique_senders(),
-            // TODO(ibalajiarun): this is disabled due to Forge Stable failure on PosToProposal latency.
-            TransactionWorkload::new(TransactionTypeArg::PublishPackage, 200)
-                .with_transactions_per_account(1),
-        ]),
-        // Investigate/improve to make latency more predictable on different workloads
-        criteria: [
-            (7000, 100, 0.3 + 0.5, 0.5, 0.5),
-            (8500, 100, 0.3 + 0.5, 0.5, 0.4),
-            (2000, 300, 0.3 + 1.0, 0.6, 1.0),
-            (3200, 500, 0.3 + 1.0, 0.7, 0.8),
-            // TODO - pos-to-proposal is set to high, until it is calibrated/understood.
-            (28, 5, 0.3 + 5.0, 0.7, 1.0),
-        ]
-        .into_iter()
-        .map(
-            |(
-                min_tps,
-                max_expired,
-                mempool_to_block_creation,
-                proposal_to_ordered,
-                ordered_to_commit,
-            )| {
-                SuccessCriteria::new(min_tps)
-                    .add_max_expired_tps(max_expired as f64)
-                    .add_max_failed_submission_tps(200.0)
-                    .add_no_restarts()
-                    .add_latency_breakdown_threshold(LatencyBreakdownThreshold::new_strict(vec![
-                        (
-                            LatencyBreakdownSlice::MempoolToBlockCreation,
-                            mempool_to_block_creation,
-                        ),
-                        (
-                            LatencyBreakdownSlice::ConsensusProposalToOrdered,
-                            proposal_to_ordered,
-                        ),
-                        (
-                            LatencyBreakdownSlice::ConsensusOrderedToCommit,
-                            ordered_to_commit,
-                        ),
-                    ]))
-            },
-        )
-        .collect(),
-        background_traffic: background_traffic_for_sweep(5),
-    })
+    realistic_env_sweep_wrap(
+        7,
+        3,
+        LoadVsPerfBenchmark {
+            test: Box::new(PerformanceBenchmark),
+            workloads: Workloads::TRANSACTIONS(vec![
+                TransactionWorkload::new(TransactionTypeArg::CoinTransfer, 20000),
+                TransactionWorkload::new(TransactionTypeArg::NoOp, 20000).with_num_modules(100),
+                TransactionWorkload::new(TransactionTypeArg::ModifyGlobalResource, 6000)
+                    .with_transactions_per_account(1),
+                TransactionWorkload::new(TransactionTypeArg::TokenV2AmbassadorMint, 20000)
+                    .with_unique_senders(),
+                // TODO(ibalajiarun): this is disabled due to Forge Stable failure on PosToProposal latency.
+                TransactionWorkload::new(TransactionTypeArg::PublishPackage, 200)
+                    .with_transactions_per_account(1),
+            ]),
+            // Investigate/improve to make latency more predictable on different workloads
+            criteria: [
+                (7000, 100, 0.3 + 0.5, 0.5, 0.5),
+                (8500, 100, 0.3 + 0.5, 0.5, 0.4),
+                (2000, 300, 0.3 + 1.0, 0.6, 1.0),
+                (3200, 500, 0.3 + 1.0, 0.7, 0.8),
+                // TODO - pos-to-proposal is set to high, until it is calibrated/understood.
+                (28, 5, 0.3 + 5.0, 0.7, 1.0),
+            ]
+            .into_iter()
+            .map(
+                |(
+                    min_tps,
+                    max_expired,
+                    mempool_to_block_creation,
+                    proposal_to_ordered,
+                    ordered_to_commit,
+                )| {
+                    SuccessCriteria::new(min_tps)
+                        .add_max_expired_tps(max_expired as f64)
+                        .add_max_failed_submission_tps(200.0)
+                        .add_no_restarts()
+                        .add_latency_breakdown_threshold(LatencyBreakdownThreshold::new_strict(
+                            vec![
+                                (
+                                    LatencyBreakdownSlice::MempoolToBlockCreation,
+                                    mempool_to_block_creation,
+                                ),
+                                (
+                                    LatencyBreakdownSlice::ConsensusProposalToOrdered,
+                                    proposal_to_ordered,
+                                ),
+                                (
+                                    LatencyBreakdownSlice::ConsensusOrderedToCommit,
+                                    ordered_to_commit,
+                                ),
+                            ],
+                        ))
+                },
+            )
+            .collect(),
+            background_traffic: background_traffic_for_sweep(5),
+        },
+    )
 }
 
 pub(crate) fn realistic_env_orderbook_workload_sweep_bench() -> ForgeConfig {
-    realistic_env_sweep_wrap(7, 3, LoadVsPerfBenchmark {
-        test: Box::new(PerformanceBenchmark),
-        workloads: Workloads::TRANSACTIONS(vec![
-            TransactionWorkload::new(
-                TransactionTypeArg::OrderBookBalancedMatches25Pct1Market,
-                1000,
-            ),
-            TransactionWorkload::new(
-                TransactionTypeArg::OrderBookBalancedMatches25Pct50Markets,
-                5000,
-            ),
-            TransactionWorkload::new(
-                TransactionTypeArg::OrderBookBalancedMatches80Pct1Market,
-                1000,
-            ),
-            TransactionWorkload::new(
-                TransactionTypeArg::OrderBookBalancedMatches80Pct50Markets,
-                5000,
-            ),
-            TransactionWorkload::new(
-                TransactionTypeArg::OrderBookBalancedSizeSkewed80Pct1Market,
-                1000,
-            ),
-            TransactionWorkload::new(
-                TransactionTypeArg::OrderBookBalancedSizeSkewed80Pct50Markets,
-                5000,
-            ),
-            TransactionWorkload::new(TransactionTypeArg::OrderBookNoMatches1Market, 1000),
-            TransactionWorkload::new(TransactionTypeArg::OrderBookNoMatches50Markets, 5000),
-        ]),
-        criteria: [
-            (350, 100, 0.3 + 1.0, 0.4, 0.2),
-            (1700, 100, 0.3 + 1.0, 0.4, 0.5),
-            (350, 300, 0.3 + 1.0, 0.4, 0.2),
-            (2000, 500, 0.3 + 1.0, 0.4, 0.5),
-            (320, 5, 0.3 + 1.0, 0.4, 0.25),
-            (1500, 5, 0.3 + 1.5, 0.4, 0.5),
-            (320, 100, 0.3 + 1.0, 0.4, 0.2),
-            (1700, 100, 0.3 + 1.0, 0.4, 0.7),
-        ]
-        .into_iter()
-        .map(
-            |(
-                min_tps,
-                max_expired,
-                mempool_to_block_creation,
-                proposal_to_ordered,
-                ordered_to_commit,
-            )| {
-                SuccessCriteria::new(min_tps)
-                    .add_max_expired_tps(max_expired as f64)
-                    .add_max_failed_submission_tps(200.0)
-                    .add_no_restarts()
-                    .add_latency_breakdown_threshold(LatencyBreakdownThreshold::new_strict(vec![
-                        (
-                            LatencyBreakdownSlice::MempoolToBlockCreation,
-                            mempool_to_block_creation,
-                        ),
-                        (
-                            LatencyBreakdownSlice::ConsensusProposalToOrdered,
-                            proposal_to_ordered,
-                        ),
-                        (
-                            LatencyBreakdownSlice::ConsensusOrderedToCommit,
-                            ordered_to_commit,
-                        ),
-                    ]))
-            },
-        )
-        .collect(),
-        background_traffic: background_traffic_for_sweep(5),
-    })
+    realistic_env_sweep_wrap(
+        7,
+        3,
+        LoadVsPerfBenchmark {
+            test: Box::new(PerformanceBenchmark),
+            workloads: Workloads::TRANSACTIONS(vec![
+                TransactionWorkload::new(
+                    TransactionTypeArg::OrderBookBalancedMatches25Pct1Market,
+                    1000,
+                ),
+                TransactionWorkload::new(
+                    TransactionTypeArg::OrderBookBalancedMatches25Pct50Markets,
+                    5000,
+                ),
+                TransactionWorkload::new(
+                    TransactionTypeArg::OrderBookBalancedMatches80Pct1Market,
+                    1000,
+                ),
+                TransactionWorkload::new(
+                    TransactionTypeArg::OrderBookBalancedMatches80Pct50Markets,
+                    5000,
+                ),
+                TransactionWorkload::new(
+                    TransactionTypeArg::OrderBookBalancedSizeSkewed80Pct1Market,
+                    1000,
+                ),
+                TransactionWorkload::new(
+                    TransactionTypeArg::OrderBookBalancedSizeSkewed80Pct50Markets,
+                    5000,
+                ),
+                TransactionWorkload::new(TransactionTypeArg::OrderBookNoMatches1Market, 1000),
+                TransactionWorkload::new(TransactionTypeArg::OrderBookNoMatches50Markets, 5000),
+            ]),
+            criteria: [
+                (350, 100, 0.3 + 1.0, 0.4, 0.2),
+                (1700, 100, 0.3 + 1.0, 0.4, 0.5),
+                (350, 300, 0.3 + 1.0, 0.4, 0.2),
+                (2000, 500, 0.3 + 1.0, 0.4, 0.5),
+                (320, 5, 0.3 + 1.0, 0.4, 0.25),
+                (1500, 5, 0.3 + 1.5, 0.4, 0.5),
+                (320, 100, 0.3 + 1.0, 0.4, 0.2),
+                (1700, 100, 0.3 + 1.0, 0.4, 0.7),
+            ]
+            .into_iter()
+            .map(
+                |(
+                    min_tps,
+                    max_expired,
+                    mempool_to_block_creation,
+                    proposal_to_ordered,
+                    ordered_to_commit,
+                )| {
+                    SuccessCriteria::new(min_tps)
+                        .add_max_expired_tps(max_expired as f64)
+                        .add_max_failed_submission_tps(200.0)
+                        .add_no_restarts()
+                        .add_latency_breakdown_threshold(LatencyBreakdownThreshold::new_strict(
+                            vec![
+                                (
+                                    LatencyBreakdownSlice::MempoolToBlockCreation,
+                                    mempool_to_block_creation,
+                                ),
+                                (
+                                    LatencyBreakdownSlice::ConsensusProposalToOrdered,
+                                    proposal_to_ordered,
+                                ),
+                                (
+                                    LatencyBreakdownSlice::ConsensusOrderedToCommit,
+                                    ordered_to_commit,
+                                ),
+                            ],
+                        ))
+                },
+            )
+            .collect(),
+            background_traffic: background_traffic_for_sweep(5),
+        },
+    )
 }
 
 pub(crate) fn realistic_env_fairness_workload_sweep() -> ForgeConfig {
-    realistic_env_sweep_wrap(7, 3, LoadVsPerfBenchmark {
-        test: Box::new(PerformanceBenchmark),
-        workloads: Workloads::TRANSACTIONS(vec![
-            // Very high gas
-            TransactionWorkload::new(
-                TransactionTypeArg::ResourceGroupsGlobalWriteAndReadTag1KB,
-                100000,
-            ),
-            TransactionWorkload::new(TransactionTypeArg::VectorPicture30k, 20000),
-            TransactionWorkload::new(TransactionTypeArg::SmartTablePicture1MWith256Change, 4000)
+    realistic_env_sweep_wrap(
+        7,
+        3,
+        LoadVsPerfBenchmark {
+            test: Box::new(PerformanceBenchmark),
+            workloads: Workloads::TRANSACTIONS(vec![
+                // Very high gas
+                TransactionWorkload::new(
+                    TransactionTypeArg::ResourceGroupsGlobalWriteAndReadTag1KB,
+                    100000,
+                ),
+                TransactionWorkload::new(TransactionTypeArg::VectorPicture30k, 20000),
+                TransactionWorkload::new(
+                    TransactionTypeArg::SmartTablePicture1MWith256Change,
+                    4000,
+                )
                 .with_transactions_per_account(1),
-        ]),
-        criteria: Vec::new(),
-        background_traffic: background_traffic_for_sweep_with_latency(
-            &[(2.0, 3.0, 8.0), (0.1, 25.0, 30.0), (0.1, 30.0, 45.0)],
-            false,
-        ),
-    })
+            ]),
+            criteria: Vec::new(),
+            background_traffic: background_traffic_for_sweep_with_latency(
+                &[(2.0, 3.0, 8.0), (0.1, 25.0, 30.0), (0.1, 30.0, 45.0)],
+                false,
+            ),
+        },
+    )
 }
 
 pub(crate) fn realistic_env_graceful_workload_sweep() -> ForgeConfig {
-    realistic_env_sweep_wrap(7, 3, LoadVsPerfBenchmark {
-        test: Box::new(PerformanceBenchmark),
-        workloads: Workloads::TRANSACTIONS(vec![
-            // do account generation first, to fill up a storage a bit.
-            TransactionWorkload::new_const_tps(TransactionTypeArg::AccountGeneration, 2 * 7000),
-            // Very high gas
-            TransactionWorkload::new_const_tps(
-                TransactionTypeArg::ResourceGroupsGlobalWriteAndReadTag1KB,
-                3 * 1800,
+    realistic_env_sweep_wrap(
+        7,
+        3,
+        LoadVsPerfBenchmark {
+            test: Box::new(PerformanceBenchmark),
+            workloads: Workloads::TRANSACTIONS(vec![
+                // do account generation first, to fill up a storage a bit.
+                TransactionWorkload::new_const_tps(TransactionTypeArg::AccountGeneration, 2 * 7000),
+                // Very high gas
+                TransactionWorkload::new_const_tps(
+                    TransactionTypeArg::ResourceGroupsGlobalWriteAndReadTag1KB,
+                    3 * 1800,
+                ),
+                TransactionWorkload::new_const_tps(
+                    TransactionTypeArg::SmartTablePicture1MWith256Change,
+                    3 * 14,
+                ),
+                TransactionWorkload::new_const_tps(
+                    TransactionTypeArg::SmartTablePicture1MWith1KChangeExceedsLimit,
+                    3 * 12,
+                ),
+                TransactionWorkload::new_const_tps(TransactionTypeArg::VectorPicture30k, 3 * 150),
+                TransactionWorkload::new_const_tps(
+                    TransactionTypeArg::ModifyGlobalFlagAggV2,
+                    3 * 3500,
+                ),
+                // publishing package - executes sequentially
+                TransactionWorkload::new_const_tps(TransactionTypeArg::PublishPackage, 3 * 150)
+                    .with_transactions_per_account(1),
+            ]),
+            criteria: Vec::new(),
+            background_traffic: background_traffic_for_sweep_with_latency(
+                &[
+                    (0.1, 4.0, 5.0),
+                    (0.1, 2.2, 3.0),
+                    (0.1, 3.5, 5.0),
+                    (0.1, 4.0, 6.0),
+                    // TODO - p50 and p90 is set to high, until it is calibrated/understood.
+                    (0.1, 3.0, 5.0),
+                    // TODO - p50 and p90 is set to high, until it is calibrated/understood.
+                    (0.1, 5.0, 10.0),
+                    // TODO - p50 and p90 is set to high, until it is calibrated/understood.
+                    (0.1, 3.0, 10.0),
+                ],
+                true,
             ),
-            TransactionWorkload::new_const_tps(
-                TransactionTypeArg::SmartTablePicture1MWith256Change,
-                3 * 14,
-            ),
-            TransactionWorkload::new_const_tps(
-                TransactionTypeArg::SmartTablePicture1MWith1KChangeExceedsLimit,
-                3 * 12,
-            ),
-            TransactionWorkload::new_const_tps(TransactionTypeArg::VectorPicture30k, 3 * 150),
-            TransactionWorkload::new_const_tps(TransactionTypeArg::ModifyGlobalFlagAggV2, 3 * 3500),
-            // publishing package - executes sequentially
-            TransactionWorkload::new_const_tps(TransactionTypeArg::PublishPackage, 3 * 150)
-                .with_transactions_per_account(1),
-        ]),
-        criteria: Vec::new(),
-        background_traffic: background_traffic_for_sweep_with_latency(
-            &[
-                (0.1, 4.0, 5.0),
-                (0.1, 2.2, 3.0),
-                (0.1, 3.5, 5.0),
-                (0.1, 4.0, 6.0),
-                // TODO - p50 and p90 is set to high, until it is calibrated/understood.
-                (0.1, 3.0, 5.0),
-                // TODO - p50 and p90 is set to high, until it is calibrated/understood.
-                (0.1, 5.0, 10.0),
-                // TODO - p50 and p90 is set to high, until it is calibrated/understood.
-                (0.1, 3.0, 10.0),
-            ],
-            true,
-        ),
-    })
+        },
+    )
     .with_emit_job(
         EmitJobRequest::default()
             .txn_expiration_time_secs(20)
@@ -319,12 +349,15 @@ pub(crate) fn realistic_env_graceful_overload(duration: Duration) -> ForgeConfig
     ForgeConfig::default()
         .with_initial_validator_count(NonZeroUsize::new(num_validators).unwrap())
         .with_initial_fullnode_count(20)
-        .add_network_test(wrap_with_realistic_env(num_validators, TwoTrafficsTest {
-            inner_traffic: EmitJobRequest::default()
-                .mode(EmitJobMode::ConstTps { tps: 30000 })
-                .init_gas_price_multiplier(20),
-            inner_success_criteria: SuccessCriteria::new(7500),
-        }))
+        .add_network_test(wrap_with_realistic_env(
+            num_validators,
+            TwoTrafficsTest {
+                inner_traffic: EmitJobRequest::default()
+                    .mode(EmitJobMode::ConstTps { tps: 30000 })
+                    .init_gas_price_multiplier(20),
+                inner_success_criteria: SuccessCriteria::new(7500),
+            },
+        ))
         // First start higher gas-fee traffic, to not cause issues with TxnEmitter setup - account creation
         .with_emit_job(
             EmitJobRequest::default()
@@ -431,12 +464,13 @@ pub(crate) fn realistic_env_max_load_test(
     ForgeConfig::default()
         .with_initial_validator_count(NonZeroUsize::new(num_validators).unwrap())
         .with_initial_fullnode_count(num_fullnodes)
-        .add_network_test(wrap_with_realistic_env(num_validators, TwoTrafficsTest {
-            inner_traffic: EmitJobRequest::default()
-                .mode(EmitJobMode::MaxLoad { mempool_backlog })
-                .init_gas_price_multiplier(20),
-            inner_success_criteria: SuccessCriteria::new(
-                if ha_proxy {
+        .add_network_test(wrap_with_realistic_env(
+            num_validators,
+            TwoTrafficsTest {
+                inner_traffic: EmitJobRequest::default()
+                    .mode(EmitJobMode::MaxLoad { mempool_backlog })
+                    .init_gas_price_multiplier(20),
+                inner_success_criteria: SuccessCriteria::new(if ha_proxy {
                     7000
                 } else if long_running {
                     // This is for forge stable
@@ -444,9 +478,9 @@ pub(crate) fn realistic_env_max_load_test(
                 } else {
                     // During land time we want to be less strict, otherwise we flaky fail
                     10000
-                },
-            ),
-        }))
+                }),
+            },
+        ))
         .with_genesis_helm_config_fn(Arc::new(move |helm_values| {
             // Have single epoch change in land blocking, and a few on long-running
             helm_values["chain"]["epoch_duration_secs"] =
@@ -511,13 +545,16 @@ pub(crate) fn realistic_env_max_load_encrypted_test(
     ForgeConfig::default()
         .with_initial_validator_count(NonZeroUsize::new(num_validators).unwrap())
         .with_initial_fullnode_count(num_fullnodes)
-        .add_network_test(wrap_with_realistic_env(num_validators, TwoTrafficsTest {
-            inner_traffic: EmitJobRequest::default()
-                .mode(EmitJobMode::MaxLoad { mempool_backlog })
-                .init_gas_price_multiplier(20)
-                .encrypt_transactions(true),
-            inner_success_criteria: SuccessCriteria::new(300),
-        }))
+        .add_network_test(wrap_with_realistic_env(
+            num_validators,
+            TwoTrafficsTest {
+                inner_traffic: EmitJobRequest::default()
+                    .mode(EmitJobMode::MaxLoad { mempool_backlog })
+                    .init_gas_price_multiplier(20)
+                    .encrypt_transactions(true),
+                inner_success_criteria: SuccessCriteria::new(300),
+            },
+        ))
         .with_genesis_helm_config_fn(Arc::new(|helm_values| {
             helm_values["chain"]["epoch_duration_secs"] = 300.into();
             helm_values["chain"]["on_chain_consensus_config"] =

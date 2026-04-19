@@ -569,10 +569,10 @@ impl MoveStructLayout {
     }
 
     pub fn signer_serialization_layout() -> Self {
-        MoveStructLayout::RuntimeVariants(vec![vec![MoveTypeLayout::Address], vec![
-            MoveTypeLayout::Address,
-            MoveTypeLayout::Address,
-        ]])
+        MoveStructLayout::RuntimeVariants(vec![
+            vec![MoveTypeLayout::Address],
+            vec![MoveTypeLayout::Address, MoveTypeLayout::Address],
+        ])
     }
 }
 

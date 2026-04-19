@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[test]
 fn build_publish_payload_success() {
-    let pkg = common::make_package("publish_me", &[(
+    let pkg = common::make_package(
         "publish_me",
-        "module 0xCAFE::publish_me {
+        &[(
+            "publish_me",
+            "module 0xCAFE::publish_me {
     public fun hello(): u64 { 42 }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let output_file = pkg.path().join("payload.json");
     let output_file_str = output_file.to_str().unwrap();

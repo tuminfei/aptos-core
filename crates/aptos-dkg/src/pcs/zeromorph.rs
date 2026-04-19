@@ -799,13 +799,11 @@ mod test {
             // LSB (bit 0) is variable 0, bit 1 is variable 1, etc.
             let mut point = Vec::new();
             for j in 0..num_vars {
-                point.push(
-                    if (i >> j) & 1 == 1 {
-                        Fr::one()
-                    } else {
-                        Fr::zero()
-                    },
-                );
+                point.push(if (i >> j) & 1 == 1 {
+                    Fr::one()
+                } else {
+                    Fr::zero()
+                });
             }
             let computed_eval = multilinear_f.evaluate(&point);
             // Check both that evaluate() works and that to_evaluations() returns the right order

@@ -1075,10 +1075,10 @@ mod tests {
     #[test_case(true)]
     fn status_cycle_with_finish_and_resolve(stall_before_finish: bool) {
         let txn_idx = 0;
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new(),
-            ]);
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new()],
+        );
         let status = statuses.get_status(txn_idx);
 
         assert_eq!(
@@ -1150,10 +1150,10 @@ mod tests {
     #[test_case(true)]
     fn status_cycle_with_abort_and_resolve(stall_before_finish: bool) {
         let txn_idx = 0;
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new(),
-            ]);
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new()],
+        );
         let status = statuses.get_status(txn_idx);
 
         *status.status_with_incarnation.lock() =
@@ -1274,13 +1274,13 @@ mod tests {
 
     #[test]
     fn stall_executed_status() {
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(SchedulingStatus::Executed, 5),
-                    0,
-                ),
-            ]);
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(SchedulingStatus::Executed, 5),
+                0,
+            )],
+        );
         let executed_status = statuses.get_status(0);
 
         // Assert correct starting state - provided by new_for_test.
@@ -1505,10 +1505,10 @@ mod tests {
     #[test_case(false)]
     #[test_case(true)]
     fn set_executing_flag_err(case: bool) {
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new(),
-            ]);
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new()],
+        );
         let status = &statuses.get_status(0);
         // Breaking the invariant, not changing status from PendingScheduling
         // but updating dependency shortcut flag.
@@ -1640,10 +1640,10 @@ mod tests {
     #[test_case(DependencyStatus::IsSafe)]
     #[test_case(DependencyStatus::ShouldDefer)]
     fn assert_finish_execution_status(dependency_status: DependencyStatus) {
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new(),
-            ]);
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new()],
+        );
         let status = &statuses.get_status(0);
         // Convert to Executing state
         assert_some_eq!(statuses.start_executing(0).unwrap(), 0);
@@ -1657,8 +1657,9 @@ mod tests {
 
     #[test]
     fn remove_stall_err_senarios() {
-        let mut statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
+        let mut statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![
                 ExecutionStatus::new(),
                 ExecutionStatus::new_for_test(
                     StatusWithIncarnation::new_for_test(SchedulingStatus::PendingScheduling, 1),
@@ -1668,7 +1669,8 @@ mod tests {
                     StatusWithIncarnation::new_for_test(SchedulingStatus::PendingScheduling, 0),
                     1,
                 ),
-            ]);
+            ],
+        );
 
         for wrong_shortcut in [DependencyStatus::WaitForExecution as u8, 100] {
             *statuses.get_status_mut(0) = ExecutionStatus::new_for_test(
@@ -1697,13 +1699,13 @@ mod tests {
     #[test]
     fn remove_stall_recheck() {
         // Executed and stalled status.
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(SchedulingStatus::Executed, 0),
-                    1,
-                ),
-            ]);
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(SchedulingStatus::Executed, 0),
+                1,
+            )],
+        );
         let status = &statuses.get_status(0);
 
         rayon::scope(|s| {
@@ -1742,16 +1744,16 @@ mod tests {
         let merged_requirements = BTreeSet::from([module_id1.clone(), module_id2.clone()]);
 
         // Test scenario 1: Executing status - should defer requirements (Ok(Some(true)))
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(
-                        SchedulingStatus::Executing(BTreeSet::new()),
-                        incarnation,
-                    ),
-                    0,
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(
+                    SchedulingStatus::Executing(BTreeSet::new()),
+                    incarnation,
                 ),
-            ]);
+                0,
+            )],
+        );
         // Add the requirements
         assert_some_eq!(
             statuses
@@ -1770,13 +1772,13 @@ mod tests {
         assert_some_eq!(returned_requirements, merged_requirements);
 
         // Test scenario 2: Executed status - should not defer (Ok(Some(false)))
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(SchedulingStatus::Executed, incarnation),
-                    0,
-                ),
-            ]);
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(SchedulingStatus::Executed, incarnation),
+                0,
+            )],
+        );
 
         assert_some_eq!(
             statuses
@@ -1786,70 +1788,70 @@ mod tests {
         );
 
         // Test scenario 3: PendingScheduling status - should error
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(
-                        SchedulingStatus::PendingScheduling,
-                        incarnation,
-                    ),
-                    0,
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(
+                    SchedulingStatus::PendingScheduling,
+                    incarnation,
                 ),
-            ]);
+                0,
+            )],
+        );
         assert_err!(statuses.defer_module_validation(txn_idx, incarnation, &requirements1));
 
         // Test scenario 4: Aborted status - should return None
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(SchedulingStatus::Aborted, incarnation),
-                    0,
-                ),
-            ]);
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(SchedulingStatus::Aborted, incarnation),
+                0,
+            )],
+        );
         assert_none!(statuses
             .defer_module_validation(txn_idx, incarnation, &requirements1)
             .unwrap());
 
         // Test scenario 5: Future incarnation - should error
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(
-                        SchedulingStatus::Executing(BTreeSet::new()),
-                        incarnation,
-                    ),
-                    0,
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(
+                    SchedulingStatus::Executing(BTreeSet::new()),
+                    incarnation,
                 ),
-            ]);
+                0,
+            )],
+        );
 
         assert_err!(statuses.defer_module_validation(txn_idx, incarnation + 1, &requirements1));
 
         // Test scenario 6: Past incarnation - should return None
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(
-                        SchedulingStatus::Executing(BTreeSet::new()),
-                        incarnation + 1,
-                    ),
-                    0,
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(
+                    SchedulingStatus::Executing(BTreeSet::new()),
+                    incarnation + 1,
                 ),
-            ]);
+                0,
+            )],
+        );
         assert_none!(statuses
             .defer_module_validation(txn_idx, incarnation, &requirements1)
             .unwrap());
 
         // Test scenario 7: Add requirements then abort - should return None from finish_execution
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(
-                        SchedulingStatus::Executing(BTreeSet::new()),
-                        incarnation,
-                    ),
-                    0,
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(
+                    SchedulingStatus::Executing(BTreeSet::new()),
+                    incarnation,
                 ),
-            ]);
+                0,
+            )],
+        );
         // Add a requirement
         assert_some_eq!(
             statuses
@@ -1869,16 +1871,16 @@ mod tests {
         let incarnation = 1;
 
         // Test scenario 1: Error when status is Executing with start_next_incarnation=true
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(
-                        SchedulingStatus::Executing(BTreeSet::new()),
-                        incarnation,
-                    ),
-                    0,
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(
+                    SchedulingStatus::Executing(BTreeSet::new()),
+                    incarnation,
                 ),
-            ]);
+                0,
+            )],
+        );
         statuses
             .get_status(txn_idx)
             .next_incarnation_to_abort
@@ -1888,13 +1890,13 @@ mod tests {
         assert_err!(statuses.finish_abort(txn_idx, incarnation, true));
 
         // Test scenario 2: Executed status with start_next_incarnation=true should transition to Executing
-        let statuses =
-            ExecutionStatuses::new_for_test(ExecutionQueueManager::new_for_test(1), vec![
-                ExecutionStatus::new_for_test(
-                    StatusWithIncarnation::new_for_test(SchedulingStatus::Executed, incarnation),
-                    0,
-                ),
-            ]);
+        let statuses = ExecutionStatuses::new_for_test(
+            ExecutionQueueManager::new_for_test(1),
+            vec![ExecutionStatus::new_for_test(
+                StatusWithIncarnation::new_for_test(SchedulingStatus::Executed, incarnation),
+                0,
+            )],
+        );
         let status = statuses.get_status(txn_idx);
         status
             .next_incarnation_to_abort

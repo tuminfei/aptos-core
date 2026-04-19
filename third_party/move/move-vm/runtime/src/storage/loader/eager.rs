@@ -216,10 +216,12 @@ where
         let arena_id = traversal_context
             .referenced_module_ids
             .alloc(module_id.clone());
-        check_dependencies_and_charge_gas(self.module_storage, gas_meter, traversal_context, [(
-            arena_id.address(),
-            arena_id.name(),
-        )])
+        check_dependencies_and_charge_gas(
+            self.module_storage,
+            gas_meter,
+            traversal_context,
+            [(arena_id.address(), arena_id.name())],
+        )
         .map_err(|err| {
             err.to_partial().append_message_with_separator(
                 '.',

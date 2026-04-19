@@ -392,10 +392,10 @@ impl<const N: usize, P: FpConfig<N>, E: Pairing<ScalarField = Fp<P, N>>>
             MsmInput::new(weighted_Cs_base, weighted_Cs_scalar).expect("weighted_Cs MSM terms");
         let pok_merged = msm::merge_msm_inputs::<E::G1Affine, _>(&pok_msm_terms, rng);
         let g1_inputs = vec![pok_merged, weighted_Cs_msm];
-        let merged_g1 = msm::merge_msm_inputs_with_scales::<E::G1Affine>(&g1_inputs, &[
-            gamma,
-            E::ScalarField::ONE,
-        ]);
+        let merged_g1 = msm::merge_msm_inputs_with_scales::<E::G1Affine>(
+            &g1_inputs,
+            &[gamma, E::ScalarField::ONE],
+        );
         let combined_G1 = E::G1::msm(merged_g1.bases(), merged_g1.scalars())
             .expect("Failed to compute merged G1 MSM in chunky");
 

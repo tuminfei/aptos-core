@@ -149,13 +149,16 @@ pub fn run_move_prover(
     let now = Instant::now();
     let compiler_version = config.compiler_config.compiler_version.unwrap_or_default();
     let language_version = config.compiler_config.language_version.unwrap_or_default();
-    let mut model = config.move_model_for_package(path, ModelConfig {
-        all_files_as_targets: false,
-        target_filter: target_filter.clone(),
-        compiler_version,
-        language_version,
-        with_bytecode: true, // prover needs FileFormat bytecode
-    })?;
+    let mut model = config.move_model_for_package(
+        path,
+        ModelConfig {
+            all_files_as_targets: false,
+            target_filter: target_filter.clone(),
+            compiler_version,
+            language_version,
+            with_bytecode: true, // prover needs FileFormat bytecode
+        },
+    )?;
     model.check_errors("in compilation")?;
     let _temp_dir_holder = if for_test {
         // Need to ensure a distinct output.bpl file for concurrent execution. In non-test

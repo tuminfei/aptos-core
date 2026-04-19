@@ -148,13 +148,17 @@ fn build_test_info(
                    it as either one or the other";
         let test_only_id = test_only_attribute.node_id();
         let test_only_loc = env.get_node_loc(test_only_id);
-        env.error_with_labels(&fn_id_loc, "invalid usage of known attribute", vec![
-            (test_only_loc, msg.to_string()),
-            (
-                test_attribute_loc.clone(),
-                "Previously annotated here".to_string(),
-            ),
-        ]);
+        env.error_with_labels(
+            &fn_id_loc,
+            "invalid usage of known attribute",
+            vec![
+                (test_only_loc, msg.to_string()),
+                (
+                    test_attribute_loc.clone(),
+                    "Previously annotated here".to_string(),
+                ),
+            ],
+        );
     }
 
     let test_annotation_params = parse_test_attribute(env, test_attribute, 0);
@@ -175,13 +179,17 @@ fn build_test_info(
                 _ => {
                     let err_msg = "Unexpected argument type: expect an address or a signer";
                     let invalid_test = "unable to generate test";
-                    env.error_with_labels(&fn_id_loc, invalid_test, vec![
-                        (test_attribute_loc.clone(), err_msg.to_string()),
-                        (
-                            var_loc.clone(),
-                            "Corresponding to this parameter".to_string(),
-                        ),
-                    ]);
+                    env.error_with_labels(
+                        &fn_id_loc,
+                        invalid_test,
+                        vec![
+                            (test_attribute_loc.clone(), err_msg.to_string()),
+                            (
+                                var_loc.clone(),
+                                "Corresponding to this parameter".to_string(),
+                            ),
+                        ],
+                    );
                 },
             },
             Some(value) => arguments.push(value.clone()),
@@ -189,13 +197,17 @@ fn build_test_info(
                 let missing_param_msg = "Missing test parameter assignment in test. Expected a \
                                          parameter to be assigned in this attribute";
                 let invalid_test = "unable to generate test";
-                env.error_with_labels(&fn_id_loc, invalid_test, vec![
-                    (test_attribute_loc.clone(), missing_param_msg.to_string()),
-                    (
-                        var_loc.clone(),
-                        "Corresponding to this parameter".to_string(),
-                    ),
-                ]);
+                env.error_with_labels(
+                    &fn_id_loc,
+                    invalid_test,
+                    vec![
+                        (test_attribute_loc.clone(), missing_param_msg.to_string()),
+                        (
+                            var_loc.clone(),
+                            "Corresponding to this parameter".to_string(),
+                        ),
+                    ],
+                );
             },
         }
     }
@@ -248,10 +260,11 @@ fn parse_test_attribute(
                 None => {
                     let aloc = env.get_node_loc(*id);
                     let assign_loc = env.get_node_loc(*id);
-                    env.error_with_labels(&assign_loc, "Unsupported attribute value", vec![(
-                        aloc,
-                        "Assigned in this attribute".to_string(),
-                    )]);
+                    env.error_with_labels(
+                        &assign_loc,
+                        "Unsupported attribute value",
+                        vec![(aloc, "Assigned in this attribute".to_string())],
+                    );
                     return BTreeMap::new();
                 },
             };
@@ -274,10 +287,11 @@ fn parse_failure_attribute(
             let invalid_assignment_msg = "Invalid expected failure code assignment";
             let expected_msg =
                 "Expect an #[expected_failure(...)] attribute for error specification";
-            env.error_with_labels(&assign_loc, invalid_assignment_msg, vec![(
-                assign_loc.clone(),
-                expected_msg.to_string(),
-            )]);
+            env.error_with_labels(
+                &assign_loc,
+                invalid_assignment_msg,
+                vec![(assign_loc.clone(), expected_msg.to_string())],
+            );
             None
         },
         Attribute::Apply(id, sym, attrs) => {
@@ -415,10 +429,11 @@ fn parse_failure_attribute(
                         );
                         let no_code =
                             format!("No status code associated with value `{major_status_u64}`");
-                        env.error_with_labels(&value_name_loc, &bad_value, vec![(
-                            major_value_loc,
-                            no_code,
-                        )]);
+                        env.error_with_labels(
+                            &value_name_loc,
+                            &bad_value,
+                            vec![(major_value_loc, no_code)],
+                        );
                         return None;
                     };
                     let minor_attr_opt = attrs.remove(TestingAttribute::MINOR_STATUS_NAME);
@@ -526,19 +541,27 @@ fn convert_location(env: &GlobalEnv, attr: Attribute) -> Option<ModuleId> {
             let vloc = env.get_node_loc(id);
             let module_id_opt = convert_module_id(env, vloc.clone(), opt_module_name);
             if !sym.display(env.symbol_pool()).to_string().is_empty() || module_id_opt.is_none() {
-                env.error_with_labels(&loc, "invalid attribute value", vec![(
-                    vloc,
-                    "Expected a module identifier, e.g. 'std::vector'".to_string(),
-                )]);
+                env.error_with_labels(
+                    &loc,
+                    "invalid attribute value",
+                    vec![(
+                        vloc,
+                        "Expected a module identifier, e.g. 'std::vector'".to_string(),
+                    )],
+                );
             }
             module_id_opt
         },
         AttributeValue::Value(id, _val) => {
             let vloc = env.get_node_loc(id);
-            env.error_with_labels(&loc, "invalid attribute value", vec![(
-                vloc,
-                "Expected a module identifier, e.g. 'std::vector'".to_string(),
-            )]);
+            env.error_with_labels(
+                &loc,
+                "invalid attribute value",
+                vec![(
+                    vloc,
+                    "Expected a module identifier, e.g. 'std::vector'".to_string(),
+                )],
+            );
             None
         },
     }

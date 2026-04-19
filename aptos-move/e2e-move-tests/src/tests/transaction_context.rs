@@ -403,15 +403,21 @@ fn test_transaction_context_entry_function_payload() {
         function_name,
         "store_entry_function_payload_from_native_txn_context"
     );
-    assert_eq!(type_arg_names, vec![
-        "u64",
-        "vector<address>",
-        "0x1::transaction_fee::FeeStatement"
-    ]);
-    assert_eq!(args, vec![
-        bcs::to_bytes(&7777777u64).unwrap(),
-        bcs::to_bytes(&true).unwrap()
-    ]);
+    assert_eq!(
+        type_arg_names,
+        vec![
+            "u64",
+            "vector<address>",
+            "0x1::transaction_fee::FeeStatement"
+        ]
+    );
+    assert_eq!(
+        args,
+        vec![
+            bcs::to_bytes(&7777777u64).unwrap(),
+            bcs::to_bytes(&true).unwrap()
+        ]
+    );
 }
 
 #[test]

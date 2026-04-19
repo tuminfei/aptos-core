@@ -30,7 +30,7 @@ use aptos_types::{
         analyzed_transaction::AnalyzedTransaction, EntryFunction, RawTransaction,
         SignedTransaction, Transaction, TransactionPayload,
     },
-    TopoCoinType, CoinType,
+    CoinType, TopoCoinType,
 };
 use move_core_types::{
     account_address::AccountAddress, identifier::Identifier, language_storage::ModuleId,

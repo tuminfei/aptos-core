@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[test]
 fn clean_after_build() {
-    let pkg = common::make_package("cleanme", &[(
+    let pkg = common::make_package(
         "cleanme",
-        "module 0xCAFE::cleanme {
+        &[(
+            "cleanme",
+            "module 0xCAFE::cleanme {
     public fun hi(): u64 { 1 }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
 
     // First compile to create build artifacts

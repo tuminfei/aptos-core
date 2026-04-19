@@ -342,9 +342,11 @@ impl BinaryIndexedView<'_> {
             Reference(_) | MutableReference(_) => Ok(AbilitySet::REFERENCES),
             Signer => Ok(AbilitySet::SIGNER),
             TypeParameter(idx) => Ok(constraints[*idx as usize]),
-            Vector(ty) => AbilitySet::polymorphic_abilities(AbilitySet::VECTOR, vec![false], vec![
-                self.abilities(ty, constraints)?,
-            ])
+            Vector(ty) => AbilitySet::polymorphic_abilities(
+                AbilitySet::VECTOR,
+                vec![false],
+                vec![self.abilities(ty, constraints)?],
+            )
             .map_err(|e| {
                 PartialVMError::new(StatusCode::VERIFIER_INVARIANT_VIOLATION)
                     .with_message(e.to_string())

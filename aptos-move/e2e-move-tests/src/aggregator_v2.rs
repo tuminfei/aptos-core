@@ -87,18 +87,24 @@ fn initialize_harness(
 
     if aggregator_execution_enabled {
         harness.enable_features(
-            [common_features, vec![
-                FeatureFlag::AGGREGATOR_V2_DELAYED_FIELDS,
-                FeatureFlag::RESOURCE_GROUPS_SPLIT_IN_VM_CHANGE_SET,
-            ]]
+            [
+                common_features,
+                vec![
+                    FeatureFlag::AGGREGATOR_V2_DELAYED_FIELDS,
+                    FeatureFlag::RESOURCE_GROUPS_SPLIT_IN_VM_CHANGE_SET,
+                ],
+            ]
             .concat(),
             vec![],
         );
     } else {
-        harness.enable_features(common_features, vec![
-            FeatureFlag::AGGREGATOR_V2_DELAYED_FIELDS,
-            FeatureFlag::RESOURCE_GROUPS_SPLIT_IN_VM_CHANGE_SET,
-        ]);
+        harness.enable_features(
+            common_features,
+            vec![
+                FeatureFlag::AGGREGATOR_V2_DELAYED_FIELDS,
+                FeatureFlag::RESOURCE_GROUPS_SPLIT_IN_VM_CHANGE_SET,
+            ],
+        );
     }
     let account = harness.new_account_at(AccountAddress::ONE);
     assert_success!(harness.publish_package_cache_building(&account, &path));
@@ -334,9 +340,11 @@ impl AggV2TestHarness {
         snap_loc: &AggregatorLocation,
         expected: u128,
     ) -> SignedTransaction {
-        self.create_entry_agg_func_with_args("0x1::aggregator_v2_test::check_derived", snap_loc, &[
-            expected,
-        ])
+        self.create_entry_agg_func_with_args(
+            "0x1::aggregator_v2_test::check_derived",
+            snap_loc,
+            &[expected],
+        )
     }
 
     #[allow(clippy::new_ret_no_self)]
@@ -366,9 +374,11 @@ impl AggV2TestHarness {
         max_value: u128,
         a: u128,
     ) -> SignedTransaction {
-        self.create_entry_agg_func_with_args("0x1::aggregator_v2_test::new_add", agg_loc, &[
-            max_value, a,
-        ])
+        self.create_entry_agg_func_with_args(
+            "0x1::aggregator_v2_test::new_add",
+            agg_loc,
+            &[max_value, a],
+        )
     }
 
     pub fn sub_add(&mut self, agg_loc: &AggregatorLocation, a: u128, b: u128) -> SignedTransaction {
@@ -393,9 +403,11 @@ impl AggV2TestHarness {
     }
 
     pub fn add_delete(&mut self, agg_loc: &AggregatorLocation, value: u128) -> SignedTransaction {
-        self.create_entry_agg_func_with_args("0x1::aggregator_v2_test::add_delete", agg_loc, &[
-            value,
-        ])
+        self.create_entry_agg_func_with_args(
+            "0x1::aggregator_v2_test::add_delete",
+            agg_loc,
+            &[value],
+        )
     }
 
     pub fn materialize(&mut self, agg_loc: &AggregatorLocation) -> SignedTransaction {

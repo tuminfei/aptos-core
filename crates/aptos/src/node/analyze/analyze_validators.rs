@@ -347,13 +347,17 @@ impl AnalyzeValidators {
         ]
         .into_iter()
         .map(|v| {
-            (v, VecDeque::new(), MaxTpsStats {
-                tps: 0.0,
-                end_version: 0,
-                txns: 0,
-                blocks: 0,
-                duration: 0.0,
-            })
+            (
+                v,
+                VecDeque::new(),
+                MaxTpsStats {
+                    tps: 0.0,
+                    end_version: 0,
+                    txns: 0,
+                    blocks: 0,
+                    duration: 0.0,
+                },
+            )
         })
         .collect::<Vec<_>>();
         let mut trimmed_rounds = 0;
@@ -475,13 +479,16 @@ impl AnalyzeValidators {
             validator_stats: validators
                 .iter()
                 .map(|validator| {
-                    (validator.address, ValidatorStats {
-                        proposal_successes: *successes.get(&validator.address).unwrap_or(&0),
-                        proposal_failures: *failures.get(&validator.address).unwrap_or(&0),
-                        votes: *votes.get(&validator.address).unwrap_or(&0),
-                        transactions: *transactions.get(&validator.address).unwrap_or(&0),
-                        voting_power: validator.voting_power,
-                    })
+                    (
+                        validator.address,
+                        ValidatorStats {
+                            proposal_successes: *successes.get(&validator.address).unwrap_or(&0),
+                            proposal_failures: *failures.get(&validator.address).unwrap_or(&0),
+                            votes: *votes.get(&validator.address).unwrap_or(&0),
+                            transactions: *transactions.get(&validator.address).unwrap_or(&0),
+                            voting_power: validator.voting_power,
+                        },
+                    )
                 })
                 .collect(),
             total_rounds,

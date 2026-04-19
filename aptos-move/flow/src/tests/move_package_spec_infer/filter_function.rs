@@ -9,9 +9,11 @@ use std::fs;
 /// left unchanged.
 #[tokio::test]
 async fn move_package_spec_infer_filter_function() {
-    let pkg = common::make_package("multi", &[(
+    let pkg = common::make_package(
         "multi",
-        "module 0xCAFE::multi {
+        &[(
+            "multi",
+            "module 0xCAFE::multi {
     fun add_one(x: u64): u64 {
         x + 1
     }
@@ -20,7 +22,8 @@ async fn move_package_spec_infer_filter_function() {
         x * 2
     }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let client = common::make_client().await;
     let result = common::call_tool(

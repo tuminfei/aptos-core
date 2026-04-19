@@ -93,13 +93,16 @@ fn run_test_impl(
                 },
                 Err(error) => format!("{:#}\n", error),
             },
-            (_, true) => match ModelBuilder::create(resolved_package, ModelConfig {
-                all_files_as_targets: false,
-                target_filter: None,
-                compiler_version,
-                language_version: LanguageVersion::default(),
-                with_bytecode: false,
-            })
+            (_, true) => match ModelBuilder::create(
+                resolved_package,
+                ModelConfig {
+                    all_files_as_targets: false,
+                    target_filter: None,
+                    compiler_version,
+                    language_version: LanguageVersion::default(),
+                    with_bytecode: false,
+                },
+            )
             .build_model()
             {
                 Ok(env) => {

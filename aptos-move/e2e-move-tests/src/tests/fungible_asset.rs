@@ -218,11 +218,14 @@ fn test_prologue_speculation() {
     let transfer_3_txn =
         harness.create_transaction_payload(&dst_3, topo_account_transfer(*dst_1.address(), 1));
 
-    harness.run_block_in_parts_and_check(BlockSplit::Whole, vec![
-        (SUCCESS, sink_txn),
-        (SUCCESS, fund_txn),
-        (SUCCESS, transfer_1_txn),
-        (SUCCESS, transfer_2_txn),
-        (SUCCESS, transfer_3_txn),
-    ]);
+    harness.run_block_in_parts_and_check(
+        BlockSplit::Whole,
+        vec![
+            (SUCCESS, sink_txn),
+            (SUCCESS, fund_txn),
+            (SUCCESS, transfer_1_txn),
+            (SUCCESS, transfer_2_txn),
+            (SUCCESS, transfer_3_txn),
+        ],
+    );
 }

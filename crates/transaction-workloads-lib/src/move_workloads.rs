@@ -468,10 +468,14 @@ impl EntryPointTrait for EntryPoints {
         match self {
             EntryPoints::Republish => {
                 let (metadata_serialized, code) = package.get_publish_args();
-                get_payload(module_id, ident_str!("publish_p").to_owned(), vec![
-                    bcs::to_bytes(&metadata_serialized).unwrap(),
-                    bcs::to_bytes(&code).unwrap(),
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("publish_p").to_owned(),
+                    vec![
+                        bcs::to_bytes(&metadata_serialized).unwrap(),
+                        bcs::to_bytes(&code).unwrap(),
+                    ],
+                )
             },
             // 0 args
             EntryPoints::Nop | EntryPoints::NopFeePayer => {
@@ -521,9 +525,11 @@ impl EntryPointTrait for EntryPoints {
                     FibonacciFunctionType::TailRecursive => "fibonacci_tail_recursive",
                     FibonacciFunctionType::Iterative => "fibonacci_iterative",
                 };
-                get_payload(module_id, ident_str!(method).to_owned(), vec![
-                    bcs::to_bytes(&n).unwrap(),
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!(method).to_owned(),
+                    vec![bcs::to_bytes(&n).unwrap()],
+                )
             },
             EntryPoints::GetFromConst { const_idx } => get_from_random_const(
                 module_id,
@@ -552,11 +558,11 @@ impl EntryPointTrait for EntryPoints {
                 let data_len = data_length.unwrap_or_else(|| rng.gen_range(0usize, 1000usize));
                 bytes_make_or_change(rng, module_id, data_len)
             },
-            EntryPoints::EmitEvents { count } => {
-                get_payload(module_id, ident_str!("emit_events").to_owned(), vec![
-                    bcs::to_bytes(count).unwrap(),
-                ])
-            },
+            EntryPoints::EmitEvents { count } => get_payload(
+                module_id,
+                ident_str!("emit_events").to_owned(),
+                vec![bcs::to_bytes(count).unwrap()],
+            ),
             EntryPoints::MakeOrChangeTable { offset, count } => get_payload(
                 module_id,
                 ident_str!("make_or_change_table").to_owned(),
@@ -605,18 +611,22 @@ impl EntryPointTrait for EntryPoints {
                 ident_str!("increment_milestone").to_owned(),
                 vec![],
             ),
-            EntryPoints::CreateGlobalMilestoneAggV2 { milestone_every } => {
-                get_payload(module_id, ident_str!("create").to_owned(), vec![
-                    bcs::to_bytes(&milestone_every).unwrap(),
-                ])
-            },
+            EntryPoints::CreateGlobalMilestoneAggV2 { milestone_every } => get_payload(
+                module_id,
+                ident_str!("create").to_owned(),
+                vec![bcs::to_bytes(&milestone_every).unwrap()],
+            ),
             EntryPoints::CreateObjects {
                 num_objects,
                 object_payload_size,
-            } => get_payload(module_id, ident_str!("create_objects").to_owned(), vec![
-                bcs::to_bytes(num_objects).unwrap(),
-                bcs::to_bytes(object_payload_size).unwrap(),
-            ]),
+            } => get_payload(
+                module_id,
+                ident_str!("create_objects").to_owned(),
+                vec![
+                    bcs::to_bytes(num_objects).unwrap(),
+                    bcs::to_bytes(object_payload_size).unwrap(),
+                ],
+            ),
             EntryPoints::CreateObjectsConflict {
                 num_objects,
                 object_payload_size,
@@ -642,13 +652,11 @@ impl EntryPointTrait for EntryPoints {
                 repeats,
             } => get_payload(
                 module_id,
-                ident_str!(
-                    if let EntryPoints::VectorTrimAppend { .. } = self {
-                        "test_trim_append"
-                    } else {
-                        "test_remove_insert"
-                    }
-                )
+                ident_str!(if let EntryPoints::VectorTrimAppend { .. } = self {
+                    "test_trim_append"
+                } else {
+                    "test_remove_insert"
+                })
                 .to_owned(),
                 vec![
                     bcs::to_bytes(vec_len).unwrap(),
@@ -754,33 +762,49 @@ impl EntryPointTrait for EntryPoints {
                 let rng: &mut StdRng = rng.expect("Must provide RNG");
                 let index1: u64 = rng.gen_range(0, 8);
                 let index2: u64 = rng.gen_range(0, 8);
-                get_payload(module_id, ident_str!("set_and_read_p").to_owned(), vec![
-                    bcs::to_bytes(&index1).unwrap(),
-                    bcs::to_bytes(&index2).unwrap(),
-                    bcs::to_bytes(&rand_string(rng, *string_length)).unwrap(), // name
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("set_and_read_p").to_owned(),
+                    vec![
+                        bcs::to_bytes(&index1).unwrap(),
+                        bcs::to_bytes(&index2).unwrap(),
+                        bcs::to_bytes(&rand_string(rng, *string_length)).unwrap(), // name
+                    ],
+                )
             },
             EntryPoints::ResourceGroupsSenderMultiChange { string_length } => {
                 let rng: &mut StdRng = rng.expect("Must provide RNG");
                 let index1: u64 = rng.gen_range(0, 8);
                 let index2: u64 = rng.gen_range(0, 8);
                 let index3: u64 = rng.gen_range(0, 8);
-                get_payload(module_id, ident_str!("set_3").to_owned(), vec![
-                    bcs::to_bytes(&index1).unwrap(),
-                    bcs::to_bytes(&index2).unwrap(),
-                    bcs::to_bytes(&index3).unwrap(),
-                    bcs::to_bytes(&rand_string(rng, *string_length)).unwrap(), // name
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("set_3").to_owned(),
+                    vec![
+                        bcs::to_bytes(&index1).unwrap(),
+                        bcs::to_bytes(&index2).unwrap(),
+                        bcs::to_bytes(&index3).unwrap(),
+                        bcs::to_bytes(&rand_string(rng, *string_length)).unwrap(), // name
+                    ],
+                )
             },
             EntryPoints::CoinInitAndMint => {
-                get_payload(module_id, ident_str!("mint_p").to_owned(), vec![
-                    bcs::to_bytes(&1000u64).unwrap(), // amount
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("mint_p").to_owned(),
+                    vec![
+                        bcs::to_bytes(&1000u64).unwrap(), // amount
+                    ],
+                )
             },
             EntryPoints::FungibleAssetMint => {
-                get_payload(module_id, ident_str!("mint_p").to_owned(), vec![
-                    bcs::to_bytes(&1000u64).unwrap(), // amount
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("mint_p").to_owned(),
+                    vec![
+                        bcs::to_bytes(&1000u64).unwrap(), // amount
+                    ],
+                )
             },
             EntryPoints::TokenV2AmbassadorMint { numbered: true } => {
                 let rng: &mut StdRng = rng.expect("Must provide RNG");
@@ -819,34 +843,50 @@ impl EntryPointTrait for EntryPoints {
             EntryPoints::LiquidityPoolSwap { is_stable } => {
                 let rng: &mut StdRng = rng.expect("Must provide RNG");
                 let from_1: bool = (rng.gen_range(0, 2) == 1);
-                get_payload(module_id, ident_str!("swap").to_owned(), vec![
-                    bcs::to_bytes(&rng.gen_range(1000u64, 2000u64)).unwrap(), // amount_in
-                    bcs::to_bytes(&from_1).unwrap(),                          // from_1
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("swap").to_owned(),
+                    vec![
+                        bcs::to_bytes(&rng.gen_range(1000u64, 2000u64)).unwrap(), // amount_in
+                        bcs::to_bytes(&from_1).unwrap(),                          // from_1
+                    ],
+                )
             },
             EntryPoints::InitializeVectorPicture { length } => {
-                get_payload(module_id, ident_str!("create").to_owned(), vec![
-                    bcs::to_bytes(&length).unwrap(), // length
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("create").to_owned(),
+                    vec![
+                        bcs::to_bytes(&length).unwrap(), // length
+                    ],
+                )
             },
             EntryPoints::VectorPicture { length } => {
                 let rng: &mut StdRng = rng.expect("Must provide RNG");
-                get_payload(module_id, ident_str!("update").to_owned(), vec![
-                    bcs::to_bytes(&other.expect("Must provide other")).unwrap(),
-                    bcs::to_bytes(&0u64).unwrap(), // palette_index
-                    bcs::to_bytes(&rng.gen_range(0u64, length)).unwrap(), // index
-                    bcs::to_bytes(&rng.gen_range(0u8, 255u8)).unwrap(), // color R
-                    bcs::to_bytes(&rng.gen_range(0u8, 255u8)).unwrap(), // color G
-                    bcs::to_bytes(&rng.gen_range(0u8, 255u8)).unwrap(), // color B
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("update").to_owned(),
+                    vec![
+                        bcs::to_bytes(&other.expect("Must provide other")).unwrap(),
+                        bcs::to_bytes(&0u64).unwrap(), // palette_index
+                        bcs::to_bytes(&rng.gen_range(0u64, length)).unwrap(), // index
+                        bcs::to_bytes(&rng.gen_range(0u8, 255u8)).unwrap(), // color R
+                        bcs::to_bytes(&rng.gen_range(0u8, 255u8)).unwrap(), // color G
+                        bcs::to_bytes(&rng.gen_range(0u8, 255u8)).unwrap(), // color B
+                    ],
+                )
             },
             EntryPoints::VectorPictureRead { length } => {
                 let rng: &mut StdRng = rng.expect("Must provide RNG");
-                get_payload(module_id, ident_str!("check").to_owned(), vec![
-                    bcs::to_bytes(&other.expect("Must provide other")).unwrap(),
-                    bcs::to_bytes(&0u64).unwrap(), // palette_index
-                    bcs::to_bytes(&rng.gen_range(0u64, length)).unwrap(), // index
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("check").to_owned(),
+                    vec![
+                        bcs::to_bytes(&other.expect("Must provide other")).unwrap(),
+                        bcs::to_bytes(&0u64).unwrap(), // palette_index
+                        bcs::to_bytes(&rng.gen_range(0u64, length)).unwrap(), // index
+                    ],
+                )
             },
             EntryPoints::InitializeSmartTablePicture => {
                 get_payload(module_id, ident_str!("create").to_owned(), vec![])
@@ -864,12 +904,16 @@ impl EntryPointTrait for EntryPoints {
                     .map(|_| rng.gen_range(0u8, 100u8))
                     .collect::<Vec<_>>();
                 assert!(indices.len() == colors.len());
-                get_payload(module_id, ident_str!("update").to_owned(), vec![
-                    bcs::to_bytes(&other.expect("Must provide other")).unwrap(),
-                    bcs::to_bytes(&0u64).unwrap(),    // palette_index
-                    bcs::to_bytes(&indices).unwrap(), // indices
-                    bcs::to_bytes(&colors).unwrap(),  // colors
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("update").to_owned(),
+                    vec![
+                        bcs::to_bytes(&other.expect("Must provide other")).unwrap(),
+                        bcs::to_bytes(&0u64).unwrap(), // palette_index
+                        bcs::to_bytes(&indices).unwrap(), // indices
+                        bcs::to_bytes(&colors).unwrap(), // colors
+                    ],
+                )
             },
             EntryPoints::DeserializeU256 => {
                 let rng: &mut StdRng = rng.expect("Must provide RNG");
@@ -892,12 +936,14 @@ impl EntryPointTrait for EntryPoints {
                     bcs::to_bytes(&1u64).unwrap(),
                 ],
             ),
-            EntryPoints::APTTransferWithMasterSigner => {
-                get_payload(module_id, ident_str!("transfer").to_owned(), vec![
+            EntryPoints::APTTransferWithMasterSigner => get_payload(
+                module_id,
+                ident_str!("transfer").to_owned(),
+                vec![
                     bcs::to_bytes(&other.expect("Must provide other")).unwrap(),
                     bcs::to_bytes(&1u64).unwrap(),
-                ])
-            },
+                ],
+            ),
             EntryPoints::MonotonicCounter { counter_type } => match counter_type {
                 MonotonicCounterType::Single => get_payload_void(
                     module_id,
@@ -930,19 +976,23 @@ impl EntryPointTrait for EntryPoints {
                 } + rng.gen_range(0, price_range);
 
                 // (account_order_id: u64, bid_price: u64, volume: u64, is_bid: bool)
-                get_payload(module_id, ident_str!("place_order").to_owned(), vec![
-                    bcs::to_bytes(&market_id).unwrap(),
-                    bcs::to_bytes(&AccountAddress::random()).unwrap(),
-                    bcs::to_bytes(
-                        &state
-                            .order_idx
-                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed),
-                    )
-                    .unwrap(),
-                    bcs::to_bytes(&price).unwrap(),  // bid_price
-                    bcs::to_bytes(&size).unwrap(),   // volume
-                    bcs::to_bytes(&is_bid).unwrap(), // is_bid
-                ])
+                get_payload(
+                    module_id,
+                    ident_str!("place_order").to_owned(),
+                    vec![
+                        bcs::to_bytes(&market_id).unwrap(),
+                        bcs::to_bytes(&AccountAddress::random()).unwrap(),
+                        bcs::to_bytes(
+                            &state
+                                .order_idx
+                                .fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+                        )
+                        .unwrap(),
+                        bcs::to_bytes(&price).unwrap(),  // bid_price
+                        bcs::to_bytes(&size).unwrap(),   // volume
+                        bcs::to_bytes(&is_bid).unwrap(), // is_bid
+                    ],
+                )
             },
             EntryPoints::MoveVmMicroBenchmark(entrypoint) => match entrypoint {
                 MoveVmMicroBenchmark::Locals => {
@@ -1095,29 +1145,37 @@ fn get_from_random_const(module_id: ModuleId, idx: u64) -> TransactionPayload {
 
 fn set_id(rng: &mut StdRng, module_id: ModuleId) -> TransactionPayload {
     let id: u64 = rng.r#gen();
-    get_payload(module_id, ident_str!("set_id").to_owned(), vec![
-        bcs::to_bytes(&id).unwrap(),
-    ])
+    get_payload(
+        module_id,
+        ident_str!("set_id").to_owned(),
+        vec![bcs::to_bytes(&id).unwrap()],
+    )
 }
 
 fn set_name(rng: &mut StdRng, module_id: ModuleId) -> TransactionPayload {
     let len = rng.gen_range(0usize, 1000usize);
     let name: String = rand_string(rng, len);
-    get_payload(module_id, ident_str!("set_name").to_owned(), vec![
-        bcs::to_bytes(&name).unwrap(),
-    ])
+    get_payload(
+        module_id,
+        ident_str!("set_name").to_owned(),
+        vec![bcs::to_bytes(&name).unwrap()],
+    )
 }
 
 fn maximize(module_id: ModuleId, other: &AccountAddress) -> TransactionPayload {
-    get_payload(module_id, ident_str!("maximize").to_owned(), vec![
-        bcs::to_bytes(other).unwrap(),
-    ])
+    get_payload(
+        module_id,
+        ident_str!("maximize").to_owned(),
+        vec![bcs::to_bytes(other).unwrap()],
+    )
 }
 
 fn minimize(module_id: ModuleId, other: &AccountAddress) -> TransactionPayload {
-    get_payload(module_id, ident_str!("minimize").to_owned(), vec![
-        bcs::to_bytes(other).unwrap(),
-    ])
+    get_payload(
+        module_id,
+        ident_str!("minimize").to_owned(),
+        vec![bcs::to_bytes(other).unwrap()],
+    )
 }
 
 fn rand_string(rng: &mut StdRng, len: usize) -> String {
@@ -1139,11 +1197,15 @@ fn make_or_change(
     let name: String = rand_string(rng, str_len);
     let mut bytes = Vec::<u8>::with_capacity(data_len);
     rng.fill_bytes(&mut bytes);
-    get_payload(module_id, ident_str!("make_or_change").to_owned(), vec![
-        bcs::to_bytes(&id).unwrap(),
-        bcs::to_bytes(&name).unwrap(),
-        bcs::to_bytes(&bytes).unwrap(),
-    ])
+    get_payload(
+        module_id,
+        ident_str!("make_or_change").to_owned(),
+        vec![
+            bcs::to_bytes(&id).unwrap(),
+            bcs::to_bytes(&name).unwrap(),
+            bcs::to_bytes(&bytes).unwrap(),
+        ],
+    )
 }
 
 fn bytes_make_or_change(

@@ -38,14 +38,20 @@ fn test_vm_value_too_deep_with_function_values() {
     );
     assert_success!(status);
 
-    let status = h.run_entry_function(&acc, str::parse("0x99::m::run2").unwrap(), vec![], vec![
-        bcs::to_bytes(&129_u64).unwrap(),
-    ]);
+    let status = h.run_entry_function(
+        &acc,
+        str::parse("0x99::m::run2").unwrap(),
+        vec![],
+        vec![bcs::to_bytes(&129_u64).unwrap()],
+    );
     assert_vm_status!(status, StatusCode::VM_MAX_VALUE_DEPTH_REACHED);
 
-    let status = h.run_entry_function(&acc, str::parse("0x99::m::run2").unwrap(), vec![], vec![
-        bcs::to_bytes(&128_u64).unwrap(),
-    ]);
+    let status = h.run_entry_function(
+        &acc,
+        str::parse("0x99::m::run2").unwrap(),
+        vec![],
+        vec![bcs::to_bytes(&128_u64).unwrap()],
+    );
     assert_success!(status);
 }
 

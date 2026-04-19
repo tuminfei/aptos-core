@@ -130,9 +130,10 @@ impl BatchTransactionFilter {
     /// Adds a filter rule that matches a specific transaction sender
     pub fn add_sender_filter(self, allow: bool, sender: AccountAddress) -> Self {
         let transaction_matcher = TransactionMatcher::Sender(sender);
-        self.add_multiple_matchers_filter(allow, vec![BatchTransactionMatcher::Transaction(
-            transaction_matcher,
-        )])
+        self.add_multiple_matchers_filter(
+            allow,
+            vec![BatchTransactionMatcher::Transaction(transaction_matcher)],
+        )
     }
 }
 

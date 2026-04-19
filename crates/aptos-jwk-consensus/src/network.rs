@@ -180,9 +180,10 @@ impl NetworkTask {
         let network_events = select_all(network_events).fuse();
         let all_events = Box::new(select(network_events, self_receiver));
 
-        (NetworkTask { rpc_tx, all_events }, NetworkReceivers {
-            rpc_rx,
-        })
+        (
+            NetworkTask { rpc_tx, all_events },
+            NetworkReceivers { rpc_rx },
+        )
     }
 
     pub async fn start(mut self) {

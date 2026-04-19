@@ -273,13 +273,11 @@ impl IoPricing {
         use IoPricing::*;
 
         match self {
-            V1(v1) => Either::Left(v1.calculate_read_gas(
-                if resource_exists {
-                    Some(bytes_loaded)
-                } else {
-                    None
-                },
-            )),
+            V1(v1) => Either::Left(v1.calculate_read_gas(if resource_exists {
+                Some(bytes_loaded)
+            } else {
+                None
+            })),
             V2(v2) => Either::Left(v2.calculate_read_gas(bytes_loaded)),
             V3(v3) => Either::Right(Either::Left(v3.calculate_read_gas(bytes_loaded))),
             V4(v4) => Either::Right(Either::Right(v4.calculate_read_gas(bytes_loaded))),

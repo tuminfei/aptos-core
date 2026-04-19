@@ -57,10 +57,12 @@ macro_rules! assert_event_value_eq {
 }
 
 fn create_test_txn(h: &mut AggV2TestHarness, account: &Account, name: &str) -> SignedTransaction {
-    h.harness
-        .create_entry_function(account, str::parse(name).unwrap(), vec![], vec![
-            bcs::to_bytes(account.address()).unwrap(),
-        ])
+    h.harness.create_entry_function(
+        account,
+        str::parse(name).unwrap(),
+        vec![],
+        vec![bcs::to_bytes(account.address()).unwrap()],
+    )
 }
 
 fn run(data: Vec<(u64, String, Option<u64>)>) -> AggV2TestHarness {

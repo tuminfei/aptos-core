@@ -110,13 +110,13 @@ pub fn shortest_cycle<'a, T: Ord + Hash>(
             );
             match (shortest_path, path_opt) {
                 (p, None) | (None, p) => p,
-                (Some((acc_len, acc_path)), Some((cur_len, cur_path))) => Some(
-                    if cur_len < acc_len {
+                (Some((acc_len, acc_path)), Some((cur_len, cur_path))) => {
+                    Some(if cur_len < acc_len {
                         (cur_len, cur_path)
                     } else {
                         (acc_len, acc_path)
-                    },
-                ),
+                    })
+                },
             }
         });
     let (_, mut path) = shortest_path.unwrap();
@@ -609,16 +609,20 @@ impl Ord for LanguageVersion {
 
 impl std::fmt::Display for LanguageVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            LanguageVersion::V1 => "1",
-            LanguageVersion::V2 => "2",
-            LanguageVersion::V2_0 => "2.0",
-            LanguageVersion::V2_1 => "2.1",
-            LanguageVersion::V2_2 => "2.2",
-            LanguageVersion::V2_3 => "2.3",
-            LanguageVersion::V2_4 => "2.4",
-            LanguageVersion::V2_5 => "2.5",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                LanguageVersion::V1 => "1",
+                LanguageVersion::V2 => "2",
+                LanguageVersion::V2_0 => "2.0",
+                LanguageVersion::V2_1 => "2.1",
+                LanguageVersion::V2_2 => "2.2",
+                LanguageVersion::V2_3 => "2.3",
+                LanguageVersion::V2_4 => "2.4",
+                LanguageVersion::V2_5 => "2.5",
+            }
+        )
     }
 }
 

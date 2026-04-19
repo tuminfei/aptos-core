@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[test]
 fn compile_fetch_deps_only() {
-    let pkg = common::make_package("deps_only", &[(
+    let pkg = common::make_package(
         "deps_only",
-        "module 0xCAFE::deps_only {
+        &[(
+            "deps_only",
+            "module 0xCAFE::deps_only {
     public fun noop() {}
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let output = common::run_cli(&[
         "compile",

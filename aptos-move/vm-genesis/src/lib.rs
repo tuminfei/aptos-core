@@ -1519,7 +1519,7 @@ fn mainnet_genesis_config() -> GenesisConfiguration {
         // 400M APT
         min_voting_threshold: (400_000_000 * TOPO_COINS_BASE_WITH_DECIMALS as u128),
         max_stake: 50_000_000 * TOPO_COINS_BASE_WITH_DECIMALS, // 50M APT.
-        recurring_lockup_duration_secs: 30 * 24 * 3600,         // 1 month
+        recurring_lockup_duration_secs: 30 * 24 * 3600,        // 1 month
         required_proposer_stake: 1_000_000 * TOPO_COINS_BASE_WITH_DECIMALS, // 1M APT
         rewards_apy_percentage: 10,
         voting_duration_secs: 7 * 24 * 3600, // 7 days

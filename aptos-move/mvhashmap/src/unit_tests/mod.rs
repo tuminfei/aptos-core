@@ -312,12 +312,16 @@ fn materialize_delta_shortcut() {
     match_unresolved(vd.fetch_data_no_record(&ap, 10), SignedU128::Positive(30));
     assert_err_eq!(
         vd.materialize_delta(&ap, 8),
-        DeltaOp::new(SignedU128::Positive(30), limit, DeltaHistory {
-            max_achieved_positive_delta: 30,
-            min_achieved_negative_delta: 0,
-            min_overflow_positive_delta: None,
-            max_underflow_negative_delta: None,
-        })
+        DeltaOp::new(
+            SignedU128::Positive(30),
+            limit,
+            DeltaHistory {
+                max_achieved_positive_delta: 30,
+                min_achieved_negative_delta: 0,
+                min_overflow_positive_delta: None,
+                max_underflow_negative_delta: None,
+            }
+        )
     );
     vd.set_base_value(
         ap.clone(),

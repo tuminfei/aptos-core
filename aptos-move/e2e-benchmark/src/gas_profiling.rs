@@ -136,13 +136,11 @@ impl CalibrationRunner {
             let log = self.run_signed_with_tps(&cur_name, txn, tps, i as u32);
             if let Some(mut log) = log {
                 log.exec_io.call_graph = log.exec_io.call_graph.fold_unique_stack();
-                aggregate_gas_log = Some(
-                    if let Some(aggregate_gas_log) = aggregate_gas_log {
-                        aggregate_gas_log.combine(&log)
-                    } else {
-                        log
-                    },
-                );
+                aggregate_gas_log = Some(if let Some(aggregate_gas_log) = aggregate_gas_log {
+                    aggregate_gas_log.combine(&log)
+                } else {
+                    log
+                });
             }
         }
 
@@ -901,65 +899,109 @@ mod tests {
         // on a prod-spec'd machine.
         let entry_points = vec![
             (2963., 4103., EntryPoints::Nop),
-            (2426., 3411., EntryPoints::BytesMakeOrChange {
-                data_length: Some(32),
-            }),
+            (
+                2426.,
+                3411.,
+                EntryPoints::BytesMakeOrChange {
+                    data_length: Some(32),
+                },
+            ),
             (2388., 3270., EntryPoints::IncGlobal),
-            (27., 28., EntryPoints::Loop {
-                loop_count: Some(100000),
-                loop_type: LoopType::NoOp,
-            }),
-            (44., 42., EntryPoints::Loop {
-                loop_count: Some(10000),
-                loop_type: LoopType::Arithmetic,
-            }),
+            (
+                27.,
+                28.,
+                EntryPoints::Loop {
+                    loop_count: Some(100000),
+                    loop_type: LoopType::NoOp,
+                },
+            ),
+            (
+                44.,
+                42.,
+                EntryPoints::Loop {
+                    loop_count: Some(10000),
+                    loop_type: LoopType::Arithmetic,
+                },
+            ),
             // This is a cheap bcs (serializing vec<u8>), so not representative of what BCS native call should cost.
             // (175., EntryPoints::Loop { loop_count: Some(1000), loop_type: LoopType::BCS { len: 1024 }}),
-            (666., 1031., EntryPoints::CreateObjects {
-                num_objects: 10,
-                object_payload_size: 0,
-            }),
-            (103., 108., EntryPoints::CreateObjects {
-                num_objects: 10,
-                object_payload_size: 10 * 1024,
-            }),
-            (93., 148., EntryPoints::CreateObjects {
-                num_objects: 100,
-                object_payload_size: 0,
-            }),
-            (43., 50., EntryPoints::CreateObjects {
-                num_objects: 100,
-                object_payload_size: 10 * 1024,
-            }),
-            (1605., 2100., EntryPoints::InitializeVectorPicture {
-                length: 40,
-            }),
+            (
+                666.,
+                1031.,
+                EntryPoints::CreateObjects {
+                    num_objects: 10,
+                    object_payload_size: 0,
+                },
+            ),
+            (
+                103.,
+                108.,
+                EntryPoints::CreateObjects {
+                    num_objects: 10,
+                    object_payload_size: 10 * 1024,
+                },
+            ),
+            (
+                93.,
+                148.,
+                EntryPoints::CreateObjects {
+                    num_objects: 100,
+                    object_payload_size: 0,
+                },
+            ),
+            (
+                43.,
+                50.,
+                EntryPoints::CreateObjects {
+                    num_objects: 100,
+                    object_payload_size: 10 * 1024,
+                },
+            ),
+            (
+                1605.,
+                2100.,
+                EntryPoints::InitializeVectorPicture { length: 40 },
+            ),
             (2850., 3400., EntryPoints::VectorPicture { length: 40 }),
             (2900., 3480., EntryPoints::VectorPictureRead { length: 40 }),
-            (30., 31., EntryPoints::InitializeVectorPicture {
-                length: 30 * 1024,
-            }),
+            (
+                30.,
+                31.,
+                EntryPoints::InitializeVectorPicture { length: 30 * 1024 },
+            ),
             (169., 180., EntryPoints::VectorPicture { length: 30 * 1024 }),
-            (189., 200., EntryPoints::VectorPictureRead {
-                length: 30 * 1024,
-            }),
-            (22., 17.8, EntryPoints::SmartTablePicture {
-                length: 30 * 1024,
-                num_points_per_txn: 200,
-            }),
-            (3., 2.75, EntryPoints::SmartTablePicture {
-                length: 1024 * 1024,
-                num_points_per_txn: 1024,
-            }),
+            (
+                189.,
+                200.,
+                EntryPoints::VectorPictureRead { length: 30 * 1024 },
+            ),
+            (
+                22.,
+                17.8,
+                EntryPoints::SmartTablePicture {
+                    length: 30 * 1024,
+                    num_points_per_txn: 200,
+                },
+            ),
+            (
+                3.,
+                2.75,
+                EntryPoints::SmartTablePicture {
+                    length: 1024 * 1024,
+                    num_points_per_txn: 1024,
+                },
+            ),
             (1351., 1719., EntryPoints::TokenV1MintAndTransferFT),
             (
                 971.,
                 1150.,
                 EntryPoints::TokenV1MintAndTransferNFTSequential,
             ),
-            (1077., 1274., EntryPoints::TokenV2AmbassadorMint {
-                numbered: true,
-            }),
+            (
+                1077.,
+                1274.,
+                EntryPoints::TokenV2AmbassadorMint { numbered: true },
+            ),
         ];
 
         let workflows: Vec<(f64, f64, Box<dyn WorkflowKind>)> = vec![(

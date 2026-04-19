@@ -895,12 +895,15 @@ impl BatchProofQueue {
                     .entry(batch.author())
                     .or_default()
                     .insert(batch_sort_key, batch.clone());
-                self.items.insert(batch_key, QueueItem {
-                    info: batch,
-                    txn_summaries: None,
-                    proof: None,
-                    proof_insertion_time: None,
-                });
+                self.items.insert(
+                    batch_key,
+                    QueueItem {
+                        info: batch,
+                        txn_summaries: None,
+                        proof: None,
+                        proof_insertion_time: None,
+                    },
+                );
             }
         }
         counters::PROOF_QUEUE_COMMIT_DURATION.observe_duration(start.elapsed());

@@ -551,10 +551,13 @@ impl ExpRewriterFunctions for LambdaLifter<'_> {
 
     fn rewrite_local_var(&mut self, node_id: NodeId, sym: Symbol) -> Option<Exp> {
         // duplicates are OK -- they are all the same local at different locations
-        self.try_insert_free_local(sym, VarInfo {
-            node_id,
-            modified: false,
-        });
+        self.try_insert_free_local(
+            sym,
+            VarInfo {
+                node_id,
+                modified: false,
+            },
+        );
         None
     }
 
@@ -569,10 +572,13 @@ impl ExpRewriterFunctions for LambdaLifter<'_> {
 
     fn rewrite_assign(&mut self, _node_id: NodeId, lhs: &Pattern, _rhs: &Exp) -> Option<Exp> {
         for (node_id, name) in lhs.vars() {
-            self.try_insert_free_local(name, VarInfo {
-                node_id,
-                modified: true,
-            });
+            self.try_insert_free_local(
+                name,
+                VarInfo {
+                    node_id,
+                    modified: true,
+                },
+            );
         }
         None
     }
@@ -581,16 +587,22 @@ impl ExpRewriterFunctions for LambdaLifter<'_> {
         if matches!(oper, Operation::Borrow(ReferenceKind::Mutable)) {
             match args[0].as_ref() {
                 ExpData::LocalVar(node_id, name) => {
-                    self.try_insert_free_local(*name, VarInfo {
-                        node_id: *node_id,
-                        modified: true,
-                    });
+                    self.try_insert_free_local(
+                        *name,
+                        VarInfo {
+                            node_id: *node_id,
+                            modified: true,
+                        },
+                    );
                 },
                 ExpData::Temporary(node_id, param) => {
-                    self.free_params.insert(*param, VarInfo {
-                        node_id: *node_id,
-                        modified: true,
-                    });
+                    self.free_params.insert(
+                        *param,
+                        VarInfo {
+                            node_id: *node_id,
+                            modified: true,
+                        },
+                    );
                 },
                 _ => {},
             }

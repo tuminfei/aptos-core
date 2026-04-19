@@ -247,9 +247,12 @@ async fn execute_test_transactions(swarm: &mut LocalSwarm) {
 fn filter_inline_transactions(node_config: &mut NodeConfig, sender_address: AccountAddress) {
     // Create the block transaction filter
     let block_transaction_filter = BlockTransactionFilter::empty()
-        .add_multiple_matchers_filter(false, vec![BlockTransactionMatcher::Transaction(
-            TransactionMatcher::Sender(sender_address),
-        )])
+        .add_multiple_matchers_filter(
+            false,
+            vec![BlockTransactionMatcher::Transaction(
+                TransactionMatcher::Sender(sender_address),
+            )],
+        )
         .add_all_filter(true);
 
     // Update the node config with the new filter
@@ -273,9 +276,12 @@ fn filter_mempool_transactions(node_config: &mut NodeConfig, sender_address: Acc
 fn filter_quorum_store_transactions(node_config: &mut NodeConfig, sender_address: AccountAddress) {
     // Create the batch transaction filter
     let batch_transaction_filter = BatchTransactionFilter::empty()
-        .add_multiple_matchers_filter(false, vec![BatchTransactionMatcher::Transaction(
-            TransactionMatcher::Sender(sender_address),
-        )])
+        .add_multiple_matchers_filter(
+            false,
+            vec![BatchTransactionMatcher::Transaction(
+                TransactionMatcher::Sender(sender_address),
+            )],
+        )
         .add_all_filter(true);
 
     // Update the node config with the new filter

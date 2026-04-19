@@ -169,9 +169,10 @@ fn test_resource_groups(resource_group_charge_as_sum_enabled: bool) {
             vec![],
         );
     } else {
-        h.enable_features(vec![], vec![
-            FeatureFlag::RESOURCE_GROUPS_SPLIT_IN_VM_CHANGE_SET,
-        ]);
+        h.enable_features(
+            vec![],
+            vec![FeatureFlag::RESOURCE_GROUPS_SPLIT_IN_VM_CHANGE_SET],
+        );
     }
 
     let primary_addr = AccountAddress::from_hex_literal("0xcafe").unwrap();

@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[tokio::test]
 async fn move_package_manifest_success() {
-    let pkg = common::make_package("hello", &[(
+    let pkg = common::make_package(
         "hello",
-        "module 0xCAFE::hello {
+        &[(
+            "hello",
+            "module 0xCAFE::hello {
     public fun greet(): u64 { 42 }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let client = common::make_client().await;
     let result = common::call_tool(

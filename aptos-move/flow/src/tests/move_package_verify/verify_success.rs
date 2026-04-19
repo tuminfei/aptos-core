@@ -5,9 +5,11 @@ use crate::tests::common;
 
 #[tokio::test]
 async fn move_package_verify_success() {
-    let pkg = common::make_package("verified", &[(
+    let pkg = common::make_package(
         "verified",
-        "module 0xCAFE::verified {
+        &[(
+            "verified",
+            "module 0xCAFE::verified {
     fun double(x: u64): u64 {
         x * 2
     }
@@ -15,7 +17,8 @@ async fn move_package_verify_success() {
         ensures result == x * 2;
     }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let client = common::make_client().await;
     let result = common::call_tool(

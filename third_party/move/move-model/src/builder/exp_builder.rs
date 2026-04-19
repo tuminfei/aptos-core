@@ -1294,10 +1294,13 @@ impl ExpTranslator<'_, '_, '_> {
                 if is_wildcard(resource) {
                     ResourceSpecifier::DeclaredInModule(module_id)
                 } else {
-                    let mident = sp(specifier.loc, EA::ModuleIdent_ {
-                        address: *address,
-                        module: *module,
-                    });
+                    let mident = sp(
+                        specifier.loc,
+                        EA::ModuleIdent_ {
+                            address: *address,
+                            module: *module,
+                        },
+                    );
                     let maccess = sp(
                         specifier.loc,
                         EA::ModuleAccess_::ModuleAccess(mident, *resource, None),
@@ -2043,11 +2046,13 @@ impl ExpTranslator<'_, '_, '_> {
                 let id = self.new_node_id_with_type_loc(&rt, &loc);
                 if self.mode == ExpTranslationMode::Impl {
                     // Remember information about this spec block for deferred checking.
-                    self.placeholder_map
-                        .insert(id, ExpPlaceholder::SpecBlockInfo {
+                    self.placeholder_map.insert(
+                        id,
+                        ExpPlaceholder::SpecBlockInfo {
                             spec_id: *spec_id,
                             locals: self.get_locals(),
-                        });
+                        },
+                    );
                 }
                 ExpData::Call(id, Operation::NoOp, vec![])
             },
@@ -3854,9 +3859,11 @@ impl ExpTranslator<'_, '_, '_> {
             );
             let global_id = self.new_node_id_with_type_loc(&ghost_mem_ty, loc);
             self.set_node_instantiation(global_id, vec![ghost_mem_ty]);
-            let global_access = ExpData::Call(global_id, Operation::Global(None), vec![
-                zero_addr.into_exp()
-            ]);
+            let global_access = ExpData::Call(
+                global_id,
+                Operation::Global(None),
+                vec![zero_addr.into_exp()],
+            );
             let select_id = self.new_node_id_with_type_loc(&ty, loc);
             self.set_node_instantiation(select_id, instantiation);
             return ExpData::Call(
@@ -4191,10 +4198,11 @@ impl ExpTranslator<'_, '_, '_> {
         );
         self.set_node_instantiation(node_id, vec![inner_ty.clone()]);
         if let (Some(mid), Some(fid)) = self.get_vector_borrow(mutable) {
-            let call = ExpData::Call(node_id, Operation::MoveFunction(mid, fid), vec![
-                vec_exp_e.into_exp(),
-                idx_exp_e.clone().into_exp(),
-            ]);
+            let call = ExpData::Call(
+                node_id,
+                Operation::MoveFunction(mid, fid),
+                vec![vec_exp_e.into_exp(), idx_exp_e.clone().into_exp()],
+            );
             return call;
         } else {
             // To use index notation in vector module
@@ -4209,10 +4217,11 @@ impl ExpTranslator<'_, '_, '_> {
                 if let Some(borrow_fun_entry) = self.parent.parent.fun_table.get(borrow_symbol) {
                     let mid = borrow_fun_entry.module_id;
                     let fid = borrow_fun_entry.fun_id;
-                    return ExpData::Call(node_id, Operation::MoveFunction(mid, fid), vec![
-                        vec_exp_e.into_exp(),
-                        idx_exp_e.clone().into_exp(),
-                    ]);
+                    return ExpData::Call(
+                        node_id,
+                        Operation::MoveFunction(mid, fid),
+                        vec![vec_exp_e.into_exp(), idx_exp_e.clone().into_exp()],
+                    );
                 }
             }
         }
@@ -4388,11 +4397,13 @@ impl ExpTranslator<'_, '_, '_> {
                     self.create_select_oper(&loc, &mid.qualified_inst(sid, inst), field_name)
                 } else {
                     // Create a placeholder for later resolution.
-                    self.placeholder_map
-                        .insert(id, ExpPlaceholder::FieldSelectInfo {
+                    self.placeholder_map.insert(
+                        id,
+                        ExpPlaceholder::FieldSelectInfo {
                             struct_ty: ty,
                             field_name,
-                        });
+                        },
+                    );
                     Operation::NoOp
                 };
                 ExpData::Call(id, oper, vec![exp.into_exp()])
@@ -4513,10 +4524,11 @@ impl ExpTranslator<'_, '_, '_> {
                 } else {
                     FieldId::new(field_name)
                 };
-                ExpData::Call(id, Operation::UpdateField(mid, sid, field_id), vec![
-                    struct_exp.into_exp(),
-                    value_exp.into_exp(),
-                ])
+                ExpData::Call(
+                    id,
+                    Operation::UpdateField(mid, sid, field_id),
+                    vec![struct_exp.into_exp(), value_exp.into_exp()],
+                )
             } else {
                 // Error reported
                 self.new_error_exp()
@@ -5078,13 +5090,15 @@ impl ExpTranslator<'_, '_, '_> {
             None,
         );
         let id = self.new_node_id_with_type_loc(expected_type, loc);
-        self.placeholder_map
-            .insert(id, ExpPlaceholder::ReceiverCallInfo {
+        self.placeholder_map.insert(
+            id,
+            ExpPlaceholder::ReceiverCallInfo {
                 name,
                 generics: generics.map(|g| g.1.clone()),
                 arg_types,
                 result_type: expected_type.clone(),
-            });
+            },
+        );
         ExpData::Call(id, Operation::NoOp, args)
     }
 
@@ -5511,13 +5525,11 @@ impl ExpTranslator<'_, '_, '_> {
     ) -> Option<usize> {
         let struct_entry = self.parent.parent.lookup_struct_entry(struct_id);
         match (&struct_entry.layout, variant) {
-            (StructLayout::Singleton(fields, _), None) => Some(
-                if struct_entry.is_empty_struct {
-                    0
-                } else {
-                    fields.len()
-                },
-            ),
+            (StructLayout::Singleton(fields, _), None) => Some(if struct_entry.is_empty_struct {
+                0
+            } else {
+                fields.len()
+            }),
             (StructLayout::Variants(variants), Some(name)) => variants
                 .iter()
                 .find(|v| v.name == name)

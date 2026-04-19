@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[test]
 fn clean_no_build() {
-    let pkg = common::make_package("fresh", &[(
+    let pkg = common::make_package(
         "fresh",
-        "module 0xCAFE::fresh {
+        &[(
+            "fresh",
+            "module 0xCAFE::fresh {
     public fun hi(): u64 { 1 }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
 
     // Clean without prior build — should be a no-op success

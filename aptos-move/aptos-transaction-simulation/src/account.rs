@@ -208,11 +208,8 @@ impl Account {
     ///
     /// Use this to retrieve or publish the Account CoinStore blob.
     pub fn make_coin_store_access_path(&self) -> AccessPath {
-        AccessPath::resource_access_path(
-            self.addr,
-            CoinStoreResource::<TopoCoinType>::struct_tag(),
-        )
-        .expect("access path in  test")
+        AccessPath::resource_access_path(self.addr, CoinStoreResource::<TopoCoinType>::struct_tag())
+            .expect("access path in  test")
     }
 
     /// Changes the keys for this account to the provided ones.

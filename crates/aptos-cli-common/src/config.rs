@@ -42,13 +42,17 @@ pub enum Network {
 
 impl Display for Network {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Network::Mainnet => "mainnet",
-            Network::Testnet => "testnet",
-            Network::Devnet => "devnet",
-            Network::Local => "local",
-            Network::Custom => "custom",
-        })
+        write!(
+            f,
+            "{}",
+            match self {
+                Network::Mainnet => "mainnet",
+                Network::Testnet => "testnet",
+                Network::Devnet => "devnet",
+                Network::Local => "local",
+                Network::Custom => "custom",
+            }
+        )
     }
 }
 

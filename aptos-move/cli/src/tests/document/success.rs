@@ -5,14 +5,17 @@ use crate::tests::common;
 
 #[test]
 fn document_success() {
-    let pkg = common::make_package("greeter", &[(
+    let pkg = common::make_package(
         "greeter",
-        "/// A greeting module
+        &[(
+            "greeter",
+            "/// A greeting module
 module 0xCAFE::greeter {
     /// Returns 42
     public fun greet(): u64 { 42 }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let output = common::run_cli(&[
         "document",

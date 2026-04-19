@@ -7,9 +7,11 @@ use crate::tests::common;
 async fn move_package_coverage_get_uncovered() {
     let _guard = common::serial_test_lock().await;
     // Create package with two functions, only one tested
-    let pkg = common::make_package("test_cov", &[(
-        "example",
-        r#"module 0xCAFE::example {
+    let pkg = common::make_package(
+        "test_cov",
+        &[(
+            "example",
+            r#"module 0xCAFE::example {
     public fun covered(): u64 { 1 }
     public fun uncovered(): u64 { 2 }
 
@@ -18,7 +20,8 @@ async fn move_package_coverage_get_uncovered() {
         assert!(covered() == 1, 0);
     }
 }"#,
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let client = common::make_client().await;
 

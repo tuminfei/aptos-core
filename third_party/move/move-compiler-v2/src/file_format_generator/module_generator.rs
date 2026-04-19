@@ -990,13 +990,11 @@ impl ModuleGenerator {
         let parameters = self.signature(ctx, loc, vec![ref_struct_ty]);
         let mut ret = vec![];
         let attributes = |offset: usize| {
-            vec![
-                if is_imm {
-                    FF::FunctionAttribute::BorrowFieldImmutable(offset as FF::MemberCount)
-                } else {
-                    FF::FunctionAttribute::BorrowFieldMutable(offset as FF::MemberCount)
-                },
-            ]
+            vec![if is_imm {
+                FF::FunctionAttribute::BorrowFieldImmutable(offset as FF::MemberCount)
+            } else {
+                FF::FunctionAttribute::BorrowFieldMutable(offset as FF::MemberCount)
+            }]
         };
         if struct_env.has_variants() {
             let (ty_offset_to_variant_map, ty_offset_to_order_map) =

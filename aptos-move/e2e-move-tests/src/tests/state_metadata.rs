@@ -27,10 +27,13 @@ fn test_metadata_tracking() {
     let account1 = harness.new_account_at(address1);
 
     // Disable storage slot metadata tracking
-    harness.enable_features(vec![], vec![
-        FeatureFlag::STORAGE_SLOT_METADATA,
-        FeatureFlag::REFUNDABLE_BYTES,
-    ]);
+    harness.enable_features(
+        vec![],
+        vec![
+            FeatureFlag::STORAGE_SLOT_METADATA,
+            FeatureFlag::REFUNDABLE_BYTES,
+        ],
+    );
     // Create and fund account2
     harness.run_transaction_payload(
         &account1,

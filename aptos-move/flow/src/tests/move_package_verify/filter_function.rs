@@ -8,9 +8,11 @@ use crate::tests::common;
 /// `bad` would fail if verified.
 #[tokio::test]
 async fn move_package_verify_filter_function() {
-    let pkg = common::make_package("mixed", &[(
+    let pkg = common::make_package(
         "mixed",
-        "module 0xCAFE::mixed {
+        &[(
+            "mixed",
+            "module 0xCAFE::mixed {
     fun good(x: u64): u64 {
         x + 1
     }
@@ -25,7 +27,8 @@ async fn move_package_verify_filter_function() {
         ensures result == x + 2;
     }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let client = common::make_client().await;
     let result = common::call_tool(

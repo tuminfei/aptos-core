@@ -31,11 +31,11 @@ pub fn test_fail(test_name: &str, network_name: &str, run_id: &str) -> Histogram
 }
 
 pub static API_TEST_ERROR: Lazy<HistogramVec> = Lazy::new(|| {
-    register_histogram_vec!("api_test_error", "Number of user flows which crashed", &[
-        "test_name",
-        "network_name",
-        "run_id"
-    ],)
+    register_histogram_vec!(
+        "api_test_error",
+        "Number of user flows which crashed",
+        &["test_name", "network_name", "run_id"],
+    )
     .unwrap()
 });
 

@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[test]
 fn compile_error_syntax() {
-    let pkg = common::make_package("broken", &[(
+    let pkg = common::make_package(
         "broken",
-        "module 0xCAFE::broken {
+        &[(
+            "broken",
+            "module 0xCAFE::broken {
     pub fun oops( { }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let output = common::run_cli(&[
         "compile",

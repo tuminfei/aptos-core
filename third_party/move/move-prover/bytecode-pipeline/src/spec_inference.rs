@@ -2370,10 +2370,13 @@ impl<'env> DataflowAnalysis for SpecInferenceAnalyzer<'env> {
         }
 
         let mut state_map: StateMap<WPState> = StateMap::new();
-        state_map.insert(cfg.entry_block(), BlockState {
-            pre: initial_state.clone(),
-            post: initial_state.clone(),
-        });
+        state_map.insert(
+            cfg.entry_block(),
+            BlockState {
+                pre: initial_state.clone(),
+                post: initial_state.clone(),
+            },
+        );
 
         while let Some(block_id) = ready_queue.pop_front() {
             // Process this block: execute its instructions on its pre-state
@@ -2407,10 +2410,13 @@ impl<'env> DataflowAnalysis for SpecInferenceAnalyzer<'env> {
                         if branch_info.is_some() {
                             initial_post.origin_block = Some(block_id);
                         }
-                        state_map.insert(*next_block_id, BlockState {
-                            pre: initial_post,
-                            post: initial_state.clone(),
-                        });
+                        state_map.insert(
+                            *next_block_id,
+                            BlockState {
+                                pre: initial_post,
+                                post: initial_state.clone(),
+                            },
+                        );
                     },
                 }
 
@@ -3564,10 +3570,11 @@ impl<'env> SpecInferenceAnalyzer<'env> {
                         && matches!(inner[0].as_ref(), ExpData::Temporary(_, i) if *i == idx)
                     {
                         // Unwrap: old($t_idx) → $t_idx
-                        return ExpData::Call(*id, AstOp::Eq, vec![
-                            inner[0].clone(),
-                            args[1].clone(),
-                        ])
+                        return ExpData::Call(
+                            *id,
+                            AstOp::Eq,
+                            vec![inner[0].clone(), args[1].clone()],
+                        )
                         .into_exp();
                     }
                 }

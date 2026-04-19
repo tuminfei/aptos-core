@@ -70,9 +70,10 @@ fn test_bibe_ct_encrypt_decrypt_ts() {
     let ct_bytes = run_ts("bibe_ciphertext_encrypt", &ek_bytes).unwrap();
     let ct: BIBECiphertext = bcs::from_bytes(&ct_bytes).unwrap();
 
-    let dk = BIBEDecryptionKey::reconstruct(&tc, &[msk_shares[0]
-        .derive_decryption_key_share(&digest)
-        .unwrap()])
+    let dk = BIBEDecryptionKey::reconstruct(
+        &tc,
+        &[msk_shares[0].derive_decryption_key_share(&digest).unwrap()],
+    )
     .unwrap();
 
     let decrypted_plaintext: String = dk
@@ -156,9 +157,10 @@ fn test_ct_encrypt_decrypt_ts() {
     let (digest, pfs) = dk.digest(&mut ids, 0).unwrap();
     let pfs = pfs.compute_all(&dk);
 
-    let dk = BIBEDecryptionKey::reconstruct(&tc, &[msk_shares[0]
-        .derive_decryption_key_share(&digest)
-        .unwrap()])
+    let dk = BIBEDecryptionKey::reconstruct(
+        &tc,
+        &[msk_shares[0].derive_decryption_key_share(&digest).unwrap()],
+    )
     .unwrap();
 
     let decrypted_plaintext: String = dk.decrypt(&ct.prepare(&digest, &pfs).unwrap()).unwrap();

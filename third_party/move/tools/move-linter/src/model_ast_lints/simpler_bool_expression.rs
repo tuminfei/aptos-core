@@ -173,13 +173,11 @@ impl SimplerBoolExpression {
 
         if is_negation_pair(left, right) || is_negation_pair(right, left) {
             let result_value = matches!(op, Or);
-            Some(
-                if result_value {
-                    SimplerBoolPatternType::Tautology
-                } else {
-                    SimplerBoolPatternType::Contradiction
-                },
-            )
+            Some(if result_value {
+                SimplerBoolPatternType::Tautology
+            } else {
+                SimplerBoolPatternType::Contradiction
+            })
         } else {
             None
         }

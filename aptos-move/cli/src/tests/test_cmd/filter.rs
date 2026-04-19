@@ -5,9 +5,11 @@ use crate::tests::common;
 
 #[test]
 fn test_filter() {
-    let pkg = common::make_package("test_filter", &[(
+    let pkg = common::make_package(
         "test_filter",
-        "module 0xCAFE::test_filter {
+        &[(
+            "test_filter",
+            "module 0xCAFE::test_filter {
     #[test]
     fun test_one() {
         assert!(1 == 1, 0);
@@ -18,7 +20,8 @@ fn test_filter() {
         abort 1
     }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let output = common::run_cli(&[
         "test",

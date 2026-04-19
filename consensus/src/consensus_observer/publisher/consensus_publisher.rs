@@ -407,9 +407,12 @@ mod test {
         // Garbage collect the subscriptions and verify that the second peer
         // is removed but not the first (we have no metadata for the second peer).
         consensus_publisher.garbage_collect_subscriptions();
-        verify_active_subscribers(&consensus_publisher, 1, vec![&peer_network_id_1], vec![
-            &peer_network_id_2,
-        ]);
+        verify_active_subscribers(
+            &consensus_publisher,
+            1,
+            vec![&peer_network_id_1],
+            vec![&peer_network_id_2],
+        );
 
         // Add another peer to the peers and metadata
         let peer_network_id_3 = PeerNetworkId::new(network_id, PeerId::random());
@@ -437,9 +440,12 @@ mod test {
 
         // Garbage collect the subscriptions and verify that the first peer is removed
         consensus_publisher.garbage_collect_subscriptions();
-        verify_active_subscribers(&consensus_publisher, 1, vec![&peer_network_id_3], vec![
-            &peer_network_id_1,
-        ]);
+        verify_active_subscribers(
+            &consensus_publisher,
+            1,
+            vec![&peer_network_id_3],
+            vec![&peer_network_id_1],
+        );
     }
 
     #[test]
@@ -478,22 +484,30 @@ mod test {
 
         // Unsubscribe the first peer from consensus updates and verify the unsubscription
         process_unsubscription_for_peer(&consensus_publisher, &peer_network_id_1);
-        verify_active_subscribers(&consensus_publisher, 1, vec![&peer_network_id_2], vec![
-            &peer_network_id_1,
-        ]);
+        verify_active_subscribers(
+            &consensus_publisher,
+            1,
+            vec![&peer_network_id_2],
+            vec![&peer_network_id_1],
+        );
 
         // Unsubscribe the first peer again and verify that the subscription is removed
         process_unsubscription_for_peer(&consensus_publisher, &peer_network_id_1);
-        verify_active_subscribers(&consensus_publisher, 1, vec![&peer_network_id_2], vec![
-            &peer_network_id_1,
-        ]);
+        verify_active_subscribers(
+            &consensus_publisher,
+            1,
+            vec![&peer_network_id_2],
+            vec![&peer_network_id_1],
+        );
 
         // Unsubscribe the second peer and verify that the subscription is removed
         process_unsubscription_for_peer(&consensus_publisher, &peer_network_id_2);
-        verify_active_subscribers(&consensus_publisher, 0, vec![], vec![
-            &peer_network_id_1,
-            &peer_network_id_2,
-        ]);
+        verify_active_subscribers(
+            &consensus_publisher,
+            0,
+            vec![],
+            vec![&peer_network_id_1, &peer_network_id_2],
+        );
     }
 
     #[tokio::test]

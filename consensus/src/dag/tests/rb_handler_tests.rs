@@ -232,10 +232,10 @@ async fn test_node_broadcast_receiver_storage() {
     );
     let sig = rb_receiver.process(node).await.expect("must succeed");
 
-    assert_ok_eq!(storage.get_votes(), vec![(
-        NodeId::new(1, 1, signers[0].author()),
-        sig
-    )],);
+    assert_ok_eq!(
+        storage.get_votes(),
+        vec![(NodeId::new(1, 1, signers[0].author()), sig)],
+    );
 
     let rb_receiver = NodeBroadcastHandler::new(
         dag,

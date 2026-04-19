@@ -287,13 +287,14 @@ mod tests {
         match mempool_listener.select_next_some().now_or_never() {
             Some(mempool_commit_notification) => match user_transaction {
                 Transaction::UserTransaction(signed_transaction) => {
-                    assert_eq!(mempool_commit_notification.transactions, vec![
-                        CommittedTransaction {
+                    assert_eq!(
+                        mempool_commit_notification.transactions,
+                        vec![CommittedTransaction {
                             sender: signed_transaction.sender(),
                             replay_protector: signed_transaction.replay_protector(),
                             use_case: signed_transaction.parse_use_case(),
-                        }
-                    ]);
+                        }]
+                    );
                     assert_eq!(
                         mempool_commit_notification.block_timestamp_usecs,
                         block_timestamp_usecs

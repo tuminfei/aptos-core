@@ -39,7 +39,7 @@ use aptos_types::{
         TransactionPayload, TransactionPayloadInner,
     },
     vm_status::StatusCode,
-    TopoCoinType, CoinType,
+    CoinType, TopoCoinType,
 };
 use aptos_vm::{AptosSimulationVM, AptosVM};
 use move_core_types::{ident_str, language_storage::ModuleId, vm_status::VMStatus};

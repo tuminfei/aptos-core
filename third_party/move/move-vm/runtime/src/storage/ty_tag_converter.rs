@@ -426,10 +426,13 @@ mod tests {
                     },
                     Type::StructInstantiation {
                         idx: StructNameIndex::new(1),
-                        ty_args: Arc::new(vec![Type::Address, Type::Struct {
-                            idx: StructNameIndex::new(2),
-                            ability: AbilityInfo::struct_(AbilitySet::singleton(Ability::Copy)),
-                        }]),
+                        ty_args: Arc::new(vec![
+                            Type::Address,
+                            Type::Struct {
+                                idx: StructNameIndex::new(2),
+                                ability: AbilityInfo::struct_(AbilitySet::singleton(Ability::Copy)),
+                            },
+                        ]),
                         ability: AbilityInfo::generic_struct(
                             AbilitySet::singleton(Ability::Drop),
                             SmallBitVec::new(),

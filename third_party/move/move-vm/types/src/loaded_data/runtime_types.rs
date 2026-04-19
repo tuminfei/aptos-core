@@ -804,15 +804,15 @@ impl Type {
                 "Unexpected TyParam type after translating from TypeTag to Type".to_string(),
             )),
 
-            Type::Vector(ty) => {
-                AbilitySet::polymorphic_abilities(AbilitySet::VECTOR, vec![false], vec![
-                    ty.abilities()?
-                ])
-                .map_err(|e| {
-                    PartialVMError::new(StatusCode::VERIFIER_INVARIANT_VIOLATION)
-                        .with_message(e.to_string())
-                })
-            },
+            Type::Vector(ty) => AbilitySet::polymorphic_abilities(
+                AbilitySet::VECTOR,
+                vec![false],
+                vec![ty.abilities()?],
+            )
+            .map_err(|e| {
+                PartialVMError::new(StatusCode::VERIFIER_INVARIANT_VIOLATION)
+                    .with_message(e.to_string())
+            }),
             Type::Struct { ability, .. } => Ok(ability.base_ability_set),
             Type::StructInstantiation {
                 ty_args,

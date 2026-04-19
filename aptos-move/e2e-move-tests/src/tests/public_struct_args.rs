@@ -258,11 +258,10 @@ fn test_public_enum_with_fields() {
     ));
 
     // Create Color::Custom { r: 100, g: 50, b: 25 } (variant index 3)
-    let color_custom = MoveValue::Struct(MoveStruct::RuntimeVariant(3, vec![
-        MoveValue::U8(100),
-        MoveValue::U8(50),
-        MoveValue::U8(25),
-    ]));
+    let color_custom = MoveValue::Struct(MoveStruct::RuntimeVariant(
+        3,
+        vec![MoveValue::U8(100), MoveValue::U8(50), MoveValue::U8(25)],
+    ));
 
     let status = h.run_entry_function(
         &acc,
@@ -301,10 +300,10 @@ fn test_public_enum_with_struct_fields() {
         MoveValue::U64(5),
         MoveValue::U64(10),
     ]));
-    let shape_circle = MoveValue::Struct(MoveStruct::RuntimeVariant(0, vec![
-        center,
-        MoveValue::U64(15),
-    ]));
+    let shape_circle = MoveValue::Struct(MoveStruct::RuntimeVariant(
+        0,
+        vec![center, MoveValue::U64(15)],
+    ));
 
     let status = h.run_entry_function(
         &acc,
@@ -1151,9 +1150,12 @@ fn test_user_enum_phantom_with_private_type_succeeds() {
     ));
 
     // Create a Wrapper<Hero>::Some { id: 42 } (variant index 0)
-    let wrapper_hero = MoveValue::Struct(MoveStruct::RuntimeVariant(0, vec![
-        MoveValue::U64(42), // id
-    ]));
+    let wrapper_hero = MoveValue::Struct(MoveStruct::RuntimeVariant(
+        0,
+        vec![
+            MoveValue::U64(42), // id
+        ],
+    ));
 
     // Call test_wrapper_hero with Wrapper<Hero>
     // This should SUCCEED because Wrapper<T>'s type parameter is phantom

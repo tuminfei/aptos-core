@@ -101,28 +101,28 @@ fn render_connection_manager_info(connection_manager: &ConnectionManager) -> Con
     );
 
     Container::new(ContainerType::Section)
-        .with_paragraph_attr("Connection Manager", [(
-            "style",
-            "font-size: 24px; font-weight: bold;",
-        )])
+        .with_paragraph_attr(
+            "Connection Manager",
+            [("style", "font-size: 24px; font-weight: bold;")],
+        )
         .with_paragraph(format!("Known latest version: {known_latest_version}."))
-        .with_paragraph_attr("Active Streams", [(
-            "style",
-            "font-size: 16px; font-weight: bold;",
-        )])
+        .with_paragraph_attr(
+            "Active Streams",
+            [("style", "font-size: 16px; font-weight: bold;")],
+        )
         .with_table(active_streams_table)
 }
 
 fn render_cache_info() -> Container {
-    Container::new(ContainerType::Section).with_paragraph_attr("In Memory Cache", [(
-        "style",
-        "font-size: 24px; font-weight: bold;",
-    )])
+    Container::new(ContainerType::Section).with_paragraph_attr(
+        "In Memory Cache",
+        [("style", "font-size: 24px; font-weight: bold;")],
+    )
 }
 
 fn render_file_store_info() -> Container {
-    Container::new(ContainerType::Section).with_paragraph_attr("File Store", [(
-        "style",
-        "font-size: 24px; font-weight: bold;",
-    )])
+    Container::new(ContainerType::Section).with_paragraph_attr(
+        "File Store",
+        [("style", "font-size: 24px; font-weight: bold;")],
+    )
 }

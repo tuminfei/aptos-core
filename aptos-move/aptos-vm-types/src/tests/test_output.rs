@@ -138,9 +138,13 @@ fn test_err_output_equality_with_deltas() {
         )
         .unwrap();
 
-    let vm_output = build_vm_output(vec![], vec![], vec![], vec![], vec![mock_add(
-        delta_key, 300,
-    )]);
+    let vm_output = build_vm_output(
+        vec![],
+        vec![],
+        vec![],
+        vec![],
+        vec![mock_add(delta_key, 300)],
+    );
 
     let vm_status_1 = assert_err!(vm_output.clone().try_materialize(&state_view));
     let vm_status_2 = assert_err!(vm_output.try_materialize_into_transaction_output(&state_view));
@@ -150,9 +154,12 @@ fn test_err_output_equality_with_deltas() {
 
     // Aggregator errors lead to aborts. Because an overflow happens,
     // the code must be 131073.
-    assert_matches!(vm_status_1, VMStatus::MoveAbort {
-        location: AbortLocation::Module(_),
-        code: 131073,
-        ..
-    });
+    assert_matches!(
+        vm_status_1,
+        VMStatus::MoveAbort {
+            location: AbortLocation::Module(_),
+            code: 131073,
+            ..
+        }
+    );
 }

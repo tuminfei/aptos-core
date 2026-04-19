@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[test]
 fn compile_save_metadata() {
-    let pkg = common::make_package("meta", &[(
+    let pkg = common::make_package(
         "meta",
-        "module 0xCAFE::meta {
+        &[(
+            "meta",
+            "module 0xCAFE::meta {
     public fun value(): u64 { 1 }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let output = common::run_cli(&[
         "compile",

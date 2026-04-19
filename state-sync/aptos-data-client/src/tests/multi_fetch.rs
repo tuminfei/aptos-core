@@ -665,10 +665,10 @@ async fn multi_fetch_peer_bucket_sizes_across_buckets() {
     );
 
     // Remove all high priority peers and verify the correct peers are selected
-    utils::disconnect_all_peers(&mut mock_network, &hashset![
-        high_priority_peer_1,
-        high_priority_peer_2
-    ]);
+    utils::disconnect_all_peers(
+        &mut mock_network,
+        &hashset![high_priority_peer_1, high_priority_peer_2],
+    );
     verify_num_selected_peers(&client, &server_version_request, max_peers_for_multi_fetch);
 
     // Disconnect all low priority peers
@@ -686,10 +686,10 @@ async fn multi_fetch_peer_bucket_sizes_across_buckets() {
     );
 
     // Disconnect all peers
-    utils::disconnect_all_peers(&mut mock_network, &hashset![
-        high_priority_peer_1,
-        medium_priority_peer_1
-    ]);
+    utils::disconnect_all_peers(
+        &mut mock_network,
+        &hashset![high_priority_peer_1, medium_priority_peer_1],
+    );
 
     // Verify the request is unserviceable
     utils::verify_request_is_unserviceable(&client, &server_version_request, true);
@@ -1036,10 +1036,10 @@ async fn multi_fetch_simple_peer_selection() {
     );
 
     // Disconnect both high priority peers and verify the low priority peer is selected
-    utils::disconnect_all_peers(&mut mock_network, &hashset![
-        high_priority_peer_1,
-        high_priority_peer_2
-    ]);
+    utils::disconnect_all_peers(
+        &mut mock_network,
+        &hashset![high_priority_peer_1, high_priority_peer_2],
+    );
     utils::verify_selected_peers_match(&client, hashset![low_priority_peer], &storage_request);
 
     // Advertise the data for the medium priority peer and verify the peer is selected

@@ -59,69 +59,87 @@ fn test_observation_aggregation_state() {
     ));
 
     // `ObservedUpdate` with incorrect epoch should be rejected.
-    let result = ob_agg_state.add(addrs[0], ObservedUpdateResponse {
-        epoch: 998,
-        update: ObservedUpdate {
-            author: addrs[0],
-            observed: view_0.clone(),
-            signature: private_keys[0].sign(&view_0).unwrap(),
+    let result = ob_agg_state.add(
+        addrs[0],
+        ObservedUpdateResponse {
+            epoch: 998,
+            update: ObservedUpdate {
+                author: addrs[0],
+                observed: view_0.clone(),
+                signature: private_keys[0].sign(&view_0).unwrap(),
+            },
         },
-    });
+    );
     assert!(result.is_err());
 
     // `ObservedUpdate` authored by X but sent by Y should be rejected.
-    let result = ob_agg_state.add(addrs[1], ObservedUpdateResponse {
-        epoch: 999,
-        update: ObservedUpdate {
-            author: addrs[0],
-            observed: view_0.clone(),
-            signature: private_keys[0].sign(&view_0).unwrap(),
+    let result = ob_agg_state.add(
+        addrs[1],
+        ObservedUpdateResponse {
+            epoch: 999,
+            update: ObservedUpdate {
+                author: addrs[0],
+                observed: view_0.clone(),
+                signature: private_keys[0].sign(&view_0).unwrap(),
+            },
         },
-    });
+    );
     assert!(result.is_err());
 
     // `ObservedUpdate` that cannot be verified should be rejected.
-    let result = ob_agg_state.add(addrs[2], ObservedUpdateResponse {
-        epoch: 999,
-        update: ObservedUpdate {
-            author: addrs[2],
-            observed: view_0.clone(),
-            signature: private_keys[2].sign(&view_1).unwrap(),
+    let result = ob_agg_state.add(
+        addrs[2],
+        ObservedUpdateResponse {
+            epoch: 999,
+            update: ObservedUpdate {
+                author: addrs[2],
+                observed: view_0.clone(),
+                signature: private_keys[2].sign(&view_1).unwrap(),
+            },
         },
-    });
+    );
     assert!(result.is_err());
 
     // Good `ObservedUpdate` should be accepted.
-    let result = ob_agg_state.add(addrs[3], ObservedUpdateResponse {
-        epoch: 999,
-        update: ObservedUpdate {
-            author: addrs[3],
-            observed: view_0.clone(),
-            signature: private_keys[3].sign(&view_0).unwrap(),
+    let result = ob_agg_state.add(
+        addrs[3],
+        ObservedUpdateResponse {
+            epoch: 999,
+            update: ObservedUpdate {
+                author: addrs[3],
+                observed: view_0.clone(),
+                signature: private_keys[3].sign(&view_0).unwrap(),
+            },
         },
-    });
+    );
     assert!(matches!(result, Ok(None)));
 
     // `ObservedUpdate` from contributed author should be ignored.
-    let result = ob_agg_state.add(addrs[3], ObservedUpdateResponse {
-        epoch: 999,
-        update: ObservedUpdate {
-            author: addrs[3],
-            observed: view_0.clone(),
-            signature: private_keys[3].sign(&view_0).unwrap(),
+    let result = ob_agg_state.add(
+        addrs[3],
+        ObservedUpdateResponse {
+            epoch: 999,
+            update: ObservedUpdate {
+                author: addrs[3],
+                observed: view_0.clone(),
+                signature: private_keys[3].sign(&view_0).unwrap(),
+            },
         },
-    });
+    );
     assert!(matches!(result, Ok(None)));
 
     // Quorum-certified update should be returned if after adding an `ObservedUpdate`, the threshold is exceeded.
-    let result = ob_agg_state.add(addrs[4], ObservedUpdateResponse {
-        epoch: 999,
-        update: ObservedUpdate {
-            author: addrs[4],
-            observed: view_0.clone(),
-            signature: private_keys[4].sign(&view_0).unwrap(),
+    let result = ob_agg_state.add(
+        addrs[4],
+        ObservedUpdateResponse {
+            epoch: 999,
+            update: ObservedUpdate {
+                author: addrs[4],
+                observed: view_0.clone(),
+                signature: private_keys[4].sign(&view_0).unwrap(),
+            },
         },
-    });
+    );
     let QuorumCertifiedUpdate {
         update: observed,
         multi_sig,

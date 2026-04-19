@@ -16,9 +16,10 @@ impl Default for TemplateContext {
         let mut context = Context::new();
         let mut tera = Tera::default();
         // Declare constants
-        context.insert("integer_types", &[
-            "u8", "u16", "u32", "u64", "u128", "u256",
-        ]);
+        context.insert(
+            "integer_types",
+            &["u8", "u16", "u32", "u64", "u128", "u256"],
+        );
         // Declare functions
         tera.register_function(
             "mangle",

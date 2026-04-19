@@ -93,11 +93,14 @@ fn test_serialization() {
         ident_str!("bcs").to_owned(),
     ));
     run_entry_functions(func_names, |status: ExecutionStatus| {
-        assert_eq!(status, ExecutionStatus::MoveAbort {
-            location: bcs_location.clone(),
-            code: NFE_BCS_SERIALIZATION_FAILURE,
-            info: None,
-        });
+        assert_eq!(
+            status,
+            ExecutionStatus::MoveAbort {
+                location: bcs_location.clone(),
+                code: NFE_BCS_SERIALIZATION_FAILURE,
+                info: None,
+            }
+        );
     });
 }
 

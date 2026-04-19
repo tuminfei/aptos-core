@@ -175,10 +175,13 @@ fn test_compilation_metadata_with_changes(
     );
     let path = builder.write_to_temp().unwrap();
 
-    let package = BuiltPackage::build(path.path().to_path_buf(), BuildOptions {
-        compiler_version: Some(compiler_version),
-        ..BuildOptions::default()
-    })
+    let package = BuiltPackage::build(
+        path.path().to_path_buf(),
+        BuildOptions {
+            compiler_version: Some(compiler_version),
+            ..BuildOptions::default()
+        },
+    )
     .expect("building package must succeed");
     let origin_code = package.extract_code();
     let mut compiled_module = CompiledModule::deserialize(&origin_code[0]).unwrap();
@@ -222,10 +225,13 @@ fn test_compilation_metadata_internal(
     } else {
         CompilerVersion::latest_stable()
     };
-    let package = BuiltPackage::build(path.path().to_path_buf(), BuildOptions {
-        compiler_version: Some(compiler_version),
-        ..BuildOptions::default()
-    })
+    let package = BuiltPackage::build(
+        path.path().to_path_buf(),
+        BuildOptions {
+            compiler_version: Some(compiler_version),
+            ..BuildOptions::default()
+        },
+    )
     .expect("building package must succeed");
 
     let package_metadata = package
@@ -278,10 +284,13 @@ fn test_compilation_metadata_script_internal(
     } else {
         CompilerVersion::latest_stable()
     };
-    let package = BuiltPackage::build(path.path().to_path_buf(), BuildOptions {
-        compiler_version: Some(compiler_version),
-        ..BuildOptions::default()
-    })
+    let package = BuiltPackage::build(
+        path.path().to_path_buf(),
+        BuildOptions {
+            compiler_version: Some(compiler_version),
+            ..BuildOptions::default()
+        },
+    )
     .expect("building package must succeed");
 
     let code = package.extract_script_code().into_iter().next().unwrap();

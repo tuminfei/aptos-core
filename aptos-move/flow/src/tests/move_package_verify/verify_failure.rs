@@ -5,9 +5,11 @@ use crate::tests::common;
 
 #[tokio::test]
 async fn move_package_verify_failure() {
-    let pkg = common::make_package("bad_spec", &[(
+    let pkg = common::make_package(
         "bad_spec",
-        "module 0xCAFE::bad_spec {
+        &[(
+            "bad_spec",
+            "module 0xCAFE::bad_spec {
     fun double(x: u64): u64 {
         x * 2
     }
@@ -15,7 +17,8 @@ async fn move_package_verify_failure() {
         ensures result == x + 1;
     }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let client = common::make_client().await;
     let result = common::call_tool(

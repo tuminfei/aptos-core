@@ -8,10 +8,12 @@ use crate::tests::common;
 #[tokio::test]
 async fn move_package_coverage_untested_module() {
     let _guard = common::serial_test_lock().await;
-    let pkg = common::make_package("test_cov_untested", &[
-        (
-            "tested",
-            r#"module 0xCAFE::tested {
+    let pkg = common::make_package(
+        "test_cov_untested",
+        &[
+            (
+                "tested",
+                r#"module 0xCAFE::tested {
     public fun add(a: u64, b: u64): u64 { a + b }
 
     #[test]
@@ -19,18 +21,19 @@ async fn move_package_coverage_untested_module() {
         assert!(add(2, 3) == 5, 0);
     }
 }"#,
-        ),
-        (
-            "untested",
-            r#"module 0xCAFE::untested {
+            ),
+            (
+                "untested",
+                r#"module 0xCAFE::untested {
     public fun multiply(a: u64, b: u64): u64 { a * b }
     public fun subtract(a: u64, b: u64): u64 {
         assert!(a >= b, 1);
         a - b
     }
 }"#,
-        ),
-    ]);
+            ),
+        ],
+    );
     let dir = pkg.path().to_str().unwrap();
     let client = common::make_client().await;
 

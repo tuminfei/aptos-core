@@ -259,9 +259,11 @@ mod tests {
         fs::write(&existing, "content").unwrap();
 
         let (watcher, invalidated) = make_watcher();
-        watcher.watch_package("pkg1", dir.path(), &[existing
-            .to_string_lossy()
-            .into_owned()]);
+        watcher.watch_package(
+            "pkg1",
+            dir.path(),
+            &[existing.to_string_lossy().into_owned()],
+        );
 
         // Add a brand-new file to the watched directory.
         fs::write(dir.path().join("new_module.move"), "module 0x1::m {}").unwrap();

@@ -88,12 +88,16 @@ fn test_script_with_object_parameter() {
     .expect("building package must succeed");
 
     let code = package.extract_script_code().into_iter().next().unwrap();
-    let script = Script::new(code, vec![], vec![
-        TransactionArgument::Serialized(bcs::to_bytes(&metadata).unwrap()),
-        TransactionArgument::Serialized(bcs::to_bytes(&vec![alice.address()]).unwrap()),
-        TransactionArgument::Serialized(bcs::to_bytes(&vec![bob.address()]).unwrap()),
-        TransactionArgument::Serialized(bcs::to_bytes(&vec![30u64]).unwrap()),
-    ]);
+    let script = Script::new(
+        code,
+        vec![],
+        vec![
+            TransactionArgument::Serialized(bcs::to_bytes(&metadata).unwrap()),
+            TransactionArgument::Serialized(bcs::to_bytes(&vec![alice.address()]).unwrap()),
+            TransactionArgument::Serialized(bcs::to_bytes(&vec![bob.address()]).unwrap()),
+            TransactionArgument::Serialized(bcs::to_bytes(&vec![30u64]).unwrap()),
+        ],
+    );
 
     let txn = TransactionBuilder::new(alice.clone())
         .script(script.clone())
@@ -162,14 +166,18 @@ fn test_script_with_signer_parameter() {
     let code = package.extract_script_code().into_iter().next().unwrap();
 
     let txn = TransactionBuilder::new(alice.clone())
-        .script(Script::new(code, vec![], vec![
-            TransactionArgument::U64(0),
-            TransactionArgument::Serialized(
-                MoveValue::Signer(*alice.address())
-                    .simple_serialize()
-                    .unwrap(),
-            ),
-        ]))
+        .script(Script::new(
+            code,
+            vec![],
+            vec![
+                TransactionArgument::U64(0),
+                TransactionArgument::Serialized(
+                    MoveValue::Signer(*alice.address())
+                        .simple_serialize()
+                        .unwrap(),
+                ),
+            ],
+        ))
         .sequence_number(10)
         .max_gas_amount(1_000_000)
         .gas_unit_price(1)
@@ -220,13 +228,17 @@ fn test_two_to_two_transfer() {
     let david_start = read_coin(&h, david.address());
 
     let code = package.extract_script_code()[0].clone();
-    let script = Script::new(code, vec![], vec![
-        TransactionArgument::U64(amount_alice),
-        TransactionArgument::U64(amount_bob),
-        TransactionArgument::Address(*carol.address()),
-        TransactionArgument::Address(*david.address()),
-        TransactionArgument::U64(amount_carol),
-    ]);
+    let script = Script::new(
+        code,
+        vec![],
+        vec![
+            TransactionArgument::U64(amount_alice),
+            TransactionArgument::U64(amount_bob),
+            TransactionArgument::Address(*carol.address()),
+            TransactionArgument::Address(*david.address()),
+            TransactionArgument::U64(amount_carol),
+        ],
+    );
 
     let transaction = TransactionBuilder::new(alice.clone())
         .secondary_signers(vec![bob.clone()])

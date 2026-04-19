@@ -269,52 +269,60 @@ mod tests {
         let mut meta = StateValueMetadata::new(0, 0, &ts);
 
         // create new
-        let ChargeAndRefund { charge: _, refund } =
-            pricing.charge_refund_write_op(&params, WriteOpInfo {
+        let ChargeAndRefund { charge: _, refund } = pricing.charge_refund_write_op(
+            &params,
+            WriteOpInfo {
                 key: &key,
                 op_size: WriteOpSize::Creation { write_len: 2 },
                 prev_size: 0,
                 metadata_mut: &mut meta,
-            });
+            },
+        );
         assert_eq!(refund, 0.into());
         assert_eq!(meta.bytes_deposit(), 25);
         assert_eq!(meta.slot_deposit(), 1000);
 
         // legacy slots without bytes deposit recorded doesn't get charged if size doesn't increase
         meta.set_bytes_deposit(0); // marks it paid 0 bytes deposit
-        let ChargeAndRefund { charge, refund } =
-            pricing.charge_refund_write_op(&params, WriteOpInfo {
+        let ChargeAndRefund { charge, refund } = pricing.charge_refund_write_op(
+            &params,
+            WriteOpInfo {
                 key: &key,
                 op_size: WriteOpSize::Modification { write_len: 2 },
                 prev_size: 2,
                 metadata_mut: &mut meta,
-            });
+            },
+        );
         assert_eq!(charge, 0.into());
         assert_eq!(refund, 0.into());
         assert_eq!(meta.bytes_deposit(), 0);
 
         // but if it does increase in size, new bytes gets charged, at the latest rate
         params.storage_fee_per_state_byte = 20.into();
-        let ChargeAndRefund { charge, refund } =
-            pricing.charge_refund_write_op(&params, WriteOpInfo {
+        let ChargeAndRefund { charge, refund } = pricing.charge_refund_write_op(
+            &params,
+            WriteOpInfo {
                 key: &key,
                 op_size: WriteOpSize::Modification { write_len: 4 },
                 prev_size: 2,
                 metadata_mut: &mut meta,
-            });
+            },
+        );
         assert_eq!(charge, 40.into());
         assert_eq!(refund, 0.into());
         assert_eq!(meta.bytes_deposit(), 40);
 
         // price lowered, adding a new byte, the target deposit is (3 + 5) * 10 = 80
         params.storage_fee_per_state_byte = 10.into();
-        let ChargeAndRefund { charge, refund } =
-            pricing.charge_refund_write_op(&params, WriteOpInfo {
+        let ChargeAndRefund { charge, refund } = pricing.charge_refund_write_op(
+            &params,
+            WriteOpInfo {
                 key: &key,
                 op_size: WriteOpSize::Modification { write_len: 5 },
                 prev_size: 4,
                 metadata_mut: &mut meta,
-            });
+            },
+        );
         assert_eq!(charge, 10.into());
         assert_eq!(refund, 0.into());
         assert_eq!(meta.bytes_deposit(), 50);
@@ -323,13 +331,15 @@ mod tests {
         // the charge is lower than one byte according to the current pricing so the
         // deposit won't go beyond the target deposit
         params.storage_fee_per_state_byte = 6.into();
-        let ChargeAndRefund { charge, refund } =
-            pricing.charge_refund_write_op(&params, WriteOpInfo {
+        let ChargeAndRefund { charge, refund } = pricing.charge_refund_write_op(
+            &params,
+            WriteOpInfo {
                 key: &key,
                 op_size: WriteOpSize::Modification { write_len: 6 },
                 prev_size: 5,
                 metadata_mut: &mut meta,
-            });
+            },
+        );
         assert_eq!(charge, 4.into());
         assert_eq!(refund, 0.into());
         assert_eq!(meta.bytes_deposit(), 54);
@@ -337,37 +347,43 @@ mod tests {
         // price lowered, adding a new byte, the target deposit is (3 + 7) * 5 = 50
         // no new charge is incurred
         params.storage_fee_per_state_byte = 5.into();
-        let ChargeAndRefund { charge, refund } =
-            pricing.charge_refund_write_op(&params, WriteOpInfo {
+        let ChargeAndRefund { charge, refund } = pricing.charge_refund_write_op(
+            &params,
+            WriteOpInfo {
                 key: &key,
                 op_size: WriteOpSize::Modification { write_len: 7 },
                 prev_size: 6,
                 metadata_mut: &mut meta,
-            });
+            },
+        );
         assert_eq!(charge, 0.into());
         assert_eq!(refund, 0.into());
         assert_eq!(meta.bytes_deposit(), 54);
 
         // no refund for reducing size
-        let ChargeAndRefund { charge, refund } =
-            pricing.charge_refund_write_op(&params, WriteOpInfo {
+        let ChargeAndRefund { charge, refund } = pricing.charge_refund_write_op(
+            &params,
+            WriteOpInfo {
                 key: &key,
                 op_size: WriteOpSize::Modification { write_len: 2 },
                 prev_size: 7,
                 metadata_mut: &mut meta,
-            });
+            },
+        );
         assert_eq!(charge, 0.into());
         assert_eq!(refund, 0.into());
         assert_eq!(meta.bytes_deposit(), 54);
 
         // refund all on deletion
-        let ChargeAndRefund { charge, refund } =
-            pricing.charge_refund_write_op(&params, WriteOpInfo {
+        let ChargeAndRefund { charge, refund } = pricing.charge_refund_write_op(
+            &params,
+            WriteOpInfo {
                 key: &key,
                 op_size: WriteOpSize::Deletion,
                 prev_size: 2,
                 metadata_mut: &mut meta,
-            });
+            },
+        );
         assert_eq!(charge, 0.into());
         assert_eq!(refund, 1054.into());
         // no need to clear up the metadata for deletions

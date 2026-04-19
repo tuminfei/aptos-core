@@ -8,10 +8,12 @@ use crate::tests::common;
 /// even though `bad_mod` would fail if verified.
 #[tokio::test]
 async fn move_package_verify_filter_module() {
-    let pkg = common::make_package("two_mods", &[
-        (
-            "good_mod",
-            "module 0xCAFE::good_mod {
+    let pkg = common::make_package(
+        "two_mods",
+        &[
+            (
+                "good_mod",
+                "module 0xCAFE::good_mod {
     fun inc(x: u64): u64 {
         x + 1
     }
@@ -19,10 +21,10 @@ async fn move_package_verify_filter_module() {
         ensures result == x + 1;
     }
 }",
-        ),
-        (
-            "bad_mod",
-            "module 0xCAFE::bad_mod {
+            ),
+            (
+                "bad_mod",
+                "module 0xCAFE::bad_mod {
     fun dec(x: u64): u64 {
         x - 1
     }
@@ -30,8 +32,9 @@ async fn move_package_verify_filter_module() {
         ensures result == x + 1;
     }
 }",
-        ),
-    ]);
+            ),
+        ],
+    );
     let dir = pkg.path().to_str().unwrap();
     let client = common::make_client().await;
     let result = common::call_tool(

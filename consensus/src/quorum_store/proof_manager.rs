@@ -120,8 +120,11 @@ impl ProofManager {
 
         counters::NUM_BATCHES_WITHOUT_PROOF_OF_STORE
             .observe(self.batch_proof_queue.num_batches_without_proof() as f64);
-        counters::PROOF_QUEUE_FULLY_UTILIZED
-            .observe(if proof_queue_fully_utilized { 1.0 } else { 0.0 });
+        counters::PROOF_QUEUE_FULLY_UTILIZED.observe(if proof_queue_fully_utilized {
+            1.0
+        } else {
+            0.0
+        });
 
         let (opt_batches, opt_batch_txns_size) =
             // TODO(ibalajiarun): Support unique txn calculation

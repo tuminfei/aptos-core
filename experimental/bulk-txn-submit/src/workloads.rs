@@ -135,9 +135,9 @@ impl SignedTransactionBuilder<AccountAddress> for TransferAptSignedTransactionBu
         account: &LocalAccount,
         txn_factory: &TransactionFactory,
     ) -> SignedTransaction {
-        account.sign_with_transaction_builder(txn_factory.payload(
-            aptos_stdlib::topo_coin_transfer(*data, self.amount_to_send),
-        ))
+        account.sign_with_transaction_builder(
+            txn_factory.payload(aptos_stdlib::topo_coin_transfer(*data, self.amount_to_send)),
+        )
     }
 
     fn success_output(

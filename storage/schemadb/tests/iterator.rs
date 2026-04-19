@@ -160,9 +160,10 @@ fn test_seek_to_first() {
 
     let mut iter = db.iter();
     iter.seek_to_first();
-    assert_eq!(collect_values(iter), [
-        100, 102, 104, 110, 112, 114, 200, 202
-    ]);
+    assert_eq!(
+        collect_values(iter),
+        [100, 102, 104, 110, 112, 114, 200, 202]
+    );
 
     let mut iter = db.rev_iter();
     iter.seek_to_first();
@@ -179,9 +180,10 @@ fn test_seek_to_last() {
 
     let mut iter = db.rev_iter();
     iter.seek_to_last();
-    assert_eq!(collect_values(iter), [
-        202, 200, 114, 112, 110, 104, 102, 100
-    ]);
+    assert_eq!(
+        collect_values(iter),
+        [202, 200, 114, 112, 110, 104, 102, 100]
+    );
 }
 
 #[test]
@@ -299,18 +301,26 @@ impl TestDBWithPrefixExtractor {
         let mut db_opts = rocksdb::Options::default();
         db_opts.create_if_missing(true);
         db_opts.create_missing_column_families(true);
-        let db = DB::open_cf(db_opts, tmpdir.path(), "test_with_prefix", vec![
-            ColumnFamilyDescriptor::new(DEFAULT_COLUMN_FAMILY_NAME, rocksdb::Options::default()),
-            ColumnFamilyDescriptor::new(TestSchema::COLUMN_FAMILY_NAME, {
-                let mut opts = rocksdb::Options::default();
-                opts.set_prefix_extractor(SliceTransform::create(
-                    "2_prefix_extractor",
-                    |key| &key[0..std::cmp::min(8, key.len())],
-                    None,
-                ));
-                opts
-            }),
-        ])
+        let db = DB::open_cf(
+            db_opts,
+            tmpdir.path(),
+            "test_with_prefix",
+            vec![
+                ColumnFamilyDescriptor::new(
+                    DEFAULT_COLUMN_FAMILY_NAME,
+                    rocksdb::Options::default(),
+                ),
+                ColumnFamilyDescriptor::new(TestSchema::COLUMN_FAMILY_NAME, {
+                    let mut opts = rocksdb::Options::default();
+                    opts.set_prefix_extractor(SliceTransform::create(
+                        "2_prefix_extractor",
+                        |key| &key[0..std::cmp::min(8, key.len())],
+                        None,
+                    ));
+                    opts
+                }),
+            ],
+        )
         .unwrap();
 
         // delete later
@@ -489,18 +499,20 @@ fn test_iter_with_max_skipped_deletions() {
 
     let mut iter = db.iter_with_max_skipped_deletions(3);
     iter.seek(&TestKey(1, 5, 5)).unwrap();
-    assert_eq!(collect_incomplete(&mut iter), [
-        155, 177, 222, 277, 288, 299
-    ]);
+    assert_eq!(
+        collect_incomplete(&mut iter),
+        [155, 177, 222, 277, 288, 299]
+    );
 
     // -----------------
     // max skip 4
 
     let mut iter = db.iter_with_max_skipped_deletions(4);
     iter.seek(&TestKey(0, 0, 0)).unwrap();
-    assert_eq!(collect_values_mut(&mut iter), [
-        122, 123, 125, 155, 177, 222, 277, 288, 299, 399
-    ]);
+    assert_eq!(
+        collect_values_mut(&mut iter),
+        [122, 123, 125, 155, 177, 222, 277, 288, 299, 399]
+    );
 }
 
 #[test]

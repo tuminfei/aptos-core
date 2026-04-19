@@ -16,13 +16,16 @@ fn prove_failure() {
         return;
     }
 
-    let pkg = common::make_package("prove_bad", &[(
+    let pkg = common::make_package(
         "prove_bad",
-        "module 0xCAFE::prove_bad {
+        &[(
+            "prove_bad",
+            "module 0xCAFE::prove_bad {
     fun add(a: u64, b: u64): u64 { a + b }
     spec add { ensures result == a - b; }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let output = common::run_cli(&[
         "prove",

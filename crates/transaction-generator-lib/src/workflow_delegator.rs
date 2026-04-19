@@ -340,13 +340,11 @@ impl WorkflowTxnGeneratorCreator {
                 Some(next_pool.clone()),
             )));
 
-            stage_switch_conditions.push(
-                if special_last {
-                    StageSwitchCondition::new_max_transactions(loop_last_num_times.unwrap())
-                } else {
-                    StageSwitchCondition::WhenPoolBecomesEmpty(prev_pool)
-                },
-            );
+            stage_switch_conditions.push(if special_last {
+                StageSwitchCondition::new_max_transactions(loop_last_num_times.unwrap())
+            } else {
+                StageSwitchCondition::WhenPoolBecomesEmpty(prev_pool)
+            });
             prev_pool = next_pool;
         }
 

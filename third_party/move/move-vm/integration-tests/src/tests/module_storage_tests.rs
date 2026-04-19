@@ -206,9 +206,10 @@ fn test_dependency_dag_traversal(enable_lazy_loading: bool) {
         assert_ok!(
             module_storage.unmetered_get_eagerly_verified_module(a_id.address(), a_id.name())
         );
-        module_storage.assert_cached_state(vec![], vec![
-            &a_id, &b_id, &c_id, &d_id, &e_id, &f_id, &g_id,
-        ]);
+        module_storage.assert_cached_state(
+            vec![],
+            vec![&a_id, &b_id, &c_id, &d_id, &e_id, &f_id, &g_id],
+        );
     }
 }
 

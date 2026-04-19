@@ -47,13 +47,16 @@ async fn test_abi(use_txn_payload_v2_format: bool, use_orderless_transactions: b
     // All entry (including private entry), view (including private view), and public
     // functions should be in the ABI. Private functions that are neither entry nor
     // view should not be included.
-    assert_eq!(exposed_function_names, [
-        "private_entry_function",
-        "private_view_function",
-        "public_entry_function",
-        "public_function",
-        "public_view_function",
-    ]);
+    assert_eq!(
+        exposed_function_names,
+        [
+            "private_entry_function",
+            "private_view_function",
+            "public_entry_function",
+            "public_function",
+            "public_view_function",
+        ]
+    );
 
     // Confirm that view functions are reported as view functions with correct visibility.
     let public_view_function = exposed_functions

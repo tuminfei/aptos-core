@@ -312,9 +312,11 @@ async fn prioritized_peer_optimistic_fetch_distance_latency_selection() {
         utils::verify_selected_peers_match(&client, hashset![last_priority_peer], &storage_request);
 
         // Disconnect the final high priority peer and remove it from the list of peers
-        disconnect_and_remove_peers(&mut mock_network, &mut high_priority_peers, &hashset![
-            last_priority_peer
-        ]);
+        disconnect_and_remove_peers(
+            &mut mock_network,
+            &mut high_priority_peers,
+            &hashset![last_priority_peer],
+        );
 
         // Verify a medium priority peer is selected by distance and latency
         verify_peers_selected_by_distance_and_latency(
@@ -631,11 +633,14 @@ async fn prioritized_peer_subscription_requests() {
         }
 
         // Disconnect all peers and verify no peers can service the request
-        utils::disconnect_all_peers(&mut mock_network, &hashset![
-            high_priority_peer_1,
-            high_priority_peer_2,
-            medium_priority_peer
-        ]);
+        utils::disconnect_all_peers(
+            &mut mock_network,
+            &hashset![
+                high_priority_peer_1,
+                high_priority_peer_2,
+                medium_priority_peer
+            ],
+        );
         utils::verify_request_is_unserviceable(&client, &storage_request, true);
     }
 }
@@ -746,9 +751,11 @@ async fn prioritized_peer_subscription_distance_latency_selection() {
         );
 
         // Disconnect the final high priority peer and remove it from the list of peers
-        disconnect_and_remove_peers(&mut mock_network, &mut high_priority_peers, &hashset![
-            last_priority_peer
-        ]);
+        disconnect_and_remove_peers(
+            &mut mock_network,
+            &mut high_priority_peers,
+            &hashset![last_priority_peer],
+        );
 
         // Verify the request is unserviceable (the last request went to the high priority peer)
         utils::verify_request_is_unserviceable(&client, &storage_request, false);

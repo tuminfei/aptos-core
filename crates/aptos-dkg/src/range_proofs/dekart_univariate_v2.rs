@@ -489,11 +489,16 @@ impl<E: Pairing> traits::BatchedRangeProof<E> for Proof<E> {
         );
 
         // Step 1b
-        fiat_shamir::append_initial_data(&mut fs_t, Self::DST, vk, PublicStatement {
-            n,
-            ell,
-            comm: TrivialShape(comm_g1),
-        });
+        fiat_shamir::append_initial_data(
+            &mut fs_t,
+            Self::DST,
+            vk,
+            PublicStatement {
+                n,
+                ell,
+                comm: TrivialShape(comm_g1),
+            },
+        );
         #[cfg(feature = "range_proof_timing_univariate_v2")]
         print_cumulative("unpack pk + append_initial_data", start.elapsed());
 
@@ -869,11 +874,16 @@ impl<E: Pairing> traits::BatchedRangeProof<E> for Proof<E> {
         } = self;
 
         // Step 2a
-        fiat_shamir::append_initial_data(&mut fs_t, Self::DST, vk, PublicStatement {
-            n,
-            ell,
-            comm: comm.clone(),
-        });
+        fiat_shamir::append_initial_data(
+            &mut fs_t,
+            Self::DST,
+            vk,
+            PublicStatement {
+                n,
+                ell,
+                comm: comm.clone(),
+            },
+        );
 
         // Step 2b
         fiat_shamir::append_hat_f_commitment::<E>(&mut fs_t, &hatC);

@@ -478,9 +478,13 @@ pub async fn simulate_multistep_proposal(
         let txn = account
             .account()
             .transaction()
-            .script(Script::new(script_blob, vec![], vec![
-                TransactionArgument::U64(DUMMY_PROPOSAL_ID), // dummy proposal id, ignored by the patched function
-            ]))
+            .script(Script::new(
+                script_blob,
+                vec![],
+                vec![
+                    TransactionArgument::U64(DUMMY_PROPOSAL_ID), // dummy proposal id, ignored by the patched function
+                ],
+            ))
             .chain_id(chain_id.chain_id())
             .sequence_number(script_idx as u64)
             .gas_unit_price(gas_params.vm.txn.min_price_per_gas_unit.into())

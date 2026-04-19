@@ -110,11 +110,14 @@ pub fn create_prebuilt_packages_bundle(
             bail!("For benchmarks, define 1 script per package to make name resolution easier")
         }
 
-        packages.insert(package.name().to_owned(), PrebuiltPackage {
-            metadata,
-            modules,
-            scripts,
-        });
+        packages.insert(
+            package.name().to_owned(),
+            PrebuiltPackage {
+                metadata,
+                modules,
+                scripts,
+            },
+        );
     }
 
     let bundle = PrebuiltPackagesBundle { packages };

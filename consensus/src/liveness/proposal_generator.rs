@@ -795,13 +795,11 @@ impl ProposalGenerator {
                 execution_backpressure_applied = true;
             }
         }
-        EXECUTION_BACKPRESSURE_ON_PROPOSAL_TRIGGERED.observe(
-            if execution_backpressure_applied {
-                1.0
-            } else {
-                0.0
-            },
-        );
+        EXECUTION_BACKPRESSURE_ON_PROPOSAL_TRIGGERED.observe(if execution_backpressure_applied {
+            1.0
+        } else {
+            0.0
+        });
 
         let max_block_txns_after_filtering = values_max_block_txns_after_filtering
             .into_iter()

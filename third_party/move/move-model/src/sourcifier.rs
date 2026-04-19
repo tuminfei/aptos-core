@@ -329,21 +329,24 @@ impl<'a> Sourcifier<'a> {
                 // Only print type suffix when not in spec context (specs use arbitrary precision)
                 if !for_spec {
                     if let Some(Type::Primitive(prim)) = ty {
-                        emit!(self.writer, match prim {
-                            PrimitiveType::U8 => "u8",
-                            PrimitiveType::U16 => "u16",
-                            PrimitiveType::U32 => "u32",
-                            PrimitiveType::U64 => "",
-                            PrimitiveType::U128 => "u128",
-                            PrimitiveType::U256 => "u256",
-                            PrimitiveType::I8 => "i8",
-                            PrimitiveType::I16 => "i16",
-                            PrimitiveType::I32 => "i32",
-                            PrimitiveType::I64 => "i64",
-                            PrimitiveType::I128 => "i128",
-                            PrimitiveType::I256 => "i256",
-                            _ => "",
-                        })
+                        emit!(
+                            self.writer,
+                            match prim {
+                                PrimitiveType::U8 => "u8",
+                                PrimitiveType::U16 => "u16",
+                                PrimitiveType::U32 => "u32",
+                                PrimitiveType::U64 => "",
+                                PrimitiveType::U128 => "u128",
+                                PrimitiveType::U256 => "u256",
+                                PrimitiveType::I8 => "i8",
+                                PrimitiveType::I16 => "i16",
+                                PrimitiveType::I32 => "i32",
+                                PrimitiveType::I64 => "i64",
+                                PrimitiveType::I128 => "i128",
+                                PrimitiveType::I256 => "i256",
+                                _ => "",
+                            }
+                        )
                     }
                 }
             },

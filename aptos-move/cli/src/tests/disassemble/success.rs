@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[test]
 fn disassemble_success() {
-    let pkg = common::make_package("disasm_pkg", &[(
+    let pkg = common::make_package(
         "disasm_pkg",
-        "module 0xCAFE::disasm_pkg {
+        &[(
+            "disasm_pkg",
+            "module 0xCAFE::disasm_pkg {
     public fun add(a: u64, b: u64): u64 { a + b }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
 
     // Compile first to produce bytecode

@@ -477,10 +477,14 @@ impl MintFunder {
                 },
                 TransactionMethod::Script => {
                     // Default script-based approach
-                    TransactionPayload::Script(Script::new(MINTER_SCRIPT.to_vec(), vec![], vec![
-                        TransactionArgument::Address(receiver_address),
-                        TransactionArgument::U64(amount),
-                    ]))
+                    TransactionPayload::Script(Script::new(
+                        MINTER_SCRIPT.to_vec(),
+                        vec![],
+                        vec![
+                            TransactionArgument::Address(receiver_address),
+                            TransactionArgument::U64(amount),
+                        ],
+                    ))
                 },
             };
 

@@ -148,9 +148,9 @@ pub async fn transfer_coins_non_blocking(
     receiver: &LocalAccount,
     amount: u64,
 ) -> SignedTransaction {
-    let txn = sender.sign_with_transaction_builder(transaction_factory.payload(
-        aptos_stdlib::topo_coin_transfer(receiver.address(), amount),
-    ));
+    let txn = sender.sign_with_transaction_builder(
+        transaction_factory.payload(aptos_stdlib::topo_coin_transfer(receiver.address(), amount)),
+    );
 
     client.submit(&txn).await.unwrap();
     txn

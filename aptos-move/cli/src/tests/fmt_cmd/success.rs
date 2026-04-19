@@ -6,12 +6,15 @@ use std::os::unix::fs::PermissionsExt;
 
 #[test]
 fn fmt_success() {
-    let pkg = common::make_package("fmt_pkg", &[(
+    let pkg = common::make_package(
         "fmt_pkg",
-        "module 0xCAFE::fmt_pkg {
+        &[(
+            "fmt_pkg",
+            "module 0xCAFE::fmt_pkg {
     public fun value(): u64 { 42 }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
 
     // Create a mock movefmt script that is a no-op (exits 0)

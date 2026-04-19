@@ -40,9 +40,12 @@ fn test_no_vote_on_denied_inline_transactions() {
 
         // Create a block filter config that denies the first transaction sender
         let block_txn_filter = BlockTransactionFilter::empty()
-            .add_multiple_matchers_filter(false, vec![BlockTransactionMatcher::Transaction(
-                TransactionMatcher::Sender(transactions[0].sender()),
-            )])
+            .add_multiple_matchers_filter(
+                false,
+                vec![BlockTransactionMatcher::Transaction(
+                    TransactionMatcher::Sender(transactions[0].sender()),
+                )],
+            )
             .add_all_filter(true);
         let block_txn_filter_config = BlockTransactionFilterConfig::new(true, block_txn_filter);
 
@@ -162,9 +165,12 @@ fn test_vote_on_no_filter_matches() {
 
         // Create a block filter config that denies the first transaction sender
         let block_txn_filter = BlockTransactionFilter::empty()
-            .add_multiple_matchers_filter(false, vec![BlockTransactionMatcher::Transaction(
-                TransactionMatcher::Sender(transactions[0].sender()),
-            )])
+            .add_multiple_matchers_filter(
+                false,
+                vec![BlockTransactionMatcher::Transaction(
+                    TransactionMatcher::Sender(transactions[0].sender()),
+                )],
+            )
             .add_all_filter(true);
         let block_txn_filter_config = BlockTransactionFilterConfig::new(true, block_txn_filter);
 

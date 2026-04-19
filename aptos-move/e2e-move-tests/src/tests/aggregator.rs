@@ -79,12 +79,15 @@ fn test_aggregators_e2e(block_split: BlockSplit, upper_limit: bool) {
     // TODO: proptests with random transaction generator might be useful here.
     let txns = (0..block_size)
         .map(|i| {
-            (SUCCESS, match i % 4 {
-                0 => sub_add(&mut h, &acc, i, (i as u128) * 1000, (i as u128) * 3000),
-                1 => materialize_and_add(&mut h, &acc, i, (i as u128) * 1000),
-                2 => sub_and_materialize(&mut h, &acc, i, (i as u128) * 1000),
-                _ => add(&mut h, &acc, i, i as u128),
-            })
+            (
+                SUCCESS,
+                match i % 4 {
+                    0 => sub_add(&mut h, &acc, i, (i as u128) * 1000, (i as u128) * 3000),
+                    1 => materialize_and_add(&mut h, &acc, i, (i as u128) * 1000),
+                    2 => sub_and_materialize(&mut h, &acc, i, (i as u128) * 1000),
+                    _ => add(&mut h, &acc, i, i as u128),
+                },
+            )
         })
         .collect();
     h.run_block_in_parts_and_check(block_split, txns);
@@ -97,12 +100,15 @@ fn test_aggregators_e2e(block_split: BlockSplit, upper_limit: bool) {
             } else {
                 0
             };
-            (SUCCESS, match i % 4 {
-                0 => check(&mut h, &acc, i, offset + (i as u128) * 3000),
-                1 => check(&mut h, &acc, i, offset + (i as u128) * 2000),
-                2 => check(&mut h, &acc, i, offset),
-                _ => check(&mut h, &acc, i, offset + (i as u128) * 1000 + (i as u128)),
-            })
+            (
+                SUCCESS,
+                match i % 4 {
+                    0 => check(&mut h, &acc, i, offset + (i as u128) * 3000),
+                    1 => check(&mut h, &acc, i, offset + (i as u128) * 2000),
+                    2 => check(&mut h, &acc, i, offset),
+                    _ => check(&mut h, &acc, i, offset + (i as u128) * 1000 + (i as u128)),
+                },
+            )
         })
         .collect();
     h.run_block_in_parts_and_check(block_split, txns);

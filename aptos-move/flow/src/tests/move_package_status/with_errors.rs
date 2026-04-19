@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[tokio::test]
 async fn move_package_status_with_errors() {
-    let pkg = common::make_package("broken", &[(
+    let pkg = common::make_package(
         "broken",
-        "module 0xCAFE::broken {
+        &[(
+            "broken",
+            "module 0xCAFE::broken {
     fun foo(): u64 { true }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let client = common::make_client().await;
     let result = common::call_tool(

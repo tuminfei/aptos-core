@@ -23,13 +23,16 @@ pub fn metrics_ingest(context: Context) -> BoxedFilter<(impl Reply,)> {
     warp::path!("ingest" / "metrics")
         .and(warp::post())
         .and(context.clone().filter())
-        .and(with_auth(context, vec![
-            NodeType::Validator,
-            NodeType::ValidatorFullNode,
-            NodeType::PublicFullNode,
-            NodeType::UnknownValidator,
-            NodeType::UnknownFullNode,
-        ]))
+        .and(with_auth(
+            context,
+            vec![
+                NodeType::Validator,
+                NodeType::ValidatorFullNode,
+                NodeType::PublicFullNode,
+                NodeType::UnknownValidator,
+                NodeType::UnknownFullNode,
+            ],
+        ))
         .and(warp::header::optional(CONTENT_ENCODING.as_str()))
         .and(warp::body::content_length_limit(MAX_CONTENT_LENGTH))
         .and(warp::body::bytes())
@@ -261,14 +264,17 @@ mod test {
             },
             Some(&String::from("test_name")),
         );
-        assert_eq!(claims, vec![
-            "role=validator",
-            "metrics_source=telemetry-service",
-            "chain_name=25",
-            "namespace=telemetry-service",
-            "kubernetes_pod_name=peer_id:test_name//0x1",
-            &format!("run_uuid={}", Uuid::default()),
-        ]);
+        assert_eq!(
+            claims,
+            vec![
+                "role=validator",
+                "metrics_source=telemetry-service",
+                "chain_name=25",
+                "namespace=telemetry-service",
+                "kubernetes_pod_name=peer_id:test_name//0x1",
+                &format!("run_uuid={}", Uuid::default()),
+            ]
+        );
 
         let test_uuid = Uuid::new_v4();
 
@@ -284,14 +290,17 @@ mod test {
             },
             None,
         );
-        assert_eq!(claims, vec![
-            "role=validator",
-            "metrics_source=telemetry-service",
-            "chain_name=25",
-            "namespace=telemetry-service",
-            "kubernetes_pod_name=peer_id:0x1",
-            &format!("run_uuid={}", test_uuid),
-        ]);
+        assert_eq!(
+            claims,
+            vec![
+                "role=validator",
+                "metrics_source=telemetry-service",
+                "chain_name=25",
+                "namespace=telemetry-service",
+                "kubernetes_pod_name=peer_id:0x1",
+                &format!("run_uuid={}", test_uuid),
+            ]
+        );
     }
 
     #[tokio::test]
@@ -426,17 +435,20 @@ mod test {
         let peer_id = PeerId::from_str("0x1").unwrap();
         {
             let mut peer_locations = test_context.inner.peer_locations().write();
-            peer_locations.insert(peer_id, PeerLocation {
-                geo_updated_at: Some("1985-04-12T23:20:50.52Z".to_string()),
-                country: Some("United Kingdom".to_string()),
-                region: Some("Western_Europe".to_string()),
+            peer_locations.insert(
                 peer_id,
-            });
+                PeerLocation {
+                    geo_updated_at: Some("1985-04-12T23:20:50.52Z".to_string()),
+                    country: Some("United Kingdom".to_string()),
+                    region: Some("Western_Europe".to_string()),
+                    peer_id,
+                },
+            );
         }
         let labels = peer_location_labels(&test_context.inner, &peer_id);
-        assert_eq!(labels, vec![
-            "country=united_kingdom",
-            "region=western_europe"
-        ]);
+        assert_eq!(
+            labels,
+            vec!["country=united_kingdom", "region=western_europe"]
+        );
     }
 }

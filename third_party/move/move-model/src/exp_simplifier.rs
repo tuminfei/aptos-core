@@ -286,10 +286,10 @@ impl<'a, 'env, G: ExpGenerator<'env>> ExpSimplifier<'a, 'env, G> {
             },
             // Negate comparisons: !(a < b) => a >= b, etc.
             ExpData::Call(_, op, args) if args.len() == 2 && negate_comparison(op).is_some() => {
-                self.mk_bool_call(negate_comparison(op).unwrap(), vec![
-                    args[0].clone(),
-                    args[1].clone(),
-                ])
+                self.mk_bool_call(
+                    negate_comparison(op).unwrap(),
+                    vec![args[0].clone(), args[1].clone()],
+                )
             },
             _ => self.mk_bool_call(Operation::Not, vec![arg]),
         }
@@ -1000,10 +1000,11 @@ impl<'a, 'env, G: ExpGenerator<'env>> ExpSimplifier<'a, 'env, G> {
                             if sum.is_zero() {
                                 Some(inner[0].clone())
                             } else {
-                                Some(self.mk_call(&ty, Operation::Add, vec![
-                                    inner[0].clone(),
-                                    self.mk_num_const(&ty, sum),
-                                ]))
+                                Some(self.mk_call(
+                                    &ty,
+                                    Operation::Add,
+                                    vec![inner[0].clone(), self.mk_num_const(&ty, sum)],
+                                ))
                             }
                         } else {
                             None
@@ -1015,15 +1016,17 @@ impl<'a, 'env, G: ExpGenerator<'env>> ExpSimplifier<'a, 'env, G> {
                             if diff.is_zero() {
                                 Some(inner[0].clone())
                             } else if diff > BigInt::zero() {
-                                Some(self.mk_call(&ty, Operation::Add, vec![
-                                    inner[0].clone(),
-                                    self.mk_num_const(&ty, diff),
-                                ]))
+                                Some(self.mk_call(
+                                    &ty,
+                                    Operation::Add,
+                                    vec![inner[0].clone(), self.mk_num_const(&ty, diff)],
+                                ))
                             } else {
-                                Some(self.mk_call(&ty, Operation::Sub, vec![
-                                    inner[0].clone(),
-                                    self.mk_num_const(&ty, -diff),
-                                ]))
+                                Some(self.mk_call(
+                                    &ty,
+                                    Operation::Sub,
+                                    vec![inner[0].clone(), self.mk_num_const(&ty, -diff)],
+                                ))
                             }
                         } else {
                             None
@@ -1069,10 +1072,11 @@ impl<'a, 'env, G: ExpGenerator<'env>> ExpSimplifier<'a, 'env, G> {
                             if sum.is_zero() {
                                 Some(inner[0].clone())
                             } else {
-                                Some(self.mk_call(&ty, Operation::Sub, vec![
-                                    inner[0].clone(),
-                                    self.mk_num_const(&ty, sum),
-                                ]))
+                                Some(self.mk_call(
+                                    &ty,
+                                    Operation::Sub,
+                                    vec![inner[0].clone(), self.mk_num_const(&ty, sum)],
+                                ))
                             }
                         } else {
                             None
@@ -1084,15 +1088,17 @@ impl<'a, 'env, G: ExpGenerator<'env>> ExpSimplifier<'a, 'env, G> {
                             if diff.is_zero() {
                                 Some(inner[0].clone())
                             } else if diff > BigInt::zero() {
-                                Some(self.mk_call(&ty, Operation::Add, vec![
-                                    inner[0].clone(),
-                                    self.mk_num_const(&ty, diff),
-                                ]))
+                                Some(self.mk_call(
+                                    &ty,
+                                    Operation::Add,
+                                    vec![inner[0].clone(), self.mk_num_const(&ty, diff)],
+                                ))
                             } else {
-                                Some(self.mk_call(&ty, Operation::Sub, vec![
-                                    inner[0].clone(),
-                                    self.mk_num_const(&ty, -diff),
-                                ]))
+                                Some(self.mk_call(
+                                    &ty,
+                                    Operation::Sub,
+                                    vec![inner[0].clone(), self.mk_num_const(&ty, -diff)],
+                                ))
                             }
                         } else {
                             None
@@ -1133,10 +1139,11 @@ impl<'a, 'env, G: ExpGenerator<'env>> ExpSimplifier<'a, 'env, G> {
                             if prod.is_zero() {
                                 Some(self.mk_num_const(&ty, BigInt::zero()))
                             } else {
-                                Some(self.mk_call(&ty, Operation::Mul, vec![
-                                    inner[0].clone(),
-                                    self.mk_num_const(&ty, prod),
-                                ]))
+                                Some(self.mk_call(
+                                    &ty,
+                                    Operation::Mul,
+                                    vec![inner[0].clone(), self.mk_num_const(&ty, prod)],
+                                ))
                             }
                         } else {
                             None
@@ -1171,15 +1178,17 @@ impl<'a, 'env, G: ExpGenerator<'env>> ExpSimplifier<'a, 'env, G> {
         if offset.is_zero() {
             base
         } else if offset > BigInt::zero() {
-            self.mk_call(ty, Operation::Add, vec![
-                base,
-                self.mk_num_const(ty, offset),
-            ])
+            self.mk_call(
+                ty,
+                Operation::Add,
+                vec![base, self.mk_num_const(ty, offset)],
+            )
         } else {
-            self.mk_call(ty, Operation::Sub, vec![
-                base,
-                self.mk_num_const(ty, -offset),
-            ])
+            self.mk_call(
+                ty,
+                Operation::Sub,
+                vec![base, self.mk_num_const(ty, -offset)],
+            )
         }
     }
 
@@ -1822,10 +1831,11 @@ impl<'a, 'env, G: ExpGenerator<'env>> ExpSimplifier<'a, 'env, G> {
                                 // Build e - 1 as the witness bound
                                 let rhs_ty = self.env().get_node_type(args[1].as_ref().node_id());
                                 let one = self.mk_num_const(&rhs_ty, BigInt::from(1));
-                                let bound = self.mk_call(&rhs_ty, Operation::Sub, vec![
-                                    args[1].clone(),
-                                    one.clone(),
-                                ]);
+                                let bound = self.mk_call(
+                                    &rhs_ty,
+                                    Operation::Sub,
+                                    vec![args[1].clone(), one.clone()],
+                                );
                                 bounds.insert(*sym, bound);
                                 bound_indices.insert(i);
                                 // Guard: e > 0 (ensures the domain x < e is non-empty)
@@ -2967,10 +2977,11 @@ impl<'a, 'env, G: ExpGenerator<'env>> ExpRewriterFunctions for ExpSimplifier<'a,
             {
                 if mid == mid2 && sid == sid2 && fid == fid2 {
                     return Some(
-                        ExpData::Call(id, oper.clone(), vec![
-                            inner_args[0].clone(),
-                            args[1].clone(),
-                        ])
+                        ExpData::Call(
+                            id,
+                            oper.clone(),
+                            vec![inner_args[0].clone(), args[1].clone()],
+                        )
                         .into_exp(),
                     );
                 }
@@ -3200,11 +3211,11 @@ mod tests {
     fn test_double_negation() {
         let env = test_env();
         let t0 = mk_temp(&env, 0, BOOL_TYPE.clone());
-        let e = mk_bool_op(&env, Operation::Not, vec![mk_bool_op(
+        let e = mk_bool_op(
             &env,
             Operation::Not,
-            vec![t0],
-        )]);
+            vec![mk_bool_op(&env, Operation::Not, vec![t0])],
+        );
         let mut g = test_gen(&env);
         let mut s = ExpSimplifier::new(&mut g);
         let result = s.simplify(e);
@@ -3413,10 +3424,12 @@ mod tests {
     fn test_constant_fold() {
         let env = test_env();
         let num_ty = Type::Primitive(PrimitiveType::Num);
-        let e = mk_op(&env, num_ty, Operation::Add, vec![
-            mk_num(&env, 2),
-            mk_num(&env, 3),
-        ]);
+        let e = mk_op(
+            &env,
+            num_ty,
+            Operation::Add,
+            vec![mk_num(&env, 2), mk_num(&env, 3)],
+        );
         let mut g = test_gen(&env);
         let mut s = ExpSimplifier::new(&mut g);
         let result = s.simplify(e);
@@ -3688,16 +3701,20 @@ mod tests {
         let t0 = mk_temp(&env, 0, u64_ty.clone());
         let max_u64 = mk_big_num(&env, BigInt::from(18446744073709551615u64));
 
-        let val4 = mk_op(&env, u64_ty.clone(), Operation::Add, vec![
-            t0.clone(),
-            mk_num(&env, 4),
-        ]);
+        let val4 = mk_op(
+            &env,
+            u64_ty.clone(),
+            Operation::Add,
+            vec![t0.clone(), mk_num(&env, 4)],
+        );
         let ge4 = mk_bool_op(&env, Operation::Ge, vec![val4, max_u64.clone()]);
 
-        let val1 = mk_op(&env, u64_ty.clone(), Operation::Add, vec![
-            t0.clone(),
-            mk_num(&env, 1),
-        ]);
+        let val1 = mk_op(
+            &env,
+            u64_ty.clone(),
+            Operation::Add,
+            vec![t0.clone(), mk_num(&env, 1)],
+        );
         let ge1 = mk_bool_op(&env, Operation::Ge, vec![val1, max_u64]);
 
         let mut g = test_gen(&env);
@@ -3875,11 +3892,11 @@ mod tests {
         let num_ty = Type::Primitive(PrimitiveType::U64);
         let x = mk_temp(&env, 0, num_ty.clone());
         let y = mk_temp(&env, 1, num_ty.clone());
-        let not_lt = mk_bool_op(&env, Operation::Not, vec![mk_bool_op(
+        let not_lt = mk_bool_op(
             &env,
-            Operation::Lt,
-            vec![y.clone(), x.clone()],
-        )]);
+            Operation::Not,
+            vec![mk_bool_op(&env, Operation::Lt, vec![y.clone(), x.clone()])],
+        );
         let le = mk_bool_op(&env, Operation::Le, vec![x, y]);
         let mut g = test_gen(&env);
         let mut s = ExpSimplifier::new(&mut g);
@@ -3943,16 +3960,16 @@ mod tests {
         let num_ty = Type::Primitive(PrimitiveType::U64);
         let x = mk_temp(&env, 0, num_ty.clone());
         let y = mk_temp(&env, 1, num_ty.clone());
-        let not_lt_xy = mk_bool_op(&env, Operation::Not, vec![mk_bool_op(
+        let not_lt_xy = mk_bool_op(
             &env,
-            Operation::Lt,
-            vec![x.clone(), y.clone()],
-        )]);
-        let not_lt_yx = mk_bool_op(&env, Operation::Not, vec![mk_bool_op(
+            Operation::Not,
+            vec![mk_bool_op(&env, Operation::Lt, vec![x.clone(), y.clone()])],
+        );
+        let not_lt_yx = mk_bool_op(
             &env,
-            Operation::Lt,
-            vec![y.clone(), x.clone()],
-        )]);
+            Operation::Not,
+            vec![mk_bool_op(&env, Operation::Lt, vec![y.clone(), x.clone()])],
+        );
         let neq = mk_bool_op(&env, Operation::Neq, vec![x, y]);
         let mut g = test_gen(&env);
         let mut s = ExpSimplifier::new(&mut g);
@@ -4129,10 +4146,11 @@ mod tests {
         let x_gt_y = mk_bool_op(&env, Operation::Gt, vec![x.clone(), y.clone()]);
         let y_gt_x = mk_bool_op(&env, Operation::Gt, vec![y, x]);
         let antecedent = mk_bool_op(&env, Operation::And, vec![x_gt_y, y_gt_x]);
-        let body = mk_bool_op(&env, Operation::Implies, vec![
-            antecedent,
-            mk_bool(&env, false),
-        ]);
+        let body = mk_bool_op(
+            &env,
+            Operation::Implies,
+            vec![antecedent, mk_bool(&env, false)],
+        );
         let quant = mk_quant(
             &env,
             QuantKind::Forall,
@@ -4320,10 +4338,12 @@ mod tests {
         let n = mk_temp(&env, 0, u64_ty.clone());
         let max = mk_big_num(&env, BigInt::from(18446744073709551615u64));
         let bound = mk_bool_op(&env, Operation::Le, vec![x.clone(), n.clone()]);
-        let val = mk_op(&env, u64_ty.clone(), Operation::Add, vec![
-            x.clone(),
-            mk_num(&env, 1),
-        ]);
+        let val = mk_op(
+            &env,
+            u64_ty.clone(),
+            Operation::Add,
+            vec![x.clone(), mk_num(&env, 1)],
+        );
         let overflow = mk_bool_op(&env, Operation::Ge, vec![val, max]);
         let body = mk_bool_op(&env, Operation::And, vec![bound, overflow]);
         let quant = mk_quant(&env, QuantKind::Exists, vec![("x", u64_ty)], body);
@@ -4461,10 +4481,12 @@ mod tests {
         let env = test_env();
         let num_ty = Type::Primitive(PrimitiveType::Num);
         let x = mk_temp(&env, 0, num_ty.clone());
-        let sub = mk_op(&env, num_ty.clone(), Operation::Sub, vec![
-            x,
-            mk_num(&env, 3),
-        ]);
+        let sub = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Sub,
+            vec![x, mk_num(&env, 3)],
+        );
         let e = mk_op(&env, num_ty, Operation::Add, vec![sub, mk_num(&env, 3)]);
         let mut g = test_gen(&env);
         let mut s = ExpSimplifier::new(&mut g);
@@ -4478,10 +4500,12 @@ mod tests {
         let env = test_env();
         let num_ty = Type::Primitive(PrimitiveType::Num);
         let x = mk_temp(&env, 0, num_ty.clone());
-        let add = mk_op(&env, num_ty.clone(), Operation::Add, vec![
-            x,
-            mk_num(&env, 3),
-        ]);
+        let add = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Add,
+            vec![x, mk_num(&env, 3)],
+        );
         let e = mk_op(&env, num_ty, Operation::Sub, vec![add, mk_num(&env, 3)]);
         let mut g = test_gen(&env);
         let mut s = ExpSimplifier::new(&mut g);
@@ -4495,10 +4519,12 @@ mod tests {
         let env = test_env();
         let num_ty = Type::Primitive(PrimitiveType::Num);
         let x = mk_temp(&env, 0, num_ty.clone());
-        let sub = mk_op(&env, num_ty.clone(), Operation::Sub, vec![
-            x,
-            mk_num(&env, 2),
-        ]);
+        let sub = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Sub,
+            vec![x, mk_num(&env, 2)],
+        );
         let e = mk_op(&env, num_ty, Operation::Add, vec![sub, mk_num(&env, 5)]);
         let mut g = test_gen(&env);
         let mut s = ExpSimplifier::new(&mut g);
@@ -4519,10 +4545,12 @@ mod tests {
         let env = test_env();
         let num_ty = Type::Primitive(PrimitiveType::Num);
         let x = mk_temp(&env, 0, num_ty.clone());
-        let add = mk_op(&env, num_ty.clone(), Operation::Add, vec![
-            x,
-            mk_num(&env, 5),
-        ]);
+        let add = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Add,
+            vec![x, mk_num(&env, 5)],
+        );
         let e = mk_op(&env, num_ty, Operation::Sub, vec![add, mk_num(&env, 2)]);
         let mut g = test_gen(&env);
         let mut s = ExpSimplifier::new(&mut g);
@@ -4654,10 +4682,12 @@ mod tests {
         let num_ty = Type::Primitive(PrimitiveType::U64);
         let sym = env.symbol_pool().make("x");
         let x = mk_local(&env, "x", num_ty.clone());
-        let x_plus_1 = mk_op(&env, num_ty.clone(), Operation::Add, vec![
-            x.clone(),
-            mk_num(&env, 1),
-        ]);
+        let x_plus_1 = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Add,
+            vec![x.clone(), mk_num(&env, 1)],
+        );
         let product = mk_op(&env, num_ty.clone(), Operation::Mul, vec![x, x_plus_1]);
         let expr = mk_op(&env, num_ty, Operation::Div, vec![product, mk_num(&env, 2)]);
         assert!(is_monotone_increasing_in(&env, &expr, sym, false));
@@ -4673,10 +4703,12 @@ mod tests {
         let num_ty = Type::Primitive(PrimitiveType::Num);
         let sym = env.symbol_pool().make("x");
         let x = mk_local(&env, "x", num_ty.clone());
-        let x_plus_1 = mk_op(&env, num_ty.clone(), Operation::Add, vec![
-            x.clone(),
-            mk_num(&env, 1),
-        ]);
+        let x_plus_1 = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Add,
+            vec![x.clone(), mk_num(&env, 1)],
+        );
         let product = mk_op(&env, num_ty, Operation::Mul, vec![x, x_plus_1]);
         assert!(!is_monotone_increasing_in(&env, &product, sym, false));
     }
@@ -4689,10 +4721,12 @@ mod tests {
         let num_ty = Type::Primitive(PrimitiveType::Num);
         let sym = env.symbol_pool().make("x");
         let x = mk_local(&env, "x", num_ty.clone());
-        let x_plus_1 = mk_op(&env, num_ty.clone(), Operation::Add, vec![
-            x.clone(),
-            mk_num(&env, 1),
-        ]);
+        let x_plus_1 = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Add,
+            vec![x.clone(), mk_num(&env, 1)],
+        );
         let product = mk_op(&env, num_ty, Operation::Mul, vec![x, x_plus_1]);
         assert!(is_monotone_increasing_in(&env, &product, sym, true));
     }
@@ -4704,10 +4738,12 @@ mod tests {
         let num_ty = Type::Primitive(PrimitiveType::Num);
         let sym = env.symbol_pool().make("x");
         let x = mk_local(&env, "x", num_ty.clone());
-        let x_plus_1 = mk_op(&env, num_ty.clone(), Operation::Add, vec![
-            x.clone(),
-            mk_num(&env, 1),
-        ]);
+        let x_plus_1 = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Add,
+            vec![x.clone(), mk_num(&env, 1)],
+        );
         let product = mk_op(&env, num_ty.clone(), Operation::Mul, vec![x, x_plus_1]);
         let expr = mk_op(&env, num_ty, Operation::Div, vec![product, mk_num(&env, 2)]);
         assert!(is_monotone_increasing_in(&env, &expr, sym, true));
@@ -4812,21 +4848,27 @@ mod tests {
         let zero = mk_num(&env, 0);
         let cond = mk_bool_op(&env, Operation::Eq, vec![n.clone(), zero.clone()]);
         // sum_up_to(n - 1): self-call with n - 1
-        let n_minus_1 = mk_op(&env, num_ty.clone(), Operation::Sub, vec![
-            n.clone(),
-            mk_num(&env, 1),
-        ]);
+        let n_minus_1 = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Sub,
+            vec![n.clone(), mk_num(&env, 1)],
+        );
         let mid = ModuleId::new(0);
         let fid = SpecFunId::new(0);
         let call_node = env.new_node(Loc::default(), num_ty.clone());
-        let self_call = ExpData::Call(call_node, Operation::SpecFunction(mid, fid, None), vec![
-            n_minus_1,
-        ])
+        let self_call = ExpData::Call(
+            call_node,
+            Operation::SpecFunction(mid, fid, None),
+            vec![n_minus_1],
+        )
         .into_exp();
-        let step = mk_op(&env, num_ty.clone(), Operation::Add, vec![
-            self_call,
-            n.clone(),
-        ]);
+        let step = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Add,
+            vec![self_call, n.clone()],
+        );
         let ite_node = env.new_node(Loc::default(), num_ty.clone());
         let body = ExpData::IfElse(ite_node, cond, zero, step).into_exp();
         let decl = mk_spec_fun_decl(&env, "sum_up_to", vec![("n", num_ty.clone())], num_ty, body);
@@ -4849,20 +4891,26 @@ mod tests {
         let zero = mk_num(&env, 0);
         let cond = mk_bool_op(&env, Operation::Eq, vec![n.clone(), zero]);
         // double_result(r * 2, n - 1)
-        let r_times_2 = mk_op(&env, num_ty.clone(), Operation::Mul, vec![
-            r.clone(),
-            mk_num(&env, 2),
-        ]);
-        let n_minus_1 = mk_op(&env, num_ty.clone(), Operation::Sub, vec![
-            n.clone(),
-            mk_num(&env, 1),
-        ]);
+        let r_times_2 = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Mul,
+            vec![r.clone(), mk_num(&env, 2)],
+        );
+        let n_minus_1 = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Sub,
+            vec![n.clone(), mk_num(&env, 1)],
+        );
         let mid = ModuleId::new(0);
         let fid = SpecFunId::new(0);
         let call_node = env.new_node(Loc::default(), num_ty.clone());
-        let self_call = ExpData::Call(call_node, Operation::SpecFunction(mid, fid, None), vec![
-            r_times_2, n_minus_1,
-        ])
+        let self_call = ExpData::Call(
+            call_node,
+            Operation::SpecFunction(mid, fid, None),
+            vec![r_times_2, n_minus_1],
+        )
         .into_exp();
         let ite_node = env.new_node(Loc::default(), num_ty.clone());
         let body = ExpData::IfElse(ite_node, cond, r, self_call).into_exp();
@@ -4890,16 +4938,20 @@ mod tests {
         let zero = mk_num(&env, 0);
         let ten = mk_num(&env, 10);
         let cond = mk_bool_op(&env, Operation::Eq, vec![n.clone(), zero]);
-        let n_minus_1 = mk_op(&env, num_ty.clone(), Operation::Sub, vec![
-            n.clone(),
-            mk_num(&env, 1),
-        ]);
+        let n_minus_1 = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Sub,
+            vec![n.clone(), mk_num(&env, 1)],
+        );
         let mid = ModuleId::new(0);
         let fid = SpecFunId::new(0);
         let call_node = env.new_node(Loc::default(), num_ty.clone());
-        let self_call = ExpData::Call(call_node, Operation::SpecFunction(mid, fid, None), vec![
-            n_minus_1,
-        ])
+        let self_call = ExpData::Call(
+            call_node,
+            Operation::SpecFunction(mid, fid, None),
+            vec![n_minus_1],
+        )
         .into_exp();
         // f(n-1) - n: the subtracted term n depends on the parameter, so not monotone
         let step = mk_op(&env, num_ty.clone(), Operation::Sub, vec![self_call, n]);
@@ -4926,16 +4978,20 @@ mod tests {
         let n = ExpData::LocalVar(n_node, n_sym).into_exp();
         let zero = mk_num(&env, 0);
         let cond = mk_bool_op(&env, Operation::Eq, vec![n.clone(), zero.clone()]);
-        let n_minus_1 = mk_op(&env, num_ty.clone(), Operation::Sub, vec![
-            n.clone(),
-            mk_num(&env, 1),
-        ]);
+        let n_minus_1 = mk_op(
+            &env,
+            num_ty.clone(),
+            Operation::Sub,
+            vec![n.clone(), mk_num(&env, 1)],
+        );
         let mid = ModuleId::new(0);
         let fid = SpecFunId::new(0);
         let call_node = env.new_node(Loc::default(), num_ty.clone());
-        let self_call = ExpData::Call(call_node, Operation::SpecFunction(mid, fid, None), vec![
-            n_minus_1,
-        ])
+        let self_call = ExpData::Call(
+            call_node,
+            Operation::SpecFunction(mid, fid, None),
+            vec![n_minus_1],
+        )
         .into_exp();
         let step = mk_op(&env, num_ty.clone(), Operation::Add, vec![self_call, n]);
         let ite_node = env.new_node(Loc::default(), num_ty.clone());
@@ -4952,9 +5008,11 @@ mod tests {
         let x_sym = env.symbol_pool().make("x");
         let x = mk_local(&env, "x", num_ty.clone());
         let call_node2 = env.new_node(Loc::default(), num_ty.clone());
-        let call_expr = ExpData::Call(call_node2, Operation::SpecFunction(mid, fid, None), vec![
-            x.clone()
-        ])
+        let call_expr = ExpData::Call(
+            call_node2,
+            Operation::SpecFunction(mid, fid, None),
+            vec![x.clone()],
+        )
         .into_exp();
         let sum_expr = mk_op(&env, num_ty, Operation::Add, vec![call_expr, x]);
         assert!(is_monotone_increasing_in(&env, &sum_expr, x_sym, false));

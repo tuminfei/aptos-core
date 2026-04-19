@@ -505,10 +505,14 @@ impl<'de, F: FftField, T: DomainCoeff<F> + CanonicalSerialize + CanonicalDeseria
             "fft_domain_size",
             "prepared_toeplitz_inputs",
         ];
-        deserializer.deserialize_struct("FKDomain", FIELDS, FKDomainVisitor {
-            _phantom: PhantomData,
-            _phantom2: PhantomData,
-        })
+        deserializer.deserialize_struct(
+            "FKDomain",
+            FIELDS,
+            FKDomainVisitor {
+                _phantom: PhantomData,
+                _phantom2: PhantomData,
+            },
+        )
     }
 }
 

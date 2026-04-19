@@ -23,15 +23,21 @@ pub fn get_status(
     let rows = query_status(&mut conn, idempotency_tuple)?;
     for row in rows {
         if row.status_code == StatusCode::OK.as_u16() as i64 {
-            status_response.insert(row.asset_uri, GetStatusResponseSuccess::Success {
-                status_code: StatusCode::OK.as_u16(),
-                cdn_image_uri: row.cdn_image_uri.unwrap_or_default(),
-            });
+            status_response.insert(
+                row.asset_uri,
+                GetStatusResponseSuccess::Success {
+                    status_code: StatusCode::OK.as_u16(),
+                    cdn_image_uri: row.cdn_image_uri.unwrap_or_default(),
+                },
+            );
         } else {
-            status_response.insert(row.asset_uri, GetStatusResponseSuccess::Error {
-                status_code: row.status_code as u16,
-                error_message: row.error_messages,
-            });
+            status_response.insert(
+                row.asset_uri,
+                GetStatusResponseSuccess::Error {
+                    status_code: row.status_code as u16,
+                    error_message: row.error_messages,
+                },
+            );
         };
     }
 

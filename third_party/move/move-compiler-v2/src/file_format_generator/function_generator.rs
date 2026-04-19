@@ -1661,11 +1661,11 @@ impl<'a> FunctionGenerator<'a> {
             .fun_ctx
             .fun
             .get_local_type(*source.last().expect("invoke has function argument last"));
-        let sign_idx = self
-            .genr
-            .signature(&ctx.fun_ctx.module, &ctx.fun_ctx.loc, vec![
-                clos_type.clone()
-            ]);
+        let sign_idx = self.genr.signature(
+            &ctx.fun_ctx.module,
+            &ctx.fun_ctx.loc,
+            vec![clos_type.clone()],
+        );
         self.abstract_push_args(ctx, source, None);
         self.emit(FF::Bytecode::CallClosure(sign_idx));
         self.abstract_pop_n(ctx, source.len());

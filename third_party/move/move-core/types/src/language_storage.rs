@@ -568,15 +568,25 @@ mod tests {
                 "0x1::a::A",
             ),
             (
-                make_struct_tag(AccountAddress::ONE, "a", "A", vec![
-                    make_struct_tag(AccountAddress::from_str("0x123").unwrap(), "b", "B", vec![
-                        Bool,
-                        Vector(Box::new(U8)),
-                    ]),
-                    make_struct_tag(AccountAddress::from_str("0xFF").unwrap(), "c", "C", vec![
-                        U8,
-                    ]),
-                ]),
+                make_struct_tag(
+                    AccountAddress::ONE,
+                    "a",
+                    "A",
+                    vec![
+                        make_struct_tag(
+                            AccountAddress::from_str("0x123").unwrap(),
+                            "b",
+                            "B",
+                            vec![Bool, Vector(Box::new(U8))],
+                        ),
+                        make_struct_tag(
+                            AccountAddress::from_str("0xFF").unwrap(),
+                            "c",
+                            "C",
+                            vec![U8],
+                        ),
+                    ],
+                ),
                 "0x1::a::A<0x123::b::B<bool, vector<u8>>, 0xff::c::C<u8>>",
             ),
             (make_function_tag(vec![], vec![], AbilitySet::EMPTY), "||()"),
@@ -593,23 +603,28 @@ mod tests {
                 "|&u8, u64|()",
             ),
             (
-                make_struct_tag(AccountAddress::ONE, "a", "A", vec![make_function_tag(
-                    vec![Value(make_function_tag(
+                make_struct_tag(
+                    AccountAddress::ONE,
+                    "a",
+                    "A",
+                    vec![make_function_tag(
                         vec![Value(make_function_tag(
+                            vec![Value(make_function_tag(
+                                vec![],
+                                vec![],
+                                AbilitySet::singleton(Ability::Copy),
+                            ))],
                             vec![],
-                            vec![],
-                            AbilitySet::singleton(Ability::Copy),
+                            AbilitySet::EMPTY,
                         ))],
-                        vec![],
+                        vec![FunctionParamOrReturnTag::Value(make_function_tag(
+                            vec![],
+                            vec![],
+                            AbilitySet::ALL,
+                        ))],
                         AbilitySet::EMPTY,
-                    ))],
-                    vec![FunctionParamOrReturnTag::Value(make_function_tag(
-                        vec![],
-                        vec![],
-                        AbilitySet::ALL,
-                    ))],
-                    AbilitySet::EMPTY,
-                )]),
+                    )],
+                ),
                 "0x1::a::A<||||() has copy|()|(||() has copy + drop + store + key)>",
             ),
         ];

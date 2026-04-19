@@ -102,16 +102,14 @@ fn configure_logger(level: Option<LevelFilter>) -> Option<Logger> {
             (spec, None)
         }
     };
-    Some(
-        if let Some(fname) = fname {
-            Logger::with(spec)
-                .format(format_record_file)
-                .log_to_file(FileSpec::try_from(fname).expect("file name"))
-                .append()
-        } else {
-            Logger::with(spec).format(format_record_colored)
-        },
-    )
+    Some(if let Some(fname) = fname {
+        Logger::with(spec)
+            .format(format_record_file)
+            .log_to_file(FileSpec::try_from(fname).expect("file name"))
+            .append()
+    } else {
+        Logger::with(spec).format(format_record_colored)
+    })
 }
 
 fn format_record_file(

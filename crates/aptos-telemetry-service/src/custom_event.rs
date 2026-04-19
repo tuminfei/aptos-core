@@ -26,14 +26,17 @@ pub fn custom_event_ingest(context: Context) -> BoxedFilter<(impl Reply,)> {
     warp::path!("ingest" / "custom-event")
         .and(warp::post())
         .and(context.clone().filter())
-        .and(with_auth(context, vec![
-            NodeType::Validator,
-            NodeType::ValidatorFullNode,
-            NodeType::PublicFullNode,
-            NodeType::Unknown,
-            NodeType::UnknownValidator,
-            NodeType::UnknownFullNode,
-        ]))
+        .and(with_auth(
+            context,
+            vec![
+                NodeType::Validator,
+                NodeType::ValidatorFullNode,
+                NodeType::PublicFullNode,
+                NodeType::Unknown,
+                NodeType::UnknownValidator,
+                NodeType::UnknownFullNode,
+            ],
+        ))
         .and(warp::body::json())
         .and(warp::header::optional("X-Forwarded-For"))
         .and_then(handle_custom_event)

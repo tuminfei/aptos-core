@@ -272,24 +272,32 @@ mod test {
                 .unwrap(),
             AggregatorChangeV1::Delete
         );
-        let delta_100 = DeltaOp::new(SignedU128::Positive(100), 600, DeltaHistory {
-            max_achieved_positive_delta: 100,
-            min_achieved_negative_delta: 0,
-            min_overflow_positive_delta: None,
-            max_underflow_negative_delta: None,
-        });
+        let delta_100 = DeltaOp::new(
+            SignedU128::Positive(100),
+            600,
+            DeltaHistory {
+                max_achieved_positive_delta: 100,
+                min_achieved_negative_delta: 0,
+                min_overflow_positive_delta: None,
+                max_underflow_negative_delta: None,
+            },
+        );
         assert_eq!(
             *aggregator_v1_changes
                 .get(&aggregator_v1_state_key_for_test(600))
                 .unwrap(),
             AggregatorChangeV1::Merge(delta_100)
         );
-        let delta_200 = DeltaOp::new(SignedU128::Positive(200), 700, DeltaHistory {
-            max_achieved_positive_delta: 200,
-            min_achieved_negative_delta: 0,
-            min_overflow_positive_delta: None,
-            max_underflow_negative_delta: None,
-        });
+        let delta_200 = DeltaOp::new(
+            SignedU128::Positive(200),
+            700,
+            DeltaHistory {
+                max_achieved_positive_delta: 200,
+                min_achieved_negative_delta: 0,
+                min_overflow_positive_delta: None,
+                max_underflow_negative_delta: None,
+            },
+        );
         assert_eq!(
             *aggregator_v1_changes
                 .get(&aggregator_v1_state_key_for_test(700))

@@ -838,13 +838,11 @@ pub fn chaos_test_suite(duration: Duration) -> ForgeConfig {
         .add_network_test(ThreeRegionSameCloudSimulationTest)
         .add_network_test(NetworkLossTest)
         .with_success_criteria(
-            SuccessCriteria::new(
-                if duration > Duration::from_secs(1200) {
-                    100
-                } else {
-                    1000
-                },
-            )
+            SuccessCriteria::new(if duration > Duration::from_secs(1200) {
+                100
+            } else {
+                1000
+            })
             .add_no_restarts()
             .add_system_metrics_threshold(SYSTEM_12_CORES_5GB_THRESHOLD.clone()),
         )
@@ -865,13 +863,11 @@ pub fn changing_working_quorum_test_helper(
     let max_down_nodes = test.max_down_nodes;
     config
         .with_initial_validator_count(NonZeroUsize::new(num_validators).unwrap())
-        .with_initial_fullnode_count(
-            if max_down_nodes == 0 {
-                0
-            } else {
-                std::cmp::max(2, target_tps / 1000)
-            },
-        )
+        .with_initial_fullnode_count(if max_down_nodes == 0 {
+            0
+        } else {
+            std::cmp::max(2, target_tps / 1000)
+        })
         .add_network_test(test)
         .with_genesis_helm_config_fn(Arc::new(move |helm_values| {
             helm_values["chain"]["epoch_duration_secs"] = epoch_duration.into();

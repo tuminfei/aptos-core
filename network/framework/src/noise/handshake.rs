@@ -1018,10 +1018,11 @@ mod test {
                 PeerRole::ValidatorFullNode,
             ),
         );
-        insert_new_trusted_peers(&peers_and_metadata, NetworkId::Public, vec![
-            client_peer,
-            server_peer,
-        ]);
+        insert_new_trusted_peers(
+            &peers_and_metadata,
+            NetworkId::Public,
+            vec![client_peer, server_peer],
+        );
 
         // Create an in-memory socket for testing
         let (dialer_socket, listener_socket) = MemorySocket::new_pair();

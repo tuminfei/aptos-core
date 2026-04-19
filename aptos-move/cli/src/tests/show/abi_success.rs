@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[test]
 fn show_abi_success() {
-    let pkg = common::make_package("entry_mod", &[(
+    let pkg = common::make_package(
         "entry_mod",
-        "module 0xCAFE::entry_mod {
+        &[(
+            "entry_mod",
+            "module 0xCAFE::entry_mod {
     public entry fun do_something(_x: u64) {}
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let output = common::run_cli(&[
         "show",

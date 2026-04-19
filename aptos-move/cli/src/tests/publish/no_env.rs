@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[test]
 fn publish_no_env() {
-    let pkg = common::make_package("pub_pkg", &[(
+    let pkg = common::make_package(
         "pub_pkg",
-        "module 0xCAFE::pub_pkg {
+        &[(
+            "pub_pkg",
+            "module 0xCAFE::pub_pkg {
     public fun hello(): u64 { 42 }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
     let output = common::run_cli(&[
         "publish",

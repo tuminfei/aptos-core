@@ -9,7 +9,7 @@ use aptos_sdk::types::TOPO_COIN_TYPE_STR;
 use aptos_types::{
     account_config::{primary_apt_store, ObjectCoreResource},
     transaction::{EntryFunction, TransactionPayload},
-    TopoCoinType, CoinType,
+    CoinType, TopoCoinType,
 };
 use move_core_types::{
     account_address::AccountAddress,

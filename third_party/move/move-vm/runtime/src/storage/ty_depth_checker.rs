@@ -459,10 +459,13 @@ mod tests {
         let a = loader.get_struct_identifier("A");
         let b = loader.get_struct_identifier("B");
         loader.add_struct("A", vec![]);
-        loader.add_enum("B", vec![
-            ("V1", vec![("x", Type::Bool)]),
-            ("V2", vec![("a", struct_ty(a))]),
-        ]);
+        loader.add_enum(
+            "B",
+            vec![
+                ("V1", vec![("x", Type::Bool)]),
+                ("V2", vec![("a", struct_ty(a))]),
+            ],
+        );
 
         // Cycles between structs C and D, and between E and itself:
         //
@@ -487,10 +490,13 @@ mod tests {
         let f = loader.get_struct_identifier("F");
         let g = loader.get_struct_identifier("G");
         loader.add_enum("F", vec![("V0", vec![("g", struct_ty(g))])]);
-        loader.add_enum("G", vec![("V0", vec![(
-            "fs",
-            Type::Vector(triomphe::Arc::new(struct_ty(f))),
-        )])]);
+        loader.add_enum(
+            "G",
+            vec![(
+                "V0",
+                vec![("fs", Type::Vector(triomphe::Arc::new(struct_ty(f))))],
+            )],
+        );
 
         let checker = TypeDepthChecker::new(&loader);
         let mut currently_visiting = HashSet::new();
@@ -540,14 +546,17 @@ mod tests {
         // struct C<T> { x: T, b: B<T> }
         let b = loader.get_struct_identifier("B");
         let c = loader.get_struct_identifier("C");
-        loader.add_struct("B", vec![(
-            "c",
-            generic_struct_ty(c, vec![Type::TyParam(0)]),
-        )]);
-        loader.add_struct("C", vec![
-            ("x", Type::TyParam(0)),
-            ("b", generic_struct_ty(b, vec![Type::TyParam(0)])),
-        ]);
+        loader.add_struct(
+            "B",
+            vec![("c", generic_struct_ty(c, vec![Type::TyParam(0)]))],
+        );
+        loader.add_struct(
+            "C",
+            vec![
+                ("x", Type::TyParam(0)),
+                ("b", generic_struct_ty(b, vec![Type::TyParam(0)])),
+            ],
+        );
 
         // Cycle between generic enum and generic struct:
         //
@@ -557,14 +566,23 @@ mod tests {
         // }
         let d = loader.get_struct_identifier("D");
         let e = loader.get_struct_identifier("E");
-        loader.add_struct("D", vec![
-            ("x", Type::TyParam(0)),
-            ("e", generic_struct_ty(e, vec![Type::U8])),
-        ]);
-        loader.add_enum("E", vec![("V0", vec![(
-            "ds",
-            Type::Vector(triomphe::Arc::new(generic_struct_ty(d, vec![Type::U8]))),
-        )])]);
+        loader.add_struct(
+            "D",
+            vec![
+                ("x", Type::TyParam(0)),
+                ("e", generic_struct_ty(e, vec![Type::U8])),
+            ],
+        );
+        loader.add_enum(
+            "E",
+            vec![(
+                "V0",
+                vec![(
+                    "ds",
+                    Type::Vector(triomphe::Arc::new(generic_struct_ty(d, vec![Type::U8]))),
+                )],
+            )],
+        );
 
         let checker = TypeDepthChecker::new(&loader);
         let mut currently_visiting = HashSet::new();

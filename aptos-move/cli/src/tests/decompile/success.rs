@@ -5,12 +5,15 @@ use crate::tests::common;
 
 #[test]
 fn decompile_success() {
-    let pkg = common::make_package("decomp_pkg", &[(
+    let pkg = common::make_package(
         "decomp_pkg",
-        "module 0xCAFE::decomp_pkg {
+        &[(
+            "decomp_pkg",
+            "module 0xCAFE::decomp_pkg {
     public fun add(a: u64, b: u64): u64 { a + b }
 }",
-    )]);
+        )],
+    );
     let dir = pkg.path().to_str().unwrap();
 
     // Compile first to produce bytecode

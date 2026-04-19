@@ -111,14 +111,17 @@ impl DagBootstrapUnit {
                 Event::RpcRequest(sender, msg, protocol, response_sender) => match msg {
                     ConsensusMsg::DAGMessage(msg) => {
                         debug!("handling RPC...");
-                        self.dag_rpc_tx.push(sender, IncomingDAGRequest {
-                            req: msg,
+                        self.dag_rpc_tx.push(
                             sender,
-                            responder: RpcResponder {
-                                protocol,
-                                response_sender,
+                            IncomingDAGRequest {
+                                req: msg,
+                                sender,
+                                responder: RpcResponder {
+                                    protocol,
+                                    response_sender,
+                                },
                             },
-                        })
+                        )
                     },
                     _ => unreachable!("expected only DAG-related messages"),
                 },

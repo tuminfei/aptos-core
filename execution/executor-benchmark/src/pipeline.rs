@@ -91,13 +91,11 @@ where
         );
 
         let (executable_block_sender, executable_block_receiver) =
-            mpsc::sync_channel::<ExecuteBlockMessage>(
-                if config.split_stages {
-                    (num_blocks.unwrap() + 1).max(50)
-                } else {
-                    10
-                }, /* bound */
-            );
+            mpsc::sync_channel::<ExecuteBlockMessage>(if config.split_stages {
+                (num_blocks.unwrap() + 1).max(50)
+            } else {
+                10
+            } /* bound */);
 
         let (ledger_update_sender, ledger_update_receiver) =
             mpsc::sync_channel::<LedgerUpdateMessage>(
@@ -108,13 +106,12 @@ where
                 }, /* bound */
             );
 
-        let (commit_sender, commit_receiver) = mpsc::sync_channel::<CommitBlockMessage>(
-            if config.split_stages {
+        let (commit_sender, commit_receiver) =
+            mpsc::sync_channel::<CommitBlockMessage>(if config.split_stages {
                 (num_blocks.unwrap() + 1).max(3)
             } else {
                 3
-            }, /* bound */
-        );
+            } /* bound */);
 
         let (start_pipeline_tx, start_pipeline_rx) =
             create_start_tx_rx(config.generate_then_execute);
