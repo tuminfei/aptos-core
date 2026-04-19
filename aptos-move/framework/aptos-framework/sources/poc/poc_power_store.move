@@ -201,6 +201,22 @@ module aptos_framework::poc_power_store {
             retention_bps_per_period;
     }
 
+    /// Update the power-period length used to advance `current_period`.
+    ///
+    /// This is a framework-governed operational parameter. Production deployments can
+    /// keep the default long period, while tests can shorten it to make staged power
+    /// updates become live after fewer epoch transitions.
+    public entry fun set_power_period_in_epochs(
+        aptos_framework: &signer,
+        power_period_in_epochs: u64,
+    ) acquires PowerStore {
+        system_addresses::assert_aptos_framework(aptos_framework);
+        assert_store_exists();
+        assert_valid_power_period(power_period_in_epochs);
+        borrow_global_mut<PowerStore>(@aptos_framework).power_period_in_epochs =
+            power_period_in_epochs;
+    }
+
     public entry fun set_operator(
         aptos_framework: &signer,
         new_operator: address,
@@ -273,6 +289,7 @@ module aptos_framework::poc_power_store {
             i += 1;
         };
     }
+
 
     /// Genesis / test special case: directly write a committed snapshot at period 0.
     ///

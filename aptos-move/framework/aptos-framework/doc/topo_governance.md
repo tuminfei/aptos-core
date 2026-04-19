@@ -58,6 +58,8 @@ on a proposal multiple times as long as the total voting power of these votes do
 -  [Function `reconfigure`](#0x1_topo_governance_reconfigure)
 -  [Function `force_end_epoch`](#0x1_topo_governance_force_end_epoch)
 -  [Function `force_end_epoch_test_only`](#0x1_topo_governance_force_end_epoch_test_only)
+-  [Function `set_power_period_in_epochs_test_only`](#0x1_topo_governance_set_power_period_in_epochs_test_only)
+-  [Function `stage_power_update_test_only`](#0x1_topo_governance_stage_power_update_test_only)
 -  [Function `toggle_features`](#0x1_topo_governance_toggle_features)
 -  [Function `get_signer_testnet_only`](#0x1_topo_governance_get_signer_testnet_only)
 -  [Function `get_signer`](#0x1_topo_governance_get_signer)
@@ -105,6 +107,7 @@ on a proposal multiple times as long as the total voting power of these votes do
 <b>use</b> <a href="governance_proposal.md#0x1_governance_proposal">0x1::governance_proposal</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="permissioned_signer.md#0x1_permissioned_signer">0x1::permissioned_signer</a>;
+<b>use</b> <a href="poc_power_store.md#0x1_poc_power_store">0x1::poc_power_store</a>;
 <b>use</b> <a href="randomness_config.md#0x1_randomness_config">0x1::randomness_config</a>;
 <b>use</b> <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg">0x1::reconfiguration_with_dkg</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
@@ -1807,6 +1810,73 @@ where the core resources account exists and has been granted power to mint Aptos
     <b>let</b> core_signer = <a href="topo_governance.md#0x1_topo_governance_get_signer_testnet_only">get_signer_testnet_only</a>(aptos_framework, @0x1);
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(&core_signer);
     <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_finish">reconfiguration_with_dkg::finish</a>(&core_signer);
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_topo_governance_set_power_period_in_epochs_test_only"></a>
+
+## Function `set_power_period_in_epochs_test_only`
+
+Test-only wrapper that lets <code>@core_resources</code> shorten the power period
+without compiling an auxiliary Move script in smoke tests.
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_set_power_period_in_epochs_test_only">set_power_period_in_epochs_test_only</a>(core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, power_period_in_epochs: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_set_power_period_in_epochs_test_only">set_power_period_in_epochs_test_only</a>(
+    core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    power_period_in_epochs: u64,
+) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a> {
+    <b>let</b> framework_signer = <a href="topo_governance.md#0x1_topo_governance_get_signer_testnet_only">get_signer_testnet_only</a>(core_resources, @0x1);
+    <a href="poc_power_store.md#0x1_poc_power_store_set_power_period_in_epochs">poc_power_store::set_power_period_in_epochs</a>(&framework_signer, power_period_in_epochs);
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_topo_governance_stage_power_update_test_only"></a>
+
+## Function `stage_power_update_test_only`
+
+Test-only wrapper that stages a single user power update for the next
+period using the framework signer delegated to <code>@core_resources</code>.
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_stage_power_update_test_only">stage_power_update_test_only</a>(core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, user: <b>address</b>, power: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_stage_power_update_test_only">stage_power_update_test_only</a>(
+    core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    user: <b>address</b>,
+    power: u64,
+) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a> {
+    <b>let</b> framework_signer = <a href="topo_governance.md#0x1_topo_governance_get_signer_testnet_only">get_signer_testnet_only</a>(core_resources, @0x1);
+    <b>let</b> target_period = <a href="poc_power_store.md#0x1_poc_power_store_get_current_period">poc_power_store::get_current_period</a>() + 1;
+    <a href="poc_power_store.md#0x1_poc_power_store_stage_batch_update">poc_power_store::stage_batch_update</a>(
+        &framework_signer,
+        target_period,
+        <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[user],
+        <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[power],
+    );
 }
 </code></pre>
 

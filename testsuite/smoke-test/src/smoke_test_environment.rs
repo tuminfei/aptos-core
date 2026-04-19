@@ -13,10 +13,21 @@ use aptos_logger::prelude::*;
 use aptos_types::chain_id::ChainId;
 use once_cell::sync::Lazy;
 use rand::rngs::OsRng;
-use std::{num::NonZeroUsize, sync::Arc};
+use std::{
+    num::NonZeroUsize,
+    sync::{Arc, Once},
+};
 use tokio::task::JoinHandle;
 
 const SWARM_BUILD_NUM_RETRIES: u8 = 3;
+static INIT_TEST_LOGGERS: Once = Once::new();
+
+fn init_test_loggers() {
+    INIT_TEST_LOGGERS.call_once(|| {
+        ::aptos_logger::Logger::new().init();
+        let _ = env_logger::try_init();
+    });
+}
 
 #[derive(Clone)]
 pub struct SwarmBuilder {
@@ -80,8 +91,7 @@ impl SwarmBuilder {
 
     // Gas is not enabled with this setup, it's enabled via forge instance.
     pub async fn build_inner(&mut self) -> anyhow::Result<LocalSwarm> {
-        ::aptos_logger::Logger::new().init();
-        env_logger::init();
+        init_test_loggers();
         info!("Preparing to finish compiling");
         // TODO change to return Swarm trait
         // Add support for forge

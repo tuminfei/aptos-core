@@ -35,8 +35,8 @@ use crate::{
     },
     op::key::{ExtractPeer, GenerateKey, NetworkKeyInputOptions, SaveKey},
     stake::{
-        AddStake, IncreaseLockup, InitializeStakeOwner, SetDelegatedVoter, SetOperator,
-        UnlockStake, WithdrawStake,
+        AddStake, IncreaseLockup, InitializeStakeOwner, SetDelegatedVoter, UnlockStake,
+        WithdrawStake,
     },
     CliCommand,
 };
@@ -112,6 +112,10 @@ pub struct CliTestFramework {
 }
 
 impl CliTestFramework {
+    /// A conservative gas ceiling for test-only governance operations that may
+    /// execute full reconfiguration or epoch-end logic in a single transaction.
+    const POC_GOVERNANCE_MAX_GAS: u64 = 20_000_000;
+
     pub fn local_new(num_accounts: usize) -> CliTestFramework {
         let dummy_url = Url::parse("http://localhost").unwrap();
         let mut framework = CliTestFramework {
@@ -405,6 +409,129 @@ impl CliTestFramework {
         .await
     }
 
+    /// Deposit TOPO into the staking registry under the caller's own account.
+    pub async fn registry_deposit(
+        &self,
+        index: usize,
+        amount: u64,
+    ) -> CliTypedResult<TransactionSummary> {
+        self.run_function(
+            index,
+            None,
+            MemberId::from_str("0x1::staking_registry::deposit").unwrap(),
+            vec![&format!("u64:{}", amount)],
+            vec![],
+        )
+        .await
+    }
+
+    /// Delegate the caller's deposited collateral to a validator pool.
+    pub async fn registry_delegate(
+        &self,
+        index: usize,
+        validator_address: AccountAddress,
+    ) -> CliTypedResult<TransactionSummary> {
+        self.run_function(
+            index,
+            None,
+            MemberId::from_str("0x1::staking_registry::delegate").unwrap(),
+            vec![&format!("address:{}", validator_address.to_hex_literal())],
+            vec![],
+        )
+        .await
+    }
+
+    /// Remove the caller's delegation from its current validator pool.
+    pub async fn registry_undelegate(&self, index: usize) -> CliTypedResult<TransactionSummary> {
+        self.run_function(
+            index,
+            None,
+            MemberId::from_str("0x1::staking_registry::undelegate").unwrap(),
+            vec![],
+            vec![],
+        )
+        .await
+    }
+
+    /// Withdraw the caller's registry deposit after cooldown and undelegation are complete.
+    pub async fn registry_withdraw_deposit(
+        &self,
+        index: usize,
+    ) -> CliTypedResult<TransactionSummary> {
+        self.run_function(
+            index,
+            None,
+            MemberId::from_str("0x1::staking_registry::withdraw_deposit").unwrap(),
+            vec![],
+            vec![],
+        )
+        .await
+    }
+
+    /// Stage a single-account POC power update through the framework operator.
+    ///
+    /// This must be submitted by the testnet `@core_resources` account because
+    /// the runtime operator is a framework-controlled signer.
+    pub async fn stage_power_update_via_core_resources(
+        &self,
+        core_resources_index: usize,
+        user_address: AccountAddress,
+        power: u64,
+    ) -> CliTypedResult<TransactionSummary> {
+        self.run_function(
+            core_resources_index,
+            Some(GasOptions {
+                max_gas: Some(Self::POC_GOVERNANCE_MAX_GAS),
+                ..Default::default()
+            }),
+            MemberId::from_str("0x1::topo_governance::stage_power_update_test_only").unwrap(),
+            vec![
+                &format!("address:{}", user_address.to_hex_literal()),
+                &format!("u64:{}", power),
+            ],
+            vec![],
+        )
+        .await
+    }
+
+    /// Override `power_period_in_epochs` via the framework signer exposed in testnet.
+    pub async fn set_power_period_in_epochs_via_core_resources(
+        &self,
+        core_resources_index: usize,
+        power_period_in_epochs: u64,
+    ) -> CliTypedResult<TransactionSummary> {
+        self.run_function(
+            core_resources_index,
+            Some(GasOptions {
+                max_gas: Some(Self::POC_GOVERNANCE_MAX_GAS),
+                ..Default::default()
+            }),
+            MemberId::from_str("0x1::topo_governance::set_power_period_in_epochs_test_only")
+                .unwrap(),
+            vec![&format!("u64:{}", power_period_in_epochs)],
+            vec![],
+        )
+        .await
+    }
+
+    /// Force an epoch transition through the framework signer exposed to `@core_resources`.
+    pub async fn force_end_epoch_via_core_resources(
+        &self,
+        core_resources_index: usize,
+    ) -> CliTypedResult<TransactionSummary> {
+        self.run_function(
+            core_resources_index,
+            Some(GasOptions {
+                max_gas: Some(Self::POC_GOVERNANCE_MAX_GAS),
+                ..Default::default()
+            }),
+            MemberId::from_str("0x1::topo_governance::force_end_epoch_test_only").unwrap(),
+            vec![],
+            vec![],
+        )
+        .await
+    }
+
     pub async fn unlock_stake(
         &self,
         index: usize,
@@ -626,12 +753,20 @@ impl CliTestFramework {
         &self,
         owner_index: usize,
         operator_index: usize,
-    ) -> CliTypedResult<Vec<TransactionSummary>> {
-        SetOperator {
-            txn_options: self.transaction_options(owner_index, None),
-            operator_address: self.account_id(operator_index),
-        }
-        .execute()
+    ) -> CliTypedResult<TransactionSummary> {
+        // The POC validator tests manage a single self-owned direct pool per owner. Calling
+        // the entry function directly avoids relying on CLI-side pool discovery, which can
+        // otherwise silently do nothing when no pool is resolved.
+        self.run_function(
+            owner_index,
+            None,
+            MemberId::from_str("0x1::stake::set_operator").unwrap(),
+            vec![&format!(
+                "address:{}",
+                self.account_id(operator_index).to_hex_literal()
+            )],
+            vec![],
+        )
         .await
     }
 

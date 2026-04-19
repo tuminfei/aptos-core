@@ -21,6 +21,7 @@ module aptos_framework::topo_governance {
     use aptos_std::table::{Self, Table};
 
     use aptos_framework::account::{Self, SignerCapability, create_signer_with_capability};
+    use aptos_framework::poc_power_store;
     use aptos_framework::event::{Self, EventHandle};
     use aptos_framework::governance_proposal::{Self, GovernanceProposal};
     use aptos_framework::stake;
@@ -611,6 +612,33 @@ module aptos_framework::topo_governance {
         let core_signer = get_signer_testnet_only(aptos_framework, @0x1);
         system_addresses::assert_aptos_framework(&core_signer);
         reconfiguration_with_dkg::finish(&core_signer);
+    }
+
+    /// Test-only wrapper that lets `@core_resources` shorten the power period
+    /// without compiling an auxiliary Move script in smoke tests.
+    public entry fun set_power_period_in_epochs_test_only(
+        core_resources: &signer,
+        power_period_in_epochs: u64,
+    ) acquires GovernanceResponsbility {
+        let framework_signer = get_signer_testnet_only(core_resources, @0x1);
+        poc_power_store::set_power_period_in_epochs(&framework_signer, power_period_in_epochs);
+    }
+
+    /// Test-only wrapper that stages a single user power update for the next
+    /// period using the framework signer delegated to `@core_resources`.
+    public entry fun stage_power_update_test_only(
+        core_resources: &signer,
+        user: address,
+        power: u64,
+    ) acquires GovernanceResponsbility {
+        let framework_signer = get_signer_testnet_only(core_resources, @0x1);
+        let target_period = poc_power_store::get_current_period() + 1;
+        poc_power_store::stage_batch_update(
+            &framework_signer,
+            target_period,
+            vector[user],
+            vector[power],
+        );
     }
 
     /// Update feature flags and also trigger reconfiguration.

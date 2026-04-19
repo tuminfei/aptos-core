@@ -40,6 +40,8 @@ use std::{
     time::Duration,
 };
 
+const TEST_POWER_PERIOD_IN_EPOCHS: u64 = 3;
+
 #[tokio::test]
 async fn test_analyze_validators() {
     let (swarm, cli, _faucet) = SwarmBuilder::new_local(1)
@@ -552,6 +554,10 @@ pub(crate) fn generate_blob(data: &[u8]) -> String {
 async fn test_large_total_stake() {
     // just barelly below u64::MAX
     const BASE: u64 = 10_000_000_000_000_000_000;
+    // Under the POC registry flow the validator must hold transferable coins first,
+    // then deposit them into `staking_registry`. Keep a small extra balance so the
+    // account can still pay gas after locking `BASE` as collateral.
+    const VALIDATOR_INITIAL_BALANCE: u64 = BASE + DEFAULT_FUNDED_COINS;
     let (swarm, mut cli, _faucet) = SwarmBuilder::new_local(4)
         .with_init_genesis_stake(Arc::new(|_, genesis_stake_amount| {
             // make sure we have quorum
@@ -572,7 +578,8 @@ async fn test_large_total_stake() {
     let rest_client = swarm.validators().next().unwrap().rest_client();
 
     let mut keygen = KeyGen::from_os_rng();
-    let (validator_cli_index, keys) = init_validator_account(&mut cli, &mut keygen, None).await;
+    let (validator_cli_index, keys) =
+        init_validator_account(&mut cli, &mut keygen, Some(VALIDATOR_INITIAL_BALANCE)).await;
     // faucet can make our root LocalAccount sequence number get out of sync.
     swarm
         .chain_info()
@@ -593,9 +600,32 @@ async fn test_large_total_stake() {
     .await
     .unwrap();
 
+    let root_cli_index = cli.add_account_with_address_to_cli(
+        swarm.root_key(),
+        swarm.chain_info().root_account().address(),
+    );
+    cli.set_power_period_in_epochs_via_core_resources(root_cli_index, TEST_POWER_PERIOD_IN_EPOCHS)
+        .await
+        .unwrap();
+    stage_power_and_wait_until_live(
+        &cli,
+        root_cli_index,
+        validator_cli_index,
+        BASE,
+        TEST_POWER_PERIOD_IN_EPOCHS,
+    )
+    .await;
+    cli.registry_deposit(validator_cli_index, BASE)
+        .await
+        .unwrap();
+    cli.registry_delegate(validator_cli_index, cli.account_id(validator_cli_index))
+        .await
+        .unwrap();
+
     cli.join_validator_set(validator_cli_index, None)
         .await
         .unwrap();
+    sync_forge_root_account_seq_num(&swarm, &rest_client).await;
 
     reconfig(
         &rest_client,
@@ -816,7 +846,6 @@ async fn test_nodes_rewards() {
             epoch_info.blocks.last().unwrap().version
         );
         if let Some(previous) = previous_stats {
-            let mut estimates = Vec::new();
             for cur_validator in &epoch_info.validators {
                 let prev_stats = previous
                     .validator_stats
@@ -825,31 +854,19 @@ async fn test_nodes_rewards() {
                 if prev_stats.proposal_successes == 0 {
                     assert_eq!(cur_validator.voting_power, prev_stats.voting_power);
                 } else {
-                    assert!(cur_validator.voting_power > prev_stats.voting_power, "in epoch {} voting power for {} didn't increase with successful proposals (from {} to {})", epoch_info.epoch - 1, cur_validator.address, prev_stats.voting_power, cur_validator.voting_power);
-                    let earning = (cur_validator.voting_power - prev_stats.voting_power) as f64
-                        / prev_stats.voting_power as f64;
-                    let failure_rate = prev_stats.failure_rate() as f64;
-                    let epoch_reward_estimate = earning / (1.0 - failure_rate);
-                    println!(
-                        "{}: {} / {} = {}, prev_voting_power = {}",
+                    // POC rewards are minted into staking_registry deposits and
+                    // effective consensus power is capped by uploaded POC power.
+                    // Voting power is therefore no longer a direct reward oracle;
+                    // the smoke test should only require it to stay monotonic.
+                    assert!(
+                        cur_validator.voting_power >= prev_stats.voting_power,
+                        "in epoch {} voting power for {} decreased after successful proposals (from {} to {})",
+                        epoch_info.epoch - 1,
                         cur_validator.address,
-                        earning,
-                        failure_rate,
-                        epoch_reward_estimate,
-                        prev_stats.voting_power
+                        prev_stats.voting_power,
+                        cur_validator.voting_power
                     );
-                    estimates.push(epoch_reward_estimate);
                 }
-            }
-            if !estimates.is_empty() {
-                assert!(
-                    estimates.iter().copied().fold(f64::NEG_INFINITY, f64::max)
-                        / estimates.iter().copied().fold(f64::INFINITY, f64::min)
-                        < 1.1,
-                    "in epoch {}, estimated epoch reward rate differs: {:?}",
-                    epoch_info.epoch - 1,
-                    estimates
-                );
             }
         }
 
@@ -1120,12 +1137,31 @@ async fn test_join_and_leave_validator() {
     cli.assert_account_balance_now(validator_cli_index, (3 * DEFAULT_FUNDED_COINS) - gas_used)
         .await;
 
+    let root_cli_index = cli.add_account_with_address_to_cli(
+        swarm.root_key(),
+        swarm.chain_info().root_account().address(),
+    );
+    cli.set_power_period_in_epochs_via_core_resources(root_cli_index, TEST_POWER_PERIOD_IN_EPOCHS)
+        .await
+        .unwrap();
     let stake_coins = 7;
+    stage_power_and_wait_until_live(
+        &cli,
+        root_cli_index,
+        validator_cli_index,
+        stake_coins,
+        TEST_POWER_PERIOD_IN_EPOCHS,
+    )
+    .await;
     gas_used += get_gas(
-        cli.add_stake(validator_cli_index, stake_coins)
+        cli.registry_deposit(validator_cli_index, stake_coins)
             .await
-            .unwrap()[0]
-            .clone(),
+            .unwrap(),
+    );
+    gas_used += get_gas(
+        cli.registry_delegate(validator_cli_index, cli.account_id(validator_cli_index))
+            .await
+            .unwrap(),
     );
 
     cli.assert_account_balance_now(
@@ -1133,6 +1169,7 @@ async fn test_join_and_leave_validator() {
         (3 * DEFAULT_FUNDED_COINS) - stake_coins - gas_used,
     )
     .await;
+    sync_forge_root_account_seq_num(&swarm, &rest_client).await;
 
     reconfig(
         &rest_client,
@@ -1199,32 +1236,19 @@ async fn test_join_and_leave_validator() {
     )
     .await;
 
-    let unlock_stake = 3;
-
-    // Unlock stake.
-    gas_used += get_gas(
-        cli.unlock_stake(validator_cli_index, unlock_stake)
-            .await
-            .unwrap()[0]
-            .clone(),
-    );
+    gas_used += get_gas(cli.registry_undelegate(validator_cli_index).await.unwrap());
 
     // Conservatively wait until the recurring lockup is over.
     tokio::time::sleep(Duration::from_secs(10)).await;
 
-    let withdraw_stake = 2;
     gas_used += get_gas(
-        cli.withdraw_stake(validator_cli_index, withdraw_stake)
+        cli.registry_withdraw_deposit(validator_cli_index)
             .await
-            .unwrap()
-            .remove(0),
+            .unwrap(),
     );
 
-    cli.assert_account_balance_now(
-        validator_cli_index,
-        (3 * DEFAULT_FUNDED_COINS) - stake_coins + withdraw_stake - gas_used,
-    )
-    .await;
+    cli.assert_account_balance_now(validator_cli_index, (3 * DEFAULT_FUNDED_COINS) - gas_used)
+        .await;
 }
 
 #[tokio::test]
@@ -1253,11 +1277,17 @@ async fn test_owner_create_and_delegate_flow() {
 
     let transaction_factory = swarm.chain_info().transaction_factory();
     let rest_client = swarm.validators().next().unwrap().rest_client();
+    let root_cli_index = cli.add_account_with_address_to_cli(
+        swarm.root_key(),
+        swarm.chain_info().root_account().address(),
+    );
+    cli.set_power_period_in_epochs_via_core_resources(root_cli_index, TEST_POWER_PERIOD_IN_EPOCHS)
+        .await
+        .unwrap();
 
     let mut keygen = KeyGen::from_os_rng();
 
     let owner_initial_coins = 20000000;
-    let voter_initial_coins = 1000000;
     let operator_initial_coins = 1000000;
 
     // Owner of the coins receives coins
@@ -1281,10 +1311,6 @@ async fn test_owner_create_and_delegate_flow() {
         .unwrap();
 
     let operator_keys = ValidatorNodeKeys::new(&mut keygen);
-    let voter_cli_index = cli
-        .create_cli_account(keygen.generate_ed25519_private_key(), owner_cli_index)
-        .await
-        .unwrap();
     let operator_cli_index = cli
         .create_cli_account(operator_keys.account_private_key.clone(), owner_cli_index)
         .await
@@ -1295,13 +1321,7 @@ async fn test_owner_create_and_delegate_flow() {
         owner_initial_coins - cli.account_balance_now(owner_cli_index).await.unwrap();
     println!("owner_gas1: {}", owner_gas);
 
-    // Voter and operator start with no coins
-    // Owner needs to send small amount of coins to operator and voter, to create their accounts and so they have enough for gas fees.
-    owner_gas += cli
-        .transfer_coins(owner_cli_index, voter_cli_index, voter_initial_coins, None)
-        .await
-        .unwrap()
-        .octa_spent();
+    // Operator starts with no coins and needs gas funds for metadata updates.
     owner_gas += cli
         .transfer_coins(
             owner_cli_index,
@@ -1315,38 +1335,44 @@ async fn test_owner_create_and_delegate_flow() {
 
     cli.assert_account_balance_now(
         owner_cli_index,
-        owner_initial_coins - voter_initial_coins - operator_initial_coins - owner_gas,
+        owner_initial_coins - operator_initial_coins - owner_gas,
     )
     .await;
-    cli.assert_account_balance_now(voter_cli_index, voter_initial_coins)
-        .await;
     cli.assert_account_balance_now(operator_cli_index, operator_initial_coins)
         .await;
 
     let stake_amount = 1000000;
     let mut operator_gas = 0;
     owner_gas += get_gas(
-        cli.initialize_stake_owner(
-            owner_cli_index,
-            stake_amount,
-            Some(voter_cli_index),
-            Some(operator_cli_index),
-        )
-        .await
-        .unwrap(),
+        cli.initialize_stake_owner(owner_cli_index, 0, None, Some(operator_cli_index))
+            .await
+            .unwrap(),
     );
-
-    println!("before4");
-    cli.assert_account_balance_now(
+    stage_power_and_wait_until_live(
+        &cli,
+        root_cli_index,
         owner_cli_index,
-        owner_initial_coins
-            - voter_initial_coins
-            - operator_initial_coins
-            - stake_amount
-            - owner_gas,
+        stake_amount,
+        TEST_POWER_PERIOD_IN_EPOCHS,
     )
     .await;
-    println!("after4");
+    owner_gas += get_gas(
+        cli.registry_deposit(owner_cli_index, stake_amount)
+            .await
+            .unwrap(),
+    );
+    owner_gas += get_gas(
+        cli.registry_delegate(owner_cli_index, cli.account_id(owner_cli_index))
+            .await
+            .unwrap(),
+    );
+
+    cli.assert_account_balance_now(
+        owner_cli_index,
+        owner_initial_coins - operator_initial_coins - stake_amount - owner_gas,
+    )
+    .await;
+    sync_forge_root_account_seq_num(&swarm, &rest_client).await;
 
     assert_validator_set_sizes(&cli, 1, 0, 0).await;
     assert_eq!(
@@ -1382,10 +1408,8 @@ async fn test_owner_create_and_delegate_flow() {
         .unwrap(),
     );
 
-    println!("before5");
     cli.assert_account_balance_now(operator_cli_index, operator_initial_coins - operator_gas)
         .await;
-    println!("after5");
 
     cli.join_validator_set(operator_cli_index, Some(owner_cli_index))
         .await
@@ -1409,7 +1433,6 @@ async fn test_owner_create_and_delegate_flow() {
     }
 
     let new_operator_keys = ValidatorNodeKeys::new(&mut keygen);
-    let new_voter_cli_index = cli.add_account_to_cli(keygen.generate_ed25519_private_key());
     let new_operator_cli_index = cli
         .create_cli_account(
             new_operator_keys.account_private_key.clone(),
@@ -1418,9 +1441,6 @@ async fn test_owner_create_and_delegate_flow() {
         .await
         .unwrap();
 
-    cli.set_delegated_voter(owner_cli_index, new_voter_cli_index)
-        .await
-        .unwrap();
     cli.set_operator(owner_cli_index, new_operator_cli_index)
         .await
         .unwrap();
@@ -1563,6 +1583,43 @@ async fn get_validator_state(cli: &CliTestFramework, pool_index: usize) -> Valid
     ValidatorState::NONE
 }
 
+/// The CLI test framework and forge keep separate clients for the same root key.
+/// When governance transactions are submitted through the CLI, the forge-owned
+/// `LocalAccount` must be resynchronized before it submits the next reconfiguration
+/// transaction, otherwise forge may reuse an old sequence number.
+async fn sync_forge_root_account_seq_num(swarm: &impl Swarm, rest_client: &Client) {
+    let mut chain_info = swarm.chain_info();
+    chain_info
+        .resync_root_account_seq_num(rest_client)
+        .await
+        .unwrap();
+}
+
 fn get_gas(transaction: TransactionSummary) -> u64 {
     transaction.gas_used.unwrap() * transaction.gas_unit_price.unwrap()
+}
+
+async fn stage_power_and_wait_until_live(
+    cli: &CliTestFramework,
+    core_resources_index: usize,
+    user_index: usize,
+    power: u64,
+    power_period_in_epochs: u64,
+) {
+    cli.stage_power_update_via_core_resources(
+        core_resources_index,
+        cli.account_id(user_index),
+        power,
+    )
+    .await
+    .unwrap();
+
+    // Runtime uploads are staged for `current_period + 1`, so with a long power period
+    // the test must explicitly advance enough epochs before the power becomes readable
+    // by staking_registry and join_validator_set.
+    for _ in 0..power_period_in_epochs {
+        cli.force_end_epoch_via_core_resources(core_resources_index)
+            .await
+            .unwrap();
+    }
 }
