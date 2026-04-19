@@ -30,6 +30,11 @@ use aptos_types::on_chain_config::{
 use move_core_types::account_address::AccountAddress;
 use std::sync::Arc;
 
+const LEGACY_TRANSACTION_EXPIRED_ERROR: &str =
+    "Used to be pending and now not found. Transaction expired.";
+const DEFINITIVE_TRANSACTION_EXPIRED_ERROR: &str =
+    "Transaction expired. It is guaranteed it will not be committed on chain.";
+
 #[tokio::test]
 async fn test_consensus_block_filter() {
     // Generate a new key pair and sender address
@@ -67,9 +72,10 @@ async fn test_consensus_block_filter() {
 
     // Verify the transaction was dropped by the consensus filter
     let error = response.unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("Used to be pending and now not found. Transaction expired."));
+    assert!(
+        is_transaction_expired_error(&error.to_string()),
+        "unexpected consensus filter error: {error}"
+    );
 
     // Execute a few more transactions and verify that they are processed correctly
     execute_test_transactions(&mut swarm).await;
@@ -141,9 +147,10 @@ async fn test_quorum_store_batch_filter() {
 
     // Verify the transaction was dropped by the quorum store filter
     let error = response.unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("Used to be pending and now not found. Transaction expired."));
+    assert!(
+        is_transaction_expired_error(&error.to_string()),
+        "unexpected quorum store filter error: {error}"
+    );
 
     // Execute a few more transactions and verify that they are processed correctly
     execute_test_transactions(&mut swarm).await;
@@ -287,4 +294,9 @@ fn filter_quorum_store_transactions(node_config: &mut NodeConfig, sender_address
     // Update the node config with the new filter
     node_config.transaction_filters.quorum_store_filter =
         BatchTransactionFilterConfig::new(true, batch_transaction_filter);
+}
+
+fn is_transaction_expired_error(error: &str) -> bool {
+    error.contains(LEGACY_TRANSACTION_EXPIRED_ERROR)
+        || error.contains(DEFINITIVE_TRANSACTION_EXPIRED_ERROR)
 }

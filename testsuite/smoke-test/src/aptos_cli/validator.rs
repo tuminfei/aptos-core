@@ -7,7 +7,7 @@ use crate::{
 };
 use aptos::{
     account::create::DEFAULT_FUNDED_COINS,
-    common::types::TransactionSummary,
+    common::types::{CliError, TransactionSummary},
     node::analyze::{
         analyze_validators::{AnalyzeValidators, EpochStats},
         fetch_metadata::FetchMetadata,
@@ -36,11 +36,19 @@ use std::{
     collections::{HashMap, HashSet},
     convert::TryFrom,
     fmt::Write,
+    future::Future,
     sync::Arc,
     time::Duration,
 };
 
 const TEST_POWER_PERIOD_IN_EPOCHS: u64 = 3;
+const VALIDATOR_SET_CHANGE_RETRY_ATTEMPTS: usize = 30;
+const VALIDATOR_SET_CHANGE_RETRY_DELAY: Duration = Duration::from_secs(2);
+const FAUCET_FUND_RETRY_ATTEMPTS: usize = 50;
+const FAUCET_FUND_RETRY_DELAY: Duration = Duration::from_millis(100);
+const RECONFIGURATION_IN_PROGRESS_ERROR: &str = "ERECONFIGURATION_IN_PROGRESS";
+const FAUCET_CONNECTION_REFUSED_ERROR: &str = "Connection refused";
+const FAUCET_TCP_CONNECT_ERROR: &str = "tcp connect error";
 
 #[tokio::test]
 async fn test_analyze_validators() {
@@ -622,9 +630,7 @@ async fn test_large_total_stake() {
         .await
         .unwrap();
 
-    cli.join_validator_set(validator_cli_index, None)
-        .await
-        .unwrap();
+    join_validator_set_when_reconfig_ready(&cli, validator_cli_index, None).await;
     sync_forge_root_account_seq_num(&swarm, &rest_client).await;
 
     reconfig(
@@ -761,20 +767,13 @@ async fn test_nodes_rewards() {
     )
     .await;
 
-    cli.fund_account(validator_cli_indices[3], Some(30000))
-        .await
-        .unwrap();
+    // The validator account already exists at genesis; use the root mint path to
+    // top up gas directly. The faucet uses short-lived transactions and can
+    // expire during the failpoint window in this test.
+    let mut public_info = swarm.aptos_public_info();
+    public_info.mint(addresses[3], 30000).await.unwrap();
 
-    // faucet can make our root LocalAccount sequence number get out of sync.
-    swarm
-        .chain_info()
-        .resync_root_account_seq_num(&rest_clients[3])
-        .await
-        .unwrap();
-
-    cli.leave_validator_set(validator_cli_indices[3], None)
-        .await
-        .unwrap();
+    leave_validator_set_when_reconfig_ready(&cli, validator_cli_indices[3], None).await;
 
     reconfig(
         &rest_clients[0],
@@ -1189,11 +1188,8 @@ async fn test_join_and_leave_validator() {
 
     assert_validator_set_sizes(&cli, 1, 0, 0).await;
 
-    gas_used += get_gas(
-        cli.join_validator_set(validator_cli_index, None)
-            .await
-            .unwrap(),
-    );
+    gas_used +=
+        get_gas(join_validator_set_when_reconfig_ready(&cli, validator_cli_index, None).await);
 
     assert_validator_set_sizes(&cli, 1, 1, 0).await;
 
@@ -1213,11 +1209,8 @@ async fn test_join_and_leave_validator() {
     )
     .await;
 
-    gas_used += get_gas(
-        cli.leave_validator_set(validator_cli_index, None)
-            .await
-            .unwrap(),
-    );
+    gas_used +=
+        get_gas(leave_validator_set_when_reconfig_ready(&cli, validator_cli_index, None).await);
 
     assert_validator_set_sizes(&cli, 1, 0, 1).await;
 
@@ -1291,13 +1284,12 @@ async fn test_owner_create_and_delegate_flow() {
     let operator_initial_coins = 1000000;
 
     // Owner of the coins receives coins
-    let owner_cli_index = cli
-        .create_cli_account_from_faucet(
-            keygen.generate_ed25519_private_key(),
-            Some(owner_initial_coins),
-        )
-        .await
-        .unwrap();
+    let owner_cli_index = create_cli_account_from_faucet_when_ready(
+        &mut cli,
+        keygen.generate_ed25519_private_key(),
+        Some(owner_initial_coins),
+    )
+    .await;
     println!("owner CLI index: {}", owner_cli_index);
 
     cli.assert_account_balance_now(owner_cli_index, owner_initial_coins)
@@ -1411,9 +1403,7 @@ async fn test_owner_create_and_delegate_flow() {
     cli.assert_account_balance_now(operator_cli_index, operator_initial_coins - operator_gas)
         .await;
 
-    cli.join_validator_set(operator_cli_index, Some(owner_cli_index))
-        .await
-        .unwrap();
+    join_validator_set_when_reconfig_ready(&cli, operator_cli_index, Some(owner_cli_index)).await;
 
     let owner_state = get_validator_state(&cli, owner_cli_index).await;
     if owner_state == ValidatorState::JOINING {
@@ -1454,9 +1444,8 @@ async fn test_owner_create_and_delegate_flow() {
     .await
     .unwrap();
 
-    cli.leave_validator_set(new_operator_cli_index, Some(owner_cli_index))
-        .await
-        .unwrap();
+    leave_validator_set_when_reconfig_ready(&cli, new_operator_cli_index, Some(owner_cli_index))
+        .await;
 
     let owner_state = get_validator_state(&cli, owner_cli_index).await;
     if owner_state == ValidatorState::LEAVING {
@@ -1522,10 +1511,12 @@ pub async fn init_validator_account(
     amount: Option<u64>,
 ) -> (usize, ValidatorNodeKeys) {
     let validator_node_keys = ValidatorNodeKeys::new(keygen);
-    let validator_cli_index = cli
-        .create_cli_account_from_faucet(validator_node_keys.account_private_key.clone(), amount)
-        .await
-        .unwrap();
+    let validator_cli_index = create_cli_account_from_faucet_when_ready(
+        cli,
+        validator_node_keys.account_private_key.clone(),
+        amount,
+    )
+    .await;
 
     cli.assert_account_balance_now(validator_cli_index, amount.unwrap_or(DEFAULT_FUNDED_COINS))
         .await;
@@ -1597,6 +1588,112 @@ async fn sync_forge_root_account_seq_num(swarm: &impl Swarm, rest_client: &Clien
 
 fn get_gas(transaction: TransactionSummary) -> u64 {
     transaction.gas_used.unwrap() * transaction.gas_unit_price.unwrap()
+}
+
+async fn join_validator_set_when_reconfig_ready(
+    cli: &CliTestFramework,
+    operator_index: usize,
+    pool_index: Option<usize>,
+) -> TransactionSummary {
+    retry_validator_set_change_on_reconfiguration(
+        || cli.join_validator_set(operator_index, pool_index),
+        "join_validator_set",
+    )
+    .await
+}
+
+async fn leave_validator_set_when_reconfig_ready(
+    cli: &CliTestFramework,
+    operator_index: usize,
+    pool_index: Option<usize>,
+) -> TransactionSummary {
+    retry_validator_set_change_on_reconfiguration(
+        || cli.leave_validator_set(operator_index, pool_index),
+        "leave_validator_set",
+    )
+    .await
+}
+
+async fn retry_validator_set_change_on_reconfiguration<F, Fut>(
+    mut submit: F,
+    operation: &str,
+) -> TransactionSummary
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<TransactionSummary, CliError>>,
+{
+    let mut last_error = None;
+    for attempt in 1..=VALIDATOR_SET_CHANGE_RETRY_ATTEMPTS {
+        match submit().await {
+            Ok(summary) => return summary,
+            Err(error) if is_reconfiguration_in_progress_error(&error) => {
+                last_error = Some(error);
+                info!(
+                    "{} hit in-progress reconfiguration on attempt {}/{}; retrying after {:?}",
+                    operation,
+                    attempt,
+                    VALIDATOR_SET_CHANGE_RETRY_ATTEMPTS,
+                    VALIDATOR_SET_CHANGE_RETRY_DELAY,
+                );
+                tokio::time::sleep(VALIDATOR_SET_CHANGE_RETRY_DELAY).await;
+            },
+            Err(error) => panic!("{} failed with non-retryable error: {:?}", operation, error),
+        }
+    }
+
+    panic!(
+        "{} kept hitting in-progress reconfiguration after {} attempts: {:?}",
+        operation, VALIDATOR_SET_CHANGE_RETRY_ATTEMPTS, last_error
+    );
+}
+
+fn is_reconfiguration_in_progress_error(error: &CliError) -> bool {
+    matches!(error, CliError::SimulationError(message) if message.contains(RECONFIGURATION_IN_PROGRESS_ERROR))
+}
+
+async fn create_cli_account_from_faucet_when_ready(
+    cli: &mut CliTestFramework,
+    private_key: Ed25519PrivateKey,
+    amount: Option<u64>,
+) -> usize {
+    let index = cli.add_account_to_cli(private_key);
+    fund_account_when_faucet_ready(cli, index, amount).await;
+    index
+}
+
+async fn fund_account_when_faucet_ready(cli: &CliTestFramework, index: usize, amount: Option<u64>) {
+    let mut last_error = None;
+    for attempt in 1..=FAUCET_FUND_RETRY_ATTEMPTS {
+        match cli.fund_account(index, amount).await {
+            Ok(_) => return,
+            Err(error) if is_faucet_connection_not_ready_error(&error) => {
+                last_error = Some(error);
+                info!(
+                    "faucet was not ready while funding account {} on attempt {}/{}; retrying after {:?}",
+                    cli.account_id(index),
+                    attempt,
+                    FAUCET_FUND_RETRY_ATTEMPTS,
+                    FAUCET_FUND_RETRY_DELAY,
+                );
+                tokio::time::sleep(FAUCET_FUND_RETRY_DELAY).await;
+            },
+            Err(error) => panic!("fund_account failed with non-retryable error: {:?}", error),
+        }
+    }
+
+    panic!(
+        "fund_account kept hitting faucet connection errors after {} attempts: {:?}",
+        FAUCET_FUND_RETRY_ATTEMPTS, last_error
+    );
+}
+
+fn is_faucet_connection_not_ready_error(error: &CliError) -> bool {
+    matches!(
+        error,
+        CliError::ApiError(message)
+            if message.contains(FAUCET_CONNECTION_REFUSED_ERROR)
+                || message.contains(FAUCET_TCP_CONNECT_ERROR)
+    )
 }
 
 async fn stage_power_and_wait_until_live(

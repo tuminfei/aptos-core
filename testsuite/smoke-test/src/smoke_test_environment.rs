@@ -16,10 +16,13 @@ use rand::rngs::OsRng;
 use std::{
     num::NonZeroUsize,
     sync::{Arc, Once},
+    time::Duration,
 };
-use tokio::task::JoinHandle;
+use tokio::{net::TcpStream, task::JoinHandle, time::sleep};
 
 const SWARM_BUILD_NUM_RETRIES: u8 = 3;
+const FAUCET_STARTUP_NUM_RETRIES: u8 = 50;
+const FAUCET_STARTUP_RETRY_DELAY: Duration = Duration::from_millis(100);
 static INIT_TEST_LOGGERS: Once = Once::new();
 
 fn init_test_loggers() {
@@ -164,6 +167,7 @@ impl SwarmBuilder {
         );
         let faucet_endpoint: reqwest::Url =
             format!("http://localhost:{}", faucet_port).parse().unwrap();
+        wait_for_faucet_to_start(faucet_port).await;
         // Connect the operator tool to the node's JSON RPC API
         let tool = CliTestFramework::new(
             validator.rest_api_endpoint(),
@@ -215,4 +219,29 @@ pub fn launch_faucet(
         Some(chain_id),
     );
     tokio::spawn(faucet_config.run())
+}
+
+async fn wait_for_faucet_to_start(port: u16) {
+    let addr = format!("127.0.0.1:{port}");
+    let mut last_error = None;
+    for attempt in 1..=FAUCET_STARTUP_NUM_RETRIES {
+        match TcpStream::connect(&addr).await {
+            Ok(_) => return,
+            Err(error) => {
+                last_error = Some(error);
+                if attempt % 10 == 0 {
+                    warn!(
+                        "Waiting for faucet at {} (attempt {}/{})",
+                        addr, attempt, FAUCET_STARTUP_NUM_RETRIES
+                    );
+                }
+                sleep(FAUCET_STARTUP_RETRY_DELAY).await;
+            },
+        }
+    }
+
+    panic!(
+        "Faucet at {} did not become reachable after {} attempts: {:?}",
+        addr, FAUCET_STARTUP_NUM_RETRIES, last_error
+    );
 }

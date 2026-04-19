@@ -24,7 +24,16 @@ use aptos_sdk::{
 use rand::{rngs::OsRng, Rng, SeedableRng};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
+
+const TEST_TRANSACTION_EXPIRATION_SECS: u64 = 120;
+const TEST_TRANSACTION_RETRY_ATTEMPTS: usize = 3;
+const TEST_TRANSACTION_RETRY_DELAY: Duration = Duration::from_secs(1);
+const DEFINITIVE_TRANSACTION_EXPIRED_ERROR: &str =
+    "Transaction expired. It is guaranteed it will not be committed on chain.";
 
 #[async_trait::async_trait]
 pub trait AptosTest: Test {
@@ -201,9 +210,12 @@ impl AptosPublicInfo {
         to_account: &LocalAccount,
         amount: u64,
     ) -> Result<PendingTransaction> {
-        let tx = from_account.sign_with_transaction_builder(self.transaction_factory().payload(
-            aptos_stdlib::topo_coin_transfer(to_account.address(), amount),
-        ));
+        let tx = sign_transfer_transaction(
+            &self.transaction_factory(),
+            from_account,
+            to_account,
+            amount,
+        );
         let pending_txn = self.rest_client.submit(&tx).await?.into_inner();
         Ok(pending_txn)
     }
@@ -214,16 +226,37 @@ impl AptosPublicInfo {
         to_account: &LocalAccount,
         amount: u64,
     ) -> Result<PendingTransaction> {
-        let pending_txn = self
-            .transfer_non_blocking(from_account, to_account, amount)
-            .await?;
-        self.rest_client.wait_for_transaction(&pending_txn).await?;
-        Ok(pending_txn)
+        let mut last_error = None;
+        for _attempt in 1..=TEST_TRANSACTION_RETRY_ATTEMPTS {
+            let sequence_number_before_signing = from_account.sequence_number();
+            let pending_txn = self
+                .transfer_non_blocking(from_account, to_account, amount)
+                .await?;
+            match self.rest_client.wait_for_transaction(&pending_txn).await {
+                Ok(_) => return Ok(pending_txn),
+                Err(error) if is_definitively_expired_transaction_error(&error.to_string()) => {
+                    from_account.set_sequence_number(sequence_number_before_signing);
+                    last_error = Some(error);
+                    tokio::time::sleep(TEST_TRANSACTION_RETRY_DELAY).await;
+                },
+                Err(error) => return Err(error.into()),
+            }
+        }
+
+        Err(anyhow!(
+            "transfer transaction expired after {} attempts: {:?}",
+            TEST_TRANSACTION_RETRY_ATTEMPTS,
+            last_error
+        ))
     }
 
     pub fn transaction_factory(&self) -> TransactionFactory {
         let unit_price = std::cmp::max(aptos_global_constants::GAS_UNIT_PRICE, 1);
-        TransactionFactory::new(self.chain_id).with_gas_unit_price(unit_price)
+        TransactionFactory::new(self.chain_id)
+            .with_gas_unit_price(unit_price)
+            .with_absolute_transaction_expiration_timestamp(
+                test_transaction_expiration_timestamp_secs(),
+            )
     }
 
     pub async fn get_approved_execution_hash_at_topo_governance(
@@ -394,4 +427,32 @@ struct SimpleMap<K, V> {
 struct Element<K, V> {
     key: K,
     value: V,
+}
+
+fn sign_transfer_transaction(
+    transaction_factory: &TransactionFactory,
+    from_account: &LocalAccount,
+    to_account: &LocalAccount,
+    amount: u64,
+) -> SignedTransaction {
+    from_account.sign_with_transaction_builder(
+        transaction_factory
+            .payload(aptos_stdlib::topo_coin_transfer(
+                to_account.address(),
+                amount,
+            ))
+            .expiration_timestamp_secs(test_transaction_expiration_timestamp_secs()),
+    )
+}
+
+fn test_transaction_expiration_timestamp_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        + TEST_TRANSACTION_EXPIRATION_SECS
+}
+
+fn is_definitively_expired_transaction_error(error: &str) -> bool {
+    error.contains(DEFINITIVE_TRANSACTION_EXPIRED_ERROR)
 }

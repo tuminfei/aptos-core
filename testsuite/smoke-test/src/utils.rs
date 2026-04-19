@@ -21,11 +21,19 @@ use aptos_types::{
 };
 use move_core_types::language_storage::CORE_CODE_ADDRESS;
 use rand::random;
-use std::{collections::HashSet, net::Ipv4Addr, sync::Arc, time::Duration};
+use std::{
+    collections::HashSet,
+    net::Ipv4Addr,
+    sync::Arc,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 pub const MAX_CATCH_UP_WAIT_SECS: u64 = 180; // The max time we'll wait for nodes to catch up
 pub const MAX_CONNECTIVITY_WAIT_SECS: u64 = 180; // The max time we'll wait for nodes to gain connectivity
 pub const MAX_HEALTHY_WAIT_SECS: u64 = 120; // The max time we'll wait for nodes to become healthy
+const TRANSFER_COINS_EXPIRATION_SECS: u64 = 120;
+const TRANSFER_COINS_RETRY_ATTEMPTS: usize = 3;
+const TRANSFER_COINS_RETRY_DELAY: Duration = Duration::from_secs(1);
 
 pub fn add_node_to_seeds(
     dest_config: &mut NodeConfig,
@@ -148,9 +156,7 @@ pub async fn transfer_coins_non_blocking(
     receiver: &LocalAccount,
     amount: u64,
 ) -> SignedTransaction {
-    let txn = sender.sign_with_transaction_builder(
-        transaction_factory.payload(aptos_stdlib::topo_coin_transfer(receiver.address(), amount)),
-    );
+    let txn = sign_transfer_coins_transaction(transaction_factory, sender, receiver, amount);
 
     client.submit(&txn).await.unwrap();
     txn
@@ -163,12 +169,61 @@ pub async fn transfer_coins(
     receiver: &LocalAccount,
     amount: u64,
 ) -> SignedTransaction {
-    let txn =
-        transfer_coins_non_blocking(client, transaction_factory, sender, receiver, amount).await;
+    let mut last_error = None;
+    for attempt in 1..=TRANSFER_COINS_RETRY_ATTEMPTS {
+        let sequence_number_before_signing = sender.sequence_number();
+        let txn =
+            transfer_coins_non_blocking(client, transaction_factory, sender, receiver, amount)
+                .await;
 
-    client.wait_for_signed_transaction(&txn).await.unwrap();
+        match client.wait_for_signed_transaction(&txn).await {
+            Ok(_) => return txn,
+            Err(error) if is_definitively_expired_transaction_error(&error) => {
+                sender.set_sequence_number(sequence_number_before_signing);
+                last_error = Some(error);
+                aptos_logger::info!(
+                    "transfer transaction expired on attempt {}/{}; retrying after {:?}",
+                    attempt,
+                    TRANSFER_COINS_RETRY_ATTEMPTS,
+                    TRANSFER_COINS_RETRY_DELAY,
+                );
+                tokio::time::sleep(TRANSFER_COINS_RETRY_DELAY).await;
+            },
+            Err(error) => panic!("transfer transaction failed: {}", error),
+        }
+    }
 
-    txn
+    panic!(
+        "transfer transaction expired after {} attempts: {:?}",
+        TRANSFER_COINS_RETRY_ATTEMPTS, last_error
+    );
+}
+
+fn sign_transfer_coins_transaction(
+    transaction_factory: &TransactionFactory,
+    sender: &mut LocalAccount,
+    receiver: &LocalAccount,
+    amount: u64,
+) -> SignedTransaction {
+    sender.sign_with_transaction_builder(
+        transaction_factory
+            .payload(aptos_stdlib::topo_coin_transfer(receiver.address(), amount))
+            .expiration_timestamp_secs(transfer_coins_expiration_timestamp_secs()),
+    )
+}
+
+fn transfer_coins_expiration_timestamp_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        + TRANSFER_COINS_EXPIRATION_SECS
+}
+
+fn is_definitively_expired_transaction_error(error: &aptos_rest_client::error::RestError) -> bool {
+    error
+        .to_string()
+        .contains("Transaction expired. It is guaranteed it will not be committed on chain.")
 }
 
 pub async fn transfer_and_maybe_reconfig(
