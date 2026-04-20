@@ -480,12 +480,15 @@ async fn test_keyless_groth16_verifies_using_rust_sdk() {
         .await
         .unwrap();
 
+    remove_training_wheels(&mut cli, &mut info, root_idx).await;
+
+    // Sign after the governance flow finishes. In slower local runs the
+    // governance scripts can take minutes, which can expire a transaction that
+    // was signed earlier with the default expiration window.
     let builder = info
         .transaction_factory()
         .payload(aptos_stdlib::topo_coin_transfer(recipient.address(), 100));
     let signed_txn = account.sign_with_transaction_builder(builder);
-
-    remove_training_wheels(&mut cli, &mut info, root_idx).await;
 
     info!("Submit keyless Groth16 transaction");
     let result = swarm
@@ -545,12 +548,14 @@ async fn test_keyless_groth16_verifies_using_rust_sdk_from_jwt() {
         .await
         .unwrap();
 
+    remove_training_wheels(&mut cli, &mut info, root_idx).await;
+
+    // Sign after the governance flow finishes so the transaction expiration is
+    // computed from the post-upgrade ledger time instead of the pre-upgrade one.
     let builder = info
         .transaction_factory()
         .payload(aptos_stdlib::topo_coin_transfer(recipient.address(), 100));
     let signed_txn = account.sign_with_transaction_builder(builder);
-
-    remove_training_wheels(&mut cli, &mut info, root_idx).await;
 
     info!("Submit keyless Groth16 transaction");
     let result = swarm

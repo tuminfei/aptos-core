@@ -3,6 +3,7 @@
 
 use super::{get_encryption_key_resource, verify_chunky_dkg_transcript};
 use crate::{smoke_test_environment::SwarmBuilder, utils::get_on_chain_resource};
+use aptos::common::types::GasOptions;
 use aptos_forge::{Node, Swarm, SwarmExt};
 use aptos_logger::info;
 use aptos_types::{
@@ -18,7 +19,7 @@ use std::{sync::Arc, time::Duration};
 #[tokio::test]
 async fn chunky_dkg_enable_feature() {
     let epoch_duration_secs = 20;
-    let estimated_dkg_latency_secs = 120;
+    let estimated_dkg_latency_secs = 240;
 
     // Genesis: randomness + validator txns enabled.
     // Chunky DKG config is OFF (default). ENCRYPTED_TRANSACTIONS is OFF.
@@ -31,6 +32,10 @@ async fn chunky_dkg_enable_feature() {
             config.consensus.quorum_store.enable_batch_v2_rx = true;
             config.consensus.quorum_store.enable_opt_qs_v2_payload_tx = true;
             config.consensus.quorum_store.enable_opt_qs_v2_payload_rx = true;
+            // Runtime enablement hits the heaviest chunky DKG path because the
+            // network transitions from plain DKG into chunky DKG mid-test. Give
+            // reliable broadcast more headroom in this single-machine swarm.
+            config.consensus.rand_rb_config.rpc_timeout_ms = 30_000;
             config
                 .state_sync
                 .state_sync_driver
@@ -98,7 +103,12 @@ script {
 }
 "#;
 
-    cli.run_script(root_idx, script)
+    let gas_options = GasOptions {
+        gas_unit_price: Some(100),
+        max_gas: Some(20_000_000),
+        expiration_secs: 60,
+    };
+    cli.run_script_with_gas_options(root_idx, script, Some(gas_options))
         .await
         .expect("Txn execution error.");
 

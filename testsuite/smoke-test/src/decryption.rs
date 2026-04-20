@@ -32,6 +32,56 @@ async fn wait_for_epoch(client: &Client, target_epoch: u64, timeout_secs: u64) -
     }
 }
 
+/// Wait until the chain exposes a usable per-epoch encryption key.
+async fn wait_for_encryption_key(client: &Client, timeout_secs: u64) -> (u64, Vec<u8>) {
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(timeout_secs);
+    loop {
+        let state = client
+            .get_ledger_information()
+            .await
+            .expect("failed to get ledger info")
+            .into_inner();
+        if let Some(key) = state.encryption_key.clone() {
+            return (state.epoch, key);
+        }
+        if tokio::time::Instant::now() > deadline {
+            panic!("timed out waiting for an encryption key to appear on chain");
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+}
+
+/// Wait until the chain rotates to a different encryption key in a later epoch.
+async fn wait_for_rotated_encryption_key(
+    client: &Client,
+    previous_epoch: u64,
+    previous_key: &[u8],
+    timeout_secs: u64,
+) -> (u64, Vec<u8>) {
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(timeout_secs);
+    loop {
+        let state = client
+            .get_ledger_information()
+            .await
+            .expect("failed to get ledger info")
+            .into_inner();
+        if state.epoch > previous_epoch {
+            if let Some(key) = state.encryption_key.clone() {
+                if key != previous_key {
+                    return (state.epoch, key);
+                }
+            }
+        }
+        if tokio::time::Instant::now() > deadline {
+            panic!(
+                "timed out waiting for encryption key rotation after epoch {}",
+                previous_epoch
+            );
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+}
+
 /// Count the number of encrypted user transactions in the range [start_version, end_version).
 async fn count_encrypted_txns(client: &Client, start_version: u64, end_version: u64) -> (u64, u64) {
     let mut count = 0u64;
@@ -73,6 +123,11 @@ async fn create_swarm_with_encryption(num_validators: usize) -> LocalSwarm {
             config.consensus.quorum_store.enable_batch_v2_rx = true;
             config.consensus.quorum_store.enable_opt_qs_v2_payload_tx = true;
             config.consensus.quorum_store.enable_opt_qs_v2_payload_rx = true;
+            // Four-validator smoke tests run all validators on a single host.
+            // Chunky DKG certification can exceed the default reliable-broadcast
+            // RPC timeout under local scheduling contention, which prevents the
+            // per-epoch encryption key from ever materializing on chain.
+            config.consensus.rand_rb_config.rpc_timeout_ms = 30_000;
             config
                 .state_sync
                 .state_sync_driver
@@ -106,23 +161,13 @@ async fn test_encryption_key_rotation_and_encrypted_txns() {
 
     let client = swarm.validators().last().unwrap().rest_client();
 
-    // ---- Wait for epoch 2 and record the encryption key ----
-    info!("Waiting for epoch 2...");
-    let key_at_epoch2 = wait_for_epoch(&client, 2, 90).await;
-    let epoch2 = client
-        .get_ledger_information()
-        .await
-        .unwrap()
-        .into_inner()
-        .epoch;
+    // ---- Wait for the first usable encryption key and record it ----
+    info!("Waiting for the first encryption key to appear...");
+    let (epoch2, key_at_epoch2) = wait_for_encryption_key(&client, 240).await;
     info!(
         "Reached epoch {} with encryption key present: {}",
         epoch2,
-        key_at_epoch2.is_some()
-    );
-    assert!(
-        key_at_epoch2.is_some(),
-        "Encryption key should exist after epoch 2, but was None"
+        true
     );
 
     // Record the ledger version so we can scan transactions later.
@@ -158,29 +203,19 @@ async fn test_encryption_key_rotation_and_encrypted_txns() {
         "Expected some committed transactions from the emitter, got 0"
     );
 
-    // ---- Wait for the next epoch and check the key changed ----
-    info!("Waiting for epoch {}...", epoch2 + 1);
-    let key_at_next_epoch = wait_for_epoch(&client, epoch2 + 1, 60).await;
-    let next_epoch = client
-        .get_ledger_information()
-        .await
-        .unwrap()
-        .into_inner()
-        .epoch;
+    // ---- Wait for the next rotated key and check that it changed ----
+    info!("Waiting for encryption key rotation after epoch {}...", epoch2);
+    let (next_epoch, key_at_next_epoch) =
+        wait_for_rotated_encryption_key(&client, epoch2, key_at_epoch2.as_slice(), 240).await;
     info!(
         "Reached epoch {} with encryption key present: {}",
         next_epoch,
-        key_at_next_epoch.is_some()
+        true
     );
 
-    assert!(
-        key_at_next_epoch.is_some(),
-        "Encryption key should exist at epoch {}, but was None",
-        next_epoch
-    );
     assert_ne!(
-        key_at_epoch2.unwrap(),
-        key_at_next_epoch.unwrap(),
+        key_at_epoch2,
+        key_at_next_epoch,
         "Encryption key must change between epoch {} and epoch {}",
         epoch2,
         next_epoch,

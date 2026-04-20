@@ -6,6 +6,7 @@ use aptos_cached_packages::aptos_stdlib;
 use aptos_crypto::SigningKey;
 use aptos_forge::Swarm;
 use aptos_sdk::types::{AccountKey, LocalAccount};
+use aptos_types::chain_id::NamedChain;
 use aptos_types::function_info::FunctionInfo;
 use ethers::{
     core::rand::rngs::OsRng,
@@ -192,7 +193,7 @@ async fn test_ethereum_derivable_account() {
                     function_name,
                     scheme,
                     domain,
-                    4,
+                    NamedChain::TESTING.id(),
                     digest,
                     "2025-01-01T00:00:00.000Z"
                 );
@@ -229,5 +230,5 @@ async fn test_ethereum_derivable_account() {
     info.client()
         .submit_and_wait(&create_txn)
         .await
-        .unwrap_or_else(|_| panic!("aa: {:?}", create_txn));
+        .unwrap_or_else(|err| panic!("aa err: {err:?}\ntxn: {:?}", create_txn));
 }

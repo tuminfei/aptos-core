@@ -51,7 +51,7 @@ module aptos_framework::consensus_config {
     public fun set_for_next_epoch(account: &signer, config: vector<u8>) {
         system_addresses::assert_aptos_framework(account);
         assert!(config.length() > 0, error::invalid_argument(EINVALID_CONFIG));
-        std::config_buffer::upsert<ConsensusConfig>(ConsensusConfig {config});
+        config_buffer::upsert(ConsensusConfig { config });
     }
 
     /// Only used in reconfigurations to apply the pending `ConsensusConfig`, if there is any.

@@ -2,6 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::aptos_cli::validator::generate_blob;
+use aptos::common::types::GasOptions;
 use aptos::test::CliTestFramework;
 use aptos_cached_packages::aptos_stdlib;
 use aptos_config::{
@@ -375,7 +376,15 @@ pub async fn update_consensus_config(
     "#,
         generate_blob(&bcs::to_bytes(&new_consensus_config).unwrap())
     );
-    cli.run_script(root_cli_index, &update_consensus_config_script)
+    cli.run_script_with_gas_options(
+        root_cli_index,
+        &update_consensus_config_script,
+        Some(GasOptions {
+            gas_unit_price: Some(100),
+            max_gas: Some(20_000_000),
+            expiration_secs: 60,
+        }),
+    )
         .await
         .unwrap();
 }

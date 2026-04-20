@@ -2,6 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::utils;
+use aptos::common::types::GasOptions;
 use anyhow::{anyhow, ensure, Result};
 use aptos_crypto::{compat::Sha3_256, Uniform};
 use aptos_dkg::weighted_vuf::traits::WeightedVUF;
@@ -10,7 +11,10 @@ use aptos_logger::info;
 use aptos_rest_client::Client;
 use aptos_types::{
     dkg::{DKGSessionState, DKGState, DKGTrait, DefaultDKG},
-    on_chain_config::{OnChainConfig, OnChainConsensusConfig},
+    on_chain_config::{
+        ChunkyDKGConfigMoveStruct, OnChainConfig, OnChainConsensusConfig,
+        OnChainChunkyDKGConfig, OnChainRandomnessConfig, RandomnessConfigMoveStruct,
+    },
     randomness::{PerBlockRandomness, RandMetadata, WVUF},
     validator_verifier::ValidatorConsensusInfo,
 };
@@ -45,6 +49,25 @@ async fn get_current_version(rest_client: &Client) -> u64 {
 }
 
 #[allow(dead_code)]
+async fn get_current_epoch(rest_client: &Client) -> u64 {
+    rest_client
+        .get_ledger_information()
+        .await
+        .unwrap()
+        .inner()
+        .epoch
+}
+
+#[allow(dead_code)]
+fn governance_gas_options() -> GasOptions {
+    GasOptions {
+        gas_unit_price: Some(100),
+        max_gas: Some(20_000_000),
+        expiration_secs: 60,
+    }
+}
+
+#[allow(dead_code)]
 async fn get_on_chain_resource_at_version<T: OnChainConfig>(
     rest_client: &Client,
     version: u64,
@@ -58,6 +81,86 @@ async fn get_on_chain_resource_at_version<T: OnChainConfig>(
         .await;
     let response = maybe_response.unwrap();
     response.into_inner()
+}
+
+#[allow(dead_code)]
+async fn wait_for_epoch_at_least(client: &Client, target_epoch: u64, time_limit_secs: u64) -> u64 {
+    let timer = Instant::now();
+    while timer.elapsed().as_secs() < time_limit_secs {
+        let epoch = get_current_epoch(client).await;
+        if epoch >= target_epoch {
+            return epoch;
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+    panic!(
+        "Timed out waiting for epoch >= {} after {} seconds",
+        target_epoch, time_limit_secs
+    );
+}
+
+#[allow(dead_code)]
+async fn wait_for_validator_txns_enabled(
+    client: &Client,
+    expected_enabled: bool,
+    time_limit_secs: u64,
+) -> OnChainConsensusConfig {
+    let timer = Instant::now();
+    while timer.elapsed().as_secs() < time_limit_secs {
+        let config = crate::utils::get_current_consensus_config(client).await;
+        if config.is_vtxn_enabled() == expected_enabled {
+            return config;
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+    panic!(
+        "Timed out waiting for validator transactions to become {}",
+        expected_enabled
+    );
+}
+
+#[allow(dead_code)]
+async fn wait_for_randomness_main_logic_enabled(
+    client: &Client,
+    expected_enabled: bool,
+    time_limit_secs: u64,
+) -> OnChainRandomnessConfig {
+    let timer = Instant::now();
+    while timer.elapsed().as_secs() < time_limit_secs {
+        let raw_config = utils::get_on_chain_resource::<RandomnessConfigMoveStruct>(client).await;
+        let config = OnChainRandomnessConfig::try_from(raw_config)
+            .unwrap_or_else(|err| panic!("Failed to decode randomness config: {err}"));
+        if config.randomness_enabled() == expected_enabled {
+            return config;
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+    panic!(
+        "Timed out waiting for randomness main logic to become {}",
+        expected_enabled
+    );
+}
+
+#[allow(dead_code)]
+async fn wait_for_chunky_dkg_enabled(
+    client: &Client,
+    expected_enabled: bool,
+    time_limit_secs: u64,
+) -> OnChainChunkyDKGConfig {
+    let timer = Instant::now();
+    while timer.elapsed().as_secs() < time_limit_secs {
+        let raw_config = utils::get_on_chain_resource::<ChunkyDKGConfigMoveStruct>(client).await;
+        let config = OnChainChunkyDKGConfig::try_from(raw_config)
+            .unwrap_or_else(|err| panic!("Failed to decode chunky DKG config: {err}"));
+        if config.chunky_dkg_enabled() == expected_enabled {
+            return config;
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+    panic!(
+        "Timed out waiting for chunky DKG config to become {}",
+        expected_enabled
+    );
 }
 
 /// Poll the on-chain state until we see a DKG session finishes.
@@ -85,6 +188,36 @@ async fn wait_for_dkg_finish(
     }
     assert!(timer.elapsed().as_secs() < time_limit_secs);
     dkg_state.last_complete().clone()
+}
+
+#[allow(dead_code)]
+async fn wait_for_new_dkg_completion(
+    client: &Client,
+    min_target_epoch: Option<u64>,
+    previous_target_epoch: Option<u64>,
+    time_limit_secs: u64,
+) -> DKGSessionState {
+    let timer = Instant::now();
+    while timer.elapsed().as_secs() < time_limit_secs {
+        let dkg_state = utils::get_on_chain_resource::<DKGState>(client).await;
+        if dkg_state.in_progress.is_none() {
+            if let Some(session) = dkg_state.last_completed.as_ref() {
+                let target_epoch = session.target_epoch();
+                let is_newer_session =
+                    previous_target_epoch.map_or(true, |previous| target_epoch > previous);
+                let satisfies_target_epoch =
+                    min_target_epoch.map_or(true, |minimum| target_epoch >= minimum);
+                if is_newer_session && satisfies_target_epoch {
+                    return session.clone();
+                }
+            }
+        }
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+    panic!(
+        "Timed out waiting for a new DKG completion (min_target_epoch={:?}, previous_target_epoch={:?})",
+        min_target_epoch, previous_target_epoch
+    );
 }
 
 /// Verify that DKG transcript of epoch i (stored in `new_dkg_state`) is correctly generated

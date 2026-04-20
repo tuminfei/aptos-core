@@ -96,6 +96,11 @@ async fn create_swarm_with_chunky_dkg(
             config.consensus.quorum_store.enable_batch_v2_rx = true;
             config.consensus.quorum_store.enable_opt_qs_v2_payload_tx = true;
             config.consensus.quorum_store.enable_opt_qs_v2_payload_rx = true;
+            // Local debug smoke tests run four validators on a single machine and
+            // can intermittently exceed the default 10s reliable-broadcast RPC
+            // timeout during chunky DKG certification. Use a wider timeout window
+            // so the test exercises the protocol instead of the local scheduler.
+            config.consensus.rand_rb_config.rpc_timeout_ms = 30_000;
             config
                 .state_sync
                 .state_sync_driver
