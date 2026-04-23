@@ -1,4 +1,4 @@
-spec aptos_token::token {
+spec topo_token::token {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_partial;

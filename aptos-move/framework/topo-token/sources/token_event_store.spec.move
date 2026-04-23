@@ -1,4 +1,4 @@
-spec aptos_token::token_event_store {
+spec topo_token::token_event_store {
     spec module {
         pragma verify = false;
         pragma aborts_if_is_strict;

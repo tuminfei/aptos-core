@@ -1,14 +1,14 @@
 /// This defines an object-based Royalty. The royalty can be applied to either a collection or a
 /// token. Applications should read the royalty from the token, as it will read the appropriate
 /// royalty.
-module aptos_token_objects::royalty {
+module topo_token_objects::royalty {
     use std::error;
     use std::option::{Self, Option};
     use aptos_framework::object::{ConstructorRef, ExtendRef, Object};
     #[test_only]
     use aptos_framework::object::Self;
 
-    friend aptos_token_objects::token;
+    friend topo_token_objects::token;
 
     /// Royalty does not exist
     const EROYALTY_DOES_NOT_EXIST: u64 = 1;

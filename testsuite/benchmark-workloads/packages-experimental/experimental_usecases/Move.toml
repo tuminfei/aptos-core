@@ -5,8 +5,8 @@ version = "0.0.0"
 [dependencies]
 AptosFramework = { local = "../../../../aptos-move/framework/aptos-framework" }
 AptosExperimental = { local = "../../../../aptos-move/framework/aptos-experimental" }
-AptosToken = { local = "../../../../aptos-move/framework/aptos-token" }
-AptosTokenObjects = { local = "../../../../aptos-move/framework/aptos-token-objects" }
+AptosToken = { local = "../../../../aptos-move/framework/topo-token" }
+AptosTokenObjects = { local = "../../../../aptos-move/framework/topo-token-objects" }
 
 # testing exchanging of constant address works as well.
 [addresses]

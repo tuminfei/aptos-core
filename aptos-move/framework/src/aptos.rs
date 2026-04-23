@@ -67,13 +67,13 @@ impl ReleaseTarget {
                 false,
             ),
             (
-                "aptos-token",
-                Some("cached-packages/src/aptos_token_sdk_builder.rs"),
+                "topo-token",
+                Some("cached-packages/src/topo_token_sdk_builder.rs"),
                 false,
             ),
             (
-                "aptos-token-objects",
-                Some("cached-packages/src/aptos_token_objects_sdk_builder.rs"),
+                "topo-token-objects",
+                Some("cached-packages/src/topo_token_objects_sdk_builder.rs"),
                 false,
             ),
             ("aptos-trading", None, false),
@@ -202,8 +202,8 @@ static NAMED_ADDRESSES: Lazy<BTreeMap<String, NumericalAddress>> = Lazy::new(|| 
     result.insert("std".to_owned(), one);
     result.insert("aptos_std".to_owned(), one);
     result.insert("aptos_framework".to_owned(), one);
-    result.insert("aptos_token".to_owned(), three);
-    result.insert("aptos_token_objects".to_owned(), four);
+    result.insert("topo_token".to_owned(), three);
+    result.insert("topo_token_objects".to_owned(), four);
     result.insert("aptos_trading".to_owned(), five);
     result.insert("aptos_experimental".to_owned(), seven);
     result.insert("aptos_fungible_asset".to_owned(), ten);

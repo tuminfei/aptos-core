@@ -61,8 +61,8 @@ pub const APTOS_PACKAGES: [&str; 6] = [
     "AptosFramework",
     "MoveStdlib",
     "AptosStdlib",
-    "AptosToken",
-    "AptosTokenObjects",
+    "TopoToken",
+    "TopoTokenObjects",
     "AptosExperimental",
 ];
 

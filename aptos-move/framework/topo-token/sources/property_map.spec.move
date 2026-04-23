@@ -1,4 +1,4 @@
-spec aptos_token::property_map {
+spec topo_token::property_map {
     spec module {
         pragma verify = true;
         pragma aborts_if_is_strict;

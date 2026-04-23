@@ -12,8 +12,8 @@ use std::{fmt::Display, path::PathBuf};
 
 /// Represents a standard library.
 pub enum StdLib {
-    AptosTokenObjects,
-    AptosToken,
+    TopoTokenObjects,
+    TopoToken,
     AptosTrading,
     AptosFramework,
     AptosStdlib,
@@ -58,8 +58,8 @@ impl StdLib {
     pub fn as_str(&self) -> &'static str {
         match self {
             StdLib::AptosTrading => "AptosTrading",
-            StdLib::AptosToken => "AptosToken",
-            StdLib::AptosTokenObjects => "AptosTokenObjects",
+            StdLib::TopoToken => "TopoToken",
+            StdLib::TopoTokenObjects => "TopoTokenObjects",
             StdLib::AptosFramework => "AptosFramework",
             StdLib::AptosStdlib => "AptosStdlib",
             StdLib::MoveStdlib => "MoveStdlib",
@@ -69,8 +69,8 @@ impl StdLib {
     /// Returns the standard library from the given package name, or `None` if the package name is not a standard library.
     pub fn from_package_name(package_name: Symbol) -> Option<StdLib> {
         match package_name.as_str() {
-            "AptosToken" => Some(StdLib::AptosToken),
-            "AptosTokenObjects" => Some(StdLib::AptosTokenObjects),
+            "TopoToken" => Some(StdLib::TopoToken),
+            "TopoTokenObjects" => Some(StdLib::TopoTokenObjects),
             "AptosFramework" => Some(StdLib::AptosFramework),
             "AptosStdlib" => Some(StdLib::AptosStdlib),
             "MoveStdlib" => Some(StdLib::MoveStdlib),
@@ -82,8 +82,8 @@ impl StdLib {
     fn sub_dir(&self) -> &'static str {
         match self {
             StdLib::AptosTrading => "aptos-trading",
-            StdLib::AptosToken => "aptos-token",
-            StdLib::AptosTokenObjects => "aptos-token-objects",
+            StdLib::TopoToken => "topo-token",
+            StdLib::TopoTokenObjects => "topo-token-objects",
             StdLib::AptosFramework => "aptos-framework",
             StdLib::AptosStdlib => "aptos-stdlib",
             StdLib::MoveStdlib => "move-stdlib",

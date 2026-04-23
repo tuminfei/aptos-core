@@ -6,16 +6,16 @@
 /// * Creator-based freezing of tokens
 /// * Standard object-based transfer and events
 /// * Metadata property type
-module aptos_token_objects::aptos_token {
+module topo_token_objects::topo_token {
     use std::error;
     use std::option::{Self, Option};
     use std::string::String;
     use std::signer;
     use aptos_framework::object::{Self, ConstructorRef, Object};
-    use aptos_token_objects::collection;
-    use aptos_token_objects::property_map;
-    use aptos_token_objects::royalty;
-    use aptos_token_objects::token;
+    use topo_token_objects::collection;
+    use topo_token_objects::property_map;
+    use topo_token_objects::royalty;
+    use topo_token_objects::token;
 
     /// The collection does not exist
     const ECOLLECTION_DOES_NOT_EXIST: u64 = 1;
@@ -206,10 +206,10 @@ module aptos_token_objects::aptos_token {
         // If tokens are freezable, add a transfer ref to be able to freeze transfers
         let freezable_by_creator = are_collection_tokens_freezable(collection);
         if (freezable_by_creator) {
-            let aptos_token_addr = constructor_ref.address_from_constructor_ref();
-            let aptos_token = &mut AptosToken[aptos_token_addr];
+            let topo_token_addr = constructor_ref.address_from_constructor_ref();
+            let topo_token = &mut AptosToken[topo_token_addr];
             let transfer_ref = constructor_ref.generate_transfer_ref();
-            aptos_token.transfer_ref.fill(transfer_ref);
+            topo_token.transfer_ref.fill(transfer_ref);
         };
 
         constructor_ref.object_from_constructor_ref()
@@ -304,13 +304,13 @@ module aptos_token_objects::aptos_token {
             option::none()
         };
 
-        let aptos_token = AptosToken {
+        let topo_token = AptosToken {
             burn_ref,
             transfer_ref: option::none(),
             mutator_ref,
             property_mutator_ref: property_map::generate_mutator_ref(&constructor_ref),
         };
-        move_to(&object_signer, aptos_token);
+        move_to(&object_signer, topo_token);
 
         let properties = property_map::prepare_input(property_keys, property_types, property_values);
         property_map::init(&constructor_ref, properties);
@@ -377,44 +377,44 @@ module aptos_token_objects::aptos_token {
     }
 
     public entry fun burn<T: key>(creator: &signer, token: Object<T>) acquires AptosToken {
-        let aptos_token = authorized_borrow(&token, creator);
+        let topo_token = authorized_borrow(&token, creator);
         assert!(
-            aptos_token.burn_ref.is_some(),
+            topo_token.burn_ref.is_some(),
             error::permission_denied(ETOKEN_NOT_BURNABLE),
         );
-        move aptos_token;
-        let aptos_token = move_from<AptosToken>(token.object_address());
+        move topo_token;
+        let topo_token = move_from<AptosToken>(token.object_address());
         let AptosToken {
             burn_ref,
             transfer_ref: _,
             mutator_ref: _,
             property_mutator_ref,
-        } = aptos_token;
+        } = topo_token;
         property_map::burn(property_mutator_ref);
         token::burn(burn_ref.extract());
     }
 
     public entry fun freeze_transfer<T: key>(creator: &signer, token: Object<T>) acquires AptosCollection, AptosToken {
-        let aptos_token = authorized_borrow(&token, creator);
+        let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_collection_tokens_freezable(token::collection_object(token))
-                && aptos_token.transfer_ref.is_some(),
+                && topo_token.transfer_ref.is_some(),
             error::permission_denied(EFIELD_NOT_MUTABLE),
         );
-        aptos_token.transfer_ref.borrow().disable_ungated_transfer();
+        topo_token.transfer_ref.borrow().disable_ungated_transfer();
     }
 
     public entry fun unfreeze_transfer<T: key>(
         creator: &signer,
         token: Object<T>
     ) acquires AptosCollection, AptosToken {
-        let aptos_token = authorized_borrow(&token, creator);
+        let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_collection_tokens_freezable(token::collection_object(token))
-                && aptos_token.transfer_ref.is_some(),
+                && topo_token.transfer_ref.is_some(),
             error::permission_denied(EFIELD_NOT_MUTABLE),
         );
-        aptos_token.transfer_ref.borrow().enable_ungated_transfer();
+        topo_token.transfer_ref.borrow().enable_ungated_transfer();
     }
 
     public entry fun set_description<T: key>(
@@ -426,8 +426,8 @@ module aptos_token_objects::aptos_token {
             is_mutable_description(token),
             error::permission_denied(EFIELD_NOT_MUTABLE),
         );
-        let aptos_token = authorized_borrow(&token, creator);
-        token::set_description(aptos_token.mutator_ref.borrow(), description);
+        let topo_token = authorized_borrow(&token, creator);
+        token::set_description(topo_token.mutator_ref.borrow(), description);
     }
 
     public entry fun set_name<T: key>(
@@ -439,8 +439,8 @@ module aptos_token_objects::aptos_token {
             is_mutable_name(token),
             error::permission_denied(EFIELD_NOT_MUTABLE),
         );
-        let aptos_token = authorized_borrow(&token, creator);
-        token::set_name(aptos_token.mutator_ref.borrow(), name);
+        let topo_token = authorized_borrow(&token, creator);
+        token::set_name(topo_token.mutator_ref.borrow(), name);
     }
 
     public entry fun set_uri<T: key>(
@@ -452,8 +452,8 @@ module aptos_token_objects::aptos_token {
             is_mutable_uri(token),
             error::permission_denied(EFIELD_NOT_MUTABLE),
         );
-        let aptos_token = authorized_borrow(&token, creator);
-        token::set_uri(aptos_token.mutator_ref.borrow(), uri);
+        let topo_token = authorized_borrow(&token, creator);
+        token::set_uri(topo_token.mutator_ref.borrow(), uri);
     }
 
     public entry fun add_property<T: key>(
@@ -463,13 +463,13 @@ module aptos_token_objects::aptos_token {
         type: String,
         value: vector<u8>,
     ) acquires AptosCollection, AptosToken {
-        let aptos_token = authorized_borrow(&token, creator);
+        let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_properties_mutable(token),
             error::permission_denied(EPROPERTIES_NOT_MUTABLE),
         );
 
-        property_map::add(&aptos_token.property_mutator_ref, key, type, value);
+        property_map::add(&topo_token.property_mutator_ref, key, type, value);
     }
 
     public entry fun add_typed_property<T: key, V: drop>(
@@ -478,13 +478,13 @@ module aptos_token_objects::aptos_token {
         key: String,
         value: V,
     ) acquires AptosCollection, AptosToken {
-        let aptos_token = authorized_borrow(&token, creator);
+        let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_properties_mutable(token),
             error::permission_denied(EPROPERTIES_NOT_MUTABLE),
         );
 
-        property_map::add_typed(&aptos_token.property_mutator_ref, key, value);
+        property_map::add_typed(&topo_token.property_mutator_ref, key, value);
     }
 
     public entry fun remove_property<T: key>(
@@ -492,13 +492,13 @@ module aptos_token_objects::aptos_token {
         token: Object<T>,
         key: String,
     ) acquires AptosCollection, AptosToken {
-        let aptos_token = authorized_borrow(&token, creator);
+        let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_properties_mutable(token),
             error::permission_denied(EPROPERTIES_NOT_MUTABLE),
         );
 
-        property_map::remove(&aptos_token.property_mutator_ref, &key);
+        property_map::remove(&topo_token.property_mutator_ref, &key);
     }
 
     public entry fun update_property<T: key>(
@@ -508,13 +508,13 @@ module aptos_token_objects::aptos_token {
         type: String,
         value: vector<u8>,
     ) acquires AptosCollection, AptosToken {
-        let aptos_token = authorized_borrow(&token, creator);
+        let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_properties_mutable(token),
             error::permission_denied(EPROPERTIES_NOT_MUTABLE),
         );
 
-        property_map::update(&aptos_token.property_mutator_ref, &key, type, value);
+        property_map::update(&topo_token.property_mutator_ref, &key, type, value);
     }
 
     public entry fun update_typed_property<T: key, V: drop>(
@@ -523,13 +523,13 @@ module aptos_token_objects::aptos_token {
         key: String,
         value: V,
     ) acquires AptosCollection, AptosToken {
-        let aptos_token = authorized_borrow(&token, creator);
+        let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_properties_mutable(token),
             error::permission_denied(EPROPERTIES_NOT_MUTABLE),
         );
 
-        property_map::update_typed(&aptos_token.property_mutator_ref, &key, value);
+        property_map::update_typed(&topo_token.property_mutator_ref, &key, value);
     }
 
     // Collection accessors

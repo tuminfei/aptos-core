@@ -1,14 +1,14 @@
 /// This module provides utils to add and emit new token events that are not in token.move
-module aptos_token::token_event_store {
+module topo_token::token_event_store {
     use std::string::String;
     use std::signer;
     use aptos_framework::event::{Self, EventHandle};
     use aptos_framework::account;
     use std::option::Option;
     use aptos_std::any::Any;
-    use aptos_token::property_map::PropertyValue;
+    use topo_token::property_map::PropertyValue;
 
-    friend aptos_token::token;
+    friend topo_token::token;
 
     //
     // Collection mutation events
