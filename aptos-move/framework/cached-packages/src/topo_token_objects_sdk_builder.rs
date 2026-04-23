@@ -198,7 +198,7 @@ pub fn aptos_token_create_collection(
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 4,
             ]),
-            ident_str!("aptos_token").to_owned(),
+            ident_str!("topo_token").to_owned(),
         ),
         ident_str!("create_collection").to_owned(),
         vec![],
@@ -238,7 +238,7 @@ pub fn aptos_token_mint(
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 4,
             ]),
-            ident_str!("aptos_token").to_owned(),
+            ident_str!("topo_token").to_owned(),
         ),
         ident_str!("mint").to_owned(),
         vec![],
@@ -271,7 +271,7 @@ pub fn aptos_token_mint_soul_bound(
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 4,
             ]),
-            ident_str!("aptos_token").to_owned(),
+            ident_str!("topo_token").to_owned(),
         ),
         ident_str!("mint_soul_bound").to_owned(),
         vec![],
@@ -362,15 +362,15 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
     once_cell::sync::Lazy::new(|| {
         let mut map: EntryFunctionDecoderMap = std::collections::HashMap::new();
         map.insert(
-            "aptos_token_create_collection".to_string(),
+            "topo_token_create_collection".to_string(),
             Box::new(decoder::aptos_token_create_collection),
         );
         map.insert(
-            "aptos_token_mint".to_string(),
+            "topo_token_mint".to_string(),
             Box::new(decoder::aptos_token_mint),
         );
         map.insert(
-            "aptos_token_mint_soul_bound".to_string(),
+            "topo_token_mint_soul_bound".to_string(),
             Box::new(decoder::aptos_token_mint_soul_bound),
         );
         map

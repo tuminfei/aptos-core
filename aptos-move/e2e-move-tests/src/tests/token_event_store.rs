@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::MoveHarness;
-use aptos_cached_packages::aptos_stdlib::aptos_token_stdlib;
+use aptos_cached_packages::aptos_stdlib::topo_token_stdlib;
 
 #[test]
 fn test_token_creation_with_token_events_store() {
@@ -17,7 +17,7 @@ fn test_token_creation_with_token_events_store() {
 
     h.run_transaction_payload(
         &acc,
-        aptos_token_stdlib::token_create_collection_script(
+        topo_token_stdlib::token_create_collection_script(
             collection_name.clone(),
             "collection description".to_owned().into_bytes(),
             "uri".to_owned().into_bytes(),
@@ -27,7 +27,7 @@ fn test_token_creation_with_token_events_store() {
     );
     h.run_transaction_payload(
         &acc,
-        aptos_token_stdlib::token_create_token_script(
+        topo_token_stdlib::token_create_token_script(
             collection_name,
             token_name,
             "collection description".to_owned().into_bytes(),
@@ -46,7 +46,7 @@ fn test_token_creation_with_token_events_store() {
 
     // mutate the token properties
     let signed_txn =
-        h.create_transaction_payload(&acc, aptos_token_stdlib::token_opt_in_direct_transfer(true));
+        h.create_transaction_payload(&acc, topo_token_stdlib::token_opt_in_direct_transfer(true));
     let (_, mut events) = h.run_with_events(signed_txn);
     // First one is always the 0x1::transaction_fee::FeeStatement
     let _event = events.pop().unwrap();

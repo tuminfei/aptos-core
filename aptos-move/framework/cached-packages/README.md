@@ -8,7 +8,7 @@ The following files are **generated** and checked into the repo:
 
 - `src/head.mrb` — BCS-serialized `ReleaseBundle` containing all compiled Move framework packages (move-stdlib, aptos-stdlib, aptos-framework, aptos-token, aptos-token-objects, aptos-trading, aptos-experimental).
 - `src/aptos_framework_sdk_builder.rs` — Rust SDK bindings for aptos-framework.
-- `src/aptos_token_sdk_builder.rs` — Rust SDK bindings for aptos-token.
+- `src/topo_token_sdk_builder.rs` — Rust SDK bindings for aptos-token.
 - `src/aptos_token_objects_sdk_builder.rs` — Rust SDK bindings for aptos-token-objects.
 
 ## Updating the artifacts

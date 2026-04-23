@@ -517,7 +517,7 @@ mod tests {
     use crate::gas_profiling::{
         print_gas_with_statement_summary_and_tps_header, CalibrationRunner, CalibrationWorkload,
     };
-    use aptos_cached_packages::{aptos_stdlib, aptos_token_sdk_builder};
+    use aptos_cached_packages::{aptos_stdlib, topo_token_sdk_builder};
     use aptos_crypto::{bls12381, PrivateKey, Uniform};
     use aptos_move_e2e_test_harness::MoveHarnessSend;
     use aptos_sdk::move_types::{identifier::Identifier, language_storage::ModuleId};
@@ -683,7 +683,7 @@ mod tests {
         runner.run(
             "CreateCollection",
             account_1,
-            aptos_token_sdk_builder::token_create_collection_script(
+            topo_token_sdk_builder::token_create_collection_script(
                 collection_name.clone(),
                 "description".to_owned().into_bytes(),
                 "uri".to_owned().into_bytes(),
@@ -694,7 +694,7 @@ mod tests {
         runner.run(
             "CreateTokenFirstTime",
             account_1,
-            aptos_token_sdk_builder::token_create_token_script(
+            topo_token_sdk_builder::token_create_token_script(
                 collection_name.clone(),
                 token_name.clone(),
                 "collection description".to_owned().into_bytes(),
@@ -713,7 +713,7 @@ mod tests {
         runner.run(
             "MintTokenV1",
             account_1,
-            aptos_token_sdk_builder::token_mint_script(
+            topo_token_sdk_builder::token_mint_script(
                 account_1_address,
                 collection_name.clone(),
                 token_name.clone(),
@@ -723,7 +723,7 @@ mod tests {
         runner.run(
             "MutateTokenV1",
             account_1,
-            aptos_token_sdk_builder::token_mutate_token_properties(
+            topo_token_sdk_builder::token_mutate_token_properties(
                 account_1_address,
                 account_1_address,
                 collection_name.clone(),
@@ -738,7 +738,7 @@ mod tests {
         runner.run(
             "MutateToken2ndTime",
             account_1,
-            aptos_token_sdk_builder::token_mutate_token_properties(
+            topo_token_sdk_builder::token_mutate_token_properties(
                 account_1_address,
                 account_1_address,
                 collection_name.clone(),
@@ -762,7 +762,7 @@ mod tests {
         runner.run(
             "MutateTokenAdd10NewProperties",
             account_1,
-            aptos_token_sdk_builder::token_mutate_token_properties(
+            topo_token_sdk_builder::token_mutate_token_properties(
                 account_1_address,
                 account_1_address,
                 collection_name.clone(),
@@ -777,7 +777,7 @@ mod tests {
         runner.run(
             "MutateTokenMutate10ExistingProperties",
             account_1,
-            aptos_token_sdk_builder::token_mutate_token_properties(
+            topo_token_sdk_builder::token_mutate_token_properties(
                 account_1_address,
                 account_1_address,
                 collection_name,
