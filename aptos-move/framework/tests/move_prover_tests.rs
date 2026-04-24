@@ -84,7 +84,7 @@ fn move_framework_prover_tests() {
 
 #[test]
 fn move_token_prover_tests() {
-    run_prover_for_pkg("aptos-token", 1, None);
+    run_prover_for_pkg("topo-token", 1, None);
 }
 
 #[test]

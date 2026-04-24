@@ -107,12 +107,12 @@ fn move_stdlib_unit_tests() {
 
 #[test]
 fn move_token_unit_tests() {
-    run_tests_for_pkg("aptos-token", false);
+    run_tests_for_pkg("topo-token", false);
 }
 
 #[test]
 fn move_token_objects_unit_tests() {
-    run_tests_for_pkg("aptos-token-objects", false);
+    run_tests_for_pkg("topo-token-objects", false);
 }
 
 #[test]
