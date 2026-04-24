@@ -32,7 +32,7 @@ module topo_token_objects::topo_token {
 
     #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
     /// Storage state for managing the no-code Collection.
-    struct AptosCollection has key {
+    struct TopoCollection has key {
         /// Used to mutate collection fields
         mutator_ref: Option<collection::MutatorRef>,
         /// Used to mutate royalties
@@ -57,7 +57,7 @@ module topo_token_objects::topo_token {
 
     #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
     /// Storage state for managing the no-code Token.
-    struct AptosToken has key {
+    struct TopoToken has key {
         /// Used to burn.
         burn_ref: Option<token::BurnRef>,
         /// Used to control freeze.
@@ -124,7 +124,7 @@ module topo_token_objects::topo_token {
         tokens_freezable_by_creator: bool,
         royalty_numerator: u64,
         royalty_denominator: u64,
-    ): Object<AptosCollection> {
+    ): Object<TopoCollection> {
         let creator_addr = signer::address_of(creator);
         let royalty = royalty::create(royalty_numerator, royalty_denominator, creator_addr);
         let constructor_ref = collection::create_fixed_collection(
@@ -149,7 +149,7 @@ module topo_token_objects::topo_token {
             option::none()
         };
 
-        let aptos_collection = AptosCollection {
+        let aptos_collection = TopoCollection {
             mutator_ref,
             royalty_mutator_ref,
             mutable_description,
@@ -175,7 +175,7 @@ module topo_token_objects::topo_token {
         property_keys: vector<String>,
         property_types: vector<String>,
         property_values: vector<vector<u8>>,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         mint_token_object(creator, collection, description, name, uri, property_keys, property_types, property_values);
     }
 
@@ -189,7 +189,7 @@ module topo_token_objects::topo_token {
         property_keys: vector<String>,
         property_types: vector<String>,
         property_values: vector<vector<u8>>,
-    ): Object<AptosToken> acquires AptosCollection, AptosToken {
+    ): Object<TopoToken> acquires TopoCollection, TopoToken {
         let constructor_ref = mint_internal(
             creator,
             collection,
@@ -207,7 +207,7 @@ module topo_token_objects::topo_token {
         let freezable_by_creator = are_collection_tokens_freezable(collection);
         if (freezable_by_creator) {
             let topo_token_addr = constructor_ref.address_from_constructor_ref();
-            let topo_token = &mut AptosToken[topo_token_addr];
+            let topo_token = &mut TopoToken[topo_token_addr];
             let transfer_ref = constructor_ref.generate_transfer_ref();
             topo_token.transfer_ref.fill(transfer_ref);
         };
@@ -226,7 +226,7 @@ module topo_token_objects::topo_token {
         property_types: vector<String>,
         property_values: vector<vector<u8>>,
         soul_bound_to: address,
-    ) acquires AptosCollection {
+    ) acquires TopoCollection {
         mint_soul_bound_token_object(
             creator,
             collection,
@@ -251,7 +251,7 @@ module topo_token_objects::topo_token {
         property_types: vector<String>,
         property_values: vector<vector<u8>>,
         soul_bound_to: address,
-    ): Object<AptosToken> acquires AptosCollection {
+    ): Object<TopoToken> acquires TopoCollection {
         let constructor_ref = mint_internal(
             creator,
             collection,
@@ -280,7 +280,7 @@ module topo_token_objects::topo_token {
         property_keys: vector<String>,
         property_types: vector<String>,
         property_values: vector<vector<u8>>,
-    ): ConstructorRef acquires AptosCollection {
+    ): ConstructorRef acquires TopoCollection {
         let constructor_ref = token::create(creator, collection, description, name, option::none(), uri);
 
         let object_signer = constructor_ref.generate_signer();
@@ -304,7 +304,7 @@ module topo_token_objects::topo_token {
             option::none()
         };
 
-        let topo_token = AptosToken {
+        let topo_token = TopoToken {
             burn_ref,
             transfer_ref: option::none(),
             mutator_ref,
@@ -320,52 +320,52 @@ module topo_token_objects::topo_token {
 
     // Token accessors
 
-    inline fun borrow<T: key>(token: &Object<T>): &AptosToken {
+    inline fun borrow<T: key>(token: &Object<T>): &TopoToken {
         let token_address = token.object_address();
         assert!(
-            exists<AptosToken>(token_address),
+            exists<TopoToken>(token_address),
             error::not_found(ETOKEN_DOES_NOT_EXIST),
         );
-        &AptosToken[token_address]
+        &TopoToken[token_address]
     }
 
     #[view]
-    public fun are_properties_mutable<T: key>(token: Object<T>): bool acquires AptosCollection {
+    public fun are_properties_mutable<T: key>(token: Object<T>): bool acquires TopoCollection {
         let collection = token::collection_object(token);
         borrow_collection(&collection).mutable_token_properties
     }
 
     #[view]
-    public fun is_burnable<T: key>(token: Object<T>): bool acquires AptosToken {
+    public fun is_burnable<T: key>(token: Object<T>): bool acquires TopoToken {
         borrow(&token).burn_ref.is_some()
     }
 
     #[view]
-    public fun is_freezable_by_creator<T: key>(token: Object<T>): bool acquires AptosCollection {
+    public fun is_freezable_by_creator<T: key>(token: Object<T>): bool acquires TopoCollection {
         are_collection_tokens_freezable(token::collection_object(token))
     }
 
     #[view]
-    public fun is_mutable_description<T: key>(token: Object<T>): bool acquires AptosCollection {
+    public fun is_mutable_description<T: key>(token: Object<T>): bool acquires TopoCollection {
         is_mutable_collection_token_description(token::collection_object(token))
     }
 
     #[view]
-    public fun is_mutable_name<T: key>(token: Object<T>): bool acquires AptosCollection {
+    public fun is_mutable_name<T: key>(token: Object<T>): bool acquires TopoCollection {
         is_mutable_collection_token_name(token::collection_object(token))
     }
 
     #[view]
-    public fun is_mutable_uri<T: key>(token: Object<T>): bool acquires AptosCollection {
+    public fun is_mutable_uri<T: key>(token: Object<T>): bool acquires TopoCollection {
         is_mutable_collection_token_uri(token::collection_object(token))
     }
 
     // Token mutators
 
-    inline fun authorized_borrow<T: key>(token: &Object<T>, creator: &signer): &AptosToken {
+    inline fun authorized_borrow<T: key>(token: &Object<T>, creator: &signer): &TopoToken {
         let token_address = token.object_address();
         assert!(
-            exists<AptosToken>(token_address),
+            exists<TopoToken>(token_address),
             error::not_found(ETOKEN_DOES_NOT_EXIST),
         );
 
@@ -373,18 +373,18 @@ module topo_token_objects::topo_token {
             token::creator(*token) == signer::address_of(creator),
             error::permission_denied(ENOT_CREATOR),
         );
-        &AptosToken[token_address]
+        &TopoToken[token_address]
     }
 
-    public entry fun burn<T: key>(creator: &signer, token: Object<T>) acquires AptosToken {
+    public entry fun burn<T: key>(creator: &signer, token: Object<T>) acquires TopoToken {
         let topo_token = authorized_borrow(&token, creator);
         assert!(
             topo_token.burn_ref.is_some(),
             error::permission_denied(ETOKEN_NOT_BURNABLE),
         );
         move topo_token;
-        let topo_token = move_from<AptosToken>(token.object_address());
-        let AptosToken {
+        let topo_token = move_from<TopoToken>(token.object_address());
+        let TopoToken {
             burn_ref,
             transfer_ref: _,
             mutator_ref: _,
@@ -394,7 +394,7 @@ module topo_token_objects::topo_token {
         token::burn(burn_ref.extract());
     }
 
-    public entry fun freeze_transfer<T: key>(creator: &signer, token: Object<T>) acquires AptosCollection, AptosToken {
+    public entry fun freeze_transfer<T: key>(creator: &signer, token: Object<T>) acquires TopoCollection, TopoToken {
         let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_collection_tokens_freezable(token::collection_object(token))
@@ -407,7 +407,7 @@ module topo_token_objects::topo_token {
     public entry fun unfreeze_transfer<T: key>(
         creator: &signer,
         token: Object<T>
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_collection_tokens_freezable(token::collection_object(token))
@@ -421,7 +421,7 @@ module topo_token_objects::topo_token {
         creator: &signer,
         token: Object<T>,
         description: String,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         assert!(
             is_mutable_description(token),
             error::permission_denied(EFIELD_NOT_MUTABLE),
@@ -434,7 +434,7 @@ module topo_token_objects::topo_token {
         creator: &signer,
         token: Object<T>,
         name: String,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         assert!(
             is_mutable_name(token),
             error::permission_denied(EFIELD_NOT_MUTABLE),
@@ -447,7 +447,7 @@ module topo_token_objects::topo_token {
         creator: &signer,
         token: Object<T>,
         uri: String,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         assert!(
             is_mutable_uri(token),
             error::permission_denied(EFIELD_NOT_MUTABLE),
@@ -462,7 +462,7 @@ module topo_token_objects::topo_token {
         key: String,
         type: String,
         value: vector<u8>,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_properties_mutable(token),
@@ -477,7 +477,7 @@ module topo_token_objects::topo_token {
         token: Object<T>,
         key: String,
         value: V,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_properties_mutable(token),
@@ -491,7 +491,7 @@ module topo_token_objects::topo_token {
         creator: &signer,
         token: Object<T>,
         key: String,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_properties_mutable(token),
@@ -507,7 +507,7 @@ module topo_token_objects::topo_token {
         key: String,
         type: String,
         value: vector<u8>,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_properties_mutable(token),
@@ -522,7 +522,7 @@ module topo_token_objects::topo_token {
         token: Object<T>,
         key: String,
         value: V,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         let topo_token = authorized_borrow(&token, creator);
         assert!(
             are_properties_mutable(token),
@@ -534,94 +534,94 @@ module topo_token_objects::topo_token {
 
     // Collection accessors
 
-    inline fun collection_object(creator: &signer, name: &String): Object<AptosCollection> {
+    inline fun collection_object(creator: &signer, name: &String): Object<TopoCollection> {
         let collection_addr = collection::create_collection_address(&signer::address_of(creator), name);
-        object::address_to_object<AptosCollection>(collection_addr)
+        object::address_to_object<TopoCollection>(collection_addr)
     }
 
-    inline fun borrow_collection<T: key>(token: &Object<T>): &AptosCollection {
+    inline fun borrow_collection<T: key>(token: &Object<T>): &TopoCollection {
         let collection_address = token.object_address();
         assert!(
-            exists<AptosCollection>(collection_address),
+            exists<TopoCollection>(collection_address),
             error::not_found(ECOLLECTION_DOES_NOT_EXIST),
         );
-        &AptosCollection[collection_address]
+        &TopoCollection[collection_address]
     }
 
     public fun is_mutable_collection_description<T: key>(
         collection: Object<T>,
-    ): bool acquires AptosCollection {
+    ): bool acquires TopoCollection {
         borrow_collection(&collection).mutable_description
     }
 
     public fun is_mutable_collection_royalty<T: key>(
         collection: Object<T>,
-    ): bool acquires AptosCollection {
+    ): bool acquires TopoCollection {
         borrow_collection(&collection).royalty_mutator_ref.is_some()
     }
 
     public fun is_mutable_collection_uri<T: key>(
         collection: Object<T>,
-    ): bool acquires AptosCollection {
+    ): bool acquires TopoCollection {
         borrow_collection(&collection).mutable_uri
     }
 
     public fun is_mutable_collection_token_description<T: key>(
         collection: Object<T>,
-    ): bool acquires AptosCollection {
+    ): bool acquires TopoCollection {
         borrow_collection(&collection).mutable_token_description
     }
 
     public fun is_mutable_collection_token_name<T: key>(
         collection: Object<T>,
-    ): bool acquires AptosCollection {
+    ): bool acquires TopoCollection {
         borrow_collection(&collection).mutable_token_name
     }
 
     public fun is_mutable_collection_token_uri<T: key>(
         collection: Object<T>,
-    ): bool acquires AptosCollection {
+    ): bool acquires TopoCollection {
         borrow_collection(&collection).mutable_token_uri
     }
 
     public fun is_mutable_collection_token_properties<T: key>(
         collection: Object<T>,
-    ): bool acquires AptosCollection {
+    ): bool acquires TopoCollection {
         borrow_collection(&collection).mutable_token_properties
     }
 
     public fun are_collection_tokens_burnable<T: key>(
         collection: Object<T>,
-    ): bool acquires AptosCollection {
+    ): bool acquires TopoCollection {
         borrow_collection(&collection).tokens_burnable_by_creator
     }
 
     public fun are_collection_tokens_freezable<T: key>(
         collection: Object<T>,
-    ): bool acquires AptosCollection {
+    ): bool acquires TopoCollection {
         borrow_collection(&collection).tokens_freezable_by_creator
     }
 
     // Collection mutators
 
-    inline fun authorized_borrow_collection<T: key>(collection: &Object<T>, creator: &signer): &AptosCollection {
+    inline fun authorized_borrow_collection<T: key>(collection: &Object<T>, creator: &signer): &TopoCollection {
         let collection_address = collection.object_address();
         assert!(
-            exists<AptosCollection>(collection_address),
+            exists<TopoCollection>(collection_address),
             error::not_found(ECOLLECTION_DOES_NOT_EXIST),
         );
         assert!(
             collection::creator(*collection) == signer::address_of(creator),
             error::permission_denied(ENOT_CREATOR),
         );
-        &AptosCollection[collection_address]
+        &TopoCollection[collection_address]
     }
 
     public entry fun set_collection_description<T: key>(
         creator: &signer,
         collection: Object<T>,
         description: String,
-    ) acquires AptosCollection {
+    ) acquires TopoCollection {
         let aptos_collection = authorized_borrow_collection(&collection, creator);
         assert!(
             aptos_collection.mutable_description,
@@ -634,7 +634,7 @@ module topo_token_objects::topo_token {
         creator: &signer,
         collection: Object<T>,
         royalty: royalty::Royalty,
-    ) acquires AptosCollection {
+    ) acquires TopoCollection {
         let aptos_collection = authorized_borrow_collection(&collection, creator);
         assert!(
             aptos_collection.royalty_mutator_ref.is_some(),
@@ -649,7 +649,7 @@ module topo_token_objects::topo_token {
         royalty_numerator: u64,
         royalty_denominator: u64,
         payee_address: address,
-    ) acquires AptosCollection {
+    ) acquires TopoCollection {
         let royalty = royalty::create(royalty_numerator, royalty_denominator, payee_address);
         set_collection_royalties(creator, collection, royalty);
     }
@@ -658,7 +658,7 @@ module topo_token_objects::topo_token {
         creator: &signer,
         collection: Object<T>,
         uri: String,
-    ) acquires AptosCollection {
+    ) acquires TopoCollection {
         let aptos_collection = authorized_borrow_collection(&collection, creator);
         assert!(
             aptos_collection.mutable_uri,
@@ -675,7 +675,7 @@ module topo_token_objects::topo_token {
     use aptos_framework::account;
 
     #[test(creator = @0x123)]
-    fun test_create_and_transfer(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_create_and_transfer(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -689,7 +689,7 @@ module topo_token_objects::topo_token {
 
     #[test(creator = @0x123, bob = @0x456)]
     #[expected_failure(abort_code = 0x50003, location = object)]
-    fun test_mint_soul_bound(creator: &signer, bob: &signer) acquires AptosCollection {
+    fun test_mint_soul_bound(creator: &signer, bob: &signer) acquires TopoCollection {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -715,7 +715,7 @@ module topo_token_objects::topo_token {
 
     #[test(creator = @0x123)]
     #[expected_failure(abort_code = 0x50003, location = object)]
-    fun test_frozen_transfer(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_frozen_transfer(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -726,7 +726,7 @@ module topo_token_objects::topo_token {
     }
 
     #[test(creator = @0x123)]
-    fun test_unfrozen_transfer(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_unfrozen_transfer(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -739,7 +739,7 @@ module topo_token_objects::topo_token {
 
     #[test(creator = @0x123, another = @0x456)]
     #[expected_failure(abort_code = 0x50003, location = Self)]
-    fun test_noncreator_freeze(creator: &signer, another: &signer) acquires AptosCollection, AptosToken {
+    fun test_noncreator_freeze(creator: &signer, another: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -750,7 +750,7 @@ module topo_token_objects::topo_token {
 
     #[test(creator = @0x123, another = @0x456)]
     #[expected_failure(abort_code = 0x50003, location = Self)]
-    fun test_noncreator_unfreeze(creator: &signer, another: &signer) acquires AptosCollection, AptosToken {
+    fun test_noncreator_unfreeze(creator: &signer, another: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -761,7 +761,7 @@ module topo_token_objects::topo_token {
     }
 
     #[test(creator = @0x123)]
-    fun test_set_description(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_set_description(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -776,7 +776,7 @@ module topo_token_objects::topo_token {
 
     #[test(creator = @0x123)]
     #[expected_failure(abort_code = 0x50004, location = Self)]
-    fun test_set_immutable_description(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_set_immutable_description(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -791,7 +791,7 @@ module topo_token_objects::topo_token {
     fun test_set_description_non_creator(
         creator: &signer,
         noncreator: &signer,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -803,7 +803,7 @@ module topo_token_objects::topo_token {
     }
 
     #[test(creator = @0x123)]
-    fun test_set_name(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_set_name(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -818,7 +818,7 @@ module topo_token_objects::topo_token {
 
     #[test(creator = @0x123)]
     #[expected_failure(abort_code = 0x50004, location = Self)]
-    fun test_set_immutable_name(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_set_immutable_name(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -833,7 +833,7 @@ module topo_token_objects::topo_token {
     fun test_set_name_non_creator(
         creator: &signer,
         noncreator: &signer,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -845,7 +845,7 @@ module topo_token_objects::topo_token {
     }
 
     #[test(creator = @0x123)]
-    fun test_set_uri(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_set_uri(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -860,7 +860,7 @@ module topo_token_objects::topo_token {
 
     #[test(creator = @0x123)]
     #[expected_failure(abort_code = 0x50004, location = Self)]
-    fun test_set_immutable_uri(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_set_immutable_uri(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -875,7 +875,7 @@ module topo_token_objects::topo_token {
     fun test_set_uri_non_creator(
         creator: &signer,
         noncreator: &signer,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -887,7 +887,7 @@ module topo_token_objects::topo_token {
     }
 
     #[test(creator = @0x123)]
-    fun test_burnable(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_burnable(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -895,14 +895,14 @@ module topo_token_objects::topo_token {
         let token = mint_helper(creator, collection_name, token_name);
         let token_addr = token.object_address();
 
-        assert!(exists<AptosToken>(token_addr), 0);
+        assert!(exists<TopoToken>(token_addr), 0);
         burn(creator, token);
-        assert!(!exists<AptosToken>(token_addr), 1);
+        assert!(!exists<TopoToken>(token_addr), 1);
     }
 
     #[test(creator = @0x123)]
     #[expected_failure(abort_code = 0x50005, location = Self)]
-    fun test_not_burnable(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_not_burnable(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -917,7 +917,7 @@ module topo_token_objects::topo_token {
     fun test_burn_non_creator(
         creator: &signer,
         noncreator: &signer,
-    ) acquires AptosCollection, AptosToken {
+    ) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -928,7 +928,7 @@ module topo_token_objects::topo_token {
     }
 
     #[test(creator = @0x123)]
-    fun test_set_collection_description(creator: &signer) acquires AptosCollection {
+    fun test_set_collection_description(creator: &signer) acquires TopoCollection {
         let collection_name = string::utf8(b"collection name");
         let collection = create_collection_helper(creator, collection_name, true);
         let value = string::utf8(b"not");
@@ -939,7 +939,7 @@ module topo_token_objects::topo_token {
 
     #[test(creator = @0x123)]
     #[expected_failure(abort_code = 0x50004, location = Self)]
-    fun test_set_immutable_collection_description(creator: &signer) acquires AptosCollection {
+    fun test_set_immutable_collection_description(creator: &signer) acquires TopoCollection {
         let collection_name = string::utf8(b"collection name");
         let collection = create_collection_helper(creator, collection_name, false);
         set_collection_description(creator, collection, string::utf8(b""));
@@ -950,14 +950,14 @@ module topo_token_objects::topo_token {
     fun test_set_collection_description_non_creator(
         creator: &signer,
         noncreator: &signer,
-    ) acquires AptosCollection {
+    ) acquires TopoCollection {
         let collection_name = string::utf8(b"collection name");
         let collection = create_collection_helper(creator, collection_name, true);
         set_collection_description(noncreator, collection, string::utf8(b""));
     }
 
     #[test(creator = @0x123)]
-    fun test_set_collection_uri(creator: &signer) acquires AptosCollection {
+    fun test_set_collection_uri(creator: &signer) acquires TopoCollection {
         let collection_name = string::utf8(b"collection name");
         let collection = create_collection_helper(creator, collection_name, true);
         let value = string::utf8(b"not");
@@ -968,7 +968,7 @@ module topo_token_objects::topo_token {
 
     #[test(creator = @0x123)]
     #[expected_failure(abort_code = 0x50004, location = Self)]
-    fun test_set_immutable_collection_uri(creator: &signer) acquires AptosCollection {
+    fun test_set_immutable_collection_uri(creator: &signer) acquires TopoCollection {
         let collection_name = string::utf8(b"collection name");
         let collection = create_collection_helper(creator, collection_name, false);
         set_collection_uri(creator, collection, string::utf8(b""));
@@ -979,14 +979,14 @@ module topo_token_objects::topo_token {
     fun test_set_collection_uri_non_creator(
         creator: &signer,
         noncreator: &signer,
-    ) acquires AptosCollection {
+    ) acquires TopoCollection {
         let collection_name = string::utf8(b"collection name");
         let collection = create_collection_helper(creator, collection_name, true);
         set_collection_uri(noncreator, collection, string::utf8(b""));
     }
 
     #[test(creator = @0x123)]
-    fun test_property_add(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_property_add(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
         let property_name = string::utf8(b"u8");
@@ -1000,20 +1000,20 @@ module topo_token_objects::topo_token {
     }
 
     #[test(creator = @0x123)]
-    fun test_property_typed_add(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_property_typed_add(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
         let property_name = string::utf8(b"u8");
 
         create_collection_helper(creator, collection_name, true);
         let token = mint_helper(creator, collection_name, token_name);
-        add_typed_property<AptosToken, u8>(creator, token, property_name, 0x8);
+        add_typed_property<TopoToken, u8>(creator, token, property_name, 0x8);
 
         assert!(property_map::read_u8(&token, &property_name) == 0x8, 0);
     }
 
     #[test(creator = @0x123)]
-    fun test_property_update(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_property_update(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
         let property_name = string::utf8(b"bool");
@@ -1027,20 +1027,20 @@ module topo_token_objects::topo_token {
     }
 
     #[test(creator = @0x123)]
-    fun test_property_update_typed(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_property_update_typed(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
         let property_name = string::utf8(b"bool");
 
         create_collection_helper(creator, collection_name, true);
         let token = mint_helper(creator, collection_name, token_name);
-        update_typed_property<AptosToken, bool>(creator, token, property_name, false);
+        update_typed_property<TopoToken, bool>(creator, token, property_name, false);
 
         assert!(!property_map::read_bool(&token, &property_name), 0);
     }
 
     #[test(creator = @0x123)]
-    fun test_property_remove(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_property_remove(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
         let property_name = string::utf8(b"bool");
@@ -1051,7 +1051,7 @@ module topo_token_objects::topo_token {
     }
 
     #[test(creator = @0x123)]
-    fun test_royalties(creator: &signer) acquires AptosCollection, AptosToken {
+    fun test_royalties(creator: &signer) acquires TopoCollection, TopoToken {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -1069,7 +1069,7 @@ module topo_token_objects::topo_token {
         creator: &signer,
         collection_name: String,
         flag: bool,
-    ): Object<AptosCollection> {
+    ): Object<TopoCollection> {
         create_collection_object(
             creator,
             string::utf8(b"collection description"),
@@ -1095,7 +1095,7 @@ module topo_token_objects::topo_token {
         creator: &signer,
         collection_name: String,
         token_name: String,
-    ): Object<AptosToken> acquires AptosCollection, AptosToken {
+    ): Object<TopoToken> acquires TopoCollection, TopoToken {
         let creator_addr = signer::address_of(creator);
         account::create_account_for_test(creator_addr);
 
