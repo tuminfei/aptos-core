@@ -771,6 +771,72 @@ pub enum EntryFunctionCall {
         permissions_storage_addr: AccountAddress,
     },
 
+    /// 批量更新用户算力。
+    ///
+    /// 说明：
+    /// - 本模块不做链上批次幂等
+    /// - 同一用户被再次写入时：
+    ///   - 若 `period >= last_updated_period`，则覆盖旧值和最后更新周期
+    ///   - 若 `period < last_updated_period`，则跳过该用户，防止旧周期回退覆盖
+    /// - 只有实际发生写入的用户才会发出 `PowerUpdatedEvent`
+    PocPowerStoreBatchUpdate {
+        period: u64,
+        users: Vec<AccountAddress>,
+        powers: Vec<u128>,
+    },
+
+    /// 初始化全局算力存储。
+    /// 仅限 @aptos_framework 地址调用，幂等执行。
+    PocPowerStoreInitializePowerStore {
+        operator: AccountAddress,
+    },
+
+    /// 更新唯一 operator 地址。
+    /// 仅限 @aptos_framework 调用；新旧地址相同则幂等返回。
+    PocPowerStoreSetOperator {
+        new_operator: AccountAddress,
+    },
+
+    PocRegistryInitializeRegistry {},
+
+    PocRegistryPauseApp {},
+
+    PocRegistryRegisterApp {
+        app_address: AccountAddress,
+        equity_token_address: AccountAddress,
+        custody_address: AccountAddress,
+        metadata_uri: Vec<u8>,
+    },
+
+    PocRegistryResumeApp {},
+
+    PocRegistrySetPocListingStatus {
+        app_admin: AccountAddress,
+        new_poc_listing_status: u8,
+    },
+
+    PocRegistryStopApp {},
+
+    PocRegistrySuspendPocListing {
+        app_admin: AccountAddress,
+    },
+
+    PocRegistryUpdateAppAddress {
+        new_app_address: AccountAddress,
+    },
+
+    PocRegistryUpdateCustodyAddress {
+        new_custody_address: AccountAddress,
+    },
+
+    PocRegistryUpdateEquityTokenAddress {
+        new_equity_token_address: AccountAddress,
+    },
+
+    PocRegistryWhitelistAppForPoc {
+        app_admin: AccountAddress,
+    },
+
     /// Creates a new resource account and rotates the authentication key to either
     /// the optional auth key if it is non-empty (though auth keys are 32-bytes)
     /// or the source accounts current auth key.
@@ -1685,6 +1751,49 @@ impl EntryFunctionCall {
             PermissionedSignerRevokePermissionStorageAddress {
                 permissions_storage_addr,
             } => permissioned_signer_revoke_permission_storage_address(permissions_storage_addr),
+            PocPowerStoreBatchUpdate {
+                period,
+                users,
+                powers,
+            } => poc_power_store_batch_update(period, users, powers),
+            PocPowerStoreInitializePowerStore { operator } => {
+                poc_power_store_initialize_power_store(operator)
+            },
+            PocPowerStoreSetOperator { new_operator } => poc_power_store_set_operator(new_operator),
+            PocRegistryInitializeRegistry {} => poc_registry_initialize_registry(),
+            PocRegistryPauseApp {} => poc_registry_pause_app(),
+            PocRegistryRegisterApp {
+                app_address,
+                equity_token_address,
+                custody_address,
+                metadata_uri,
+            } => poc_registry_register_app(
+                app_address,
+                equity_token_address,
+                custody_address,
+                metadata_uri,
+            ),
+            PocRegistryResumeApp {} => poc_registry_resume_app(),
+            PocRegistrySetPocListingStatus {
+                app_admin,
+                new_poc_listing_status,
+            } => poc_registry_set_poc_listing_status(app_admin, new_poc_listing_status),
+            PocRegistryStopApp {} => poc_registry_stop_app(),
+            PocRegistrySuspendPocListing { app_admin } => {
+                poc_registry_suspend_poc_listing(app_admin)
+            },
+            PocRegistryUpdateAppAddress { new_app_address } => {
+                poc_registry_update_app_address(new_app_address)
+            },
+            PocRegistryUpdateCustodyAddress {
+                new_custody_address,
+            } => poc_registry_update_custody_address(new_custody_address),
+            PocRegistryUpdateEquityTokenAddress {
+                new_equity_token_address,
+            } => poc_registry_update_equity_token_address(new_equity_token_address),
+            PocRegistryWhitelistAppForPoc { app_admin } => {
+                poc_registry_whitelist_app_for_poc(app_admin)
+            },
             ResourceAccountCreateResourceAccount {
                 seed,
                 optional_auth_key,
@@ -3949,6 +4058,256 @@ pub fn permissioned_signer_revoke_permission_storage_address(
         ident_str!("revoke_permission_storage_address").to_owned(),
         vec![],
         vec![bcs::to_bytes(&permissions_storage_addr).unwrap()],
+    ))
+}
+
+/// 批量更新用户算力。
+///
+/// 说明：
+/// - 本模块不做链上批次幂等
+/// - 同一用户被再次写入时：
+///   - 若 `period >= last_updated_period`，则覆盖旧值和最后更新周期
+///   - 若 `period < last_updated_period`，则跳过该用户，防止旧周期回退覆盖
+/// - 只有实际发生写入的用户才会发出 `PowerUpdatedEvent`
+pub fn poc_power_store_batch_update(
+    period: u64,
+    users: Vec<AccountAddress>,
+    powers: Vec<u128>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("batch_update").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&period).unwrap(),
+            bcs::to_bytes(&users).unwrap(),
+            bcs::to_bytes(&powers).unwrap(),
+        ],
+    ))
+}
+
+/// 初始化全局算力存储。
+/// 仅限 @aptos_framework 地址调用，幂等执行。
+pub fn poc_power_store_initialize_power_store(operator: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("initialize_power_store").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&operator).unwrap()],
+    ))
+}
+
+/// 更新唯一 operator 地址。
+/// 仅限 @aptos_framework 调用；新旧地址相同则幂等返回。
+pub fn poc_power_store_set_operator(new_operator: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("set_operator").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&new_operator).unwrap()],
+    ))
+}
+
+pub fn poc_registry_initialize_registry() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("initialize_registry").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+pub fn poc_registry_pause_app() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("pause_app").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+pub fn poc_registry_register_app(
+    app_address: AccountAddress,
+    equity_token_address: AccountAddress,
+    custody_address: AccountAddress,
+    metadata_uri: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("register_app").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&app_address).unwrap(),
+            bcs::to_bytes(&equity_token_address).unwrap(),
+            bcs::to_bytes(&custody_address).unwrap(),
+            bcs::to_bytes(&metadata_uri).unwrap(),
+        ],
+    ))
+}
+
+pub fn poc_registry_resume_app() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("resume_app").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+pub fn poc_registry_set_poc_listing_status(
+    app_admin: AccountAddress,
+    new_poc_listing_status: u8,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("set_poc_listing_status").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&app_admin).unwrap(),
+            bcs::to_bytes(&new_poc_listing_status).unwrap(),
+        ],
+    ))
+}
+
+pub fn poc_registry_stop_app() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("stop_app").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+pub fn poc_registry_suspend_poc_listing(app_admin: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("suspend_poc_listing").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&app_admin).unwrap()],
+    ))
+}
+
+pub fn poc_registry_update_app_address(new_app_address: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("update_app_address").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&new_app_address).unwrap()],
+    ))
+}
+
+pub fn poc_registry_update_custody_address(
+    new_custody_address: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("update_custody_address").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&new_custody_address).unwrap()],
+    ))
+}
+
+pub fn poc_registry_update_equity_token_address(
+    new_equity_token_address: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("update_equity_token_address").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&new_equity_token_address).unwrap()],
+    ))
+}
+
+pub fn poc_registry_whitelist_app_for_poc(app_admin: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("whitelist_app_for_poc").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&app_admin).unwrap()],
     ))
 }
 
@@ -6604,6 +6963,160 @@ mod decoder {
         }
     }
 
+    pub fn poc_power_store_batch_update(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreBatchUpdate {
+                period: bcs::from_bytes(script.args().get(0)?).ok()?,
+                users: bcs::from_bytes(script.args().get(1)?).ok()?,
+                powers: bcs::from_bytes(script.args().get(2)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_power_store_initialize_power_store(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreInitializePowerStore {
+                operator: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_power_store_set_operator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreSetOperator {
+                new_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_initialize_registry(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocRegistryInitializeRegistry {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_pause_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocRegistryPauseApp {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_register_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryRegisterApp {
+                app_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                equity_token_address: bcs::from_bytes(script.args().get(1)?).ok()?,
+                custody_address: bcs::from_bytes(script.args().get(2)?).ok()?,
+                metadata_uri: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_resume_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocRegistryResumeApp {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_set_poc_listing_status(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistrySetPocListingStatus {
+                app_admin: bcs::from_bytes(script.args().get(0)?).ok()?,
+                new_poc_listing_status: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_stop_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocRegistryStopApp {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_suspend_poc_listing(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistrySuspendPocListing {
+                app_admin: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_update_app_address(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryUpdateAppAddress {
+                new_app_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_update_custody_address(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryUpdateCustodyAddress {
+                new_custody_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_update_equity_token_address(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryUpdateEquityTokenAddress {
+                new_equity_token_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_whitelist_app_for_poc(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryWhitelistAppForPoc {
+                app_admin: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn resource_account_create_resource_account(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -7865,6 +8378,62 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "permissioned_signer_revoke_permission_storage_address".to_string(),
             Box::new(decoder::permissioned_signer_revoke_permission_storage_address),
+        );
+        map.insert(
+            "poc_power_store_batch_update".to_string(),
+            Box::new(decoder::poc_power_store_batch_update),
+        );
+        map.insert(
+            "poc_power_store_initialize_power_store".to_string(),
+            Box::new(decoder::poc_power_store_initialize_power_store),
+        );
+        map.insert(
+            "poc_power_store_set_operator".to_string(),
+            Box::new(decoder::poc_power_store_set_operator),
+        );
+        map.insert(
+            "poc_registry_initialize_registry".to_string(),
+            Box::new(decoder::poc_registry_initialize_registry),
+        );
+        map.insert(
+            "poc_registry_pause_app".to_string(),
+            Box::new(decoder::poc_registry_pause_app),
+        );
+        map.insert(
+            "poc_registry_register_app".to_string(),
+            Box::new(decoder::poc_registry_register_app),
+        );
+        map.insert(
+            "poc_registry_resume_app".to_string(),
+            Box::new(decoder::poc_registry_resume_app),
+        );
+        map.insert(
+            "poc_registry_set_poc_listing_status".to_string(),
+            Box::new(decoder::poc_registry_set_poc_listing_status),
+        );
+        map.insert(
+            "poc_registry_stop_app".to_string(),
+            Box::new(decoder::poc_registry_stop_app),
+        );
+        map.insert(
+            "poc_registry_suspend_poc_listing".to_string(),
+            Box::new(decoder::poc_registry_suspend_poc_listing),
+        );
+        map.insert(
+            "poc_registry_update_app_address".to_string(),
+            Box::new(decoder::poc_registry_update_app_address),
+        );
+        map.insert(
+            "poc_registry_update_custody_address".to_string(),
+            Box::new(decoder::poc_registry_update_custody_address),
+        );
+        map.insert(
+            "poc_registry_update_equity_token_address".to_string(),
+            Box::new(decoder::poc_registry_update_equity_token_address),
+        );
+        map.insert(
+            "poc_registry_whitelist_app_for_poc".to_string(),
+            Box::new(decoder::poc_registry_whitelist_app_for_poc),
         );
         map.insert(
             "resource_account_create_resource_account".to_string(),

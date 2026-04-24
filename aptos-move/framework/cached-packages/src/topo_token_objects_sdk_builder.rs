@@ -38,7 +38,7 @@ type Bytes = Vec<u8>;
 #[cfg_attr(feature = "fuzzing", proptest(no_params))]
 pub enum EntryFunctionCall {
     /// Create a new collection
-    AptosTokenCreateCollection {
+    TopoTokenCreateCollection {
         description: Vec<u8>,
         max_supply: u64,
         name: Vec<u8>,
@@ -57,7 +57,7 @@ pub enum EntryFunctionCall {
     },
 
     /// With an existing collection, directly mint a viable token into the creators account.
-    AptosTokenMint {
+    TopoTokenMint {
         collection: Vec<u8>,
         description: Vec<u8>,
         name: Vec<u8>,
@@ -68,7 +68,7 @@ pub enum EntryFunctionCall {
     },
 
     /// With an existing collection, directly mint a soul bound token into the recipient's account.
-    AptosTokenMintSoulBound {
+    TopoTokenMintSoulBound {
         collection: Vec<u8>,
         description: Vec<u8>,
         name: Vec<u8>,
@@ -85,7 +85,7 @@ impl EntryFunctionCall {
     pub fn encode(self) -> TransactionPayload {
         use EntryFunctionCall::*;
         match self {
-            AptosTokenCreateCollection {
+            TopoTokenCreateCollection {
                 description,
                 max_supply,
                 name,
@@ -101,7 +101,7 @@ impl EntryFunctionCall {
                 tokens_freezable_by_creator,
                 royalty_numerator,
                 royalty_denominator,
-            } => aptos_token_create_collection(
+            } => topo_token_create_collection(
                 description,
                 max_supply,
                 name,
@@ -118,7 +118,7 @@ impl EntryFunctionCall {
                 royalty_numerator,
                 royalty_denominator,
             ),
-            AptosTokenMint {
+            TopoTokenMint {
                 collection,
                 description,
                 name,
@@ -126,7 +126,7 @@ impl EntryFunctionCall {
                 property_keys,
                 property_types,
                 property_values,
-            } => aptos_token_mint(
+            } => topo_token_mint(
                 collection,
                 description,
                 name,
@@ -135,7 +135,7 @@ impl EntryFunctionCall {
                 property_types,
                 property_values,
             ),
-            AptosTokenMintSoulBound {
+            TopoTokenMintSoulBound {
                 collection,
                 description,
                 name,
@@ -144,7 +144,7 @@ impl EntryFunctionCall {
                 property_types,
                 property_values,
                 soul_bound_to,
-            } => aptos_token_mint_soul_bound(
+            } => topo_token_mint_soul_bound(
                 collection,
                 description,
                 name,
@@ -175,7 +175,7 @@ impl EntryFunctionCall {
 }
 
 /// Create a new collection
-pub fn aptos_token_create_collection(
+pub fn topo_token_create_collection(
     description: Vec<u8>,
     max_supply: u64,
     name: Vec<u8>,
@@ -223,7 +223,7 @@ pub fn aptos_token_create_collection(
 }
 
 /// With an existing collection, directly mint a viable token into the creators account.
-pub fn aptos_token_mint(
+pub fn topo_token_mint(
     collection: Vec<u8>,
     description: Vec<u8>,
     name: Vec<u8>,
@@ -255,7 +255,7 @@ pub fn aptos_token_mint(
 }
 
 /// With an existing collection, directly mint a soul bound token into the recipient's account.
-pub fn aptos_token_mint_soul_bound(
+pub fn topo_token_mint_soul_bound(
     collection: Vec<u8>,
     description: Vec<u8>,
     name: Vec<u8>,
@@ -289,11 +289,9 @@ pub fn aptos_token_mint_soul_bound(
 }
 mod decoder {
     use super::*;
-    pub fn aptos_token_create_collection(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
+    pub fn topo_token_create_collection(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::AptosTokenCreateCollection {
+            Some(EntryFunctionCall::TopoTokenCreateCollection {
                 description: bcs::from_bytes(script.args().get(0)?).ok()?,
                 max_supply: bcs::from_bytes(script.args().get(1)?).ok()?,
                 name: bcs::from_bytes(script.args().get(2)?).ok()?,
@@ -315,9 +313,9 @@ mod decoder {
         }
     }
 
-    pub fn aptos_token_mint(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn topo_token_mint(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::AptosTokenMint {
+            Some(EntryFunctionCall::TopoTokenMint {
                 collection: bcs::from_bytes(script.args().get(0)?).ok()?,
                 description: bcs::from_bytes(script.args().get(1)?).ok()?,
                 name: bcs::from_bytes(script.args().get(2)?).ok()?,
@@ -331,9 +329,9 @@ mod decoder {
         }
     }
 
-    pub fn aptos_token_mint_soul_bound(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+    pub fn topo_token_mint_soul_bound(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::AptosTokenMintSoulBound {
+            Some(EntryFunctionCall::TopoTokenMintSoulBound {
                 collection: bcs::from_bytes(script.args().get(0)?).ok()?,
                 description: bcs::from_bytes(script.args().get(1)?).ok()?,
                 name: bcs::from_bytes(script.args().get(2)?).ok()?,
@@ -363,15 +361,15 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         let mut map: EntryFunctionDecoderMap = std::collections::HashMap::new();
         map.insert(
             "topo_token_create_collection".to_string(),
-            Box::new(decoder::aptos_token_create_collection),
+            Box::new(decoder::topo_token_create_collection),
         );
         map.insert(
             "topo_token_mint".to_string(),
-            Box::new(decoder::aptos_token_mint),
+            Box::new(decoder::topo_token_mint),
         );
         map.insert(
             "topo_token_mint_soul_bound".to_string(),
-            Box::new(decoder::aptos_token_mint_soul_bound),
+            Box::new(decoder::topo_token_mint_soul_bound),
         );
         map
     });

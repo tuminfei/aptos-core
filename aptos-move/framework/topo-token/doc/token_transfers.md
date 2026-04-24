@@ -840,7 +840,7 @@ Get the amount from sender token
    id: TokenId,
    amount: u64
 ): u64 {
-   <b>use</b> aptos_token::token::{TokenStore};
+   <b>use</b> topo_token::token::{TokenStore};
    <b>use</b> aptos_std::table::{<b>Self</b>};
    <b>let</b> tokens = <b>global</b>&lt;TokenStore&gt;(account_addr).tokens;
    <b>let</b> balance = <a href="../../aptos-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(tokens, id).amount;
