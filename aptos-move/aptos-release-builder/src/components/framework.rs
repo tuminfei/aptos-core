@@ -52,11 +52,11 @@ pub fn generate_upgrade_proposals(
             "aptos-move/framework/aptos-framework",
             "aptos-framework",
         ),
-        ("0x3", "aptos-move/framework/aptos-token", "aptos-token"),
+        ("0x3", "aptos-move/framework/topo-token", "topo-token"),
         (
             "0x4",
-            "aptos-move/framework/aptos-token-objects",
-            "aptos-token-objects",
+            "aptos-move/framework/topo-token-objects",
+            "topo-token-objects",
         ),
         ("0x5", "aptos-move/framework/aptos-trading", "aptos-trading"),
     ];
