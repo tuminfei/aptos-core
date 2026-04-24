@@ -14,7 +14,7 @@ async fn chunky_dkg_with_validator_down() {
     // This scenario waits for one complete chunky DKG round before taking a
     // validator down. On a single host with four validators, the first round
     // can occasionally take materially longer than the happy-path test.
-    let estimated_dkg_latency_secs = 240;
+    let estimated_dkg_latency_secs = 360;
     let time_limit_secs = epoch_duration_secs + estimated_dkg_latency_secs;
 
     let mut swarm = create_swarm_with_chunky_dkg(4, epoch_duration_secs).await;

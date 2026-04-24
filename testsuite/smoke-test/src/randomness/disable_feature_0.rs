@@ -86,7 +86,12 @@ async fn disable_feature_0() {
     let randomness_seed = get_on_chain_resource::<PerBlockRandomness>(&client).await;
     assert!(randomness_seed.seed.is_none());
 
-    wait_for_epoch_at_least(&client, disable_effective_epoch + 1, epoch_duration_secs * 4).await;
+    wait_for_epoch_at_least(
+        &client,
+        disable_effective_epoch + 1,
+        epoch_duration_secs * 4,
+    )
+    .await;
 
     info!("Checking that no newer DKG result is produced after randomness is disabled.");
     let maybe_last_complete = get_on_chain_resource::<DKGState>(&client)

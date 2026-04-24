@@ -328,7 +328,7 @@ async fn submit_to_chain(
         .map_err(|err| CliError::UnexpectedError(err.to_string()))?
         .as_secs();
     let now_usecs = now * US_IN_SECS;
-    if now_usecs < state.timestamp_usecs - ACCEPTED_CLOCK_SKEW_US {
+    if now_usecs < state.timestamp_usecs.saturating_sub(ACCEPTED_CLOCK_SKEW_US) {
         eprintln!(
             "Local clock is skewed from blockchain clock. Clock is more than {} seconds behind the blockchain {}",
             ACCEPTED_CLOCK_SKEW_US,

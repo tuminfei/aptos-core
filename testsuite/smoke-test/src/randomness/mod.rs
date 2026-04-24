@@ -2,8 +2,8 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::utils;
-use aptos::common::types::GasOptions;
 use anyhow::{anyhow, ensure, Result};
+use aptos::common::types::GasOptions;
 use aptos_crypto::{compat::Sha3_256, Uniform};
 use aptos_dkg::weighted_vuf::traits::WeightedVUF;
 use aptos_forge::LocalSwarm;
@@ -12,8 +12,8 @@ use aptos_rest_client::Client;
 use aptos_types::{
     dkg::{DKGSessionState, DKGState, DKGTrait, DefaultDKG},
     on_chain_config::{
-        ChunkyDKGConfigMoveStruct, OnChainConfig, OnChainConsensusConfig,
-        OnChainChunkyDKGConfig, OnChainRandomnessConfig, RandomnessConfigMoveStruct,
+        ChunkyDKGConfigMoveStruct, OnChainChunkyDKGConfig, OnChainConfig, OnChainConsensusConfig,
+        OnChainRandomnessConfig, RandomnessConfigMoveStruct,
     },
     randomness::{PerBlockRandomness, RandMetadata, WVUF},
     validator_verifier::ValidatorConsensusInfo,

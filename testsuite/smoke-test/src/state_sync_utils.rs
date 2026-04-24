@@ -5,12 +5,12 @@ use crate::{
     smoke_test_environment::SwarmBuilder,
     utils::{
         create_test_accounts, execute_transactions, execute_transactions_and_wait,
-        wait_for_all_nodes, MAX_HEALTHY_WAIT_SECS,
+        MAX_CATCH_UP_WAIT_SECS, MAX_HEALTHY_WAIT_SECS,
     },
 };
 use aptos_config::config::{BootstrappingMode, NodeConfig, OverrideNodeConfig};
 use aptos_db::AptosDB;
-use aptos_forge::{LocalNode, LocalSwarm, Node, NodeExt, Swarm};
+use aptos_forge::{LocalNode, LocalSwarm, Node, NodeExt, Swarm, SwarmExt};
 use aptos_inspection_service::inspection_client::InspectionClient;
 use aptos_rest_client::Client as RestClient;
 use aptos_sdk::types::PeerId;
@@ -138,6 +138,25 @@ pub async fn test_fullnode_sync(
     epoch_changes: bool,
     clear_storage: bool,
 ) {
+    test_fullnode_sync_with_catchup_timeout(
+        vfn_peer_id,
+        swarm,
+        epoch_changes,
+        clear_storage,
+        Duration::from_secs(MAX_CATCH_UP_WAIT_SECS),
+    )
+    .await;
+}
+
+/// A helper method that tests that a full node can sync from a validator after
+/// a failure and continue to stay up-to-date, using a custom catch-up timeout.
+pub async fn test_fullnode_sync_with_catchup_timeout(
+    vfn_peer_id: PeerId,
+    swarm: &mut LocalSwarm,
+    epoch_changes: bool,
+    clear_storage: bool,
+    catchup_timeout: Duration,
+) {
     // Stop the fullnode and potentially clear storage
     stop_fullnode_and_delete_storage(swarm, vfn_peer_id, clear_storage).await;
 
@@ -161,7 +180,10 @@ pub async fn test_fullnode_sync(
         .restart()
         .await
         .unwrap();
-    wait_for_all_nodes(swarm).await;
+    swarm
+        .wait_for_all_nodes_to_catchup(catchup_timeout)
+        .await
+        .unwrap();
 
     // Execute more transactions on the validator and verify the fullnode catches up
     execute_transactions_and_wait(

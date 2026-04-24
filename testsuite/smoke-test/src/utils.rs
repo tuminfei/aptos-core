@@ -385,8 +385,8 @@ pub async fn update_consensus_config(
             expiration_secs: 60,
         }),
     )
-        .await
-        .unwrap();
+    .await
+    .unwrap();
 }
 
 #[cfg(test)]

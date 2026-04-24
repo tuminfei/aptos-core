@@ -56,7 +56,11 @@ async fn enable_feature_0() {
     let enable_dkg_script = script_to_enable_main_logic();
 
     let txn_summary = cli
-        .run_script_with_gas_options(root_idx, enable_dkg_script.as_str(), Some(governance_gas.clone()))
+        .run_script_with_gas_options(
+            root_idx,
+            enable_dkg_script.as_str(),
+            Some(governance_gas.clone()),
+        )
         .await
         .expect("Txn execution error.");
     debug!("enabling_dkg_summary={:?}", txn_summary);

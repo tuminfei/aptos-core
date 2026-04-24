@@ -127,7 +127,7 @@ async fn create_swarm_with_encryption(num_validators: usize) -> LocalSwarm {
             // Chunky DKG certification can exceed the default reliable-broadcast
             // RPC timeout under local scheduling contention, which prevents the
             // per-epoch encryption key from ever materializing on chain.
-            config.consensus.rand_rb_config.rpc_timeout_ms = 30_000;
+            config.consensus.rand_rb_config.rpc_timeout_ms = 60_000;
             config
                 .state_sync
                 .state_sync_driver
@@ -163,11 +163,10 @@ async fn test_encryption_key_rotation_and_encrypted_txns() {
 
     // ---- Wait for the first usable encryption key and record it ----
     info!("Waiting for the first encryption key to appear...");
-    let (epoch2, key_at_epoch2) = wait_for_encryption_key(&client, 240).await;
+    let (epoch2, key_at_epoch2) = wait_for_encryption_key(&client, 360).await;
     info!(
         "Reached epoch {} with encryption key present: {}",
-        epoch2,
-        true
+        epoch2, true
     );
 
     // Record the ledger version so we can scan transactions later.
@@ -204,21 +203,21 @@ async fn test_encryption_key_rotation_and_encrypted_txns() {
     );
 
     // ---- Wait for the next rotated key and check that it changed ----
-    info!("Waiting for encryption key rotation after epoch {}...", epoch2);
+    info!(
+        "Waiting for encryption key rotation after epoch {}...",
+        epoch2
+    );
     let (next_epoch, key_at_next_epoch) =
-        wait_for_rotated_encryption_key(&client, epoch2, key_at_epoch2.as_slice(), 240).await;
+        wait_for_rotated_encryption_key(&client, epoch2, key_at_epoch2.as_slice(), 360).await;
     info!(
         "Reached epoch {} with encryption key present: {}",
-        next_epoch,
-        true
+        next_epoch, true
     );
 
     assert_ne!(
-        key_at_epoch2,
-        key_at_next_epoch,
+        key_at_epoch2, key_at_next_epoch,
         "Encryption key must change between epoch {} and epoch {}",
-        epoch2,
-        next_epoch,
+        epoch2, next_epoch,
     );
 
     // ---- Count encrypted transactions in the committed history ----

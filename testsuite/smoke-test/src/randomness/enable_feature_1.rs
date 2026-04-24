@@ -58,7 +58,11 @@ async fn enable_feature_1() {
 
     debug!("enable_vtxn_script={}", enable_vtxn_script);
     let txn_summary = cli
-        .run_script_with_gas_options(root_idx, enable_vtxn_script.as_str(), Some(governance_gas.clone()))
+        .run_script_with_gas_options(
+            root_idx,
+            enable_vtxn_script.as_str(),
+            Some(governance_gas.clone()),
+        )
         .await
         .expect("Txn execution error.");
     debug!("enabling_vtxn_summary={:?}", txn_summary);
@@ -73,7 +77,11 @@ async fn enable_feature_1() {
     info!("Enabling randomness main logic.");
     let enable_main_logic_script = script_to_enable_main_logic();
     let txn_summary = cli
-        .run_script_with_gas_options(root_idx, enable_main_logic_script.as_str(), Some(governance_gas))
+        .run_script_with_gas_options(
+            root_idx,
+            enable_main_logic_script.as_str(),
+            Some(governance_gas),
+        )
         .await
         .expect("Txn execution error.");
     debug!("txn_summary={:?}", txn_summary);

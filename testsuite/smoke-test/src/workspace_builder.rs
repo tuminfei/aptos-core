@@ -8,13 +8,7 @@
 use aptos_forge::cargo_build_common_args;
 use aptos_logger::prelude::*;
 use once_cell::sync::Lazy;
-use std::{
-    collections::HashMap,
-    env,
-    path::PathBuf,
-    process::Command,
-    sync::Mutex,
-};
+use std::{collections::HashMap, env, path::PathBuf, process::Command, sync::Mutex};
 
 fn build_error_message(bin_name: &str) -> String {
     format!(
@@ -87,8 +81,7 @@ fn build_dir() -> PathBuf {
 pub fn get_bin<S: AsRef<str>>(bin_name: S) -> PathBuf {
     let bin_name = bin_name.as_ref();
     assert_ne!(
-        "aptos-node",
-        bin_name,
+        "aptos-node", bin_name,
         "aptos-node must be built and used via local swarm cargo_build_aptos_node"
     );
 

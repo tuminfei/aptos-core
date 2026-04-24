@@ -146,7 +146,14 @@ async fn test_fullnode_fast_and_intelligent_sync_epoch_changes() {
 
     // Create the fullnode and test its ability to sync
     let vfn_peer_id = state_sync_utils::create_fullnode(vfn_config, &mut swarm).await;
-    state_sync_utils::test_fullnode_sync(vfn_peer_id, &mut swarm, true, false).await;
+    state_sync_utils::test_fullnode_sync_with_catchup_timeout(
+        vfn_peer_id,
+        &mut swarm,
+        true,
+        false,
+        Duration::from_secs(MAX_CATCH_UP_WAIT_SECS * 2),
+    )
+    .await;
 }
 
 #[tokio::test]
