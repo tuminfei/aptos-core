@@ -371,9 +371,7 @@ module aptos_framework::staking_registry {
 
         let user_address = signer::address_of(user);
         let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
-        if (!registry.users.contains(user_address)) {
-            registry.users.add(user_address, new_user_info());
-        };
+        ensure_user_record(registry, user_address);
 
         let coins = coin::withdraw<TopoCoin>(user, amount);
         let info = registry.users.borrow_mut(user_address);
@@ -503,16 +501,7 @@ module aptos_framework::staking_registry {
         };
 
         let pool = registry.validators.borrow(validator_address);
-        let total_power = 0u128;
-        pool.delegator_list.for_each_ref(|member| {
-            let member_address = *member;
-            total_power += (get_user_effective_power_for_validator(
-                registry,
-                member_address,
-                validator_address,
-            ) as u128);
-        });
-        total_power as u64
+        calculate_validator_total_power(registry, pool, validator_address)
     }
 
     public(friend) fun get_validator_total_power_for_next_epoch(
@@ -618,6 +607,249 @@ module aptos_framework::staking_registry {
     public fun validator_exists(validator_address: address): bool acquires StakingRegistry {
         exists<StakingRegistry>(@aptos_framework)
             && borrow_global<StakingRegistry>(@aptos_framework).validators.contains(validator_address)
+    }
+
+    #[view]
+    public fun validators_exist(
+        validators: vector<address>,
+    ): vector<bool> acquires StakingRegistry {
+        let exists_flags = vector[];
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return exists_flags
+        };
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let len = validators.length();
+        let i = 0;
+        while (i < len) {
+            exists_flags.push_back(registry.validators.contains(*validators.borrow(i)));
+            i += 1;
+        };
+        exists_flags
+    }
+
+    #[view]
+    public fun get_validator_view(
+        validator_address: address,
+    ): (address, address, u64, u64, u64, u64, u64) acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return empty_validator_view(validator_address)
+        };
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        build_validator_view(registry, validator_address)
+    }
+
+    #[view]
+    public fun get_validator_views_by_addresses(
+        validators: vector<address>,
+    ): (
+        vector<address>,
+        vector<address>,
+        vector<u64>,
+        vector<u64>,
+        vector<u64>,
+        vector<u64>,
+        vector<u64>,
+    ) acquires StakingRegistry {
+        let validator_addresses = vector[];
+        let owner_addresses = vector[];
+        let commission_bps_values = vector[];
+        let statuses = vector[];
+        let delegator_counts = vector[];
+        let joining_powers = vector[];
+        let total_powers = vector[];
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return (
+                validator_addresses,
+                owner_addresses,
+                commission_bps_values,
+                statuses,
+                delegator_counts,
+                joining_powers,
+                total_powers,
+            )
+        };
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let len = validators.length();
+        let i = 0;
+        while (i < len) {
+            let (
+                validator_address,
+                owner_address,
+                commission_bps,
+                status,
+                delegator_count,
+                joining_power,
+                total_power,
+            ) = build_validator_view(registry, *validators.borrow(i));
+            validator_addresses.push_back(validator_address);
+            owner_addresses.push_back(owner_address);
+            commission_bps_values.push_back(commission_bps);
+            statuses.push_back(status);
+            delegator_counts.push_back(delegator_count);
+            joining_powers.push_back(joining_power);
+            total_powers.push_back(total_power);
+            i += 1;
+        };
+        (
+            validator_addresses,
+            owner_addresses,
+            commission_bps_values,
+            statuses,
+            delegator_counts,
+            joining_powers,
+            total_powers,
+        )
+    }
+
+    #[view]
+    public fun get_user_stake_view(
+        user: address,
+    ): (address, u64, address, u64, u64, u64) acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return empty_user_stake_view(user)
+        };
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        build_user_stake_view(registry, user)
+    }
+
+    #[view]
+    public fun users_have_stake_records(
+        users: vector<address>,
+    ): vector<bool> acquires StakingRegistry {
+        let exists_flags = vector[];
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return exists_flags
+        };
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let len = users.length();
+        let i = 0;
+        while (i < len) {
+            exists_flags.push_back(registry.users.contains(*users.borrow(i)));
+            i += 1;
+        };
+        exists_flags
+    }
+
+    #[view]
+    public fun get_user_stake_views_by_addresses(
+        users: vector<address>,
+    ): (
+        vector<address>,
+        vector<u64>,
+        vector<address>,
+        vector<u64>,
+        vector<u64>,
+        vector<u64>,
+    ) acquires StakingRegistry {
+        let returned_users = vector[];
+        let deposit_octas_values = vector[];
+        let delegated_to_values = vector[];
+        let cooldown_until_secs_values = vector[];
+        let committed_powers = vector[];
+        let effective_powers = vector[];
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return (
+                returned_users,
+                deposit_octas_values,
+                delegated_to_values,
+                cooldown_until_secs_values,
+                committed_powers,
+                effective_powers,
+            )
+        };
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let len = users.length();
+        let i = 0;
+        while (i < len) {
+            let (
+                user,
+                deposit_octas,
+                delegated_to,
+                cooldown_until_secs,
+                committed_power,
+                effective_power,
+            ) = build_user_stake_view(registry, *users.borrow(i));
+            returned_users.push_back(user);
+            deposit_octas_values.push_back(deposit_octas);
+            delegated_to_values.push_back(delegated_to);
+            cooldown_until_secs_values.push_back(cooldown_until_secs);
+            committed_powers.push_back(committed_power);
+            effective_powers.push_back(effective_power);
+            i += 1;
+        };
+        (
+            returned_users,
+            deposit_octas_values,
+            delegated_to_values,
+            cooldown_until_secs_values,
+            committed_powers,
+            effective_powers,
+        )
+    }
+
+    #[view]
+    public fun get_validator_delegator_count(
+        validator_address: address,
+    ): u64 acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return 0
+        };
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        if (!registry.validators.contains(validator_address)) {
+            return 0
+        };
+        registry.validators.borrow(validator_address).delegator_list.length()
+    }
+
+    #[view]
+    public fun get_validator_delegators(
+        validator_address: address,
+        offset: u64,
+        limit: u64,
+    ): vector<address> acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return vector[]
+        };
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        if (!registry.validators.contains(validator_address)) {
+            return vector[]
+        };
+        let pool = registry.validators.borrow(validator_address);
+        copy_address_range(&pool.delegator_list, offset, limit)
+    }
+
+    #[view]
+    public fun get_validator_delegator_views(
+        validator_address: address,
+        offset: u64,
+        limit: u64,
+    ): (vector<address>, vector<u64>, vector<u64>, vector<u64>) acquires StakingRegistry {
+        let delegators = vector[];
+        let deposit_octas_values = vector[];
+        let committed_powers = vector[];
+        let effective_powers = vector[];
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            return (delegators, deposit_octas_values, committed_powers, effective_powers)
+        };
+        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        if (!registry.validators.contains(validator_address)) {
+            return (delegators, deposit_octas_values, committed_powers, effective_powers)
+        };
+        let pool = registry.validators.borrow(validator_address);
+        let len = pool.delegator_list.length();
+        let i = offset;
+        let end = range_end(offset, limit, len);
+        while (i < end) {
+            let delegator = *pool.delegator_list.borrow(i);
+            let (deposit_octas, committed_power, effective_power) =
+                build_delegator_view(registry, delegator, validator_address);
+            delegators.push_back(delegator);
+            deposit_octas_values.push_back(deposit_octas);
+            committed_powers.push_back(committed_power);
+            effective_powers.push_back(effective_power);
+            i += 1;
+        };
+        (delegators, deposit_octas_values, committed_powers, effective_powers)
     }
 
     #[view]
@@ -957,9 +1189,7 @@ module aptos_framework::staking_registry {
             error::already_exists(EALREADY_VALIDATOR),
         );
 
-        if (!registry.users.contains(owner_address)) {
-            registry.users.add(owner_address, new_user_info());
-        };
+        ensure_user_record(registry, owner_address);
 
         registry.validators.add(validator_address, ValidatorPool {
             owner_address,
@@ -990,9 +1220,7 @@ module aptos_framework::staking_registry {
             error::invalid_argument(ENOT_VALIDATOR),
         );
 
-        if (!registry.users.contains(user_address)) {
-            registry.users.add(user_address, new_user_info());
-        };
+        ensure_user_record(registry, user_address);
 
         let now_seconds = timestamp::now_seconds();
         let info = registry.users.borrow(user_address);
@@ -1081,6 +1309,12 @@ module aptos_framework::staking_registry {
             delegated_to: @0x0,
             cooldown_until_secs: 0,
         }
+    }
+
+    fun ensure_user_record(registry: &mut StakingRegistry, user_address: address) {
+        if (!registry.users.contains(user_address)) {
+            registry.users.add(user_address, new_user_info());
+        };
     }
 
     fun mint_to_user_deposit(
@@ -1326,6 +1560,141 @@ module aptos_framework::staking_registry {
         let copied = vector[];
         addresses.for_each_ref(|addr| copied.push_back(*addr));
         copied
+    }
+
+    fun build_validator_view(
+        registry: &StakingRegistry,
+        validator_address: address,
+    ): (address, address, u64, u64, u64, u64, u64) {
+        if (!registry.validators.contains(validator_address)) {
+            return empty_validator_view(validator_address)
+        };
+        let pool = registry.validators.borrow(validator_address);
+        (
+            validator_address,
+            pool.owner_address,
+            pool.commission_bps,
+            pool.status,
+            pool.delegator_list.length(),
+            get_user_effective_power_for_validator(
+                registry,
+                pool.owner_address,
+                validator_address,
+            ),
+            calculate_validator_total_power(registry, pool, validator_address),
+        )
+    }
+
+    fun empty_validator_view(
+        validator_address: address,
+    ): (address, address, u64, u64, u64, u64, u64) {
+        (validator_address, @0x0, 0, VALIDATOR_STATUS_INACTIVE, 0, 0, 0)
+    }
+
+    fun build_user_stake_view(
+        registry: &StakingRegistry,
+        user: address,
+    ): (address, u64, address, u64, u64, u64) {
+        if (!registry.users.contains(user)) {
+            return empty_user_stake_view(user)
+        };
+        let info = registry.users.borrow(user);
+        (
+            user,
+            coin::value(&info.deposit),
+            info.delegated_to,
+            info.cooldown_until_secs,
+            poc_power_store::get_user_committed_power(user),
+            get_active_effective_power(registry, user),
+        )
+    }
+
+    fun empty_user_stake_view(user: address): (address, u64, address, u64, u64, u64) {
+        (user, 0, @0x0, 0, poc_power_store::get_user_committed_power(user), 0)
+    }
+
+    fun build_delegator_view(
+        registry: &StakingRegistry,
+        delegator: address,
+        validator_address: address,
+    ): (u64, u64, u64) {
+        if (!registry.users.contains(delegator)) {
+            return (0, poc_power_store::get_user_committed_power(delegator), 0)
+        };
+        let info = registry.users.borrow(delegator);
+        (
+            coin::value(&info.deposit),
+            poc_power_store::get_user_committed_power(delegator),
+            get_user_effective_power_for_validator(
+                registry,
+                delegator,
+                validator_address,
+            ),
+        )
+    }
+
+    fun get_active_effective_power(
+        registry: &StakingRegistry,
+        user: address,
+    ): u64 {
+        if (!registry.users.contains(user)) {
+            return 0
+        };
+        let info = registry.users.borrow(user);
+        if (info.delegated_to == @0x0 || !registry.validators.contains(info.delegated_to)) {
+            return 0
+        };
+        let pool = registry.validators.borrow(info.delegated_to);
+        if (pool.status != VALIDATOR_STATUS_ACTIVE
+            && pool.status != VALIDATOR_STATUS_PENDING_INACTIVE) {
+            return 0
+        };
+        calculate_effective_power(info, registry.config.octas_per_power, user)
+    }
+
+    fun calculate_validator_total_power(
+        registry: &StakingRegistry,
+        pool: &ValidatorPool,
+        validator_address: address,
+    ): u64 {
+        let total_power = 0u128;
+        pool.delegator_list.for_each_ref(|member| {
+            let member_address = *member;
+            total_power += (get_user_effective_power_for_validator(
+                registry,
+                member_address,
+                validator_address,
+            ) as u128);
+        });
+        total_power as u64
+    }
+
+    fun copy_address_range(
+        addresses: &vector<address>,
+        offset: u64,
+        limit: u64,
+    ): vector<address> {
+        let copied = vector[];
+        let len = addresses.length();
+        let i = offset;
+        let end = range_end(offset, limit, len);
+        while (i < end) {
+            copied.push_back(*addresses.borrow(i));
+            i += 1;
+        };
+        copied
+    }
+
+    fun range_end(offset: u64, limit: u64, len: u64): u64 {
+        if (offset >= len || limit == 0) {
+            return offset
+        };
+        let remaining = len - offset;
+        if (limit >= remaining) {
+            len
+        } else {
+            offset + limit
+        }
     }
 
     /// Compute epoch rewards for a validator pool.

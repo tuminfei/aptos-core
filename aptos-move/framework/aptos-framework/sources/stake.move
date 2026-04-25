@@ -459,6 +459,81 @@ module aptos_framework::stake {
         result
     }
 
+    #[view]
+    /// Return the number of active validators in the current epoch.
+    public fun get_active_validator_count(): u64 acquires ValidatorSet {
+        borrow_global<ValidatorSet>(@aptos_framework).active_validators.length()
+    }
+
+    #[view]
+    /// Return the number of validators waiting to become active next epoch.
+    public fun get_pending_active_validator_count(): u64 acquires ValidatorSet {
+        borrow_global<ValidatorSet>(@aptos_framework).pending_active.length()
+    }
+
+    #[view]
+    /// Return the number of validators still active this epoch but leaving next epoch.
+    public fun get_pending_inactive_validator_count(): u64 acquires ValidatorSet {
+        borrow_global<ValidatorSet>(@aptos_framework).pending_inactive.length()
+    }
+
+    #[view]
+    /// Return active validator pool addresses in current-epoch order.
+    public fun get_active_validators(
+        offset: u64,
+        limit: u64
+    ): vector<address> acquires ValidatorSet {
+        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        get_validator_addresses(&validator_set.active_validators, offset, limit)
+    }
+
+    #[view]
+    /// Return pending-active validator pool addresses.
+    public fun get_pending_active_validators(
+        offset: u64,
+        limit: u64
+    ): vector<address> acquires ValidatorSet {
+        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        get_validator_addresses(&validator_set.pending_active, offset, limit)
+    }
+
+    #[view]
+    /// Return pending-inactive validator pool addresses.
+    public fun get_pending_inactive_validators(
+        offset: u64,
+        limit: u64
+    ): vector<address> acquires ValidatorSet {
+        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        get_validator_addresses(&validator_set.pending_inactive, offset, limit)
+    }
+
+    #[view]
+    /// Return validator addresses that can vote in the current epoch:
+    /// active validators followed by pending-inactive validators.
+    public fun get_current_epoch_validators(
+        offset: u64,
+        limit: u64
+    ): vector<address> acquires ValidatorSet {
+        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let addresses = vector[];
+        let total = validator_set.active_validators.length()
+            + validator_set.pending_inactive.length();
+        let i = offset;
+        let end = range_end(offset, limit, total);
+        while (i < end) {
+            if (i < validator_set.active_validators.length()) {
+                addresses.push_back(validator_set.active_validators.borrow(i).addr);
+            } else {
+                let pending_index = i - validator_set.active_validators.length();
+                addresses.push_back(
+                    validator_set.pending_inactive.borrow(pending_index).addr
+                );
+            };
+            i += 1;
+        };
+        addresses
+    }
+
     /// Initialize validator set to the core resource account.
     public(friend) fun initialize(aptos_framework: &signer) {
         system_addresses::assert_aptos_framework(aptos_framework);
@@ -1962,6 +2037,34 @@ module aptos_framework::stake {
             i += 1;
         };
         option::none()
+    }
+
+    fun get_validator_addresses(
+        validators: &vector<ValidatorInfo>,
+        offset: u64,
+        limit: u64
+    ): vector<address> {
+        let addresses = vector[];
+        let len = validators.length();
+        let i = offset;
+        let end = range_end(offset, limit, len);
+        while (i < end) {
+            addresses.push_back(validators.borrow(i).addr);
+            i += 1;
+        };
+        addresses
+    }
+
+    fun range_end(offset: u64, limit: u64, len: u64): u64 {
+        if (offset >= len || limit == 0) {
+            return offset
+        };
+        let remaining = len - offset;
+        if (limit >= remaining) {
+            len
+        } else {
+            offset + limit
+        }
     }
 
     fun generate_validator_info(

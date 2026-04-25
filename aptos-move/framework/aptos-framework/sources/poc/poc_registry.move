@@ -580,6 +580,82 @@ module aptos_framework::poc_registry {
     }
 
     #[view]
+    /// Batch-check app registration for caller-provided admin addresses.
+    public fun exists_apps(app_admins: vector<address>): vector<bool> acquires Registry {
+        let exists_flags = vector[];
+        let len = app_admins.length();
+        if (!exists<Registry>(@aptos_framework)) {
+            let i = 0;
+            while (i < len) {
+                exists_flags.push_back(false);
+                i += 1;
+            };
+            return exists_flags
+        };
+        let registry = borrow_global<Registry>(@aptos_framework);
+        let i = 0;
+        while (i < len) {
+            exists_flags.push_back(registry.apps.contains(*app_admins.borrow(i)));
+            i += 1;
+        };
+        exists_flags
+    }
+
+    #[view]
+    /// Return full app records for explicit admin addresses.
+    public fun get_app_infos_by_admins(
+        app_admins: vector<address>,
+    ): vector<AppInfo> acquires Registry {
+        if (!exists<Registry>(@aptos_framework)) {
+            return vector[]
+        };
+        let registry = borrow_global<Registry>(@aptos_framework);
+        let infos = vector[];
+        let len = app_admins.length();
+        let i = 0;
+        while (i < len) {
+            let app_admin = *app_admins.borrow(i);
+            assert!(
+                registry.apps.contains(app_admin),
+                error::not_found(EAPP_ADMIN_NOT_FOUND),
+            );
+            infos.push_back(*registry.apps.borrow(app_admin));
+            i += 1;
+        };
+        infos
+    }
+
+    #[view]
+    /// Batch reverse-lookup admin addresses by app contract addresses.
+    /// Missing app addresses are returned as @0x0 to keep the batch response total.
+    public fun get_app_admins_by_app_addresses(
+        app_addresses: vector<address>,
+    ): vector<address> acquires Registry {
+        let app_admins = vector[];
+        let len = app_addresses.length();
+        if (!exists<Registry>(@aptos_framework)) {
+            let i = 0;
+            while (i < len) {
+                app_admins.push_back(@0x0);
+                i += 1;
+            };
+            return app_admins
+        };
+        let registry = borrow_global<Registry>(@aptos_framework);
+        let i = 0;
+        while (i < len) {
+            let app_address = *app_addresses.borrow(i);
+            if (registry.app_address_to_admin.contains(app_address)) {
+                app_admins.push_back(*registry.app_address_to_admin.borrow(app_address));
+            } else {
+                app_admins.push_back(@0x0);
+            };
+            i += 1;
+        };
+        app_admins
+    }
+
+    #[view]
     /// Reverse-lookup: get admin address from contract deployment address.
     ///
     /// Aborts if the registry is not initialized or the address is not registered.

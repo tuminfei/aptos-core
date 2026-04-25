@@ -43,8 +43,8 @@ module aptos_framework::poc_power_store {
 
     // Basis points denominator: 10000 bps = 100%
     const BPS_DENOMINATOR: u64 = 10000;
-    // Default retention: 9950/10000 = 99.5% power retained per period (0.5% decay per period)
-    const DEFAULT_RETENTION_BPS_PER_PERIOD: u64 = 9950;
+    // Default retention: 9995/10000 = 99.95% power retained per period (0.05% decay per period)
+    const DEFAULT_RETENTION_BPS_PER_PERIOD: u64 = 9995;
     // Default power period: 60 epochs per power period
     const DEFAULT_POWER_PERIOD_IN_EPOCHS: u64 = 60;
 
@@ -85,8 +85,6 @@ module aptos_framework::poc_power_store {
         current_period: u64,
         /// Per-user storage: address → two-slot power version window
         users: Table<address, UserPowerInfo>,
-        /// Ordered list of all users who have ever had power written; used for iteration in tests/migration
-        user_list: vector<address>,
         /// Decay factor applied per period to stale power values (in basis points, e.g. 9950 = 99.5%)
         retention_bps_per_period: u64,
     }
@@ -361,7 +359,8 @@ module aptos_framework::poc_power_store {
         get_user_power_for_period_internal(store, user, store.current_period)
     }
 
-    public(friend) fun get_user_committed_power_for_next_epoch(
+    #[view]
+    public fun get_user_committed_power_for_next_epoch(
         user: address,
     ): u64 acquires PowerStore {
         if (!exists<PowerStore>(@aptos_framework)) {
@@ -384,6 +383,119 @@ module aptos_framework::poc_power_store {
         };
         let store = borrow_global<PowerStore>(@aptos_framework);
         get_user_power_for_period_internal(store, user, target_period)
+    }
+
+    #[view]
+    public fun get_user_committed_powers(
+        users: vector<address>,
+    ): vector<u64> acquires PowerStore {
+        let powers = vector[];
+        if (!exists<PowerStore>(@aptos_framework)) {
+            return powers
+        };
+        let store = borrow_global<PowerStore>(@aptos_framework);
+        let len = users.length();
+        let i = 0;
+        while (i < len) {
+            powers.push_back(get_user_power_for_period_internal(
+                store,
+                *users.borrow(i),
+                store.current_period,
+            ));
+            i += 1;
+        };
+        powers
+    }
+
+    #[view]
+    public fun get_user_powers_for_period(
+        users: vector<address>,
+        target_period: u64,
+    ): vector<u64> acquires PowerStore {
+        let powers = vector[];
+        if (!exists<PowerStore>(@aptos_framework)) {
+            return powers
+        };
+        let store = borrow_global<PowerStore>(@aptos_framework);
+        let len = users.length();
+        let i = 0;
+        while (i < len) {
+            powers.push_back(get_user_power_for_period_internal(
+                store,
+                *users.borrow(i),
+                target_period,
+            ));
+            i += 1;
+        };
+        powers
+    }
+
+    #[view]
+    public fun get_user_power_version(
+        user: address,
+    ): (u64, u64, u64, u64, u64) acquires PowerStore {
+        if (!exists<PowerStore>(@aptos_framework)) {
+            return (0, 0, 0, 0, 0)
+        };
+        let store = borrow_global<PowerStore>(@aptos_framework);
+        build_user_power_version(store, user)
+    }
+
+    #[view]
+    public fun get_user_power_versions_by_addresses(
+        users: vector<address>,
+    ): (
+        vector<address>,
+        vector<u64>,
+        vector<u64>,
+        vector<u64>,
+        vector<u64>,
+        vector<u64>,
+    ) acquires PowerStore {
+        let returned_users = vector[];
+        let older_effective_periods = vector[];
+        let older_powers = vector[];
+        let newer_effective_periods = vector[];
+        let newer_powers = vector[];
+        let committed_powers = vector[];
+        if (!exists<PowerStore>(@aptos_framework)) {
+            return (
+                returned_users,
+                older_effective_periods,
+                older_powers,
+                newer_effective_periods,
+                newer_powers,
+                committed_powers,
+            )
+        };
+        let store = borrow_global<PowerStore>(@aptos_framework);
+        let len = users.length();
+        let i = 0;
+        while (i < len) {
+            let user = *users.borrow(i);
+            let (
+                older_effective_period,
+                older_power,
+                newer_effective_period,
+                newer_power,
+                committed_power,
+            ) = build_user_power_version(store, user);
+            returned_users.push_back(user);
+            older_effective_periods.push_back(older_effective_period);
+            older_powers.push_back(older_power);
+            newer_effective_periods.push_back(newer_effective_period);
+            newer_powers.push_back(newer_power);
+            committed_powers.push_back(committed_power);
+            i += 1;
+        };
+        (
+            returned_users,
+            older_effective_periods,
+            older_powers,
+            newer_effective_periods,
+            newer_powers,
+            committed_powers,
+        )
     }
 
     #[view]
@@ -444,7 +556,6 @@ module aptos_framework::poc_power_store {
                 last_epoch: 0,
                 current_period: 0,
                 users: table::new(),
-                user_list: vector[],
                 retention_bps_per_period,
             });
         };
@@ -506,7 +617,6 @@ module aptos_framework::poc_power_store {
                     power,
                 },
             });
-            store.user_list.push_back(user);
             return
         };
 
@@ -568,6 +678,27 @@ module aptos_framework::poc_power_store {
             base_power,
             target_period - base_period,
             store.retention_bps_per_period,
+        )
+    }
+
+    fun build_user_power_version(
+        store: &PowerStore,
+        user: address,
+    ): (u64, u64, u64, u64, u64) {
+        if (!store.users.contains(user)) {
+            return (0, 0, 0, 0, 0)
+        };
+        let info = store.users.borrow(user);
+        (
+            info.older.effective_period,
+            info.older.power,
+            info.newer.effective_period,
+            info.newer.power,
+            get_user_power_for_period_internal(
+                store,
+                user,
+                store.current_period,
+            ),
         )
     }
 
