@@ -40,8 +40,14 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 
 DEFAULT_NODE_COUNT = 4
-DEFAULT_BASE_STAKE = 100000000000000
+DEFAULT_BASE_STAKE = 10000000000000
 DEFAULT_CHAIN_ID = 4
+DEFAULT_EPOCH_DURATION_SECS = 60
+DEFAULT_POC_POWER_PERIOD_IN_EPOCHS = 5
+DEFAULT_CORE_RESOURCES_ADDRESS = "0xa550c18"
+DEFAULT_ROOT_PRIVATE_KEY = "D04470F43AB6AEAA4EB616B72128881EEF77346F2075FFE68E14BA7DEBD8095E"
+DEFAULT_GAS_UNIT_PRICE = 100
+DEFAULT_MAX_GAS = 20_000_000
 DEFAULT_STARTUP_TIMEOUT_SECS = 240
 DEFAULT_POLL_INTERVAL_SECS = 1.0
 DEFAULT_WORKDIR_NAME = "prod-like-validator-cluster"
@@ -123,6 +129,96 @@ def run_command(
         text=True,
         capture_output=capture_output,
     )
+
+
+def normalize_hex(value: str) -> str:
+    text = value.strip().strip('"').strip("'")
+    if text.startswith("0x") or text.startswith("0X"):
+        return "0x" + text[2:].lower()
+    return "0x" + text.lower()
+
+
+def derive_public_key(
+    *,
+    aptos_cli: Sequence[str],
+    repo_root: Path,
+    private_key: str,
+) -> str:
+    private_key = normalize_hex(private_key)
+    output_path = repo_root / "prod-like-validator-cluster" / ".root-public-key.tmp"
+    public_key_path = output_path.with_suffix(output_path.suffix + ".pub")
+    try:
+        run_command(
+            list(aptos_cli)
+            + [
+                "key",
+                "extract-public-key",
+                "--private-key",
+                private_key,
+                "--output-file",
+                str(output_path),
+                "--assume-yes",
+            ],
+            cwd=repo_root,
+            capture_output=True,
+        )
+        return normalize_hex(public_key_path.read_text())
+    finally:
+        try:
+            output_path.unlink()
+        except FileNotFoundError:
+            pass
+        try:
+            public_key_path.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def run_logged(
+    cmd: Sequence[str],
+    *,
+    cwd: Path,
+    redactions: Sequence[str] = (),
+) -> None:
+    printable = list(cmd)
+    for secret in redactions:
+        printable = [item.replace(secret, "<redacted>") for item in printable]
+    print("$ " + " ".join(printable))
+    run_command(cmd, cwd=cwd)
+
+
+def set_poc_power_period(
+    *,
+    aptos_cli: Sequence[str],
+    repo_root: Path,
+    rest_url: str,
+    root_key: str,
+    power_period_in_epochs: int,
+) -> None:
+    core_private_key = normalize_hex(root_key)
+    cmd = (
+        list(aptos_cli)
+        + [
+            "move",
+            "run",
+            "--function-id",
+            "0x1::topo_governance::set_power_period_in_epochs_test_only",
+            "--url",
+            rest_url,
+            "--private-key",
+            core_private_key,
+            "--assume-yes",
+            "--max-gas",
+            str(DEFAULT_MAX_GAS),
+            "--gas-unit-price",
+            str(DEFAULT_GAS_UNIT_PRICE),
+            "--sender-account",
+            DEFAULT_CORE_RESOURCES_ADDRESS,
+            "--args",
+            f"u64:{power_period_in_epochs}",
+        ]
+    )
+    run_logged(cmd, cwd=repo_root, redactions=[core_private_key])
 
 
 def write_text(path: Path, content: str) -> None:
@@ -446,10 +542,18 @@ def build_node(workdir: Path, index: int, ports: PortLayout) -> NodeRuntime:
     )
 
 
-def prepare_layout(args: argparse.Namespace, workspace: Path) -> Path:
+def prepare_layout(
+    args: argparse.Namespace,
+    workspace: Path,
+    nodes: Sequence[NodeRuntime],
+) -> Path:
+    users = [node.username for node in nodes]
+    if not users:
+        raise SystemExit("cannot generate genesis layout without validators")
+
     layout = {
-        "root_key": args.root_key,
-        "users": [],
+        "root_key": args.root_public_key,
+        "users": users,
         "chain_id": args.chain_id,
         "allow_new_validators": args.allow_new_validators,
         "epoch_duration_secs": args.epoch_duration_secs,
@@ -978,12 +1082,19 @@ def start_command(args: argparse.Namespace) -> int:
     aptos_node_bin = choose_aptos_node(repo_root, args.aptos_node_bin)
     framework_path = framework_bundle_path(repo_root, args.framework_bundle)
 
-    layout_path = prepare_layout(args, workspace)
-    setup_genesis_repository(aptos_cli, repo_root, workspace, layout_path)
-    copy_framework_bundle(framework_path, workspace)
-
     ports = allocate_local_ports(args.nodes, args.port_start)
     nodes = build_nodes(workdir, args.nodes, ports)
+
+    if args.root_public_key is None:
+        args.root_public_key = derive_public_key(
+            aptos_cli=aptos_cli,
+            repo_root=repo_root,
+            private_key=args.root_private_key,
+        )
+
+    layout_path = prepare_layout(args, workspace, nodes)
+    setup_genesis_repository(aptos_cli, repo_root, workspace, layout_path)
+    copy_framework_bundle(framework_path, workspace)
 
     print("generating validator keys ...")
     generate_keys(aptos_cli, repo_root, nodes)
@@ -1014,6 +1125,18 @@ def start_command(args: argparse.Namespace) -> int:
             poll_interval_secs=args.poll_interval_secs,
             pids=pids,
         )
+        if args.poc_power_period_in_epochs > 0:
+            print(
+                "setting POC power period to "
+                f"{args.poc_power_period_in_epochs} epochs ..."
+            )
+            set_poc_power_period(
+                aptos_cli=aptos_cli,
+                repo_root=repo_root,
+                rest_url=nodes[0].rest_url,
+                root_key=args.root_private_key,
+                power_period_in_epochs=args.poc_power_period_in_epochs,
+            )
     except BaseException:
         cleanup_node_processes(nodes=nodes, pids=pids)
         raise
@@ -1249,19 +1372,33 @@ def build_parser() -> argparse.ArgumentParser:
         help="whether post-genesis validator join/leave is allowed; default: enabled",
     )
     start_parser.add_argument(
-        "--root-key",
-        default="D04470F43AB6AEAA4EB616B72128881EEF77346F2075FFE68E14BA7DEBD8095E",
-        help="hex root key for layout.yaml",
+        "--root-private-key",
+        default=DEFAULT_ROOT_PRIVATE_KEY,
+        help="hex root private key used to sign core resources transactions",
     )
-    start_parser.add_argument("--epoch-duration-secs", type=int, default=7200)
-    start_parser.add_argument("--min-stake", type=int, default=100000000000000)
-    start_parser.add_argument("--min-voting-threshold", type=int, default=100000000000000)
+    start_parser.add_argument(
+        "--root-public-key",
+        default=None,
+        help="hex root public key for layout.yaml; derived from --root-private-key if omitted",
+    )
+    start_parser.add_argument("--epoch-duration-secs", type=int, default=DEFAULT_EPOCH_DURATION_SECS)
+    start_parser.add_argument(
+        "--poc-power-period-in-epochs",
+        type=int,
+        default=DEFAULT_POC_POWER_PERIOD_IN_EPOCHS,
+        help=(
+            "set on-chain POC power_period_in_epochs after startup; "
+            f"default: {DEFAULT_POC_POWER_PERIOD_IN_EPOCHS}; use 0 to skip"
+        ),
+    )
+    start_parser.add_argument("--min-stake", type=int, default=10000000000000)
+    start_parser.add_argument("--min-voting-threshold", type=int, default=10000000000000)
     start_parser.add_argument("--max-stake", type=int, default=100000000000000000)
     start_parser.add_argument("--recurring-lockup-duration-secs", type=int, default=86400)
     start_parser.add_argument("--required-proposer-stake", type=int, default=1000000)
     start_parser.add_argument("--rewards-apy-percentage", type=int, default=10)
     start_parser.add_argument("--voting-duration-secs", type=int, default=43200)
-    start_parser.add_argument("--voting-power-increase-limit", type=int, default=20)
+    start_parser.add_argument("--voting-power-increase-limit", type=int, default=50)
     start_parser.add_argument("--startup-timeout-secs", type=int, default=DEFAULT_STARTUP_TIMEOUT_SECS)
     start_parser.add_argument("--poll-interval-secs", type=float, default=DEFAULT_POLL_INTERVAL_SECS)
     start_parser.set_defaults(func=start_command)
