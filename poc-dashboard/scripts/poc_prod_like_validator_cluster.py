@@ -31,6 +31,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -50,7 +51,7 @@ DEFAULT_GAS_UNIT_PRICE = 100
 DEFAULT_MAX_GAS = 20_000_000
 DEFAULT_STARTUP_TIMEOUT_SECS = 240
 DEFAULT_POLL_INTERVAL_SECS = 1.0
-DEFAULT_WORKDIR_NAME = "prod-like-validator-cluster"
+DEFAULT_WORKDIR_NAME = "poc-validator-cluster"
 STATE_FILE_NAME = ".prod_like_validator_cluster_state.json"
 FORGE_LOG_NAME = "cluster.log"
 APTOS_NODE_LOG_NAME = "aptos-node.log"
@@ -105,11 +106,11 @@ def eprint(message: str) -> None:
 
 
 def repo_root_from_script() -> Path:
-    return Path(__file__).resolve().parent.parent
+    return Path(__file__).resolve().parents[2]
 
 
 def default_workdir(repo_root: Path) -> Path:
-    return repo_root / DEFAULT_WORKDIR_NAME
+    return Path(__file__).resolve().parent.parent / DEFAULT_WORKDIR_NAME
 
 
 def state_file(workdir: Path) -> Path:
@@ -145,9 +146,9 @@ def derive_public_key(
     private_key: str,
 ) -> str:
     private_key = normalize_hex(private_key)
-    output_path = repo_root / "prod-like-validator-cluster" / ".root-public-key.tmp"
-    public_key_path = output_path.with_suffix(output_path.suffix + ".pub")
-    try:
+    with tempfile.TemporaryDirectory(prefix="poc-root-key-") as tmp_dir:
+        output_path = Path(tmp_dir) / "root-public-key.tmp"
+        public_key_path = output_path.with_suffix(output_path.suffix + ".pub")
         run_command(
             list(aptos_cli)
             + [
@@ -163,11 +164,6 @@ def derive_public_key(
             capture_output=True,
         )
         return normalize_hex(public_key_path.read_text())
-    finally:
-        try:
-            output_path.unlink()
-        except FileNotFoundError:
-            pass
         try:
             public_key_path.unlink()
         except FileNotFoundError:

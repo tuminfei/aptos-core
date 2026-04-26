@@ -35,7 +35,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
 
-DEFAULT_WORKDIR_NAME = "prod-like-validator-cluster"
+DEFAULT_WORKDIR_NAME = "poc-validator-cluster"
 STATE_FILE_NAME = ".prod_like_validator_cluster_state.json"
 DEFAULT_CORE_RESOURCES_ADDRESS = "0xa550c18"
 DEFAULT_FRAMEWORK_ADDRESS = "0x1"
@@ -71,11 +71,11 @@ def eprint(message: str) -> None:
 
 
 def repo_root_from_script() -> Path:
-    return Path(__file__).resolve().parent.parent
+    return Path(__file__).resolve().parents[2]
 
 
 def default_workdir(repo_root: Path) -> Path:
-    return repo_root / DEFAULT_WORKDIR_NAME
+    return Path(__file__).resolve().parent.parent / DEFAULT_WORKDIR_NAME
 
 
 def state_file(workdir: Path) -> Path:

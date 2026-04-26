@@ -16,7 +16,7 @@
 
 ```bash
 pip install cryptography requests  # or
-# python3 -m venv .venv && source .venv/bin/activate && pip install cryptography requests
+# python3 -m .venv ..venv && source ..venv/bin/activate && pip install cryptography requests
 ```
 
 ## 快速开始

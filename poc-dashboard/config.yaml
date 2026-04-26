@@ -1,0 +1,11 @@
+# 集群目录路径（相对于本文件或绝对路径）
+# 启动时自动从此目录读取: API地址、chain_id、密钥
+cluster_dir: "./poc-validator-cluster"
+
+server:
+  host: "127.0.0.1"
+  port: 38000
+  poll_interval_secs: 5
+
+database:
+  path: "./poc_dashboard.db"

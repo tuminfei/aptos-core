@@ -4,7 +4,8 @@
 **/target
 **/*.rs.bk
 .idea/
-.venv
+**/.venv
+**/*.db
 
 # Ignore wallet mnemonic files used for deterministic key derivation
 *.mnemonic
