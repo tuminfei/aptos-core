@@ -36,6 +36,7 @@ class ProxyStakeReq(BaseModel):
     deposit_amount: int
     delegate_to: str
     force_epoch: bool = False
+    force_epochs: int = 0
 
 
 @router.post("/staking/deposit")
@@ -149,6 +150,7 @@ async def proxy_stake_endpoint(req: ProxyStakeReq):
         deposit_amount=req.deposit_amount,
         delegate_to=req.delegate_to,
         force_epoch=req.force_epoch,
+        force_epochs=req.force_epochs,
     )
     result["user_address"] = user_address
     return result

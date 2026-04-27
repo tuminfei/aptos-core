@@ -9,6 +9,7 @@ import { DEFAULT_USER_STAKE_OCTAS, MIN_VALIDATOR_STAKE_OCTAS } from '../utils/co
 
 const DEFAULT_USER_STAKE_TOPO = octasToTopo(DEFAULT_USER_STAKE_OCTAS);
 const DEFAULT_USER_MINT_TOPO = DEFAULT_USER_STAKE_TOPO + octasToTopo(MIN_VALIDATOR_STAKE_OCTAS);
+const DEFAULT_FORCE_EPOCHS = 5;
 const defaultBatchRow = (key: string) => ({
   key,
   address: '',
@@ -48,6 +49,7 @@ export default function ProxyStake() {
         deposit_amount: topoToOctas(values.deposit_amount),
         delegate_to: values.delegate_to,
         force_epoch: values.force_epoch || false,
+        force_epochs: values.force_epoch ? values.force_epochs || DEFAULT_FORCE_EPOCHS : 0,
       });
       setSteps(result.steps || []);
       setCurrent(result.steps?.length || 0);
@@ -70,7 +72,8 @@ export default function ProxyStake() {
           set_power: row.power,
           deposit_amount: topoToOctas(row.deposit),
           delegate_to: batchValidator,
-          force_epoch: false,
+          force_epoch: true,
+          force_epochs: DEFAULT_FORCE_EPOCHS,
         });
         results.push({ address: row.address, ...result });
       } catch (e: any) {
@@ -105,7 +108,7 @@ export default function ProxyStake() {
         key: 'single', label: '单用户模式', children: (
           <div>
             <Card title="代理质押 — 为用户一键完成铸币+算力+存款+委托" style={{ marginBottom: 16 }}>
-              <Form form={form} layout="vertical" initialValues={{ mint_amount: DEFAULT_USER_MINT_TOPO, set_power: DEFAULT_USER_STAKE_OCTAS, deposit_amount: DEFAULT_USER_STAKE_TOPO }}>
+              <Form form={form} layout="vertical" initialValues={{ mint_amount: DEFAULT_USER_MINT_TOPO, set_power: DEFAULT_USER_STAKE_OCTAS, deposit_amount: DEFAULT_USER_STAKE_TOPO, force_epoch: true, force_epochs: DEFAULT_FORCE_EPOCHS }}>
                 <Form.Item name="target_user" label="目标用户" rules={[{ required: true }]}>
                   <AddressSelect kind="user" value={form.getFieldValue('target_user')} onChange={(v) => form.setFieldValue('target_user', v)} />
                 </Form.Item>
@@ -116,6 +119,7 @@ export default function ProxyStake() {
                   <AddressSelect kind="validator" value={form.getFieldValue('delegate_to')} onChange={(v) => form.setFieldValue('delegate_to', v)} />
                 </Form.Item>
                 <Form.Item name="force_epoch" valuePropName="checked"><Checkbox>强制Epoch</Checkbox></Form.Item>
+                <Form.Item name="force_epochs" label="强制Epoch次数"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
                 <Button type="primary" onClick={handleSingle} loading={running}>执行代理质押</Button>
               </Form>
             </Card>

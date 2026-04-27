@@ -20,6 +20,7 @@ CHAIN_TEST_PARAMS_SCRIPT="${CHAIN_TEST_PARAMS_SCRIPT:-$ROOT_DIR/scripts/set_chai
 BASE_NODE_COUNT="${BASE_NODE_COUNT:-4}"
 TARGET_VALIDATOR_COUNT="${TARGET_VALIDATOR_COUNT:-7}"
 USERS_PER_NEW_VALIDATOR="${USERS_PER_NEW_VALIDATOR:-5}"
+POWER_PERIOD_IN_EPOCHS="${POWER_PERIOD_IN_EPOCHS:-5}"
 
 MIN_VALIDATOR_STAKE="${MIN_VALIDATOR_STAKE:-1000000000}"
 VALIDATOR_STAKE_MULTIPLIER="${VALIDATOR_STAKE_MULTIPLIER:-10}"
@@ -31,13 +32,14 @@ VALIDATOR_POWER="${VALIDATOR_POWER:-$DEFAULT_VALIDATOR_STAKE}"
 VALIDATOR_MINT_AMOUNT="${VALIDATOR_MINT_AMOUNT:-$((DEFAULT_VALIDATOR_STAKE + MIN_VALIDATOR_STAKE))}"
 VALIDATOR_DEPOSIT_AMOUNT="${VALIDATOR_DEPOSIT_AMOUNT:-$DEFAULT_VALIDATOR_STAKE}"
 VALIDATOR_COMMISSION_BPS="${VALIDATOR_COMMISSION_BPS:-0}"
-VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE="${VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE:-1}"
+VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE="${VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE:-$POWER_PERIOD_IN_EPOCHS}"
 VALIDATOR_FORCE_EPOCHS_AFTER_JOIN="${VALIDATOR_FORCE_EPOCHS_AFTER_JOIN:-1}"
 
 USER_MINT_AMOUNT="${USER_MINT_AMOUNT:-$((DEFAULT_USER_STAKE + MIN_VALIDATOR_STAKE))}"
 USER_POWER="${USER_POWER:-$DEFAULT_USER_STAKE}"
 USER_DEPOSIT_AMOUNT="${USER_DEPOSIT_AMOUNT:-$DEFAULT_USER_STAKE}"
 USER_FORCE_EPOCH="${USER_FORCE_EPOCH:-true}"
+USER_FORCE_EPOCHS="${USER_FORCE_EPOCHS:-$POWER_PERIOD_IN_EPOCHS}"
 
 WAIT_TIMEOUT_SECS="${WAIT_TIMEOUT_SECS:-180}"
 POLL_INTERVAL_SECS="${POLL_INTERVAL_SECS:-2}"
@@ -75,6 +77,7 @@ usage() {
   CLUSTER_PORT_START             默认 $CLUSTER_PORT_START
   TARGET_VALIDATOR_COUNT         默认 $TARGET_VALIDATOR_COUNT
   USERS_PER_NEW_VALIDATOR        默认 $USERS_PER_NEW_VALIDATOR
+  POWER_PERIOD_IN_EPOCHS         默认 $POWER_PERIOD_IN_EPOCHS
   MIN_VALIDATOR_STAKE            默认 $MIN_VALIDATOR_STAKE
   VALIDATOR_STAKE_MULTIPLIER     默认 $VALIDATOR_STAKE_MULTIPLIER
   USER_STAKE_MULTIPLIER          默认 $USER_STAKE_MULTIPLIER
@@ -84,6 +87,7 @@ usage() {
   USER_MINT_AMOUNT               默认 $USER_MINT_AMOUNT
   USER_POWER                     默认 $USER_POWER
   USER_DEPOSIT_AMOUNT            默认 $USER_DEPOSIT_AMOUNT
+  USER_FORCE_EPOCHS              默认 $USER_FORCE_EPOCHS
   FRAMEWORK_LOCAL_DIR            默认 $FRAMEWORK_LOCAL_DIR
 EOF
 }
@@ -318,7 +322,7 @@ ensure_base_cluster() {
         --port-start "$CLUSTER_PORT_START" \
         --min-stake "$MIN_VALIDATOR_STAKE" \
         --base-stake "$VALIDATOR_POWER" \
-        --poc-power-period-in-epochs 1
+        --poc-power-period-in-epochs "$POWER_PERIOD_IN_EPOCHS"
 }
 
 set_chain_test_params() {
@@ -327,7 +331,7 @@ set_chain_test_params() {
         return
     fi
 
-    log "提交链上测试参数交易: rewards_rate=10000/1000000000, retention=9998, power_period=1"
+    log "提交链上测试参数交易: rewards_rate=10000/1000000000, retention=9998, power_period=$POWER_PERIOD_IN_EPOCHS"
     need_file "$CHAIN_TEST_PARAMS_SCRIPT"
     "$APTOS_CLI" move run-script \
         --url "$REST_URL" \
@@ -379,8 +383,8 @@ join_validator_if_needed() {
 
     log "通过前端接口加入验证者 $label $address"
     local payload
-    payload="$(printf '{"validator_address":"%s","label":"%s","power":%s,"set_power_period":1,"force_epochs_before_delegate":%s,"force_epochs_after_join":%s,"mint_amount":%s,"deposit_amount":%s,"commission_bps":%s}' \
-        "$address" "$label" "$VALIDATOR_POWER" "$VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE" \
+    payload="$(printf '{"validator_address":"%s","label":"%s","power":%s,"set_power_period":%s,"force_epochs_before_delegate":%s,"force_epochs_after_join":%s,"mint_amount":%s,"deposit_amount":%s,"commission_bps":%s}' \
+        "$address" "$label" "$VALIDATOR_POWER" "$POWER_PERIOD_IN_EPOCHS" "$VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE" \
         "$VALIDATOR_FORCE_EPOCHS_AFTER_JOIN" "$VALIDATOR_MINT_AMOUNT" "$VALIDATOR_DEPOSIT_AMOUNT" \
         "$VALIDATOR_COMMISSION_BPS")"
     local response
@@ -422,8 +426,8 @@ proxy_stake_user() {
     local validator_address="$3"
     local label="validator-$validator_index-user-$user_index"
     local payload
-    payload="$(printf '{"target_user":"","label":"%s","mint_amount":%s,"set_power":%s,"deposit_amount":%s,"delegate_to":"%s","force_epoch":%s}' \
-        "$label" "$USER_MINT_AMOUNT" "$USER_POWER" "$USER_DEPOSIT_AMOUNT" "$validator_address" "$USER_FORCE_EPOCH")"
+    payload="$(printf '{"target_user":"","label":"%s","mint_amount":%s,"set_power":%s,"deposit_amount":%s,"delegate_to":"%s","force_epoch":%s,"force_epochs":%s}' \
+        "$label" "$USER_MINT_AMOUNT" "$USER_POWER" "$USER_DEPOSIT_AMOUNT" "$validator_address" "$USER_FORCE_EPOCH" "$USER_FORCE_EPOCHS")"
 
     log "创建普通用户并代理质押 $label -> $validator_address"
     local response

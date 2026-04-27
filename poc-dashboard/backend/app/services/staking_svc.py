@@ -18,6 +18,7 @@ async def proxy_stake(
     deposit_amount: int,
     delegate_to: str,
     force_epoch: bool = False,
+    force_epochs: int = 0,
 ) -> dict:
     steps = []
 
@@ -62,9 +63,10 @@ async def proxy_stake(
     if not ok:
         return {"steps": steps, "final_status": "failed"}
 
-    # Step 4: force epoch if needed
-    if force_epoch:
-        ok = await run_step("force_end_epoch", lambda: submit_entry_function(
+    # Step 4: force epochs if needed
+    force_epoch_count = max(force_epochs, 1 if force_epoch else 0)
+    for i in range(force_epoch_count):
+        ok = await run_step(f"force_end_epoch_{i+1}", lambda: submit_entry_function(
             client, core_key, core_address,
             "0x1::topo_governance::force_end_epoch_test_only",
         ))

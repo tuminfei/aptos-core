@@ -8,7 +8,7 @@
 - 不修改 Rust 代码，通过交易设置测试参数：
   - `rewards_rate ~= 10000 / 1000000000`
   - `retention_bps_per_period = 9998`
-  - `power_period_in_epochs = 1`
+  - `power_period_in_epochs = 5`
 - 通过前端接口加入 3 个普通验证者，总 active validator 数量达到 7。
 - 每个新增验证者有 5 个普通用户完成代理质押。
 - 前端接口返回验证者和用户的质押、奖励、手续费预估信息。
@@ -42,6 +42,7 @@
 
 ```bash
 TARGET_VALIDATOR_COUNT=7 USERS_PER_NEW_VALIDATOR=5 ./full_flow_bootstrap.sh --reset
+POWER_PERIOD_IN_EPOCHS=5 ./full_flow_bootstrap.sh --reset
 MIN_VALIDATOR_STAKE=1000000000 VALIDATOR_STAKE_MULTIPLIER=10 USER_STAKE_MULTIPLIER=5 ./full_flow_bootstrap.sh --reset
 VALIDATOR_POWER=10000000000 USER_POWER=5000000000 ./full_flow_bootstrap.sh --reset
 USER_MINT_AMOUNT=6000000000 USER_DEPOSIT_AMOUNT=5000000000 ./full_flow_bootstrap.sh --reset
@@ -129,8 +130,8 @@ curl -sS -X POST http://127.0.0.1:35173/api/v1/validators/prepare-join \
   -d '{
     "label": "validator-4",
     "power": 10000000000,
-    "set_power_period": 1,
-    "force_epochs_before_delegate": 1,
+    "set_power_period": 5,
+    "force_epochs_before_delegate": 5,
     "force_epochs_after_join": 1,
     "mint_amount": 11000000000,
     "deposit_amount": 10000000000,
@@ -171,7 +172,8 @@ curl -sS --retry 10 --retry-connrefused --retry-all-errors --retry-delay 1 \
     "set_power": 5000000000,
     "deposit_amount": 5000000000,
     "delegate_to": "0x8725ae23b9c42c03f81163cd24a9611aee6826666740b31b537ed390dd4e12e1",
-    "force_epoch": true
+    "force_epoch": true,
+    "force_epochs": 5
   }'
 ```
 

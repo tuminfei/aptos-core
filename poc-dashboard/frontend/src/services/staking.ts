@@ -27,6 +27,7 @@ export async function proxyStake(params: {
   deposit_amount: number;
   delegate_to: string;
   force_epoch: boolean;
+  force_epochs?: number;
 }) {
   const { data } = await api.post('/staking/proxy', params);
   return data;

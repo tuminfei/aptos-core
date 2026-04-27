@@ -56,7 +56,7 @@ export default function AddValidator() {
   return (
     <div>
       <Card title="添加新验证者" style={{ marginBottom: 16 }}>
-        <Form form={form} layout="vertical" initialValues={{ power: DEFAULT_VALIDATOR_STAKE_OCTAS, power_period: 1, force_epochs: 1, force_epochs_after_join: 1, mint_topo: defaultValidatorStakeTopo + octasToTopo(MIN_VALIDATOR_STAKE_OCTAS), deposit_topo: defaultValidatorStakeTopo, commission: 0 }}>
+        <Form form={form} layout="vertical" initialValues={{ power: DEFAULT_VALIDATOR_STAKE_OCTAS, power_period: 5, force_epochs: 5, force_epochs_after_join: 1, mint_topo: defaultValidatorStakeTopo + octasToTopo(MIN_VALIDATOR_STAKE_OCTAS), deposit_topo: defaultValidatorStakeTopo, commission: 0 }}>
           <Form.Item name="validator_address" label="验证者地址" rules={[{ required: true }]}>
             <AddressSelect kind="validator" value={form.getFieldValue('validator_address')} onChange={(v) => form.setFieldValue('validator_address', v)} />
           </Form.Item>

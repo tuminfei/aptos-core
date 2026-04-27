@@ -31,8 +31,8 @@ class PrepareJoinReq(BaseModel):
     validator_address: str = ""
     label: str = ""
     power: int = 10000000000
-    set_power_period: int = 1
-    force_epochs_before_delegate: int = 1
+    set_power_period: int = 5
+    force_epochs_before_delegate: int = 5
     force_epochs_after_join: int = 1
     mint_amount: int = 11000000000
     deposit_amount: int = 10000000000
