@@ -657,7 +657,7 @@ mod tests {
         runner.run(
             "AddStake",
             account_1,
-            aptos_stdlib::staking_contract_add_stake(account_2_address, 1000),
+            aptos_stdlib::staking_registry_deposit(1000),
         );
         runner.run(
             "UnlockStake",

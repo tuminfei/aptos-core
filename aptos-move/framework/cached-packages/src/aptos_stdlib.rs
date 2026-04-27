@@ -228,3 +228,13 @@ pub fn delegation_pool_withdraw(pool_address: AccountAddress, amount: u64) -> Tr
         ],
     )
 }
+
+pub fn staking_registry_deposit(amount: u64) -> TransactionPayload {
+    aptos_framework_entry_function(
+        "staking_registry",
+        "deposit",
+        vec![
+            bcs::to_bytes(&amount).unwrap(),
+        ],
+    )
+}
