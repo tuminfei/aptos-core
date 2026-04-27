@@ -3,41 +3,92 @@
 
 # Module `0x1::poc_contribution`
 
-POC 可信贡献发放合约 —— 贡献事件的唯一可信发出路径
-
-本模块是 Topo 链 POC（Proof of Contribution）体系的执行入口，
-负责把"股权代币转账 + 注册表校验 + 贡献事件发出"整合到一个函数中。
-
-核心设计原则：
-- 不干涉应用主业务：股权代币转账始终执行，不受 POC 校验结果影响。
-校验结果只决定是否发出 ContributionEvent，不会阻断转账。
-- 贡献事件（ContributionEvent）不能由 Dapp 独立应用随意发出，
-必须经过本模块提供的核心函数，在完成身份校验和真实转账后才能发出。
-- 关键资产参数（股权代币地址、托管地址等）全部从 poc_registry 注册表读取，
-不信任外部传入，防止伪造。
-
-调用方式：
-- 本模块的核心函数是 <code><b>public</b> <b>fun</b></code>（而非 <code>entry <b>fun</b></code>），
-Dapp 独立应用需要在自己的 entry fun 中调用本函数。
-这样链下索引器可以通过交易 payload 的入口模块地址做应用归因。
-
-典型调用时序：
-1. 用户调用 Dapp 独立应用的 entry fun（业务入口）
-2. 应用完成自身业务校验
-3. 应用生成 app_signer（合约部署地址的签名者）和 custody_actor（托管地址的签名者）
-4. 应用调用 grant_equity_with_contribution(app_signer, custody_actor, contributor, equity_amount)
-5. 本模块先执行股权代币转账（始终执行，不受校验影响）
-6. 本模块从注册表校验应用身份、POC 资格、托管地址
-7. 校验全部通过后才发出 ContributionEvent；校验不通过则不发事件，但转账已完成
-
-行为保证：
-- 转账失败 -> 交易失败（转账本身的错误仍会 abort）
-- 转账成功但校验不通过 -> 转账生效，不发事件
-- 转账成功且校验通过 -> 转账生效，发出 ContributionEvent
+POC Trusted Contribution Emission Contract — the sole trusted path for emitting contribution events.
 
 
+<a id="@Overview_0"></a>
+
+### Overview
+
+
+This module is the execution entry point for the Topo chain's POC (Proof of Contribution) system.
+It integrates equity token transfer + registry validation + contribution event emission into a
+single atomic function call.
+
+
+<a id="@Core_Design_Principle:_Non-Interference_with_Application_Business_Logic_1"></a>
+
+### Core Design Principle: Non-Interference with Application Business Logic
+
+
+The equity token transfer ALWAYS executes, regardless of POC validation results.
+Validation results only determine whether a <code><a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a></code> is emitted.
+This means:
+- A failed validation never blocks the token transfer (the user always receives their tokens)
+- Only the POC power accounting is affected by validation failures
+- Applications can safely call this function without worrying about POC validation
+causing unexpected transaction failures
+
+
+<a id="@Why_This_Module_Exists_(Trust_Boundary)_2"></a>
+
+### Why This Module Exists (Trust Boundary)
+
+
+Without this module, any Dapp could emit arbitrary <code><a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a></code>s to inflate
+their users' POC power. This module enforces that:
+1. A real equity token transfer occurred in the same transaction
+2. The application is registered in poc_registry and currently ACTIVE
+3. The application has been whitelisted by the platform (WHITELISTED status)
+4. The custody signer matches the registered custody address (prevents impersonation)
+5. All key asset parameters (equity token address, custody address) come from the
+registry — they are NOT trusted from external input
+
+
+<a id="@Call_Pattern_3"></a>
+
+### Call Pattern
+
+
+This module's core function is <code><b>public</b> <b>fun</b></code> (not <code>entry <b>fun</b></code>). Dapp applications
+must call it from within their own <code>entry <b>fun</b></code>. This design allows off-chain indexers
+to attribute contribution events to specific applications by inspecting the transaction
+payload's entry module address.
+
+
+<a id="@Typical_Call_Sequence_4"></a>
+
+### Typical Call Sequence
+
+
+1. User calls the Dapp application's <code>entry <b>fun</b></code> (business entry point)
+2. Application completes its own business validation
+3. Application generates <code>app_signer</code> (signer for the contract deployment address)
+and <code>custody_actor</code> (signer for the custody address)
+4. Application calls <code><a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution">grant_equity_with_contribution</a>(app_signer, custody_actor, contributor, equity_amount)</code>
+5. This module executes the equity token transfer (always, regardless of validation)
+6. This module validates app identity, POC eligibility, and custody address from the registry
+7. If all validations pass → emit <code><a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a></code>; otherwise → no event, transfer already done
+
+
+<a id="@Behavioral_Guarantees_5"></a>
+
+### Behavioral Guarantees
+
+
+- Transfer fails → transaction aborts (transfer errors still propagate normally)
+- Transfer succeeds but validation fails → transfer takes effect, no event emitted
+- Transfer succeeds and validation passes → transfer takes effect, <code><a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a></code> emitted
+
+
+    -  [Overview](#@Overview_0)
+    -  [Core Design Principle: Non-Interference with Application Business Logic](#@Core_Design_Principle:_Non-Interference_with_Application_Business_Logic_1)
+    -  [Why This Module Exists (Trust Boundary)](#@Why_This_Module_Exists_(Trust_Boundary)_2)
+    -  [Call Pattern](#@Call_Pattern_3)
+    -  [Typical Call Sequence](#@Typical_Call_Sequence_4)
+    -  [Behavioral Guarantees](#@Behavioral_Guarantees_5)
 -  [Struct `ContributionEvent`](#0x1_poc_contribution_ContributionEvent)
--  [Constants](#@Constants_0)
+-  [Constants](#@Constants_6)
 -  [Function `grant_equity_with_contribution`](#0x1_poc_contribution_grant_equity_with_contribution)
 
 
@@ -55,16 +106,22 @@ Dapp 独立应用需要在自己的 entry fun 中调用本函数。
 
 ## Struct `ContributionEvent`
 
-可信贡献事件 —— POC 算力体系的协议边界。
+Trusted contribution event — the protocol boundary of the POC power system.
 
-该事件表示：本模块已在当前交易内完成一笔通过注册表校验的标准股权发放，
-收款人为 contributor，平台认可的目标到账金额为 equity_amount。
+This event signifies: this module has completed a registry-validated standard equity
+distribution within the current transaction. The recipient is <code>contributor</code> and the
+platform-recognized target received amount is <code>equity_amount</code>.
 
-可信性来源：
-- 事件由 poc_contribution 模块发出（非应用自行 emit）
-- 事件只在真实转账成功后发出
-- 关键资产参数由注册表给出，非外部传入
-- 链下还能看到同交易的 FA 转账事实做交叉验证
+Sources of trustworthiness:
+- Event is emitted by the <code><a href="poc_contribution.md#0x1_poc_contribution">poc_contribution</a></code> module (not by the application itself)
+- Event is only emitted after a real token transfer has succeeded
+- Key asset parameters (equity_token, custody_address) come from the registry, not external input
+- Off-chain indexers can cross-validate against the FA transfer event in the same transaction
+
+Off-chain indexers use this event to:
+1. Identify which application made the contribution (via app_address)
+2. Record the contributor's equity receipt for POC power calculation
+3. Aggregate contribution data across periods for the operator to upload to poc_power_store
 
 
 <pre><code>#[<a href="event.md#0x1_event">event</a>]
@@ -82,27 +139,39 @@ Dapp 独立应用需要在自己的 entry fun 中调用本函数。
 <code>contributor: <b>address</b></code>
 </dt>
 <dd>
- 贡献者（接收股权代币的用户地址）
+ The address that received the equity tokens (the contributor being rewarded)
+</dd>
+<dt>
+<code>equity_token: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;</code>
+</dt>
+<dd>
+ The Fungible Asset metadata object for the equity token transferred
 </dd>
 <dt>
 <code>equity_amount: u64</code>
 </dt>
 <dd>
- 本次发放的股权代币数量（平台认可的目标到账金额）
+ The amount of equity tokens transferred (guaranteed to be the minimum received amount)
+</dd>
+<dt>
+<code>app_address: <b>address</b></code>
+</dt>
+<dd>
+ The application's contract deployment address (used for off-chain attribution)
 </dd>
 </dl>
 
 
 </details>
 
-<a id="@Constants_0"></a>
+<a id="@Constants_6"></a>
 
 ## Constants
 
 
 <a id="0x1_poc_contribution_EZERO_AMOUNT"></a>
 
-发放数量不能为 0
+Equity amount must be greater than zero
 
 
 <pre><code><b>const</b> <a href="poc_contribution.md#0x1_poc_contribution_EZERO_AMOUNT">EZERO_AMOUNT</a>: u64 = 1;
@@ -114,35 +183,41 @@ Dapp 独立应用需要在自己的 entry fun 中调用本函数。
 
 ## Function `grant_equity_with_contribution`
 
-可信贡献发放 —— 转账 + 校验 + 条件发事件。
+Trusted contribution distribution — transfer + validate + conditionally emit event.
 
-这是 Dapp 独立应用发出平台认可的贡献事件的唯一入口。
+This is the ONLY entry point through which a Dapp application can emit a
+platform-recognized contribution event.
 
-核心原则：不干涉应用主业务。
-- 股权代币转账始终执行，不受 POC 校验结果影响
-- 校验结果只决定是否发出 ContributionEvent
-- 校验不通过时转账照常完成，只是不产生可信贡献记录
+Core principle: non-interference with application business logic.
+- Equity token transfer always executes, regardless of POC validation results
+- Validation results only determine whether a ContributionEvent is emitted
+- If validation fails, the transfer still completes; only the POC record is absent
 
-执行流程：
-1. 校验发放数量大于 0（这是转账本身的前置条件，不通过会 abort）
-2. 执行股权代币转账（始终执行）
-3. 校验应用身份：app_signer 地址是否在注册表中
-4. 校验 POC 资格：应用是否处于运行状态且在白名单中
-5. 校验托管地址：custody_actor 签名地址是否与注册表一致
-6. 以上校验全部通过 -> 发出 ContributionEvent；任一不通过 -> 不发事件
+Execution flow:
+1. Assert equity_amount > 0 (pre-condition for the transfer; aborts if violated)
+2. Resolve equity_token from registry using app_signer's address (not from caller input)
+3. Execute equity token transfer via transfer_assert_minimum_deposit (always executes)
+4. Check POC eligibility: app must be ACTIVE and WHITELISTED
+5. If eligible: verify custody_actor's address matches the registered custody address
+6. If both checks pass → emit ContributionEvent; otherwise → no event, transfer already done
 
-参数：
-- app_signer: Dapp 独立应用的合约部署地址签名者
-（通常由应用通过 SignerCapability 生成资源账户的 signer）
-- custody_actor: 托管地址的签名者，拥有转出股权代币的权限
-（通常由应用通过 SignerCapability 生成托管资源账户的 signer）
-- contributor: 贡献者地址（接收股权代币的用户）
-- equity_amount: 本次发放的股权代币数量
+Parameters:
+- app_signer: Signer for the Dapp application's contract deployment address.
+Typically generated by the application via SignerCapability for a resource account.
+Used to look up the app's registration in poc_registry.
+- custody_actor: Signer for the custody address that holds equity tokens pending distribution.
+Typically generated by the application via SignerCapability for a custody resource account.
+Must match the custody_address registered in poc_registry.
+- contributor: The recipient address for the equity tokens (the user being rewarded)
+- equity_amount: The number of equity token units to transfer
 
-为什么使用 transfer_assert_minimum_deposit：
-- 某些 FA 可能带 dispatchable hook、手续费或特殊存取逻辑
-- 平台认可的贡献金额必须等于用户实际收到的最小金额
-- 如果不做最小到账断言，ContributionEvent.equity_amount 可能大于真实到账量
+Why use transfer_assert_minimum_deposit instead of a plain transfer?
+- Some Fungible Assets may have dispatchable hooks, transfer fees, or special deposit logic
+that cause the actual received amount to differ from the requested amount.
+- The platform's recognized contribution amount must equal the minimum amount the user
+actually receives — not the amount requested.
+- Without the minimum deposit assertion, ContributionEvent.equity_amount could exceed
+the true received amount, inflating POC power calculations.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution">grant_equity_with_contribution</a>(app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, contributor: <b>address</b>, equity_amount: u64)
@@ -160,11 +235,23 @@ Dapp 独立应用需要在自己的 entry fun 中调用本函数。
     contributor: <b>address</b>,
     equity_amount: u64,
 ) {
-    // 第一步：校验发放数量大于 0（转账前置条件）
+    // Step 1: Validate equity_amount &gt; 0.
+    // This is a hard pre-condition: a zero-amount transfer is meaningless and
+    // would produce a misleading <a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a> <b>with</b> equity_amount = 0.
     <b>assert</b>!(equity_amount &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_contribution.md#0x1_poc_contribution_EZERO_AMOUNT">EZERO_AMOUNT</a>));
 
-    // 第二步：从注册表读取股权代币地址，执行真实转账（始终执行，不受后续校验影响）
-    // 使用 transfer_assert_minimum_deposit 确保用户实际到账金额不低于声明金额
+    // Step 2: Resolve the equity token from the registry and execute the transfer.
+    //
+    // Key security property: the equity_token_address is read from <a href="poc_registry.md#0x1_poc_registry">poc_registry</a>
+    // using the app_signer's <b>address</b> <b>as</b> the lookup key — it is NOT accepted <b>as</b> a
+    // parameter from the caller. This prevents a malicious app from passing a
+    // different token <b>address</b> <b>to</b> transfer a cheaper token <b>while</b> claiming credit
+    // for a more valuable one.
+    //
+    // transfer_assert_minimum_deposit is used instead of a plain transfer <b>to</b>
+    // guarantee that the actual received amount equals equity_amount. If the FA
+    // <b>has</b> hooks or fees that reduce the received amount, the transaction aborts
+    // rather than emitting a <a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a> <b>with</b> an inflated equity_amount.
     <b>let</b> app_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_signer);
     <b>let</b> app_admin = <a href="poc_registry.md#0x1_poc_registry_get_app_admin_by_app_address">poc_registry::get_app_admin_by_app_address</a>(app_address);
     <b>let</b> equity_token_address = <a href="poc_registry.md#0x1_poc_registry_get_equity_token_address">poc_registry::get_equity_token_address</a>(app_admin);
@@ -177,14 +264,27 @@ Dapp 独立应用需要在自己的 entry fun 中调用本函数。
         equity_amount,
     );
 
-    // 第三步：校验 POC 资格和托管地址，只影响是否发出贡献事件，不影响已完成的转账
-    // - 应用必须处于运行状态（ACTIVE）且在 POC 白名单中（WHITELISTED）
-    // - 实际签名的托管地址必须与注册表中记录的一致
+    // Step 3: Conditionally emit <a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a> based on POC eligibility checks.
+    //
+    // This <a href="block.md#0x1_block">block</a> only affects whether the <a href="event.md#0x1_event">event</a> is emitted — the transfer above
+    // <b>has</b> already completed and cannot be rolled back by anything in this <a href="block.md#0x1_block">block</a>.
+    //
+    // Two checks must both pass:
+    // a) is_app_eligible_for_poc: app_state == ACTIVE && poc_listing_status == WHITELISTED
+    //    If the app is paused, stopped, or not yet whitelisted, no <a href="event.md#0x1_event">event</a> is emitted.
+    // b) custody <b>address</b> match: the actual <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a> of custody_actor must equal the
+    //    custody_address registered in <a href="poc_registry.md#0x1_poc_registry">poc_registry</a>. This prevents a whitelisted app
+    //    from using an unregistered custody <a href="account.md#0x1_account">account</a> <b>to</b> emit contribution events.
     <b>if</b> (<a href="poc_registry.md#0x1_poc_registry_is_app_eligible_for_poc">poc_registry::is_app_eligible_for_poc</a>(app_admin)) {
         <b>let</b> registered_custody_address = <a href="poc_registry.md#0x1_poc_registry_get_custody_address">poc_registry::get_custody_address</a>(app_admin);
         <b>let</b> actual_custody_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(custody_actor);
         <b>if</b> (actual_custody_address == registered_custody_address) {
-            <a href="event.md#0x1_event_emit">event::emit</a>(<a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a> { contributor, equity_amount });
+            <a href="event.md#0x1_event_emit">event::emit</a>(<a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a> {
+                contributor,
+                equity_token: metadata,
+                equity_amount,
+                app_address
+            });
         };
     };
 }
