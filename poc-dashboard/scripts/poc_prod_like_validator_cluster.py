@@ -803,6 +803,7 @@ def cleanup_node_processes(
     pids: Optional[Iterable[int]] = None,
 ) -> int:
     pid_file_map: Dict[Path, int] = {}
+    extra_pids: List[int] = []
     if nodes is not None:
         for node in nodes:
             if node.pid_file.exists():
@@ -820,8 +821,8 @@ def cleanup_node_processes(
                 pass
 
     for pid in pids or []:
-        if pid > 0:
-            pid_file_map.setdefault(Path(), pid)
+        if pid > 0 and pid not in pid_file_map.values():
+            extra_pids.append(pid)
 
     killed = 0
     for pid_file, pid in pid_file_map.items():
@@ -830,6 +831,10 @@ def cleanup_node_processes(
             killed += 1
         if pid_file != Path() and pid_file.exists():
             pid_file.unlink()
+    for pid in extra_pids:
+        if is_pid_alive(pid):
+            kill_pid(pid)
+            killed += 1
     return killed
 
 
@@ -1345,6 +1350,79 @@ def stop_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def restart_command(args: argparse.Namespace) -> int:
+    repo_root = Path(args.repo_root).resolve()
+    workdir = Path(args.workdir).resolve()
+    state, nodes = load_nodes_from_state_or_workdir(workdir)
+    if not nodes:
+        raise SystemExit(f"no nodes found under {workdir}")
+
+    if args.aptos_node_bin:
+        aptos_node_bin = choose_aptos_node(repo_root, args.aptos_node_bin)
+    elif state is not None and state.get("aptos_node_bin"):
+        aptos_node_bin = Path(str(state["aptos_node_bin"])).resolve()
+        if not aptos_node_bin.exists():
+            aptos_node_bin = choose_aptos_node(repo_root, None)
+    else:
+        aptos_node_bin = choose_aptos_node(repo_root, None)
+
+    state_pids: List[int] = []
+    if state is not None:
+        for entry in state.get("nodes", []):
+            try:
+                state_pids.append(int(entry.get("pid", 0)))
+            except (TypeError, ValueError):
+                pass
+
+    print("stopping existing aptos-node processes ...")
+    killed = cleanup_node_processes(nodes=nodes, pids=state_pids)
+    print(f"stopped {killed} process(es)")
+
+    print("starting aptos-node processes ...")
+    pids = start_nodes(aptos_node_bin, nodes)
+    try:
+        wait_for_nodes_healthy(
+            nodes,
+            timeout_secs=args.startup_timeout_secs,
+            poll_interval_secs=args.poll_interval_secs,
+            pids=pids,
+        )
+    except BaseException:
+        cleanup_node_processes(nodes=nodes, pids=pids)
+        raise
+
+    workspace = Path((state or {}).get("workspace", workdir / "genesis-workspace")).resolve()
+    framework_bundle = Path(
+        (state or {}).get("framework_bundle", workspace / "framework.mrb")
+    ).resolve()
+    port_start = resolve_port_start(state, nodes)
+    restarted_at = time.strftime("%Y-%m-%d %H:%M:%S %z")
+    payload = build_state_payload(
+        repo_root=repo_root,
+        workdir=workdir,
+        workspace=workspace,
+        aptos_node_bin=aptos_node_bin,
+        framework_bundle=framework_bundle,
+        started_at=(state or {}).get("started_at", restarted_at),
+        port_start=port_start,
+        nodes=nodes,
+        pid_by_index={node.index: pid for node, pid in zip(nodes, pids)},
+    )
+    payload["last_restarted_at"] = restarted_at
+    write_json(state_file(workdir), payload)
+
+    print("cluster restarted and healthy")
+    for node in nodes:
+        ok, detail = probe_node(node)
+        status = "UP" if ok else "DOWN"
+        print(
+            f"node {node.index}: {status} rest={node.rest_url} "
+            f"validator_port={node.ports.validator_port} detail={detail}"
+        )
+    print(f"state file: {state_file(workdir)}")
+    return 0
+
+
 def add_common_path_args(parser: argparse.ArgumentParser, repo_root: Path) -> None:
     parser.add_argument(
         "--repo-root",
@@ -1464,6 +1542,16 @@ def build_parser() -> argparse.ArgumentParser:
     stop_parser = subparsers.add_parser("stop", help="stop all node processes")
     add_common_path_args(stop_parser, repo_root)
     stop_parser.set_defaults(func=stop_command)
+
+    restart_parser = subparsers.add_parser(
+        "restart",
+        help="restart existing node processes without rebuilding genesis or deleting chain data",
+    )
+    add_common_path_args(restart_parser, repo_root)
+    restart_parser.add_argument("--aptos-node-bin", help="path to aptos-node binary")
+    restart_parser.add_argument("--startup-timeout-secs", type=int, default=DEFAULT_STARTUP_TIMEOUT_SECS)
+    restart_parser.add_argument("--poll-interval-secs", type=float, default=DEFAULT_POLL_INTERVAL_SECS)
+    restart_parser.set_defaults(func=restart_command)
 
     return parser
 
