@@ -10,6 +10,7 @@ from tests.mock_chain import MockChainClient
 from app.models.db import init_db, close_db, _db
 from app.chain import client as chain_client_module
 from app.chain import keys as keys_module
+from app.config import load_settings
 
 
 @pytest.fixture(scope="session")
@@ -23,6 +24,8 @@ def event_loop():
 async def setup_db(tmp_path_factory):
     db_path = str(tmp_path_factory.mktemp("data") / "test.db")
     await init_db(db_path)
+    settings = load_settings()
+    settings.server.history_sampler_enabled = False
     yield
     await close_db()
 

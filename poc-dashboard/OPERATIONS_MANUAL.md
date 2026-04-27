@@ -274,6 +274,27 @@ curl -sS http://127.0.0.1:35173/api/v1/watchlist/users
   - `estimated_epoch_fee_octas`
   - `estimated_epoch_total_octas`
 
+## 历史快照与估算累计奖励
+
+Dashboard 后端启动后默认每 60 秒采样一次本地 SQLite 历史快照，采样对象包括链全局参数、链上活跃验证者、watchlist 验证者和 watchlist 用户。可在 `config.yaml` 的 `server` 下调整：
+
+```yaml
+server:
+  history_sampler_enabled: true
+  history_sampler_interval_secs: 60
+```
+
+也可以手动触发一次打点：
+
+```bash
+curl -sS -X POST http://127.0.0.1:35173/api/v1/history/sample
+curl -sS http://127.0.0.1:35173/api/v1/history/chain
+curl -sS http://127.0.0.1:35173/api/v1/history/users/<user_address>
+curl -sS http://127.0.0.1:35173/api/v1/history/validators/<validator_address>
+```
+
+Web 端会在 Dashboard、用户详情、验证者详情展示本地快照趋势。累计奖励是按 epoch 边界记录的 `estimated_epoch_*` 近似累加，不是精确链上逐笔索引结果。
+
 ## 常见问题
 
 - `max_gas` 必须使用 `200000`。当前链 block gas limit 是 `200000`，使用 `20000000` 会导致交易长时间 pending 或无法上链。

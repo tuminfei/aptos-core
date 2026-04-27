@@ -1,0 +1,21 @@
+import api from './api';
+
+export async function sampleHistoryNow() {
+  const { data } = await api.post('/history/sample');
+  return data;
+}
+
+export async function getChainHistory(limit = 200) {
+  const { data } = await api.get('/history/chain', { params: { limit } });
+  return data;
+}
+
+export async function getUserSnapshotHistory(address: string, limit = 200) {
+  const { data } = await api.get(`/history/users/${address}`, { params: { limit } });
+  return data;
+}
+
+export async function getValidatorSnapshotHistory(address: string, limit = 200) {
+  const { data } = await api.get(`/history/validators/${address}`, { params: { limit } });
+  return data;
+}

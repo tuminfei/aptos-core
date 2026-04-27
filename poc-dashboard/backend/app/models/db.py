@@ -45,6 +45,99 @@ CREATE TABLE IF NOT EXISTS managed_keys (
     label       TEXT,
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS chain_snapshots (
+    id                              INTEGER PRIMARY KEY AUTOINCREMENT,
+    sampled_at                      TEXT NOT NULL,
+    chain_id                        INTEGER NOT NULL DEFAULT 0,
+    epoch                           INTEGER NOT NULL DEFAULT 0,
+    ledger_version                  INTEGER NOT NULL DEFAULT 0,
+    block_height                    INTEGER NOT NULL DEFAULT 0,
+    ledger_timestamp                TEXT,
+    current_period                  INTEGER NOT NULL DEFAULT 0,
+    power_period_in_epochs          INTEGER NOT NULL DEFAULT 0,
+    retention_bps                   INTEGER NOT NULL DEFAULT 0,
+    reward_rate_numerator           INTEGER NOT NULL DEFAULT 0,
+    reward_rate_denominator         INTEGER NOT NULL DEFAULT 0,
+    reward_rate_bps                 INTEGER NOT NULL DEFAULT 0,
+    active_validator_count          INTEGER NOT NULL DEFAULT 0,
+    pending_active_validator_count  INTEGER NOT NULL DEFAULT 0,
+    pending_inactive_validator_count INTEGER NOT NULL DEFAULT 0,
+    total_staked_power              INTEGER NOT NULL DEFAULT 0,
+    octas_per_power                 INTEGER NOT NULL DEFAULT 0,
+    cooldown_secs                   INTEGER NOT NULL DEFAULT 0,
+    voting_duration_secs            INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_chain_snapshots_sampled ON chain_snapshots(sampled_at);
+CREATE INDEX IF NOT EXISTS idx_chain_snapshots_epoch ON chain_snapshots(epoch);
+
+CREATE TABLE IF NOT EXISTS validator_snapshots (
+    id                              INTEGER PRIMARY KEY AUTOINCREMENT,
+    sampled_at                      TEXT NOT NULL,
+    epoch                           INTEGER NOT NULL DEFAULT 0,
+    address                         TEXT NOT NULL,
+    label                           TEXT,
+    status                          TEXT NOT NULL DEFAULT 'unknown',
+    status_code                     INTEGER NOT NULL DEFAULT 0,
+    in_watchlist                    INTEGER NOT NULL DEFAULT 0,
+    voting_power                    INTEGER NOT NULL DEFAULT 0,
+    commission_bps                  INTEGER NOT NULL DEFAULT 0,
+    delegator_count                 INTEGER NOT NULL DEFAULT 0,
+    total_pool_power                INTEGER NOT NULL DEFAULT 0,
+    stake_active_octas              INTEGER NOT NULL DEFAULT 0,
+    stake_inactive_octas            INTEGER NOT NULL DEFAULT 0,
+    stake_pending_active_octas      INTEGER NOT NULL DEFAULT 0,
+    stake_pending_inactive_octas    INTEGER NOT NULL DEFAULT 0,
+    proposals_successful            INTEGER NOT NULL DEFAULT 0,
+    proposals_failed                INTEGER NOT NULL DEFAULT 0,
+    estimated_epoch_reward_octas    INTEGER NOT NULL DEFAULT 0,
+    estimated_epoch_fee_octas       INTEGER NOT NULL DEFAULT 0,
+    estimated_epoch_total_octas     INTEGER NOT NULL DEFAULT 0,
+    estimated_commission_octas      INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_validator_snapshots_address_sampled ON validator_snapshots(address, sampled_at);
+CREATE INDEX IF NOT EXISTS idx_validator_snapshots_epoch ON validator_snapshots(epoch);
+
+CREATE TABLE IF NOT EXISTS user_snapshots (
+    id                                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    sampled_at                          TEXT NOT NULL,
+    epoch                               INTEGER NOT NULL DEFAULT 0,
+    address                             TEXT NOT NULL,
+    label                               TEXT,
+    balance_octas                       INTEGER NOT NULL DEFAULT 0,
+    committed_power                     INTEGER NOT NULL DEFAULT 0,
+    effective_power                     INTEGER NOT NULL DEFAULT 0,
+    power_for_next_epoch                INTEGER NOT NULL DEFAULT 0,
+    deposit_octas                       INTEGER NOT NULL DEFAULT 0,
+    delegated_to                        TEXT NOT NULL DEFAULT '0x0',
+    cooldown_until_secs                 INTEGER NOT NULL DEFAULT 0,
+    is_in_cooldown                      INTEGER NOT NULL DEFAULT 0,
+    estimated_epoch_reward_octas        INTEGER NOT NULL DEFAULT 0,
+    estimated_epoch_fee_octas           INTEGER NOT NULL DEFAULT 0,
+    estimated_epoch_total_octas         INTEGER NOT NULL DEFAULT 0,
+    estimated_owner_commission_octas    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_snapshots_address_sampled ON user_snapshots(address, sampled_at);
+CREATE INDEX IF NOT EXISTS idx_user_snapshots_epoch ON user_snapshots(epoch);
+
+CREATE TABLE IF NOT EXISTS reward_epoch_estimates (
+    id                              INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind                            TEXT NOT NULL,
+    address                         TEXT NOT NULL,
+    epoch                           INTEGER NOT NULL,
+    sampled_at                      TEXT NOT NULL,
+    reward_octas                    INTEGER NOT NULL DEFAULT 0,
+    fee_octas                       INTEGER NOT NULL DEFAULT 0,
+    total_estimated_reward_octas    INTEGER NOT NULL DEFAULT 0,
+    owner_commission_octas          INTEGER NOT NULL DEFAULT 0,
+    created_at                      TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(kind, address, epoch)
+);
+
+CREATE INDEX IF NOT EXISTS idx_reward_epoch_address ON reward_epoch_estimates(kind, address, epoch);
 """
 
 

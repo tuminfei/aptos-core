@@ -4,13 +4,15 @@ import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { getWatchedUsers, addToWatchlist, removeFromWatchlist } from '../../services/watchlist';
 import { usePolling } from '../../hooks/usePolling';
+import { useEventRefresh } from '../../hooks/useEventRefresh';
 import AddressTag from '../../components/AddressTag';
 import { formatNumber, formatRewardAmount } from '../../utils/format';
 
 export default function UserSearch() {
   const navigate = useNavigate();
   const fetchUsers = useCallback(() => getWatchedUsers(), []);
-  const { data, loading, refresh } = usePolling(fetchUsers, 15000);
+  const { data, loading, refresh } = usePolling(fetchUsers, 0);
+  useEventRefresh(['epoch_changed', 'power_period_advanced', 'history_sampled'], refresh);
 
   const [showAdd, setShowAdd] = useState(false);
   const [newAddr, setNewAddr] = useState('');

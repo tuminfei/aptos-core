@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Row, Col, Card, Statistic, Table, Tag, Progress, Space, Typography, Badge } from 'antd';
+import { Row, Col, Card, Statistic, Table, Tag, Progress, Space, Typography, Badge, Button, message } from 'antd';
 import ReactECharts from 'echarts-for-react';
 import { getOverview } from '../services/dashboard';
+import { getChainHistory, sampleHistoryNow } from '../services/history';
 import { usePolling } from '../hooks/usePolling';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { useEventRefresh } from '../hooks/useEventRefresh';
 import { useNavigate } from 'react-router-dom';
 import AddressTag from '../components/AddressTag';
 import { formatNumber, formatTimestamp } from '../utils/format';
@@ -28,9 +30,12 @@ function formatCooldown(seconds: number): string {
 export default function Dashboard() {
   const navigate = useNavigate();
   const fetchOverview = useCallback(() => getOverview(), []);
-  const { data, loading } = usePolling(fetchOverview, 10000);
+  const fetchHistory = useCallback(() => getChainHistory(200), []);
+  const { data, loading, refresh: refreshOverview } = usePolling(fetchOverview, 0);
+  const { data: historyData, refresh: refreshHistory } = usePolling(fetchHistory, 0);
   const { lastMessage } = useWebSocket();
   const [events, setEvents] = useState<{ time: string; type: string; detail: string }[]>([]);
+  const [sampling, setSampling] = useState(false);
 
   useEffect(() => {
     if (lastMessage) {
@@ -40,6 +45,9 @@ export default function Dashboard() {
       ]);
     }
   }, [lastMessage]);
+
+  useEventRefresh(['chain_tick', 'epoch_changed', 'validator_set_changed', 'power_period_advanced'], refreshOverview);
+  useEventRefresh(['history_sampled'], refreshHistory);
 
   const chain = data?.chain || {};
   const validators = data?.validators || {};
@@ -67,6 +75,53 @@ export default function Dashboard() {
     [summary],
   );
   const totalVotingPower = sortedSummary.reduce((sum: number, v: any) => sum + Number(v.voting_power || 0), 0);
+  const chainHistory = historyData?.history || [];
+  const historyLabels = chainHistory.map((item: any) => {
+    const date = new Date(item.sampled_at);
+    return Number.isNaN(date.getTime()) ? item.sampled_at : date.toLocaleTimeString();
+  });
+
+  const historyOption = {
+    tooltip: { trigger: 'axis' as const },
+    legend: { top: 0 },
+    grid: { left: 48, right: 56, top: 44, bottom: 32 },
+    xAxis: { type: 'category' as const, data: historyLabels },
+    yAxis: [
+      { type: 'value' as const, name: '算力/区块' },
+      { type: 'value' as const, name: '验证者', minInterval: 1 },
+    ],
+    series: [
+      {
+        name: '总质押算力',
+        type: 'line',
+        smooth: true,
+        data: chainHistory.map((item: any) => Number(item.total_staked_power || 0)),
+      },
+      {
+        name: '区块高度',
+        type: 'line',
+        smooth: true,
+        data: chainHistory.map((item: any) => Number(item.block_height || 0)),
+      },
+      {
+        name: '活跃验证者',
+        type: 'line',
+        yAxisIndex: 1,
+        smooth: true,
+        data: chainHistory.map((item: any) => Number(item.active_validator_count || 0)),
+      },
+    ],
+  };
+
+  const handleSampleNow = async () => {
+    setSampling(true);
+    try {
+      await sampleHistoryNow();
+      message.success('历史快照已记录');
+      refreshHistory();
+    } catch {}
+    setSampling(false);
+  };
 
   const pieOption = {
     tooltip: { trigger: 'item' as const },
@@ -154,6 +209,14 @@ export default function Dashboard() {
           </Card>
         </Col>
       </Row>
+
+      <Card
+        title="全局历史趋势"
+        extra={<Button size="small" loading={sampling} onClick={handleSampleNow}>记录快照</Button>}
+        style={{ marginBottom: 16 }}
+      >
+        <ReactECharts option={historyOption} style={{ height: 280 }} />
+      </Card>
 
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <Col xs={24} xl={10}>

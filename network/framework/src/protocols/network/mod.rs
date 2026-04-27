@@ -282,7 +282,7 @@ fn received_message_to_event<TMessage: Message>(
         rpc_replier,
     } = message;
     let dequeue_at = unix_micros();
-    let dt_micros = dequeue_at - rx_at;
+    let dt_micros = dequeue_at.saturating_sub(rx_at);
     let dt_seconds = (dt_micros as f64) / 1000000.0;
     match message {
         NetworkMessage::RpcRequest(rpc_req) => {

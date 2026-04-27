@@ -1,8 +1,11 @@
 import { useCallback, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Descriptions, Table, Button, Space, InputNumber, Modal, message, Row, Col, Statistic, Tag } from 'antd';
+import ReactECharts from 'echarts-for-react';
 import { getValidator, stagePower, joinValidatorSet, leaveValidatorSet } from '../../services/validator';
+import { getValidatorSnapshotHistory } from '../../services/history';
 import { usePolling } from '../../hooks/usePolling';
+import { useEventRefresh } from '../../hooks/useEventRefresh';
 import AddressTag from '../../components/AddressTag';
 import StatusBadge from '../../components/StatusBadge';
 import AmountDisplay from '../../components/AmountDisplay';
@@ -12,15 +15,70 @@ export default function ValidatorDetail() {
   const { address } = useParams<{ address: string }>();
   const navigate = useNavigate();
   const fetchDetail = useCallback(() => getValidator(address!), [address]);
-  const { data, loading, refresh } = usePolling(fetchDetail, 15000, [address]);
+  const fetchHistory = useCallback(() => getValidatorSnapshotHistory(address!), [address]);
+  const { data, loading, refresh } = usePolling(fetchDetail, 0, [address]);
+  const { data: historyData, refresh: refreshHistory } = usePolling(fetchHistory, 0, [address]);
   const [powerVal, setPowerVal] = useState<number>(0);
   const [showPower, setShowPower] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  if (!data && !loading) return <div>验证者不存在</div>;
   const v = data || {};
   const rewards = v.rewards || {};
   const rewardRate = rewards.reward_rate || {};
+  const snapshots = historyData?.history || [];
+  const cumulativeRewards = historyData?.cumulative_rewards || {};
+  const snapshotLabels = snapshots.map((h: any) => {
+    const date = new Date(h.sampled_at);
+    return Number.isNaN(date.getTime()) ? h.sampled_at : date.toLocaleTimeString();
+  });
+  const historyOption = {
+    tooltip: { trigger: 'axis' as const },
+    legend: { top: 0 },
+    grid: { left: 56, right: 72, top: 44, bottom: 32 },
+    xAxis: { type: 'category' as const, data: snapshotLabels },
+    yAxis: [
+      { type: 'value' as const, name: '算力/人数' },
+      { type: 'value' as const, name: 'TOPO' },
+    ],
+    series: [
+      {
+        name: '投票权',
+        type: 'line',
+        smooth: true,
+        data: snapshots.map((h: any) => Number(h.voting_power || 0)),
+      },
+      {
+        name: '池总算力',
+        type: 'line',
+        smooth: true,
+        data: snapshots.map((h: any) => Number(h.total_pool_power || 0)),
+      },
+      {
+        name: '委托人数',
+        type: 'line',
+        smooth: true,
+        data: snapshots.map((h: any) => Number(h.delegator_count || 0)),
+      },
+      {
+        name: '活跃质押',
+        type: 'line',
+        yAxisIndex: 1,
+        smooth: true,
+        data: snapshots.map((h: any) => Number(h.stake_active_octas || 0) / 1e8),
+      },
+      {
+        name: '预计入账',
+        type: 'bar',
+        yAxisIndex: 1,
+        data: snapshots.map((h: any) => Number(h.estimated_epoch_total_octas || 0) / 1e8),
+      },
+    ],
+  };
+
+  useEventRefresh(['epoch_changed', 'validator_set_changed', 'power_period_advanced', 'history_sampled'], refresh);
+  useEventRefresh(['history_sampled'], refreshHistory);
+
+  if (!data && !loading) return <div>验证者不存在</div>;
 
   const handleStagePower = async () => {
     setSubmitting(true);
@@ -97,6 +155,15 @@ export default function ValidatorDetail() {
           <Col span={6}><Statistic title="预计本 epoch 入账" value={formatRewardAmount(rewards.estimated_epoch_total_octas || 0)} /></Col>
           <Col span={6}><Statistic title="预计验证者佣金" value={formatRewardAmount(rewards.estimated_commission_octas || 0)} /></Col>
         </Row>
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col span={8}><Statistic title="估算累计奖励" value={formatRewardAmount(cumulativeRewards.reward_octas || 0)} /></Col>
+          <Col span={8}><Statistic title="估算累计入账" value={formatRewardAmount(cumulativeRewards.total_estimated_reward_octas || 0)} suffix={`${cumulativeRewards.epochs || 0} epochs`} /></Col>
+          <Col span={8}><Statistic title="估算累计佣金" value={formatRewardAmount(cumulativeRewards.owner_commission_octas || 0)} /></Col>
+        </Row>
+      </Card>
+
+      <Card title="本地快照历史" style={{ marginBottom: 16 }}>
+        <ReactECharts option={historyOption} style={{ height: 300 }} />
       </Card>
 
       <Card title={`委托者 (${v.pool?.delegators?.length || 0})`} style={{ marginBottom: 16 }}>

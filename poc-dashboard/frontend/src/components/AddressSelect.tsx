@@ -67,16 +67,17 @@ export default function AddressSelect({ kind, value, onChange, placeholder, styl
   };
 
   const kindLabel = kind === 'user' ? '用户' : '验证者';
+  const containerStyle: React.CSSProperties = style || { width: '100%' };
 
   return (
-    <Space.Compact style={style}>
+    <Space.Compact style={containerStyle}>
       <Select
         showSearch
         value={value}
         onChange={onChange}
         loading={loading}
         placeholder={placeholder || `选择${kindLabel}`}
-        style={{ minWidth: 360, ...(style || {}) }}
+        style={{ width: '100%', minWidth: 0 }}
         optionFilterProp="label"
         filterOption={(input, option) => {
           const s = input.toLowerCase();

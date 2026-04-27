@@ -28,6 +28,8 @@ class ServerConfig(BaseModel):
     host: str = "0.0.0.0"
     port: int = 38000
     poll_interval_secs: int = 5
+    history_sampler_enabled: bool = True
+    history_sampler_interval_secs: int = 60
 
 
 class DatabaseConfig(BaseModel):

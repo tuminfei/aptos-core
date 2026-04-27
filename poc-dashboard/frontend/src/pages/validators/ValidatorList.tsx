@@ -4,6 +4,7 @@ import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { getWatchedValidators, addToWatchlist, removeFromWatchlist } from '../../services/watchlist';
 import { usePolling } from '../../hooks/usePolling';
+import { useEventRefresh } from '../../hooks/useEventRefresh';
 import AddressTag from '../../components/AddressTag';
 import StatusBadge from '../../components/StatusBadge';
 import { formatNumber, formatRewardAmount } from '../../utils/format';
@@ -11,7 +12,8 @@ import { formatNumber, formatRewardAmount } from '../../utils/format';
 export default function ValidatorList() {
   const navigate = useNavigate();
   const fetchValidators = useCallback(() => getWatchedValidators(), []);
-  const { data, loading, refresh } = usePolling(fetchValidators, 15000);
+  const { data, loading, refresh } = usePolling(fetchValidators, 0);
+  useEventRefresh(['epoch_changed', 'validator_set_changed', 'power_period_advanced', 'history_sampled'], refresh);
 
   const [showAdd, setShowAdd] = useState(false);
   const [newAddr, setNewAddr] = useState('');

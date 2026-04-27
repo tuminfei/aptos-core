@@ -3,10 +3,12 @@ import { useParams } from 'react-router-dom';
 import { Row, Col, Card, Statistic, Button, InputNumber, Space, Modal, message, Tag } from 'antd';
 import ReactECharts from 'echarts-for-react';
 import { getUser, getPowerHistory } from '../../services/user';
+import { getUserSnapshotHistory } from '../../services/history';
 import { mintTopo } from '../../services/governance';
 import { stageSingle } from '../../services/power';
 import { deposit, delegate, undelegate, withdraw } from '../../services/staking';
 import { usePolling } from '../../hooks/usePolling';
+import { useEventRefresh } from '../../hooks/useEventRefresh';
 import AddressTag from '../../components/AddressTag';
 import AddressSelect from '../../components/AddressSelect';
 import { formatNumber, formatRewardAmount, formatRewardRate, formatTopo, topoToOctas } from '../../utils/format';
@@ -15,8 +17,10 @@ export default function UserDetail() {
   const { address } = useParams<{ address: string }>();
   const fetchUser = useCallback(() => getUser(address!), [address]);
   const fetchHistory = useCallback(() => getPowerHistory(address!), [address]);
-  const { data, loading, refresh } = usePolling(fetchUser, 15000, [address]);
-  const { data: historyData } = usePolling(fetchHistory, 30000, [address]);
+  const fetchSnapshotHistory = useCallback(() => getUserSnapshotHistory(address!), [address]);
+  const { data, loading, refresh } = usePolling(fetchUser, 0, [address]);
+  const { data: historyData, refresh: refreshPowerHistory } = usePolling(fetchHistory, 0, [address]);
+  const { data: snapshotData, refresh: refreshSnapshotHistory } = usePolling(fetchSnapshotHistory, 0, [address]);
 
   const [mintAmount, setMintAmount] = useState<number>(0);
   const [powerVal, setPowerVal] = useState<number>(0);
@@ -31,6 +35,8 @@ export default function UserDetail() {
   const rewards = u.rewards || {};
   const rewardRate = rewards.reward_rate || {};
   const history = historyData?.history || [];
+  const snapshots = snapshotData?.history || [];
+  const cumulativeRewards = snapshotData?.cumulative_rewards || {};
 
   const chartOption = {
     xAxis: { type: 'category' as const, data: history.map((h: any) => `P${h.period}`) },
@@ -38,6 +44,58 @@ export default function UserDetail() {
     series: [{ type: 'line', data: history.map((h: any) => h.power), smooth: true, areaStyle: {} }],
     tooltip: { trigger: 'axis' as const },
   };
+  const snapshotLabels = snapshots.map((h: any) => {
+    const date = new Date(h.sampled_at);
+    return Number.isNaN(date.getTime()) ? h.sampled_at : date.toLocaleTimeString();
+  });
+  const snapshotChartOption = {
+    tooltip: { trigger: 'axis' as const },
+    legend: { top: 0 },
+    grid: { left: 56, right: 72, top: 44, bottom: 32 },
+    xAxis: { type: 'category' as const, data: snapshotLabels },
+    yAxis: [
+      { type: 'value' as const, name: '算力' },
+      { type: 'value' as const, name: 'TOPO' },
+    ],
+    series: [
+      {
+        name: '有效算力',
+        type: 'line',
+        smooth: true,
+        data: snapshots.map((h: any) => Number(h.effective_power || 0)),
+      },
+      {
+        name: '已提交算力',
+        type: 'line',
+        smooth: true,
+        data: snapshots.map((h: any) => Number(h.committed_power || 0)),
+      },
+      {
+        name: '保证金',
+        type: 'line',
+        yAxisIndex: 1,
+        smooth: true,
+        data: snapshots.map((h: any) => Number(h.deposit_octas || 0) / 1e8),
+      },
+      {
+        name: '余额',
+        type: 'line',
+        yAxisIndex: 1,
+        smooth: true,
+        data: snapshots.map((h: any) => Number(h.balance_octas || 0) / 1e8),
+      },
+      {
+        name: '预计入账',
+        type: 'bar',
+        yAxisIndex: 1,
+        data: snapshots.map((h: any) => Number(h.estimated_epoch_total_octas || 0) / 1e8),
+      },
+    ],
+  };
+
+  useEventRefresh(['epoch_changed', 'power_period_advanced', 'history_sampled'], refresh);
+  useEventRefresh(['power_period_advanced'], refreshPowerHistory);
+  useEventRefresh(['history_sampled'], refreshSnapshotHistory);
 
   const doAction = async (name: string, fn: () => Promise<any>) => {
     setSubmitting(true);
@@ -89,6 +147,17 @@ export default function UserDetail() {
             <Statistic title="当前奖励率" value={formatRewardRate(rewardRate)} />
           </Col>
         </Row>
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          <Col span={8}>
+            <Statistic title="估算累计奖励" value={formatRewardAmount(cumulativeRewards.reward_octas || 0)} />
+          </Col>
+          <Col span={8}>
+            <Statistic title="估算累计手续费" value={formatRewardAmount(cumulativeRewards.fee_octas || 0)} />
+          </Col>
+          <Col span={8}>
+            <Statistic title="估算累计入账" value={formatRewardAmount(cumulativeRewards.total_estimated_reward_octas || 0)} suffix={`${cumulativeRewards.epochs || 0} epochs`} />
+          </Col>
+        </Row>
         <Space style={{ marginTop: 12 }}>
           <Tag color={rewards.auto_compound ? 'green' : 'default'}>{rewards.auto_compound ? '奖励自动复投到保证金' : '奖励方式未知'}</Tag>
           {rewards.is_validator_owner && <Tag color="blue">包含验证者佣金 {formatRewardAmount(rewards.estimated_owner_commission_octas || 0)}</Tag>}
@@ -100,38 +169,42 @@ export default function UserDetail() {
         <ReactECharts option={chartOption} style={{ height: 250 }} />
       </Card>
 
+      <Card title="本地快照历史" style={{ marginBottom: 16 }}>
+        <ReactECharts option={snapshotChartOption} style={{ height: 300 }} />
+      </Card>
+
       <Card title="操作区">
         <Row gutter={[16, 16]}>
-          <Col span={12}>
+          <Col xs={24} lg={12}>
             <Card size="small" title="铸造 TOPO">
-              <Space>
-                <InputNumber value={mintAmount} onChange={(v) => setMintAmount(v || 0)} addonAfter="TOPO" min={0} />
+              <div style={{ display: 'flex', gap: 8, width: '100%', alignItems: 'center' }}>
+                <InputNumber value={mintAmount} onChange={(v) => setMintAmount(v || 0)} addonAfter="TOPO" min={0} style={{ flex: 1, minWidth: 0 }} />
                 <Button loading={submitting} onClick={() => doAction('铸造', () => mintTopo({ recipient: address!, amount: topoToOctas(mintAmount) }))}>铸造</Button>
-              </Space>
+              </div>
             </Card>
           </Col>
-          <Col span={12}>
+          <Col xs={24} lg={12}>
             <Card size="small" title="设置算力">
-              <Space>
-                <InputNumber value={powerVal} onChange={(v) => setPowerVal(v || 0)} min={0} />
+              <div style={{ display: 'flex', gap: 8, width: '100%', alignItems: 'center' }}>
+                <InputNumber value={powerVal} onChange={(v) => setPowerVal(v || 0)} min={0} style={{ flex: 1, minWidth: 0 }} />
                 <Button loading={submitting} onClick={() => doAction('设置算力', () => stageSingle({ user_address: address!, power: powerVal }))}>设置</Button>
-              </Space>
+              </div>
             </Card>
           </Col>
-          <Col span={12}>
+          <Col xs={24} lg={12}>
             <Card size="small" title="保证金">
-              <Space>
-                <InputNumber value={depositAmount} onChange={(v) => setDepositAmount(v || 0)} addonAfter="TOPO" min={0} />
+              <div style={{ display: 'flex', gap: 8, width: '100%', alignItems: 'center' }}>
+                <InputNumber value={depositAmount} onChange={(v) => setDepositAmount(v || 0)} addonAfter="TOPO" min={0} style={{ flex: 1, minWidth: 0 }} />
                 <Button loading={submitting} onClick={() => doAction('保证金', () => deposit({ user_address: address!, amount: topoToOctas(depositAmount) }))}>存入保证金</Button>
-              </Space>
+              </div>
             </Card>
           </Col>
-          <Col span={12}>
+          <Col xs={24} lg={12}>
             <Card size="small" title="委托给验证者">
-              <Space>
-                <AddressSelect kind="validator" value={delegateTo} onChange={setDelegateTo} style={{ width: 300 }} />
+              <div style={{ display: 'flex', gap: 8, width: '100%', alignItems: 'center' }}>
+                <AddressSelect kind="validator" value={delegateTo} onChange={setDelegateTo} allowAdd={false} style={{ flex: 1, minWidth: 0 }} />
                 <Button loading={submitting} onClick={() => doAction('委托', () => delegate({ user_address: address!, validator_address: delegateTo }))}>委托</Button>
-              </Space>
+              </div>
             </Card>
           </Col>
         </Row>
