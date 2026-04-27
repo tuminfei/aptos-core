@@ -58,6 +58,7 @@ APTOS_NODE_LOG_NAME = "aptos-node.log"
 DEFAULT_PORT_START = 6180
 PORTS_PER_NODE = 10
 LOCALHOST_IPV4 = "127.0.0.1"
+PUBLIC_BIND_IPV4 = "0.0.0.0"
 
 
 @dataclass(frozen=True)
@@ -756,7 +757,7 @@ def build_node_config(node: NodeRuntime, waypoint_text: str) -> Dict:
         ],
         "api": {
             "enabled": True,
-            "address": f"{LOCALHOST_IPV4}:{node.ports.api_port}",
+            "address": f"{PUBLIC_BIND_IPV4}:{node.ports.api_port}",
         },
         "inspection_service": {
             "address": LOCALHOST_IPV4,

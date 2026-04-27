@@ -8,7 +8,8 @@ PID_DIR="$ROOT_DIR/.pids"
 LOG_DIR="$ROOT_DIR/.logs"
 BACKEND_VENV_DIR="${BACKEND_VENV_DIR:-$BACKEND_DIR/.venv}"
 
-BACKEND_HOST="${BACKEND_HOST:-127.0.0.1}"
+BACKEND_HOST="${BACKEND_HOST:-0.0.0.0}"
+FRONTEND_HOST="${FRONTEND_HOST:-0.0.0.0}"
 BACKEND_PORT="${BACKEND_PORT:-38000}"
 FRONTEND_PORT="${FRONTEND_PORT:-35173}"
 
@@ -117,10 +118,10 @@ start_frontend() {
     fi
 
     cd "$FRONTEND_DIR"
-    setsid npm exec vite -- --host 127.0.0.1 --port "$FRONTEND_PORT" --strictPort \
+    setsid npm exec vite -- --host "$FRONTEND_HOST" --port "$FRONTEND_PORT" --strictPort \
         > "$LOG_DIR/frontend.log" 2>&1 &
     echo $! > "$PID_DIR/frontend.pid"
-    green "前端已启动 http://localhost:$FRONTEND_PORT (pid $!)"
+    green "前端已启动 http://$FRONTEND_HOST:$FRONTEND_PORT (pid $!)"
     cd "$ROOT_DIR"
 }
 
@@ -135,7 +136,7 @@ start_all() {
     echo ""
     green "全部启动完成"
     echo "  后端: http://$BACKEND_HOST:$BACKEND_PORT"
-    echo "  前端: http://localhost:$FRONTEND_PORT"
+    echo "  前端: http://$FRONTEND_HOST:$FRONTEND_PORT"
     echo "  日志: $LOG_DIR/"
 }
 
@@ -159,7 +160,7 @@ show_status() {
         red "后端: 未运行"
     fi
     if _is_running frontend; then
-        green "前端: 运行中 (pid $(cat "$PID_DIR/frontend.pid")) http://localhost:$FRONTEND_PORT"
+        green "前端: 运行中 (pid $(cat "$PID_DIR/frontend.pid")) http://$FRONTEND_HOST:$FRONTEND_PORT"
     else
         red "前端: 未运行"
     fi
@@ -190,9 +191,10 @@ usage() {
   logs [target]    查看日志 (backend/frontend/all, 默认 all)
 
 环境变量:
-  BACKEND_HOST     后端监听地址 (默认 127.0.0.1)
+  BACKEND_HOST     后端监听地址 (默认 0.0.0.0)
   BACKEND_PORT     后端端口 (默认 38000)
   BACKEND_VENV_DIR 后端虚拟环境目录 (默认 backend/.venv)
+  FRONTEND_HOST    前端监听地址 (默认 0.0.0.0)
   FRONTEND_PORT    前端端口 (默认 35173)
 EOF
 }

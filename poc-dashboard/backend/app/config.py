@@ -24,7 +24,7 @@ class KeysConfig(BaseModel):
 
 
 class ServerConfig(BaseModel):
-    host: str = "127.0.0.1"
+    host: str = "0.0.0.0"
     port: int = 38000
     poll_interval_secs: int = 5
 
