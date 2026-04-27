@@ -78,8 +78,8 @@ export default function ValidatorList() {
   return (
     <div>
       <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAdd(true)}>添加验证者</Button>
-        <Button onClick={() => navigate('/validators/add')}>添加验证者向导</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/validators/add')}>新增验证者</Button>
+        <Button onClick={() => setShowAdd(true)}>添加已有验证者</Button>
       </Space>
 
       <Table

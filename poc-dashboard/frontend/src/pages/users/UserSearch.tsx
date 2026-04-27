@@ -1,12 +1,14 @@
 import { useState, useCallback } from 'react';
-import { Card, Table, Button, Space, Modal, Input, message, Tag } from 'antd';
+import { Table, Button, Space, Modal, Input, message, Tag, Radio, Alert, Typography } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { getWatchedUsers, addToWatchlist, removeFromWatchlist } from '../../services/watchlist';
+import { getWatchedUsers, addToWatchlist, removeFromWatchlist, generateAccount } from '../../services/watchlist';
 import { usePolling } from '../../hooks/usePolling';
 import { useEventRefresh } from '../../hooks/useEventRefresh';
 import AddressTag from '../../components/AddressTag';
 import { formatNumber, formatRewardAmount } from '../../utils/format';
+
+const { Text } = Typography;
 
 export default function UserSearch() {
   const navigate = useNavigate();
@@ -15,22 +17,41 @@ export default function UserSearch() {
   useEventRefresh(['epoch_changed', 'power_period_advanced', 'history_sampled'], refresh);
 
   const [showAdd, setShowAdd] = useState(false);
+  const [addMode, setAddMode] = useState<'generate' | 'existing'>('generate');
   const [newAddr, setNewAddr] = useState('');
   const [newLabel, setNewLabel] = useState('');
+  const [generated, setGenerated] = useState<any>(null);
+  const [creating, setCreating] = useState(false);
 
   const handleAdd = async () => {
-    if (!newAddr.startsWith('0x') || newAddr.length < 4) {
+    if (addMode === 'existing' && (!newAddr.startsWith('0x') || newAddr.length < 4)) {
       message.warning('请输入有效的 0x 地址');
       return;
     }
+    setCreating(true);
     try {
-      await addToWatchlist({ kind: 'user', address: newAddr, label: newLabel || undefined });
-      message.success('用户添加成功');
-      setNewAddr('');
-      setNewLabel('');
-      setShowAdd(false);
+      if (addMode === 'generate') {
+        const account = await generateAccount({ kind: 'user', label: newLabel || undefined });
+        setGenerated(account);
+        setNewAddr(account.address);
+        message.success('用户账户已生成并托管私钥');
+      } else {
+        await addToWatchlist({ kind: 'user', address: newAddr, label: newLabel || undefined });
+        message.success('用户添加成功');
+        closeAddModal();
+      }
       refresh();
     } catch {}
+    setCreating(false);
+  };
+
+  const closeAddModal = () => {
+    setNewAddr('');
+    setNewLabel('');
+    setGenerated(null);
+    setAddMode('generate');
+    setCreating(false);
+    setShowAdd(false);
   };
 
   const handleRemove = async (address: string) => {
@@ -69,7 +90,7 @@ export default function UserSearch() {
   return (
     <div>
       <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAdd(true)}>添加用户</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAdd(true)}>新增普通用户</Button>
       </Space>
 
       <Table
@@ -81,10 +102,57 @@ export default function UserSearch() {
         onRow={(r: any) => ({ onClick: () => navigate(`/users/${r.address}`), style: { cursor: 'pointer' } })}
       />
 
-      <Modal title="添加用户" open={showAdd} onOk={handleAdd} onCancel={() => setShowAdd(false)} okText="添加">
+      <Modal
+        title="新增普通用户"
+        open={showAdd}
+        onOk={generated ? closeAddModal : handleAdd}
+        onCancel={closeAddModal}
+        okText={generated ? '完成' : (addMode === 'generate' ? '生成用户' : '添加')}
+        confirmLoading={creating}
+      >
         <Space direction="vertical" style={{ width: '100%', marginTop: 16 }}>
-          <Input placeholder="用户地址 0x..." value={newAddr} onChange={(e) => setNewAddr(e.target.value)} />
+          <Radio.Group
+            value={addMode}
+            onChange={(e) => {
+              setAddMode(e.target.value as 'generate' | 'existing');
+              setGenerated(null);
+              setNewAddr('');
+            }}
+            optionType="button"
+            buttonStyle="solid"
+          >
+            <Radio.Button value="generate">生成新账户</Radio.Button>
+            <Radio.Button value="existing">添加已有地址</Radio.Button>
+          </Radio.Group>
           <Input placeholder="备注（可选）" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+          {addMode === 'existing' && (
+            <Input placeholder="用户地址 0x..." value={newAddr} onChange={(e) => setNewAddr(e.target.value)} />
+          )}
+          {addMode === 'generate' && !generated && (
+            <Alert
+              type="info"
+              showIcon
+              message="系统会直接生成 Ed25519 私钥和账户地址，并把私钥托管到本地数据库。"
+            />
+          )}
+          {generated && (
+            <Alert
+              type="success"
+              showIcon
+              message="账户已生成"
+              description={(
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <span>地址：<AddressTag address={generated.address} short={false} /></span>
+                  <Text copyable={{ text: generated.public_key }} style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                    公钥：{generated.public_key}
+                  </Text>
+                  <Text copyable={{ text: generated.private_key }} style={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                    私钥：{generated.private_key}
+                  </Text>
+                </Space>
+              )}
+            />
+          )}
         </Space>
       </Modal>
     </div>

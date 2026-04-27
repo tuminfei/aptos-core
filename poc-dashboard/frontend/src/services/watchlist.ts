@@ -10,6 +10,11 @@ export async function addToWatchlist(params: { kind: string; address: string; la
   return data;
 }
 
+export async function generateAccount(params: { kind: 'user' | 'validator' | 'dapp'; label?: string }) {
+  const { data } = await api.post('/watchlist/generate-account', params);
+  return data;
+}
+
 export async function removeFromWatchlist(kind: string, address: string) {
   const { data } = await api.delete(`/watchlist/${kind}/${address}`);
   return data;

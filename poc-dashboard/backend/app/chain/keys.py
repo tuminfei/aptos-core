@@ -63,10 +63,17 @@ class KeyManager:
                 return self.operator_keys[name]
         return None
 
+    def _key_name(self, label: str, address: str) -> str:
+        name = label or address
+        existing_addr = self.operator_addresses.get(name)
+        if existing_addr and existing_addr.lower() != address.lower():
+            return address
+        return name
+
     def generate_account(self, label: str = "") -> tuple[Ed25519Key, str]:
         key = Ed25519Key("0x")  # generates random
         address = key.account_address
-        name = label or address
+        name = self._key_name(label, address)
         self.operator_keys[name] = key
         self.operator_addresses[name] = address
         return key, address
@@ -74,7 +81,7 @@ class KeyManager:
     def register_key(self, private_key_hex: str, label: str = "") -> tuple[Ed25519Key, str]:
         key = Ed25519Key(private_key_hex)
         address = key.account_address
-        name = label or address
+        name = self._key_name(label, address)
         self.operator_keys[name] = key
         self.operator_addresses[name] = address
         return key, address

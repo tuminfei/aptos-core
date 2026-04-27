@@ -4,8 +4,11 @@ from app.models import watchlist
 from app.chain.client import get_chain_client
 from app.chain import view
 from app.services import rewards_svc
+from app.api.errors import ParamError
 
 router = APIRouter(tags=["watchlist"])
+
+VALID_WATCH_KINDS = {"user", "validator", "dapp"}
 
 
 class AddAddressReq(BaseModel):
@@ -39,12 +42,23 @@ async def remove_from_watchlist(kind: str, address: str):
 
 @router.post("/watchlist/generate-account")
 async def generate_account(req: GenerateAccountReq):
-    """生成新的 Ed25519 账户，注册到 KeyManager 并保存到 watchlist"""
+    """生成新的 Ed25519 账户，托管私钥并保存到 watchlist。"""
+    if req.kind not in VALID_WATCH_KINDS:
+        raise ParamError(f"Unsupported watchlist kind: {req.kind}")
+
     from app.chain.keys import get_key_manager
     km = get_key_manager()
     key, address = km.generate_account(req.label or "")
+    await km.persist_key(key, address, req.label or "")
     await watchlist.add_address(req.kind, address, req.label)
-    return {"address": address, "public_key": key.public_key_hex, "success": True}
+    return {
+        "address": address,
+        "public_key": key.public_key_hex,
+        "private_key": key.private_key_hex,
+        "kind": req.kind,
+        "label": req.label or "",
+        "success": True,
+    }
 
 
 @router.get("/watchlist/users")

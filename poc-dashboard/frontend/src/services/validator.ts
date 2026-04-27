@@ -31,7 +31,8 @@ export async function leaveValidatorSet(params: { operator_address: string; pool
 }
 
 export async function prepareJoin(params: {
-  validator_address: string;
+  validator_address?: string;
+  label?: string;
   power: number;
   set_power_period: number;
   force_epochs_before_delegate: number;
