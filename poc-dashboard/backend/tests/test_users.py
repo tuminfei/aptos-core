@@ -19,6 +19,10 @@ async def test_user_detail(client):
     assert data["power_store"]["versions"]["newer"]["raw_power"] == 5000
     assert data["power_store"]["current_calculation"]["selected_slot"] == "newer"
     assert data["power_store"]["current_calculation"]["calculated_power"] == 5000
+    assert len(data["power_store"]["version_rows"]) == 2
+    assert data["power_store"]["version_rows"][1]["slot"] == "newer"
+    assert data["power_store"]["version_rows"][1]["selected_for_current_period"] is True
+    assert "staking_effective_minus_power_store" in data["power_store"]["power_gap"]
     assert "rewards" in data
     assert data["rewards"]["auto_compound"] is True
     assert data["rewards"]["estimated_epoch_total_octas"] > 0

@@ -18,13 +18,17 @@ def apply_retention(power: int, periods_elapsed: int, retention_bps: int) -> int
     return retained
 
 
+def has_power_version(effective_period: int, power: int) -> bool:
+    return effective_period > 0 or power > 0
+
+
 def select_power_version(versions: dict, target_period: int) -> dict:
     newer = {
         "slot": "newer",
         "effective_period": int(versions.get("newer_period", 0) or 0),
         "power": int(versions.get("newer_power", 0) or 0),
     }
-    if (newer["effective_period"] > 0 or newer["power"] > 0) and newer["effective_period"] <= target_period:
+    if has_power_version(newer["effective_period"], newer["power"]) and newer["effective_period"] <= target_period:
         return newer
 
     older = {
@@ -32,10 +36,69 @@ def select_power_version(versions: dict, target_period: int) -> dict:
         "effective_period": int(versions.get("older_period", 0) or 0),
         "power": int(versions.get("older_power", 0) or 0),
     }
-    if (older["effective_period"] > 0 or older["power"] > 0) and older["effective_period"] <= target_period:
+    if has_power_version(older["effective_period"], older["power"]) and older["effective_period"] <= target_period:
         return older
 
     return {"slot": "none", "effective_period": 0, "power": 0}
+
+
+def build_version_row(
+    *,
+    slot: str,
+    effective_period: int,
+    raw_power: int,
+    current_period: int,
+    next_epoch_period: int,
+    retention_bps: int,
+    current_selected_slot: str,
+    next_selected_slot: str,
+) -> dict:
+    present = has_power_version(effective_period, raw_power)
+    current_active = present and effective_period <= current_period
+    next_active = present and effective_period <= next_epoch_period
+    current_elapsed = max(0, current_period - effective_period) if current_active else 0
+    next_elapsed = max(0, next_epoch_period - effective_period) if next_active else 0
+    return {
+        "slot": slot,
+        "effective_period": effective_period,
+        "raw_power": raw_power,
+        "present": present,
+        "active_for_current_period": current_active,
+        "active_for_next_epoch": next_active,
+        "selected_for_current_period": current_selected_slot == slot,
+        "selected_for_next_epoch": next_selected_slot == slot,
+        "current_periods_elapsed": current_elapsed,
+        "current_decayed_power": apply_retention(raw_power, current_elapsed, retention_bps) if current_active else 0,
+        "next_epoch_periods_elapsed": next_elapsed,
+        "next_epoch_decayed_power": apply_retention(raw_power, next_elapsed, retention_bps) if next_active else 0,
+    }
+
+
+def build_version_rows(versions: dict, current_period: int, next_epoch_period: int, retention_bps: int) -> list[dict]:
+    current_selected = select_power_version(versions, current_period)
+    next_selected = select_power_version(versions, next_epoch_period)
+    return [
+        build_version_row(
+            slot="older",
+            effective_period=int(versions.get("older_period", 0) or 0),
+            raw_power=int(versions.get("older_power", 0) or 0),
+            current_period=current_period,
+            next_epoch_period=next_epoch_period,
+            retention_bps=retention_bps,
+            current_selected_slot=current_selected["slot"],
+            next_selected_slot=next_selected["slot"],
+        ),
+        build_version_row(
+            slot="newer",
+            effective_period=int(versions.get("newer_period", 0) or 0),
+            raw_power=int(versions.get("newer_power", 0) or 0),
+            current_period=current_period,
+            next_epoch_period=next_epoch_period,
+            retention_bps=retention_bps,
+            current_selected_slot=current_selected["slot"],
+            next_selected_slot=next_selected["slot"],
+        ),
+    ]
 
 
 def build_power_calculation(versions: dict, target_period: int, retention_bps: int, chain_power: int) -> dict:
@@ -149,6 +212,12 @@ async def user_detail(address: str):
                     "raw_power": int(power_versions.get("newer_power", 0) or 0),
                 },
             },
+            "version_rows": build_version_rows(
+                power_versions,
+                current_period,
+                next_epoch_period,
+                retention_bps,
+            ),
             "current_calculation": build_power_calculation(
                 power_versions,
                 current_period,
@@ -162,6 +231,10 @@ async def user_detail(address: str):
                 next_epoch,
             ),
             "staking_effective_power": effective,
+            "power_gap": {
+                "staking_effective_minus_power_store": effective - committed,
+                "next_epoch_minus_current": next_epoch - committed,
+            },
         },
         "staking": {
             "deposit_octas": deposit_octas,

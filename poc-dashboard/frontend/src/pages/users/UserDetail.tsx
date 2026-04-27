@@ -39,23 +39,10 @@ export default function UserDetail() {
   const snapshots = snapshotData?.history || [];
   const cumulativeRewards = snapshotData?.cumulative_rewards || {};
   const formatBps = (bps: number) => `${(Number(bps || 0) / 100).toFixed(2)}%`;
-  const powerVersions = powerStore.versions || {};
   const currentCalculation = powerStore.current_calculation || {};
   const nextEpochCalculation = powerStore.next_epoch_calculation || {};
-  const versionRows = [
-    {
-      key: 'older',
-      slot: 'older',
-      effective_period: powerVersions.older?.effective_period || 0,
-      raw_power: powerVersions.older?.raw_power || 0,
-    },
-    {
-      key: 'newer',
-      slot: 'newer',
-      effective_period: powerVersions.newer?.effective_period || 0,
-      raw_power: powerVersions.newer?.raw_power || 0,
-    },
-  ];
+  const powerGap = powerStore.power_gap || {};
+  const versionRows = (powerStore.version_rows || []).map((row: any) => ({ key: row.slot, ...row }));
   const calcRows = [
     { key: 'current', label: '当前 period', ...currentCalculation },
     { key: 'next', label: '下一 epoch period', ...nextEpochCalculation },
@@ -116,9 +103,26 @@ export default function UserDetail() {
     ],
   };
   const versionColumns = [
-    { title: '原始版本槽', dataIndex: 'slot', width: 120, render: (v: string) => <Tag color={v === 'newer' ? 'blue' : 'default'}>{v}</Tag> },
-    { title: '生效 Period', dataIndex: 'effective_period', render: (v: number) => formatNumber(v || 0) },
+    {
+      title: '版本槽',
+      dataIndex: 'slot',
+      width: 110,
+      render: (v: string, r: any) => (
+        <Space>
+          <Tag color={v === 'newer' ? 'blue' : 'default'}>{v}</Tag>
+          {!r.present && <Tag>空</Tag>}
+          {r.selected_for_current_period && <Tag color="green">当前选中</Tag>}
+          {r.selected_for_next_epoch && !r.selected_for_current_period && <Tag color="cyan">下 epoch 选中</Tag>}
+        </Space>
+      ),
+    },
+    { title: '生效 Period', dataIndex: 'effective_period', render: (_: number, r: any) => r.present ? formatNumber(r.effective_period || 0) : '-' },
     { title: '原始算力 raw_power', dataIndex: 'raw_power', render: (v: number) => formatNumber(v || 0) },
+    { title: '当前是否生效', dataIndex: 'active_for_current_period', render: (v: boolean) => <Tag color={v ? 'green' : 'default'}>{v ? '是' : '否'}</Tag> },
+    { title: '当前衰减周期', dataIndex: 'current_periods_elapsed', render: (v: number) => formatNumber(v || 0) },
+    { title: '当前衰减后算力', dataIndex: 'current_decayed_power', render: (v: number) => formatNumber(v || 0) },
+    { title: '下一 epoch 是否生效', dataIndex: 'active_for_next_epoch', render: (v: boolean) => <Tag color={v ? 'green' : 'default'}>{v ? '是' : '否'}</Tag> },
+    { title: '下一 epoch 衰减后算力', dataIndex: 'next_epoch_decayed_power', render: (v: number) => formatNumber(v || 0) },
   ];
   const calcColumns = [
     { title: '目标', dataIndex: 'label', width: 140 },
@@ -205,33 +209,57 @@ export default function UserDetail() {
       </Card>
 
       <Card title="Power Store 原始版本与衰减" loading={loading} style={{ marginBottom: 16 }}>
-        <Descriptions bordered column={3} size="small" style={{ marginBottom: 16 }}>
-          <Descriptions.Item label="当前 Epoch">{formatNumber(powerStore.current_epoch || 0)}</Descriptions.Item>
-          <Descriptions.Item label="当前 Period">{formatNumber(powerStore.current_period || 0)}</Descriptions.Item>
-          <Descriptions.Item label="下一 Epoch 对应 Period">{formatNumber(powerStore.next_epoch_period || 0)}</Descriptions.Item>
-          <Descriptions.Item label="算力周期">{formatNumber(powerStore.power_period_in_epochs || 0)} Epoch</Descriptions.Item>
-          <Descriptions.Item label="保留系数 retention_bps">
-            {formatNumber(powerStore.retention_bps || 0)} ({formatBps(powerStore.retention_bps || 0)})
-          </Descriptions.Item>
-          <Descriptions.Item label="衰减系数 decay_bps">
-            {formatNumber(powerStore.decay_bps || 0)} ({formatBps(powerStore.decay_bps || 0)})
-          </Descriptions.Item>
-          <Descriptions.Item label="PowerStore 当前算力">{formatNumber(power.committed_power || 0)}</Descriptions.Item>
-          <Descriptions.Item label="Staking 有效算力">{formatNumber(powerStore.staking_effective_power || power.effective_power || 0)}</Descriptions.Item>
-          <Descriptions.Item label="下一 Epoch PowerStore 算力">{formatNumber(power.power_for_next_epoch || 0)}</Descriptions.Item>
-        </Descriptions>
+        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+          <Col xs={24} md={8}>
+            <Card size="small" title="周期与衰减">
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="当前 Epoch">{formatNumber(powerStore.current_epoch || 0)}</Descriptions.Item>
+                <Descriptions.Item label="当前 Period">{formatNumber(powerStore.current_period || 0)}</Descriptions.Item>
+                <Descriptions.Item label="下一 Epoch Period">{formatNumber(powerStore.next_epoch_period || 0)}</Descriptions.Item>
+                <Descriptions.Item label="算力周期">{formatNumber(powerStore.power_period_in_epochs || 0)} Epoch</Descriptions.Item>
+                <Descriptions.Item label="保留系数">{formatNumber(powerStore.retention_bps || 0)} ({formatBps(powerStore.retention_bps || 0)})</Descriptions.Item>
+                <Descriptions.Item label="每 Period 衰减">{formatNumber(powerStore.decay_bps || 0)} ({formatBps(powerStore.decay_bps || 0)})</Descriptions.Item>
+              </Descriptions>
+            </Card>
+          </Col>
+          <Col xs={24} md={8}>
+            <Card size="small" title="当前算力">
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="PowerStore 当前">{formatNumber(power.committed_power || 0)}</Descriptions.Item>
+                <Descriptions.Item label="Staking 有效">{formatNumber(powerStore.staking_effective_power || power.effective_power || 0)}</Descriptions.Item>
+                <Descriptions.Item label="Staking - PowerStore">{formatNumber(powerGap.staking_effective_minus_power_store || 0)}</Descriptions.Item>
+                <Descriptions.Item label="当前选中版本"><Tag color="green">{currentCalculation.selected_slot || 'none'}</Tag></Descriptions.Item>
+                <Descriptions.Item label="当前基准">{formatNumber(currentCalculation.base_power || 0)} @ P{formatNumber(currentCalculation.base_period || 0)}</Descriptions.Item>
+                <Descriptions.Item label="当前衰减周期">{formatNumber(currentCalculation.periods_elapsed || 0)}</Descriptions.Item>
+              </Descriptions>
+            </Card>
+          </Col>
+          <Col xs={24} md={8}>
+            <Card size="small" title="下一 Epoch 算力">
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="PowerStore 下一">{formatNumber(power.power_for_next_epoch || 0)}</Descriptions.Item>
+                <Descriptions.Item label="下一 - 当前">{formatNumber(powerGap.next_epoch_minus_current || 0)}</Descriptions.Item>
+                <Descriptions.Item label="下一选中版本"><Tag color="cyan">{nextEpochCalculation.selected_slot || 'none'}</Tag></Descriptions.Item>
+                <Descriptions.Item label="下一基准">{formatNumber(nextEpochCalculation.base_power || 0)} @ P{formatNumber(nextEpochCalculation.base_period || 0)}</Descriptions.Item>
+                <Descriptions.Item label="下一衰减周期">{formatNumber(nextEpochCalculation.periods_elapsed || 0)}</Descriptions.Item>
+                <Descriptions.Item label="计算差值">{formatNumber(nextEpochCalculation.delta || 0)}</Descriptions.Item>
+              </Descriptions>
+            </Card>
+          </Col>
+        </Row>
         <Row gutter={[16, 16]}>
-          <Col xs={24} xl={9}>
+          <Col xs={24}>
             <Table
-              title={() => '双版本原始算力'}
+              title={() => '双版本原始算力槽位'}
               dataSource={versionRows}
               columns={versionColumns}
               rowKey="key"
               pagination={false}
               size="small"
+              scroll={{ x: 1180 }}
             />
           </Col>
-          <Col xs={24} xl={15}>
+          <Col xs={24}>
             <Table
               title={() => '衰减计算路径'}
               dataSource={calcRows}
