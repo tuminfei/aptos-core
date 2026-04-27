@@ -9,6 +9,7 @@ import { useEventRefresh } from '../hooks/useEventRefresh';
 import { useNavigate } from 'react-router-dom';
 import AddressTag from '../components/AddressTag';
 import HistoryWindowControl from '../components/HistoryWindowControl';
+import { createScaledValueAxis } from '../utils/chart';
 import { formatCompactNumber, formatNumber, formatTimestamp } from '../utils/format';
 
 const { Text } = Typography;
@@ -83,6 +84,9 @@ export default function Dashboard() {
     const date = new Date(item.sampled_at);
     return Number.isNaN(date.getTime()) ? item.sampled_at : date.toLocaleTimeString();
   });
+  const totalStakedPowerSeries = chainHistory.map((item: any) => Number(item.total_staked_power || 0));
+  const blockHeightSeries = chainHistory.map((item: any) => Number(item.block_height || 0));
+  const activeValidatorSeries = chainHistory.map((item: any) => Number(item.active_validator_count || 0));
 
   const historyOption = {
     tooltip: { trigger: 'axis' as const },
@@ -90,28 +94,37 @@ export default function Dashboard() {
     grid: { left: 48, right: 56, top: 44, bottom: 32, containLabel: true },
     xAxis: { type: 'category' as const, data: historyLabels },
     yAxis: [
-      { type: 'value' as const, name: '算力/区块', axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
-      { type: 'value' as const, name: '验证者', minInterval: 1, axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
+      createScaledValueAxis({
+        name: '算力/区块',
+        values: [...totalStakedPowerSeries, ...blockHeightSeries],
+        formatter: formatCompactNumber,
+      }),
+      createScaledValueAxis({
+        name: '验证者',
+        values: activeValidatorSeries,
+        formatter: formatCompactNumber,
+        minInterval: 1,
+      }),
     ],
     series: [
       {
         name: '总质押算力',
         type: 'line',
         smooth: true,
-        data: chainHistory.map((item: any) => Number(item.total_staked_power || 0)),
+        data: totalStakedPowerSeries,
       },
       {
         name: '区块高度',
         type: 'line',
         smooth: true,
-        data: chainHistory.map((item: any) => Number(item.block_height || 0)),
+        data: blockHeightSeries,
       },
       {
         name: '活跃验证者',
         type: 'line',
         yAxisIndex: 1,
         smooth: true,
-        data: chainHistory.map((item: any) => Number(item.active_validator_count || 0)),
+        data: activeValidatorSeries,
       },
     ],
   };

@@ -12,6 +12,7 @@ import { useEventRefresh } from '../../hooks/useEventRefresh';
 import AddressTag from '../../components/AddressTag';
 import AddressSelect from '../../components/AddressSelect';
 import HistoryWindowControl from '../../components/HistoryWindowControl';
+import { createScaledValueAxis } from '../../utils/chart';
 import { formatCompactNumber, formatNumber, formatRewardAmount, formatRewardRate, formatTopo, topoToOctas } from '../../utils/format';
 
 export default function UserDetail() {
@@ -93,47 +94,60 @@ export default function UserDetail() {
     const date = new Date(h.sampled_at);
     return Number.isNaN(date.getTime()) ? h.sampled_at : date.toLocaleTimeString();
   });
+  const effectivePowerSeries = snapshots.map((h: any) => Number(h.effective_power || 0));
+  const committedPowerSeries = snapshots.map((h: any) => Number(h.committed_power || 0));
+  const depositSeries = snapshots.map((h: any) => Number(h.deposit_octas || 0) / 1e8);
+  const balanceSeries = snapshots.map((h: any) => Number(h.balance_octas || 0) / 1e8);
+  const estimatedRewardSeries = snapshots.map((h: any) => Number(h.estimated_epoch_total_octas || 0) / 1e8);
   const snapshotChartOption = {
     tooltip: { trigger: 'axis' as const },
     legend: { top: 0 },
     grid: { left: 56, right: 72, top: 44, bottom: 32, containLabel: true },
     xAxis: { type: 'category' as const, data: snapshotLabels },
     yAxis: [
-      { type: 'value' as const, name: '算力', axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
-      { type: 'value' as const, name: 'TOPO', axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
+      createScaledValueAxis({
+        name: '算力',
+        values: [...effectivePowerSeries, ...committedPowerSeries],
+        formatter: formatCompactNumber,
+      }),
+      createScaledValueAxis({
+        name: 'TOPO',
+        values: [...depositSeries, ...balanceSeries, ...estimatedRewardSeries],
+        formatter: formatCompactNumber,
+      }),
     ],
     series: [
       {
         name: '有效算力',
         type: 'line',
         smooth: true,
-        data: snapshots.map((h: any) => Number(h.effective_power || 0)),
+        data: effectivePowerSeries,
       },
       {
         name: '已提交算力',
         type: 'line',
         smooth: true,
-        data: snapshots.map((h: any) => Number(h.committed_power || 0)),
+        data: committedPowerSeries,
       },
       {
         name: '保证金',
         type: 'line',
         yAxisIndex: 1,
         smooth: true,
-        data: snapshots.map((h: any) => Number(h.deposit_octas || 0) / 1e8),
+        data: depositSeries,
       },
       {
         name: '余额',
         type: 'line',
         yAxisIndex: 1,
         smooth: true,
-        data: snapshots.map((h: any) => Number(h.balance_octas || 0) / 1e8),
+        data: balanceSeries,
       },
       {
         name: '预计入账',
         type: 'bar',
         yAxisIndex: 1,
-        data: snapshots.map((h: any) => Number(h.estimated_epoch_total_octas || 0) / 1e8),
+        data: estimatedRewardSeries,
       },
     ],
   };
