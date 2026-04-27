@@ -46,6 +46,8 @@ DEFAULT_BASE_STAKE = DEFAULT_MIN_STAKE * 10
 DEFAULT_CHAIN_ID = 4
 DEFAULT_EPOCH_DURATION_SECS = 60
 DEFAULT_POC_POWER_PERIOD_IN_EPOCHS = 5
+DEFAULT_VALIDATOR_LOCKUP_PERIODS = 2
+DEFAULT_GOVERNANCE_VOTING_PERIODS = 1
 DEFAULT_CORE_RESOURCES_ADDRESS = "0xa550c18"
 DEFAULT_ROOT_PRIVATE_KEY = "D04470F43AB6AEAA4EB616B72128881EEF77346F2075FFE68E14BA7DEBD8095E"
 DEFAULT_GAS_UNIT_PRICE = 100
@@ -1058,6 +1060,26 @@ def start_command(args: argparse.Namespace) -> int:
     log_path = workdir / FORGE_LOG_NAME
     workdir.mkdir(parents=True, exist_ok=True)
 
+    if args.recurring_lockup_duration_secs is None:
+        power_period = args.poc_power_period_in_epochs
+        if power_period <= 0:
+            power_period = DEFAULT_POC_POWER_PERIOD_IN_EPOCHS
+        args.recurring_lockup_duration_secs = (
+            args.epoch_duration_secs * power_period * DEFAULT_VALIDATOR_LOCKUP_PERIODS
+        )
+    if args.voting_duration_secs is None:
+        power_period = args.poc_power_period_in_epochs
+        if power_period <= 0:
+            power_period = DEFAULT_POC_POWER_PERIOD_IN_EPOCHS
+        args.voting_duration_secs = (
+            args.epoch_duration_secs * power_period * DEFAULT_GOVERNANCE_VOTING_PERIODS
+        )
+    if args.voting_duration_secs >= args.recurring_lockup_duration_secs:
+        raise SystemExit(
+            "voting duration must be strictly smaller than validator recurring lockup "
+            f"({args.voting_duration_secs} >= {args.recurring_lockup_duration_secs})"
+        )
+
     if maybe_read_json(state_file(workdir)):
         raise SystemExit(f"state file already exists: {state_file(workdir)}; stop first")
 
@@ -1392,10 +1414,27 @@ def build_parser() -> argparse.ArgumentParser:
     start_parser.add_argument("--min-stake", type=int, default=DEFAULT_MIN_STAKE)
     start_parser.add_argument("--min-voting-threshold", type=int, default=DEFAULT_MIN_STAKE)
     start_parser.add_argument("--max-stake", type=int, default=100000000000000000)
-    start_parser.add_argument("--recurring-lockup-duration-secs", type=int, default=86400)
+    start_parser.add_argument(
+        "--recurring-lockup-duration-secs",
+        type=int,
+        default=None,
+        help=(
+            "validator recurring lockup / exit cooldown in seconds; "
+            f"default derives from {DEFAULT_VALIDATOR_LOCKUP_PERIODS} POC periods"
+        ),
+    )
     start_parser.add_argument("--required-proposer-stake", type=int, default=1000000)
     start_parser.add_argument("--rewards-apy-percentage", type=int, default=10)
-    start_parser.add_argument("--voting-duration-secs", type=int, default=43200)
+    start_parser.add_argument(
+        "--voting-duration-secs",
+        type=int,
+        default=None,
+        help=(
+            "governance voting duration in seconds; "
+            f"default derives from {DEFAULT_GOVERNANCE_VOTING_PERIODS} POC period "
+            "for local testing"
+        ),
+    )
     start_parser.add_argument("--voting-power-increase-limit", type=int, default=50)
     start_parser.add_argument("--startup-timeout-secs", type=int, default=DEFAULT_STARTUP_TIMEOUT_SECS)
     start_parser.add_argument("--poll-interval-secs", type=float, default=DEFAULT_POLL_INTERVAL_SECS)

@@ -65,7 +65,7 @@ export default function UserDetail() {
         </Col>
         <Col span={8}>
           <Card loading={loading}>
-            <Statistic title="存款" value={formatTopo(staking.deposit_octas || 0)} suffix="TOPO" />
+            <Statistic title="保证金" value={formatTopo(staking.deposit_octas || 0)} suffix="TOPO" />
             <div style={{ fontSize: 12, color: '#999' }}>
               委托: <AddressTag address={staking.delegated_to || '0x0'} />
               {staking.is_in_cooldown && <span style={{ color: 'orange' }}> 冷却中</span>}
@@ -90,7 +90,7 @@ export default function UserDetail() {
           </Col>
         </Row>
         <Space style={{ marginTop: 12 }}>
-          <Tag color={rewards.auto_compound ? 'green' : 'default'}>{rewards.auto_compound ? '奖励自动复投到存款' : '奖励方式未知'}</Tag>
+          <Tag color={rewards.auto_compound ? 'green' : 'default'}>{rewards.auto_compound ? '奖励自动复投到保证金' : '奖励方式未知'}</Tag>
           {rewards.is_validator_owner && <Tag color="blue">包含验证者佣金 {formatRewardAmount(rewards.estimated_owner_commission_octas || 0)}</Tag>}
           {rewards.delegated_to && rewards.delegated_to !== '0x0' ? <span style={{ color: '#666' }}>委托给 <AddressTag address={rewards.delegated_to} /></span> : <Tag>未委托</Tag>}
         </Space>
@@ -119,10 +119,10 @@ export default function UserDetail() {
             </Card>
           </Col>
           <Col span={12}>
-            <Card size="small" title="存款">
+            <Card size="small" title="保证金">
               <Space>
                 <InputNumber value={depositAmount} onChange={(v) => setDepositAmount(v || 0)} addonAfter="TOPO" min={0} />
-                <Button loading={submitting} onClick={() => doAction('存款', () => deposit({ user_address: address!, amount: topoToOctas(depositAmount) }))}>存款</Button>
+                <Button loading={submitting} onClick={() => doAction('保证金', () => deposit({ user_address: address!, amount: topoToOctas(depositAmount) }))}>存入保证金</Button>
               </Space>
             </Card>
           </Col>
@@ -137,7 +137,7 @@ export default function UserDetail() {
         </Row>
         <Space style={{ marginTop: 16 }}>
           <Button danger loading={submitting} onClick={() => Modal.confirm({ title: '确认取消委托?', onOk: () => doAction('取消委托', () => undelegate({ user_address: address! })) })}>取消委托</Button>
-          <Button danger loading={submitting} onClick={() => Modal.confirm({ title: '确认提取存款?', onOk: () => doAction('提取存款', () => withdraw({ user_address: address! })) })}>提取存款</Button>
+          <Button danger loading={submitting} onClick={() => Modal.confirm({ title: '确认提取保证金?', onOk: () => doAction('提取保证金', () => withdraw({ user_address: address! })) })}>提取保证金</Button>
         </Space>
       </Card>
     </div>

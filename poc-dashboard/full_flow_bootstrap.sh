@@ -21,6 +21,12 @@ BASE_NODE_COUNT="${BASE_NODE_COUNT:-4}"
 TARGET_VALIDATOR_COUNT="${TARGET_VALIDATOR_COUNT:-7}"
 USERS_PER_NEW_VALIDATOR="${USERS_PER_NEW_VALIDATOR:-5}"
 POWER_PERIOD_IN_EPOCHS="${POWER_PERIOD_IN_EPOCHS:-5}"
+EPOCH_DURATION_SECS="${EPOCH_DURATION_SECS:-60}"
+VALIDATOR_LOCKUP_PERIODS="${VALIDATOR_LOCKUP_PERIODS:-${VALIDATOR_EXIT_COOLDOWN_PERIODS:-2}}"
+VALIDATOR_LOCKUP_SECS="${VALIDATOR_LOCKUP_SECS:-${VALIDATOR_EXIT_COOLDOWN_SECS:-$((EPOCH_DURATION_SECS * POWER_PERIOD_IN_EPOCHS * VALIDATOR_LOCKUP_PERIODS))}}"
+GOVERNANCE_VOTING_PERIODS="${GOVERNANCE_VOTING_PERIODS:-1}"
+GOVERNANCE_VOTING_DURATION_SECS="${GOVERNANCE_VOTING_DURATION_SECS:-$((EPOCH_DURATION_SECS * POWER_PERIOD_IN_EPOCHS * GOVERNANCE_VOTING_PERIODS))}"
+EXPECTED_STAKING_COOLDOWN_SECS=$((VALIDATOR_LOCKUP_SECS > GOVERNANCE_VOTING_DURATION_SECS ? VALIDATOR_LOCKUP_SECS : GOVERNANCE_VOTING_DURATION_SECS))
 
 MIN_VALIDATOR_STAKE="${MIN_VALIDATOR_STAKE:-1000000000}"
 VALIDATOR_STAKE_MULTIPLIER="${VALIDATOR_STAKE_MULTIPLIER:-10}"
@@ -78,6 +84,11 @@ usage() {
   TARGET_VALIDATOR_COUNT         默认 $TARGET_VALIDATOR_COUNT
   USERS_PER_NEW_VALIDATOR        默认 $USERS_PER_NEW_VALIDATOR
   POWER_PERIOD_IN_EPOCHS         默认 $POWER_PERIOD_IN_EPOCHS
+  EPOCH_DURATION_SECS            默认 $EPOCH_DURATION_SECS
+  VALIDATOR_LOCKUP_PERIODS       默认 $VALIDATOR_LOCKUP_PERIODS
+  VALIDATOR_LOCKUP_SECS          默认 $VALIDATOR_LOCKUP_SECS
+  GOVERNANCE_VOTING_PERIODS      默认 $GOVERNANCE_VOTING_PERIODS
+  GOVERNANCE_VOTING_DURATION_SECS 默认 $GOVERNANCE_VOTING_DURATION_SECS
   MIN_VALIDATOR_STAKE            默认 $MIN_VALIDATOR_STAKE
   VALIDATOR_STAKE_MULTIPLIER     默认 $VALIDATOR_STAKE_MULTIPLIER
   USER_STAKE_MULTIPLIER          默认 $USER_STAKE_MULTIPLIER
@@ -314,14 +325,17 @@ ensure_base_cluster() {
         return
     fi
 
-    log "启动 $BASE_NODE_COUNT 节点创世集群"
+    log "启动 $BASE_NODE_COUNT 节点创世集群: epoch=${EPOCH_DURATION_SECS}s, period=${POWER_PERIOD_IN_EPOCHS} epochs, validator_lockup=${VALIDATOR_LOCKUP_SECS}s, voting_duration=${GOVERNANCE_VOTING_DURATION_SECS}s"
     python3 "$CLUSTER_SCRIPT" start \
         --repo-root "$REPO_ROOT" \
         --workdir "$CLUSTER_DIR" \
         --nodes "$BASE_NODE_COUNT" \
         --port-start "$CLUSTER_PORT_START" \
+        --epoch-duration-secs "$EPOCH_DURATION_SECS" \
         --min-stake "$MIN_VALIDATOR_STAKE" \
         --base-stake "$VALIDATOR_POWER" \
+        --recurring-lockup-duration-secs "$VALIDATOR_LOCKUP_SECS" \
+        --voting-duration-secs "$GOVERNANCE_VOTING_DURATION_SECS" \
         --poc-power-period-in-epochs "$POWER_PERIOD_IN_EPOCHS"
 }
 
@@ -476,9 +490,19 @@ final_verify() {
     echo "$validators_json" | json_assert_reward_fields "validators"
     echo "$users_json" | json_assert_reward_fields "users"
 
+    local governance_json voting_duration cooldown_secs
+    governance_json="$(curl_json GET "$FRONTEND_URL/api/v1/governance/config")"
+    voting_duration="$(echo "$governance_json" | json_get "governance.voting_duration_secs")"
+    cooldown_secs="$(echo "$governance_json" | json_get "staking.cooldown_secs")"
+    [[ "$voting_duration" == "$GOVERNANCE_VOTING_DURATION_SECS" ]] || die "治理投票时长为 $voting_duration，期望 $GOVERNANCE_VOTING_DURATION_SECS"
+    [[ "$cooldown_secs" == "$EXPECTED_STAKING_COOLDOWN_SECS" ]] || die "POC 冷却期为 $cooldown_secs，期望 $EXPECTED_STAKING_COOLDOWN_SECS"
+
     log "校验通过"
     echo "active_validators=$active_count"
     echo "watchlist_users=$user_total"
+    echo "validator_lockup_secs=$VALIDATOR_LOCKUP_SECS"
+    echo "governance_voting_duration_secs=$voting_duration"
+    echo "staking_cooldown_secs=$cooldown_secs"
     echo "frontend=$FRONTEND_URL"
     echo "backend=$BACKEND_URL"
     echo "rest=$REST_URL"
@@ -489,6 +513,9 @@ main() {
     need_executable "$APTOS_CLI"
     need_file "$FRAMEWORK_LOCAL_DIR/Move.toml"
     need_file "$ROOT_DIR/dashboard.sh"
+    if (( GOVERNANCE_VOTING_DURATION_SECS >= VALIDATOR_LOCKUP_SECS )); then
+        die "创世要求 GOVERNANCE_VOTING_DURATION_SECS($GOVERNANCE_VOTING_DURATION_SECS) 必须小于 VALIDATOR_LOCKUP_SECS($VALIDATOR_LOCKUP_SECS)"
+    fi
 
     if [[ "$RESET" == true ]]; then
         reset_all

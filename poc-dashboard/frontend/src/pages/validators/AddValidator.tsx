@@ -65,7 +65,7 @@ export default function AddValidator() {
           </Form.Item>
           <Form.Item name="power" label="目标算力"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
           <Form.Item name="mint_topo" label="铸造 TOPO 数量"><InputNumber min={0} style={{ width: '100%' }} addonAfter="TOPO" /></Form.Item>
-          <Form.Item name="deposit_topo" label="存款数量"><InputNumber min={0} style={{ width: '100%' }} addonAfter="TOPO" /></Form.Item>
+          <Form.Item name="deposit_topo" label="保证金数量"><InputNumber min={0} style={{ width: '100%' }} addonAfter="TOPO" /></Form.Item>
           <Form.Item name="commission" label="佣金比例"><InputNumber min={0} max={100} style={{ width: '100%' }} addonAfter="%" /></Form.Item>
           <Form.Item name="power_period" label="算力周期 (Epoch)"><InputNumber min={1} style={{ width: '100%' }} /></Form.Item>
           <Form.Item name="force_epochs" label="强制Epoch次数"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>

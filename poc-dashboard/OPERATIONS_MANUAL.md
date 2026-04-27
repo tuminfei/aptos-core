@@ -43,6 +43,8 @@
 ```bash
 TARGET_VALIDATOR_COUNT=7 USERS_PER_NEW_VALIDATOR=5 ./full_flow_bootstrap.sh --reset
 POWER_PERIOD_IN_EPOCHS=5 ./full_flow_bootstrap.sh --reset
+VALIDATOR_LOCKUP_PERIODS=2 ./full_flow_bootstrap.sh --reset
+GOVERNANCE_VOTING_PERIODS=1 ./full_flow_bootstrap.sh --reset
 MIN_VALIDATOR_STAKE=1000000000 VALIDATOR_STAKE_MULTIPLIER=10 USER_STAKE_MULTIPLIER=5 ./full_flow_bootstrap.sh --reset
 VALIDATOR_POWER=10000000000 USER_POWER=5000000000 ./full_flow_bootstrap.sh --reset
 USER_MINT_AMOUNT=6000000000 USER_DEPOSIT_AMOUNT=5000000000 ./full_flow_bootstrap.sh --reset
@@ -55,7 +57,13 @@ USER_MINT_AMOUNT=6000000000 USER_DEPOSIT_AMOUNT=5000000000 ./full_flow_bootstrap
 ```bash
 python3 ./scripts/poc_prod_like_validator_cluster.py stop --workdir ./poc-validator-cluster
 rm -rf ./poc-validator-cluster
-python3 ./scripts/poc_prod_like_validator_cluster.py start --workdir ./poc-validator-cluster --nodes 4 --port-start 36180
+python3 ./scripts/poc_prod_like_validator_cluster.py start \
+  --workdir ./poc-validator-cluster \
+  --nodes 4 \
+  --port-start 36180 \
+  --poc-power-period-in-epochs 5 \
+  --recurring-lockup-duration-secs 600 \
+  --voting-duration-secs 300
 python3 ./scripts/poc_prod_like_validator_cluster.py status --workdir ./poc-validator-cluster
 ```
 
@@ -157,7 +165,7 @@ curl -sS http://127.0.0.1:35173/api/v1/validators
 
 ## 创建普通用户并代理质押
 
-每个普通用户通过 `/api/v1/staking/proxy` 一次完成创建账户、铸币、设置算力、强制 epoch、存款、委托。
+每个普通用户通过 `/api/v1/staking/proxy` 一次完成创建账户、铸币、设置算力、强制 epoch、保证金、委托。
 
 示例：
 
@@ -269,6 +277,7 @@ curl -sS http://127.0.0.1:35173/api/v1/watchlist/users
 ## 常见问题
 
 - `max_gas` 必须使用 `200000`。当前链 block gas limit 是 `200000`，使用 `20000000` 会导致交易长时间 pending 或无法上链。
+- 默认 `epoch_duration_secs = 60`、`power_period_in_epochs = 5`、`VALIDATOR_LOCKUP_PERIODS = 2`，所以验证者 lockup/退出锁定期是 `600` 秒。治理投票时长默认 `GOVERNANCE_VOTING_PERIODS = 1`，即 `300` 秒；创世要求投票时长必须严格小于验证者 lockup。POC 用户取消委托后的冷却期取二者最大值，所以默认也是 `600` 秒。
 - `retention_bps_per_period = 9998` 表示每个 period 保留 99.98% 算力，测试中能看到缓慢衰减。`full_flow_bootstrap.sh` 默认按 `MIN_VALIDATOR_STAKE=1000000000` 派生测试金额：验证者初始 stake/power 是最小值 10 倍，普通测试用户 stake/power 是最小值 5 倍。不要把初始 power 设置为刚好等于最小 stake，否则推进 period 后会低于最小 stake，导致验证者退出 active set。
 - 批量代理质押不要并行发交易。多个请求共用 `core_resources` 时，并行提交容易产生 sequence number 冲突。
 - `prepare-join` 的 `mint_amount` 要大于 `deposit_amount`，预留 gas 和流程中产生的费用。

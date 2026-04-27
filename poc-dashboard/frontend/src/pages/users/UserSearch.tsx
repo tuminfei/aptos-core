@@ -49,7 +49,7 @@ export default function UserSearch() {
     { title: 'TOPO 余额', dataIndex: 'balance_topo', render: (v: number) => v?.toFixed(2) ?? '-' },
     { title: '已提交算力', dataIndex: 'committed_power', render: formatNumber },
     { title: '有效算力', dataIndex: 'effective_power', render: (v: number) => formatNumber(v || 0) },
-    { title: '存款 TOPO', dataIndex: 'deposit_topo', render: (v: number) => v?.toFixed(2) ?? '-' },
+    { title: '保证金 TOPO', dataIndex: 'deposit_topo', render: (v: number) => v?.toFixed(2) ?? '-' },
     { title: '预计奖励', render: (_: any, r: any) => formatRewardAmount(r.rewards?.estimated_epoch_reward_octas || 0) },
     { title: '预计手续费', render: (_: any, r: any) => formatRewardAmount(r.rewards?.estimated_epoch_fee_octas || 0) },
     { title: '预计入账', render: (_: any, r: any) => formatRewardAmount(r.rewards?.estimated_epoch_total_octas || 0) },

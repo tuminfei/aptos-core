@@ -61,7 +61,7 @@ export default function ValidatorDetail() {
 
   const delegatorColumns = [
     { title: '地址', dataIndex: 'address', render: (v: string) => <AddressTag address={v} /> },
-    { title: '存款 TOPO', dataIndex: 'deposit_topo', render: (v: number) => v?.toFixed(2) },
+    { title: '保证金 TOPO', dataIndex: 'deposit_topo', render: (v: number) => v?.toFixed(2) },
     { title: 'POC算力', dataIndex: 'poc_power', render: formatNumber },
     { title: '有效算力', dataIndex: 'effective_power', render: formatNumber },
     { title: '预计奖励', dataIndex: 'estimated_epoch_reward_octas', render: (v: number) => formatRewardAmount(v || 0) },

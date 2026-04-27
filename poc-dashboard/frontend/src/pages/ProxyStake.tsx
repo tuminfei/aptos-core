@@ -99,7 +99,7 @@ export default function ProxyStake() {
     { title: '用户', dataIndex: 'address', width: 280, render: (_: any, __: any, i: number) => <AddressSelect kind="user" value={batchRows[i]?.address || undefined} onChange={(v) => updateRow(i, 'address', v)} style={{ width: 260 }} /> },
     { title: '铸造TOPO', dataIndex: 'mint', render: (_: any, __: any, i: number) => <InputNumber value={batchRows[i]?.mint} onChange={(v) => updateRow(i, 'mint', v)} size="small" min={0} /> },
     { title: '算力', dataIndex: 'power', render: (_: any, __: any, i: number) => <InputNumber value={batchRows[i]?.power} onChange={(v) => updateRow(i, 'power', v)} size="small" min={0} /> },
-    { title: '存款TOPO', dataIndex: 'deposit', render: (_: any, __: any, i: number) => <InputNumber value={batchRows[i]?.deposit} onChange={(v) => updateRow(i, 'deposit', v)} size="small" min={0} /> },
+    { title: '保证金TOPO', dataIndex: 'deposit', render: (_: any, __: any, i: number) => <InputNumber value={batchRows[i]?.deposit} onChange={(v) => updateRow(i, 'deposit', v)} size="small" min={0} /> },
   ];
 
   return (
@@ -107,14 +107,14 @@ export default function ProxyStake() {
       {
         key: 'single', label: '单用户模式', children: (
           <div>
-            <Card title="代理质押 — 为用户一键完成铸币+算力+存款+委托" style={{ marginBottom: 16 }}>
+            <Card title="代理质押 — 为用户一键完成铸币+算力+保证金+委托" style={{ marginBottom: 16 }}>
               <Form form={form} layout="vertical" initialValues={{ mint_amount: DEFAULT_USER_MINT_TOPO, set_power: DEFAULT_USER_STAKE_OCTAS, deposit_amount: DEFAULT_USER_STAKE_TOPO, force_epoch: true, force_epochs: DEFAULT_FORCE_EPOCHS }}>
                 <Form.Item name="target_user" label="目标用户" rules={[{ required: true }]}>
                   <AddressSelect kind="user" value={form.getFieldValue('target_user')} onChange={(v) => form.setFieldValue('target_user', v)} />
                 </Form.Item>
                 <Form.Item name="mint_amount" label="铸造数量"><InputNumber min={0} style={{ width: '100%' }} addonAfter="TOPO" /></Form.Item>
                 <Form.Item name="set_power" label="设置算力"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
-                <Form.Item name="deposit_amount" label="存款数量"><InputNumber min={0} style={{ width: '100%' }} addonAfter="TOPO" /></Form.Item>
+                <Form.Item name="deposit_amount" label="保证金数量"><InputNumber min={0} style={{ width: '100%' }} addonAfter="TOPO" /></Form.Item>
                 <Form.Item name="delegate_to" label="委托验证者" rules={[{ required: true }]}>
                   <AddressSelect kind="validator" value={form.getFieldValue('delegate_to')} onChange={(v) => form.setFieldValue('delegate_to', v)} />
                 </Form.Item>
