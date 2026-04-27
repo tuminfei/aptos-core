@@ -2,6 +2,7 @@ import os
 import glob
 import json
 import urllib.request
+from urllib.parse import urlsplit, urlunsplit
 from typing import Optional
 from pydantic import BaseModel
 import yaml
@@ -107,7 +108,7 @@ def _detect_api_url(cluster_dir: str) -> str | None:
             continue
         addr = api_cfg.get("address", "")
         if addr:
-            candidates.append(f"http://{addr}/v1")
+            candidates.append(_client_url_from_bind_address(addr))
 
     if not candidates:
         return None
@@ -126,6 +127,25 @@ def _detect_api_url(cluster_dir: str) -> str | None:
             latest_version = version
 
     return latest_url or candidates[0]
+
+
+def _client_url_from_bind_address(address: str) -> str:
+    host, sep, port = address.rpartition(":")
+    if not sep:
+        return f"http://{address}/v1"
+    if host in {"0.0.0.0", "::", ""}:
+        host = "127.0.0.1"
+    return f"http://{host}:{port}/v1"
+
+
+def _local_health_url(url: str) -> str:
+    parts = urlsplit(url)
+    host = parts.hostname or "127.0.0.1"
+    if host in {"0.0.0.0", "::", ""}:
+        host = "127.0.0.1"
+    port = f":{parts.port}" if parts.port else ""
+    netloc = f"{host}{port}"
+    return urlunsplit((parts.scheme or "http", netloc, parts.path, parts.query, parts.fragment))
 
 
 def load_settings(config_path: Optional[str] = None) -> Settings:

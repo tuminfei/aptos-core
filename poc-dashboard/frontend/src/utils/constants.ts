@@ -64,3 +64,6 @@ export const ACTION_LABELS: Record<string, string> = {
 };
 
 export const OCTAS_PER_TOPO = 1e8;
+export const MIN_VALIDATOR_STAKE_OCTAS = 1_000_000_000;
+export const DEFAULT_VALIDATOR_STAKE_OCTAS = MIN_VALIDATOR_STAKE_OCTAS * 10;
+export const DEFAULT_USER_STAKE_OCTAS = MIN_VALIDATOR_STAKE_OCTAS * 5;

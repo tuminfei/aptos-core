@@ -4,13 +4,15 @@ import { prepareJoin } from '../../services/validator';
 import { addToWatchlist } from '../../services/watchlist';
 import StepProgress from '../../components/StepProgress';
 import AddressSelect from '../../components/AddressSelect';
-import { topoToOctas } from '../../utils/format';
+import { octasToTopo, topoToOctas } from '../../utils/format';
+import { DEFAULT_VALIDATOR_STAKE_OCTAS, MIN_VALIDATOR_STAKE_OCTAS } from '../../utils/constants';
 
 export default function AddValidator() {
   const [form] = Form.useForm();
   const [running, setRunning] = useState(false);
   const [steps, setSteps] = useState<any[]>([]);
   const [current, setCurrent] = useState(-1);
+  const defaultValidatorStakeTopo = octasToTopo(DEFAULT_VALIDATOR_STAKE_OCTAS);
 
   const STEP_NAMES = ['create_account', 'mint_topo', 'set_power_period', 'force_end_epoch_after_set_power_period', 'stage_power', 'force_end_epoch', 'initialize_validator', 'register_validator', 'deposit', 'delegate_self', 'join_validator_set', 'force_end_epoch_after_join'];
 
@@ -54,7 +56,7 @@ export default function AddValidator() {
   return (
     <div>
       <Card title="添加新验证者" style={{ marginBottom: 16 }}>
-        <Form form={form} layout="vertical" initialValues={{ power: 1000000000, power_period: 1, force_epochs: 1, force_epochs_after_join: 1, mint_topo: 100, deposit_topo: 10, commission: 0 }}>
+        <Form form={form} layout="vertical" initialValues={{ power: DEFAULT_VALIDATOR_STAKE_OCTAS, power_period: 1, force_epochs: 1, force_epochs_after_join: 1, mint_topo: defaultValidatorStakeTopo + octasToTopo(MIN_VALIDATOR_STAKE_OCTAS), deposit_topo: defaultValidatorStakeTopo, commission: 0 }}>
           <Form.Item name="validator_address" label="验证者地址" rules={[{ required: true }]}>
             <AddressSelect kind="validator" value={form.getFieldValue('validator_address')} onChange={(v) => form.setFieldValue('validator_address', v)} />
           </Form.Item>

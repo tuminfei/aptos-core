@@ -41,7 +41,8 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 
 DEFAULT_NODE_COUNT = 4
-DEFAULT_BASE_STAKE = 1000000000
+DEFAULT_MIN_STAKE = 1000000000
+DEFAULT_BASE_STAKE = DEFAULT_MIN_STAKE * 10
 DEFAULT_CHAIN_ID = 4
 DEFAULT_EPOCH_DURATION_SECS = 60
 DEFAULT_POC_POWER_PERIOD_IN_EPOCHS = 5
@@ -1388,8 +1389,8 @@ def build_parser() -> argparse.ArgumentParser:
             f"default: {DEFAULT_POC_POWER_PERIOD_IN_EPOCHS}; use 0 to skip"
         ),
     )
-    start_parser.add_argument("--min-stake", type=int, default=1000000000)
-    start_parser.add_argument("--min-voting-threshold", type=int, default=1000000000)
+    start_parser.add_argument("--min-stake", type=int, default=DEFAULT_MIN_STAKE)
+    start_parser.add_argument("--min-voting-threshold", type=int, default=DEFAULT_MIN_STAKE)
     start_parser.add_argument("--max-stake", type=int, default=100000000000000000)
     start_parser.add_argument("--recurring-lockup-duration-secs", type=int, default=86400)
     start_parser.add_argument("--required-proposer-stake", type=int, default=1000000)

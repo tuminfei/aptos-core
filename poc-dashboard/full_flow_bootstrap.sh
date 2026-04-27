@@ -21,16 +21,22 @@ BASE_NODE_COUNT="${BASE_NODE_COUNT:-4}"
 TARGET_VALIDATOR_COUNT="${TARGET_VALIDATOR_COUNT:-7}"
 USERS_PER_NEW_VALIDATOR="${USERS_PER_NEW_VALIDATOR:-5}"
 
-VALIDATOR_POWER="${VALIDATOR_POWER:-1200000000}"
-VALIDATOR_MINT_AMOUNT="${VALIDATOR_MINT_AMOUNT:-10000000000}"
-VALIDATOR_DEPOSIT_AMOUNT="${VALIDATOR_DEPOSIT_AMOUNT:-2000000000}"
+MIN_VALIDATOR_STAKE="${MIN_VALIDATOR_STAKE:-1000000000}"
+VALIDATOR_STAKE_MULTIPLIER="${VALIDATOR_STAKE_MULTIPLIER:-10}"
+USER_STAKE_MULTIPLIER="${USER_STAKE_MULTIPLIER:-5}"
+DEFAULT_VALIDATOR_STAKE=$((MIN_VALIDATOR_STAKE * VALIDATOR_STAKE_MULTIPLIER))
+DEFAULT_USER_STAKE=$((MIN_VALIDATOR_STAKE * USER_STAKE_MULTIPLIER))
+
+VALIDATOR_POWER="${VALIDATOR_POWER:-$DEFAULT_VALIDATOR_STAKE}"
+VALIDATOR_MINT_AMOUNT="${VALIDATOR_MINT_AMOUNT:-$((DEFAULT_VALIDATOR_STAKE + MIN_VALIDATOR_STAKE))}"
+VALIDATOR_DEPOSIT_AMOUNT="${VALIDATOR_DEPOSIT_AMOUNT:-$DEFAULT_VALIDATOR_STAKE}"
 VALIDATOR_COMMISSION_BPS="${VALIDATOR_COMMISSION_BPS:-0}"
 VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE="${VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE:-1}"
 VALIDATOR_FORCE_EPOCHS_AFTER_JOIN="${VALIDATOR_FORCE_EPOCHS_AFTER_JOIN:-1}"
 
-USER_MINT_AMOUNT="${USER_MINT_AMOUNT:-1000000000}"
-USER_POWER="${USER_POWER:-100000000}"
-USER_DEPOSIT_AMOUNT="${USER_DEPOSIT_AMOUNT:-500000000}"
+USER_MINT_AMOUNT="${USER_MINT_AMOUNT:-$((DEFAULT_USER_STAKE + MIN_VALIDATOR_STAKE))}"
+USER_POWER="${USER_POWER:-$DEFAULT_USER_STAKE}"
+USER_DEPOSIT_AMOUNT="${USER_DEPOSIT_AMOUNT:-$DEFAULT_USER_STAKE}"
 USER_FORCE_EPOCH="${USER_FORCE_EPOCH:-true}"
 
 WAIT_TIMEOUT_SECS="${WAIT_TIMEOUT_SECS:-180}"
@@ -69,6 +75,9 @@ usage() {
   CLUSTER_PORT_START             默认 $CLUSTER_PORT_START
   TARGET_VALIDATOR_COUNT         默认 $TARGET_VALIDATOR_COUNT
   USERS_PER_NEW_VALIDATOR        默认 $USERS_PER_NEW_VALIDATOR
+  MIN_VALIDATOR_STAKE            默认 $MIN_VALIDATOR_STAKE
+  VALIDATOR_STAKE_MULTIPLIER     默认 $VALIDATOR_STAKE_MULTIPLIER
+  USER_STAKE_MULTIPLIER          默认 $USER_STAKE_MULTIPLIER
   VALIDATOR_POWER                默认 $VALIDATOR_POWER
   VALIDATOR_MINT_AMOUNT          默认 $VALIDATOR_MINT_AMOUNT
   VALIDATOR_DEPOSIT_AMOUNT       默认 $VALIDATOR_DEPOSIT_AMOUNT
@@ -267,7 +276,7 @@ cluster_state_exists() {
 }
 
 start_dashboard_if_needed() {
-    if curl -sS "$FRONTEND_URL/api/v1/system/health" >/dev/null 2>&1; then
+    if curl_json GET "$FRONTEND_URL/api/v1/system/health" >/dev/null 2>&1; then
         log "Dashboard 前端代理已健康: $FRONTEND_URL"
         return
     fi
@@ -279,7 +288,7 @@ start_dashboard_if_needed() {
 
     log "启动 Dashboard 前后端"
     BACKEND_PORT="$BACKEND_PORT" FRONTEND_PORT="$FRONTEND_PORT" "$ROOT_DIR/dashboard.sh" start
-    wait_until "Dashboard API 健康" "curl -sS '$FRONTEND_URL/api/v1/system/health' >/dev/null"
+    wait_until "Dashboard API 健康" "curl_json GET '$FRONTEND_URL/api/v1/system/health' >/dev/null"
 }
 
 reset_all() {
@@ -307,8 +316,8 @@ ensure_base_cluster() {
         --workdir "$CLUSTER_DIR" \
         --nodes "$BASE_NODE_COUNT" \
         --port-start "$CLUSTER_PORT_START" \
-        --min-stake 1000000000 \
-        --base-stake 1000000000 \
+        --min-stake "$MIN_VALIDATOR_STAKE" \
+        --base-stake "$VALIDATOR_POWER" \
         --poc-power-period-in-epochs 1
 }
 
@@ -318,7 +327,7 @@ set_chain_test_params() {
         return
     fi
 
-    log "提交链上测试参数交易: rewards_rate=10000/1000000000, retention=10000, power_period=1"
+    log "提交链上测试参数交易: rewards_rate=10000/1000000000, retention=9998, power_period=1"
     need_file "$CHAIN_TEST_PARAMS_SCRIPT"
     "$APTOS_CLI" move run-script \
         --url "$REST_URL" \
@@ -345,7 +354,7 @@ ensure_post_genesis_nodes() {
             --repo-root "$REPO_ROOT" \
             --workdir "$CLUSTER_DIR" \
             --count "$add_count" \
-            --base-stake 1000000000
+            --base-stake "$VALIDATOR_POWER"
     else
         log "验证者节点目录数量已达到 $existing_count，跳过 add-validators"
     fi

@@ -4,7 +4,18 @@ import { PlusOutlined } from '@ant-design/icons';
 import { proxyStake } from '../services/staking';
 import StepProgress from '../components/StepProgress';
 import AddressSelect from '../components/AddressSelect';
-import { topoToOctas } from '../utils/format';
+import { octasToTopo, topoToOctas } from '../utils/format';
+import { DEFAULT_USER_STAKE_OCTAS, MIN_VALIDATOR_STAKE_OCTAS } from '../utils/constants';
+
+const DEFAULT_USER_STAKE_TOPO = octasToTopo(DEFAULT_USER_STAKE_OCTAS);
+const DEFAULT_USER_MINT_TOPO = DEFAULT_USER_STAKE_TOPO + octasToTopo(MIN_VALIDATOR_STAKE_OCTAS);
+const defaultBatchRow = (key: string) => ({
+  key,
+  address: '',
+  mint: DEFAULT_USER_MINT_TOPO,
+  power: DEFAULT_USER_STAKE_OCTAS,
+  deposit: DEFAULT_USER_STAKE_TOPO,
+});
 
 export default function ProxyStake() {
   const [form] = Form.useForm();
@@ -13,7 +24,7 @@ export default function ProxyStake() {
   const [current, setCurrent] = useState(-1);
 
   const [batchValidator, setBatchValidator] = useState('');
-  const [batchRows, setBatchRows] = useState<any[]>([{ key: '1', address: '', mint: 1000, power: 5000, deposit: 500 }]);
+  const [batchRows, setBatchRows] = useState<any[]>([defaultBatchRow('1')]);
   const [batchResults, setBatchResults] = useState<any[]>([]);
   const [batchRunning, setBatchRunning] = useState(false);
 
@@ -72,7 +83,7 @@ export default function ProxyStake() {
   };
 
   const addRow = () => {
-    setBatchRows([...batchRows, { key: String(batchRows.length + 1), address: '', mint: 1000, power: 5000, deposit: 500 }]);
+    setBatchRows([...batchRows, defaultBatchRow(String(batchRows.length + 1))]);
   };
 
   const updateRow = (index: number, field: string, value: any) => {
@@ -94,7 +105,7 @@ export default function ProxyStake() {
         key: 'single', label: '单用户模式', children: (
           <div>
             <Card title="代理质押 — 为用户一键完成铸币+算力+存款+委托" style={{ marginBottom: 16 }}>
-              <Form form={form} layout="vertical" initialValues={{ mint_amount: 1000, set_power: 5000, deposit_amount: 500 }}>
+              <Form form={form} layout="vertical" initialValues={{ mint_amount: DEFAULT_USER_MINT_TOPO, set_power: DEFAULT_USER_STAKE_OCTAS, deposit_amount: DEFAULT_USER_STAKE_TOPO }}>
                 <Form.Item name="target_user" label="目标用户" rules={[{ required: true }]}>
                   <AddressSelect kind="user" value={form.getFieldValue('target_user')} onChange={(v) => form.setFieldValue('target_user', v)} />
                 </Form.Item>

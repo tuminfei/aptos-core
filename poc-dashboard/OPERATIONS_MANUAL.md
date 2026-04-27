@@ -7,7 +7,7 @@
 - 本地 4 节点创世启动成功。
 - 不修改 Rust 代码，通过交易设置测试参数：
   - `rewards_rate ~= 10000 / 1000000000`
-  - `retention_bps_per_period = 10000`
+  - `retention_bps_per_period = 9998`
   - `power_period_in_epochs = 1`
 - 通过前端接口加入 3 个普通验证者，总 active validator 数量达到 7。
 - 每个新增验证者有 5 个普通用户完成代理质押。
@@ -42,8 +42,9 @@
 
 ```bash
 TARGET_VALIDATOR_COUNT=7 USERS_PER_NEW_VALIDATOR=5 ./full_flow_bootstrap.sh --reset
-VALIDATOR_POWER=1200000000 USER_POWER=100000000 ./full_flow_bootstrap.sh --reset
-USER_MINT_AMOUNT=1000000000 USER_DEPOSIT_AMOUNT=500000000 ./full_flow_bootstrap.sh --reset
+MIN_VALIDATOR_STAKE=1000000000 VALIDATOR_STAKE_MULTIPLIER=10 USER_STAKE_MULTIPLIER=5 ./full_flow_bootstrap.sh --reset
+VALIDATOR_POWER=10000000000 USER_POWER=5000000000 ./full_flow_bootstrap.sh --reset
+USER_MINT_AMOUNT=6000000000 USER_DEPOSIT_AMOUNT=5000000000 ./full_flow_bootstrap.sh --reset
 ```
 
 手动流程如下。
@@ -127,12 +128,12 @@ curl -sS -X POST http://127.0.0.1:35173/api/v1/validators/prepare-join \
   -H 'Content-Type: application/json' \
   -d '{
     "label": "validator-4",
-    "power": 1200000000,
+    "power": 10000000000,
     "set_power_period": 1,
     "force_epochs_before_delegate": 1,
     "force_epochs_after_join": 1,
-    "mint_amount": 10000000000,
-    "deposit_amount": 2000000000,
+    "mint_amount": 11000000000,
+    "deposit_amount": 10000000000,
     "commission_bps": 0
   }'
 ```
@@ -166,9 +167,9 @@ curl -sS --retry 10 --retry-connrefused --retry-all-errors --retry-delay 1 \
   -d '{
     "target_user": "",
     "label": "validator-4-user-1",
-    "mint_amount": 1000000000,
-    "set_power": 100000000,
-    "deposit_amount": 500000000,
+    "mint_amount": 6000000000,
+    "set_power": 5000000000,
+    "deposit_amount": 5000000000,
     "delegate_to": "0x8725ae23b9c42c03f81163cd24a9611aee6826666740b31b537ed390dd4e12e1",
     "force_epoch": true
   }'
@@ -266,7 +267,7 @@ curl -sS http://127.0.0.1:35173/api/v1/watchlist/users
 ## 常见问题
 
 - `max_gas` 必须使用 `200000`。当前链 block gas limit 是 `200000`，使用 `20000000` 会导致交易长时间 pending 或无法上链。
-- `retention_bps_per_period` 建议设为 `10000`。默认衰减可能在多次强制 epoch 后让验证者 power 低于最小 stake，导致验证者退出 active set。
+- `retention_bps_per_period = 9998` 表示每个 period 保留 99.98% 算力，测试中能看到缓慢衰减。`full_flow_bootstrap.sh` 默认按 `MIN_VALIDATOR_STAKE=1000000000` 派生测试金额：验证者初始 stake/power 是最小值 10 倍，普通测试用户 stake/power 是最小值 5 倍。不要把初始 power 设置为刚好等于最小 stake，否则推进 period 后会低于最小 stake，导致验证者退出 active set。
 - 批量代理质押不要并行发交易。多个请求共用 `core_resources` 时，并行提交容易产生 sequence number 冲突。
 - `prepare-join` 的 `mint_amount` 要大于 `deposit_amount`，预留 gas 和流程中产生的费用。
 - 铸造大额 TOPO 时要注意接收账户余额上限。账户余额和铸造金额相加不能超过 `18446744073709551615` octas。
