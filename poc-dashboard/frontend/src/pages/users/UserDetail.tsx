@@ -11,16 +11,19 @@ import { usePolling } from '../../hooks/usePolling';
 import { useEventRefresh } from '../../hooks/useEventRefresh';
 import AddressTag from '../../components/AddressTag';
 import AddressSelect from '../../components/AddressSelect';
-import { formatNumber, formatRewardAmount, formatRewardRate, formatTopo, topoToOctas } from '../../utils/format';
+import HistoryWindowControl from '../../components/HistoryWindowControl';
+import { formatCompactNumber, formatNumber, formatRewardAmount, formatRewardRate, formatTopo, topoToOctas } from '../../utils/format';
 
 export default function UserDetail() {
   const { address } = useParams<{ address: string }>();
+  const [snapshotLimit, setSnapshotLimit] = useState(200);
+  const [snapshotOffset, setSnapshotOffset] = useState(0);
   const fetchUser = useCallback(() => getUser(address!), [address]);
   const fetchHistory = useCallback(() => getPowerHistory(address!), [address]);
-  const fetchSnapshotHistory = useCallback(() => getUserSnapshotHistory(address!), [address]);
+  const fetchSnapshotHistory = useCallback(() => getUserSnapshotHistory(address!, snapshotLimit, snapshotOffset), [address, snapshotLimit, snapshotOffset]);
   const { data, loading, refresh } = usePolling(fetchUser, 0, [address]);
   const { data: historyData, refresh: refreshPowerHistory } = usePolling(fetchHistory, 0, [address]);
-  const { data: snapshotData, refresh: refreshSnapshotHistory } = usePolling(fetchSnapshotHistory, 0, [address]);
+  const { data: snapshotData, refresh: refreshSnapshotHistory } = usePolling(fetchSnapshotHistory, 0, [address, snapshotLimit, snapshotOffset]);
 
   const [mintAmount, setMintAmount] = useState<number>(0);
   const [powerVal, setPowerVal] = useState<number>(0);
@@ -47,11 +50,43 @@ export default function UserDetail() {
     { key: 'current', label: '当前 period', ...currentCalculation },
     { key: 'next', label: '下一 epoch period', ...nextEpochCalculation },
   ];
+  const historyPowers = history.map((h: any) => Number(h.power || 0));
+  const hasHistoryPowers = historyPowers.length > 0;
+  const powerMin = hasHistoryPowers ? Math.min(...historyPowers) : 0;
+  const powerMax = hasHistoryPowers ? Math.max(...historyPowers) : 0;
+  const powerRange = powerMax - powerMin;
+  const flatPowerPadding = Math.max(1, Math.ceil(Math.max(powerMax, 1) * 0.05));
+  const historyYAxisMin = hasHistoryPowers && powerRange > 0 ? powerMin : Math.max(0, powerMin - flatPowerPadding);
+  const historyYAxisMax = hasHistoryPowers && powerRange > 0 ? powerMax : powerMax + flatPowerPadding;
 
   const chartOption = {
+    grid: { left: 56, right: 32, top: 32, bottom: 32, containLabel: true },
     xAxis: { type: 'category' as const, data: history.map((h: any) => `P${h.period}`) },
-    yAxis: { type: 'value' as const },
-    series: [{ type: 'line', data: history.map((h: any) => h.power), smooth: true, areaStyle: {} }],
+    yAxis: {
+      type: 'value' as const,
+      min: historyYAxisMin,
+      max: historyYAxisMax,
+      scale: true,
+      axisLabel: {
+        formatter: (v: number) => formatCompactNumber(v),
+        showMinLabel: true,
+        showMaxLabel: true,
+      },
+    },
+    series: [{
+      type: 'line',
+      data: historyPowers,
+      smooth: true,
+      areaStyle: {},
+      markPoint: {
+        symbolSize: 56,
+        label: { formatter: ({ value }: any) => formatNumber(value) },
+        data: [
+          { type: 'max', name: '最大值' },
+          { type: 'min', name: '最小值' },
+        ],
+      },
+    }],
     tooltip: { trigger: 'axis' as const },
   };
   const snapshotLabels = snapshots.map((h: any) => {
@@ -61,11 +96,11 @@ export default function UserDetail() {
   const snapshotChartOption = {
     tooltip: { trigger: 'axis' as const },
     legend: { top: 0 },
-    grid: { left: 56, right: 72, top: 44, bottom: 32 },
+    grid: { left: 56, right: 72, top: 44, bottom: 32, containLabel: true },
     xAxis: { type: 'category' as const, data: snapshotLabels },
     yAxis: [
-      { type: 'value' as const, name: '算力' },
-      { type: 'value' as const, name: 'TOPO' },
+      { type: 'value' as const, name: '算力', axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
+      { type: 'value' as const, name: 'TOPO', axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
     ],
     series: [
       {
@@ -273,11 +308,28 @@ export default function UserDetail() {
         </Row>
       </Card>
 
-      <Card title="算力历史" style={{ marginBottom: 16 }}>
+      <Card
+        title="算力历史"
+        extra={<span style={{ color: '#666' }}>最小 {formatNumber(powerMin)} / 最大 {formatNumber(powerMax)}</span>}
+        style={{ marginBottom: 16 }}
+      >
         <ReactECharts option={chartOption} style={{ height: 250 }} />
       </Card>
 
-      <Card title="本地快照历史" style={{ marginBottom: 16 }}>
+      <Card
+        title="本地快照历史"
+        extra={(
+          <HistoryWindowControl
+            limit={snapshotLimit}
+            offset={snapshotOffset}
+            total={snapshotData?.total || 0}
+            shown={snapshots.length}
+            onLimitChange={setSnapshotLimit}
+            onOffsetChange={setSnapshotOffset}
+          />
+        )}
+        style={{ marginBottom: 16 }}
+      >
         <ReactECharts option={snapshotChartOption} style={{ height: 300 }} />
       </Card>
 

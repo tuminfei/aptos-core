@@ -16,6 +16,38 @@ export function formatNumber(n: number | string): string {
   return Number(n).toLocaleString();
 }
 
+const SUPERSCRIPT_DIGITS: Record<string, string> = {
+  '-': '⁻',
+  '0': '⁰',
+  '1': '¹',
+  '2': '²',
+  '3': '³',
+  '4': '⁴',
+  '5': '⁵',
+  '6': '⁶',
+  '7': '⁷',
+  '8': '⁸',
+  '9': '⁹',
+};
+
+function formatSuperscriptExponent(exponent: number): string {
+  return String(exponent).split('').map((char) => SUPERSCRIPT_DIGITS[char] || char).join('');
+}
+
+export function formatCompactNumber(n: number | string): string {
+  const value = Number(n || 0);
+  if (!Number.isFinite(value) || value === 0) return '0';
+
+  const abs = Math.abs(value);
+  if (abs < 10_000) {
+    return value.toLocaleString(undefined, { maximumFractionDigits: abs >= 100 ? 0 : 2 });
+  }
+
+  const exponent = Math.floor(Math.log10(abs));
+  const coefficient = value / Math.pow(10, exponent);
+  return `${coefficient.toLocaleString(undefined, { maximumFractionDigits: 2 })}x10${formatSuperscriptExponent(exponent)}`;
+}
+
 export function formatTopo(octas: number | string): string {
   return octasToTopo(octas).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }

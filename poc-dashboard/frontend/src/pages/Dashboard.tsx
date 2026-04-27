@@ -8,7 +8,8 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { useEventRefresh } from '../hooks/useEventRefresh';
 import { useNavigate } from 'react-router-dom';
 import AddressTag from '../components/AddressTag';
-import { formatNumber, formatTimestamp } from '../utils/format';
+import HistoryWindowControl from '../components/HistoryWindowControl';
+import { formatCompactNumber, formatNumber, formatTimestamp } from '../utils/format';
 
 const { Text } = Typography;
 
@@ -29,10 +30,12 @@ function formatCooldown(seconds: number): string {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [historyLimit, setHistoryLimit] = useState(200);
+  const [historyOffset, setHistoryOffset] = useState(0);
   const fetchOverview = useCallback(() => getOverview(), []);
-  const fetchHistory = useCallback(() => getChainHistory(200), []);
+  const fetchHistory = useCallback(() => getChainHistory(historyLimit, historyOffset), [historyLimit, historyOffset]);
   const { data, loading, refresh: refreshOverview } = usePolling(fetchOverview, 0);
-  const { data: historyData, refresh: refreshHistory } = usePolling(fetchHistory, 0);
+  const { data: historyData, refresh: refreshHistory } = usePolling(fetchHistory, 0, [historyLimit, historyOffset]);
   const { lastMessage } = useWebSocket();
   const [events, setEvents] = useState<{ time: string; type: string; detail: string }[]>([]);
   const [sampling, setSampling] = useState(false);
@@ -84,11 +87,11 @@ export default function Dashboard() {
   const historyOption = {
     tooltip: { trigger: 'axis' as const },
     legend: { top: 0 },
-    grid: { left: 48, right: 56, top: 44, bottom: 32 },
+    grid: { left: 48, right: 56, top: 44, bottom: 32, containLabel: true },
     xAxis: { type: 'category' as const, data: historyLabels },
     yAxis: [
-      { type: 'value' as const, name: '算力/区块' },
-      { type: 'value' as const, name: '验证者', minInterval: 1 },
+      { type: 'value' as const, name: '算力/区块', axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
+      { type: 'value' as const, name: '验证者', minInterval: 1, axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
     ],
     series: [
       {
@@ -212,7 +215,19 @@ export default function Dashboard() {
 
       <Card
         title="全局历史趋势"
-        extra={<Button size="small" loading={sampling} onClick={handleSampleNow}>记录快照</Button>}
+        extra={(
+          <Space wrap>
+            <HistoryWindowControl
+              limit={historyLimit}
+              offset={historyOffset}
+              total={historyData?.total || 0}
+              shown={chainHistory.length}
+              onLimitChange={setHistoryLimit}
+              onOffsetChange={setHistoryOffset}
+            />
+            <Button size="small" loading={sampling} onClick={handleSampleNow}>记录快照</Button>
+          </Space>
+        )}
         style={{ marginBottom: 16 }}
       >
         <ReactECharts option={historyOption} style={{ height: 280 }} />

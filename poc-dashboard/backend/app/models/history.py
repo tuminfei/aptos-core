@@ -162,43 +162,76 @@ async def upsert_reward_epoch_estimates(kind: str, rows: list[dict[str, Any]]) -
     await db.commit()
 
 
-async def get_chain_history(limit: int = 200) -> list[dict]:
+async def count_chain_history() -> int:
+    db = await get_db()
+    cursor = await db.execute("SELECT COUNT(*) AS total FROM chain_snapshots")
+    row = await cursor.fetchone()
+    return int(row["total"] or 0)
+
+
+async def get_chain_history(limit: int = 200, offset: int = 0) -> list[dict]:
     db = await get_db()
     rows = await db.execute_fetchall(
         """
         SELECT * FROM chain_snapshots
         ORDER BY sampled_at DESC, id DESC
-        LIMIT ?
+        LIMIT ? OFFSET ?
         """,
-        (limit,),
+        (limit, offset),
     )
     return [_row_to_dict(row) for row in reversed(rows)]
 
 
-async def get_validator_history(address: str, limit: int = 200) -> list[dict]:
+async def count_validator_history(address: str) -> int:
+    db = await get_db()
+    cursor = await db.execute(
+        """
+        SELECT COUNT(*) AS total FROM validator_snapshots
+        WHERE lower(address) = lower(?)
+        """,
+        (address,),
+    )
+    row = await cursor.fetchone()
+    return int(row["total"] or 0)
+
+
+async def get_validator_history(address: str, limit: int = 200, offset: int = 0) -> list[dict]:
     db = await get_db()
     rows = await db.execute_fetchall(
         """
         SELECT * FROM validator_snapshots
         WHERE lower(address) = lower(?)
         ORDER BY sampled_at DESC, id DESC
-        LIMIT ?
+        LIMIT ? OFFSET ?
         """,
-        (address, limit),
+        (address, limit, offset),
     )
     return [_row_to_dict(row) for row in reversed(rows)]
 
 
-async def get_user_history(address: str, limit: int = 200) -> list[dict]:
+async def count_user_history(address: str) -> int:
+    db = await get_db()
+    cursor = await db.execute(
+        """
+        SELECT COUNT(*) AS total FROM user_snapshots
+        WHERE lower(address) = lower(?)
+        """,
+        (address,),
+    )
+    row = await cursor.fetchone()
+    return int(row["total"] or 0)
+
+
+async def get_user_history(address: str, limit: int = 200, offset: int = 0) -> list[dict]:
     db = await get_db()
     rows = await db.execute_fetchall(
         """
         SELECT * FROM user_snapshots
         WHERE lower(address) = lower(?)
         ORDER BY sampled_at DESC, id DESC
-        LIMIT ?
+        LIMIT ? OFFSET ?
         """,
-        (address, limit),
+        (address, limit, offset),
     )
     return [_row_to_dict(row) for row in reversed(rows)]
 

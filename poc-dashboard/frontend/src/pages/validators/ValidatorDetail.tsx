@@ -7,17 +7,20 @@ import { getValidatorSnapshotHistory } from '../../services/history';
 import { usePolling } from '../../hooks/usePolling';
 import { useEventRefresh } from '../../hooks/useEventRefresh';
 import AddressTag from '../../components/AddressTag';
+import HistoryWindowControl from '../../components/HistoryWindowControl';
 import StatusBadge from '../../components/StatusBadge';
 import AmountDisplay from '../../components/AmountDisplay';
-import { formatNumber, formatPercent, formatRewardAmount, formatRewardRate } from '../../utils/format';
+import { formatCompactNumber, formatNumber, formatPercent, formatRewardAmount, formatRewardRate } from '../../utils/format';
 
 export default function ValidatorDetail() {
   const { address } = useParams<{ address: string }>();
   const navigate = useNavigate();
+  const [historyLimit, setHistoryLimit] = useState(200);
+  const [historyOffset, setHistoryOffset] = useState(0);
   const fetchDetail = useCallback(() => getValidator(address!), [address]);
-  const fetchHistory = useCallback(() => getValidatorSnapshotHistory(address!), [address]);
+  const fetchHistory = useCallback(() => getValidatorSnapshotHistory(address!, historyLimit, historyOffset), [address, historyLimit, historyOffset]);
   const { data, loading, refresh } = usePolling(fetchDetail, 0, [address]);
-  const { data: historyData, refresh: refreshHistory } = usePolling(fetchHistory, 0, [address]);
+  const { data: historyData, refresh: refreshHistory } = usePolling(fetchHistory, 0, [address, historyLimit, historyOffset]);
   const [powerVal, setPowerVal] = useState<number>(0);
   const [showPower, setShowPower] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -34,11 +37,11 @@ export default function ValidatorDetail() {
   const historyOption = {
     tooltip: { trigger: 'axis' as const },
     legend: { top: 0 },
-    grid: { left: 56, right: 72, top: 44, bottom: 32 },
+    grid: { left: 56, right: 72, top: 44, bottom: 32, containLabel: true },
     xAxis: { type: 'category' as const, data: snapshotLabels },
     yAxis: [
-      { type: 'value' as const, name: '算力/人数' },
-      { type: 'value' as const, name: 'TOPO' },
+      { type: 'value' as const, name: '算力/人数', axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
+      { type: 'value' as const, name: 'TOPO', axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
     ],
     series: [
       {
@@ -162,7 +165,20 @@ export default function ValidatorDetail() {
         </Row>
       </Card>
 
-      <Card title="本地快照历史" style={{ marginBottom: 16 }}>
+      <Card
+        title="本地快照历史"
+        extra={(
+          <HistoryWindowControl
+            limit={historyLimit}
+            offset={historyOffset}
+            total={historyData?.total || 0}
+            shown={snapshots.length}
+            onLimitChange={setHistoryLimit}
+            onOffsetChange={setHistoryOffset}
+          />
+        )}
+        style={{ marginBottom: 16 }}
+      >
         <ReactECharts option={historyOption} style={{ height: 300 }} />
       </Card>
 
