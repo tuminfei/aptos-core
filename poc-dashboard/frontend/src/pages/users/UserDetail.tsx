@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Row, Col, Card, Statistic, Button, InputNumber, Space, Modal, message, Tag } from 'antd';
+import { Row, Col, Card, Statistic, Button, InputNumber, Space, Modal, message, Tag, Descriptions, Table } from 'antd';
 import ReactECharts from 'echarts-for-react';
 import { getUser, getPowerHistory } from '../../services/user';
 import { getUserSnapshotHistory } from '../../services/history';
@@ -31,12 +31,35 @@ export default function UserDetail() {
   const u = data || {};
   const balance = u.balance || {};
   const power = u.power || {};
+  const powerStore = u.power_store || {};
   const staking = u.staking || {};
   const rewards = u.rewards || {};
   const rewardRate = rewards.reward_rate || {};
   const history = historyData?.history || [];
   const snapshots = snapshotData?.history || [];
   const cumulativeRewards = snapshotData?.cumulative_rewards || {};
+  const formatBps = (bps: number) => `${(Number(bps || 0) / 100).toFixed(2)}%`;
+  const powerVersions = powerStore.versions || {};
+  const currentCalculation = powerStore.current_calculation || {};
+  const nextEpochCalculation = powerStore.next_epoch_calculation || {};
+  const versionRows = [
+    {
+      key: 'older',
+      slot: 'older',
+      effective_period: powerVersions.older?.effective_period || 0,
+      raw_power: powerVersions.older?.raw_power || 0,
+    },
+    {
+      key: 'newer',
+      slot: 'newer',
+      effective_period: powerVersions.newer?.effective_period || 0,
+      raw_power: powerVersions.newer?.raw_power || 0,
+    },
+  ];
+  const calcRows = [
+    { key: 'current', label: '当前 period', ...currentCalculation },
+    { key: 'next', label: '下一 epoch period', ...nextEpochCalculation },
+  ];
 
   const chartOption = {
     xAxis: { type: 'category' as const, data: history.map((h: any) => `P${h.period}`) },
@@ -92,6 +115,22 @@ export default function UserDetail() {
       },
     ],
   };
+  const versionColumns = [
+    { title: '原始版本槽', dataIndex: 'slot', width: 120, render: (v: string) => <Tag color={v === 'newer' ? 'blue' : 'default'}>{v}</Tag> },
+    { title: '生效 Period', dataIndex: 'effective_period', render: (v: number) => formatNumber(v || 0) },
+    { title: '原始算力 raw_power', dataIndex: 'raw_power', render: (v: number) => formatNumber(v || 0) },
+  ];
+  const calcColumns = [
+    { title: '目标', dataIndex: 'label', width: 140 },
+    { title: '目标 Period', dataIndex: 'target_period', render: (v: number) => formatNumber(v || 0) },
+    { title: '选中版本', dataIndex: 'selected_slot', render: (v: string) => <Tag>{v || 'none'}</Tag> },
+    { title: '基准 Period', dataIndex: 'base_period', render: (v: number) => formatNumber(v || 0) },
+    { title: '基准原始算力', dataIndex: 'base_power', render: (v: number) => formatNumber(v || 0) },
+    { title: '衰减周期数', dataIndex: 'periods_elapsed', render: (v: number) => formatNumber(v || 0) },
+    { title: '计算值', dataIndex: 'calculated_power', render: (v: number) => formatNumber(v || 0) },
+    { title: '链上返回值', dataIndex: 'chain_power', render: (v: number) => formatNumber(v || 0) },
+    { title: '差值', dataIndex: 'delta', render: (v: number) => formatNumber(v || 0) },
+  ];
 
   useEventRefresh(['epoch_changed', 'power_period_advanced', 'history_sampled'], refresh);
   useEventRefresh(['power_period_advanced'], refreshPowerHistory);
@@ -163,6 +202,47 @@ export default function UserDetail() {
           {rewards.is_validator_owner && <Tag color="blue">包含验证者佣金 {formatRewardAmount(rewards.estimated_owner_commission_octas || 0)}</Tag>}
           {rewards.delegated_to && rewards.delegated_to !== '0x0' ? <span style={{ color: '#666' }}>委托给 <AddressTag address={rewards.delegated_to} /></span> : <Tag>未委托</Tag>}
         </Space>
+      </Card>
+
+      <Card title="Power Store 原始版本与衰减" loading={loading} style={{ marginBottom: 16 }}>
+        <Descriptions bordered column={3} size="small" style={{ marginBottom: 16 }}>
+          <Descriptions.Item label="当前 Epoch">{formatNumber(powerStore.current_epoch || 0)}</Descriptions.Item>
+          <Descriptions.Item label="当前 Period">{formatNumber(powerStore.current_period || 0)}</Descriptions.Item>
+          <Descriptions.Item label="下一 Epoch 对应 Period">{formatNumber(powerStore.next_epoch_period || 0)}</Descriptions.Item>
+          <Descriptions.Item label="算力周期">{formatNumber(powerStore.power_period_in_epochs || 0)} Epoch</Descriptions.Item>
+          <Descriptions.Item label="保留系数 retention_bps">
+            {formatNumber(powerStore.retention_bps || 0)} ({formatBps(powerStore.retention_bps || 0)})
+          </Descriptions.Item>
+          <Descriptions.Item label="衰减系数 decay_bps">
+            {formatNumber(powerStore.decay_bps || 0)} ({formatBps(powerStore.decay_bps || 0)})
+          </Descriptions.Item>
+          <Descriptions.Item label="PowerStore 当前算力">{formatNumber(power.committed_power || 0)}</Descriptions.Item>
+          <Descriptions.Item label="Staking 有效算力">{formatNumber(powerStore.staking_effective_power || power.effective_power || 0)}</Descriptions.Item>
+          <Descriptions.Item label="下一 Epoch PowerStore 算力">{formatNumber(power.power_for_next_epoch || 0)}</Descriptions.Item>
+        </Descriptions>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} xl={9}>
+            <Table
+              title={() => '双版本原始算力'}
+              dataSource={versionRows}
+              columns={versionColumns}
+              rowKey="key"
+              pagination={false}
+              size="small"
+            />
+          </Col>
+          <Col xs={24} xl={15}>
+            <Table
+              title={() => '衰减计算路径'}
+              dataSource={calcRows}
+              columns={calcColumns}
+              rowKey="key"
+              pagination={false}
+              size="small"
+              scroll={{ x: 980 }}
+            />
+          </Col>
+        </Row>
       </Card>
 
       <Card title="算力历史" style={{ marginBottom: 16 }}>

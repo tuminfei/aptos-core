@@ -12,6 +12,13 @@ async def test_user_detail(client):
     assert "staking" in data
     assert data["balance"]["topo_octas"] == 100000000000
     assert data["power"]["committed_power"] == 5000
+    assert data["power_store"]["retention_bps"] == 9950
+    assert data["power_store"]["versions"]["older"]["effective_period"] == 20
+    assert data["power_store"]["versions"]["older"]["raw_power"] == 4000
+    assert data["power_store"]["versions"]["newer"]["effective_period"] == 23
+    assert data["power_store"]["versions"]["newer"]["raw_power"] == 5000
+    assert data["power_store"]["current_calculation"]["selected_slot"] == "newer"
+    assert data["power_store"]["current_calculation"]["calculated_power"] == 5000
     assert "rewards" in data
     assert data["rewards"]["auto_compound"] is True
     assert data["rewards"]["estimated_epoch_total_octas"] > 0
