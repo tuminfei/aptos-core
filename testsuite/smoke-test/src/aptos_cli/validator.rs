@@ -44,9 +44,12 @@ use std::{
 const TEST_POWER_PERIOD_IN_EPOCHS: u64 = 3;
 const VALIDATOR_SET_CHANGE_RETRY_ATTEMPTS: usize = 30;
 const VALIDATOR_SET_CHANGE_RETRY_DELAY: Duration = Duration::from_secs(2);
+const REGISTRY_WITHDRAW_RETRY_ATTEMPTS: usize = 60;
+const REGISTRY_WITHDRAW_RETRY_DELAY: Duration = Duration::from_secs(1);
 const FAUCET_FUND_RETRY_ATTEMPTS: usize = 50;
 const FAUCET_FUND_RETRY_DELAY: Duration = Duration::from_millis(100);
 const RECONFIGURATION_IN_PROGRESS_ERROR: &str = "ERECONFIGURATION_IN_PROGRESS";
+const COOLDOWN_ACTIVE_ERROR: &str = "ECOOLDOWN_ACTIVE";
 const FAUCET_CONNECTION_REFUSED_ERROR: &str = "Connection refused";
 const FAUCET_TCP_CONNECT_ERROR: &str = "tcp connect error";
 
@@ -1231,13 +1234,8 @@ async fn test_join_and_leave_validator() {
 
     gas_used += get_gas(cli.registry_undelegate(validator_cli_index).await.unwrap());
 
-    // Conservatively wait until the recurring lockup is over.
-    tokio::time::sleep(Duration::from_secs(10)).await;
-
     gas_used += get_gas(
-        cli.registry_withdraw_deposit(validator_cli_index)
-            .await
-            .unwrap(),
+        withdraw_registry_deposit_when_cooldown_elapsed(&cli, validator_cli_index).await,
     );
 
     cli.assert_account_balance_now(validator_cli_index, (3 * DEFAULT_FUNDED_COINS) - gas_used)
@@ -1625,7 +1623,22 @@ where
     let mut last_error = None;
     for attempt in 1..=VALIDATOR_SET_CHANGE_RETRY_ATTEMPTS {
         match submit().await {
-            Ok(summary) => return summary,
+            Ok(summary) if is_successful_transaction(&summary) => return summary,
+            Ok(summary) if is_reconfiguration_in_progress_summary(&summary) => {
+                info!(
+                    "{} committed during in-progress reconfiguration on attempt {}/{}; retrying after {:?}: {:?}",
+                    operation,
+                    attempt,
+                    VALIDATOR_SET_CHANGE_RETRY_ATTEMPTS,
+                    VALIDATOR_SET_CHANGE_RETRY_DELAY,
+                    summary.vm_status,
+                );
+                tokio::time::sleep(VALIDATOR_SET_CHANGE_RETRY_DELAY).await;
+            },
+            Ok(summary) => panic!(
+                "{} committed with non-retryable failure: {:?}",
+                operation, summary
+            ),
             Err(error) if is_reconfiguration_in_progress_error(&error) => {
                 last_error = Some(error);
                 info!(
@@ -1647,8 +1660,65 @@ where
     );
 }
 
+fn is_successful_transaction(summary: &TransactionSummary) -> bool {
+    summary.success.unwrap_or(false)
+}
+
+fn is_reconfiguration_in_progress_summary(summary: &TransactionSummary) -> bool {
+    matches!(
+        (&summary.success, &summary.vm_status),
+        (Some(false), Some(message)) if message.contains(RECONFIGURATION_IN_PROGRESS_ERROR)
+    )
+}
+
 fn is_reconfiguration_in_progress_error(error: &CliError) -> bool {
-    matches!(error, CliError::SimulationError(message) if message.contains(RECONFIGURATION_IN_PROGRESS_ERROR))
+    matches!(
+        error,
+        CliError::SimulationError(message)
+            if message.contains(RECONFIGURATION_IN_PROGRESS_ERROR)
+    )
+}
+
+async fn withdraw_registry_deposit_when_cooldown_elapsed(
+    cli: &CliTestFramework,
+    account_index: usize,
+) -> TransactionSummary {
+    let mut last_error = None;
+    for attempt in 1..=REGISTRY_WITHDRAW_RETRY_ATTEMPTS {
+        match cli.registry_withdraw_deposit(account_index).await {
+            Ok(summary) if is_successful_transaction(&summary) => return summary,
+            Ok(summary) => panic!(
+                "registry_withdraw_deposit committed with non-retryable failure: {:?}",
+                summary
+            ),
+            Err(error) if is_cooldown_active_error(&error) => {
+                last_error = Some(error);
+                info!(
+                    "registry_withdraw_deposit hit active cooldown on attempt {}/{}; retrying after {:?}",
+                    attempt,
+                    REGISTRY_WITHDRAW_RETRY_ATTEMPTS,
+                    REGISTRY_WITHDRAW_RETRY_DELAY,
+                );
+                tokio::time::sleep(REGISTRY_WITHDRAW_RETRY_DELAY).await;
+            },
+            Err(error) => panic!(
+                "registry_withdraw_deposit failed with non-retryable error: {:?}",
+                error
+            ),
+        }
+    }
+
+    panic!(
+        "registry_withdraw_deposit kept hitting active cooldown after {} attempts: {:?}",
+        REGISTRY_WITHDRAW_RETRY_ATTEMPTS, last_error
+    );
+}
+
+fn is_cooldown_active_error(error: &CliError) -> bool {
+    matches!(
+        error,
+        CliError::SimulationError(message) if message.contains(COOLDOWN_ACTIVE_ERROR)
+    )
 }
 
 async fn create_cli_account_from_faucet_when_ready(
