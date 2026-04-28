@@ -22,7 +22,7 @@ use std::{
     convert::TryFrom,
     fs::File,
     io::Read,
-    net::{Ipv4Addr, Ipv6Addr, ToSocketAddrs},
+    net::{IpAddr, Ipv4Addr, Ipv6Addr, ToSocketAddrs},
     path::Path,
     str::FromStr,
 };
@@ -335,6 +335,11 @@ impl TryFrom<&NetworkAddress> for HostAndPort {
 
     fn try_from(address: &NetworkAddress) -> Result<Self, Self::Error> {
         let socket_addr = address.to_socket_addrs()?.next().unwrap();
+        let socket_addr = if socket_addr.ip().is_unspecified() {
+            (IpAddr::V4(Ipv4Addr::LOCALHOST), socket_addr.port()).into()
+        } else {
+            socket_addr
+        };
         HostAndPort::from_str(&socket_addr.to_string())
     }
 }

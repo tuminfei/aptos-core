@@ -110,6 +110,13 @@ A validator's voting_power in ValidatorSet = staking_registry::get_validator_tot
 -  [Function `get_validator_config`](#0x1_stake_get_validator_config)
 -  [Function `stake_pool_exists`](#0x1_stake_stake_pool_exists)
 -  [Function `get_pending_transaction_fee`](#0x1_stake_get_pending_transaction_fee)
+-  [Function `get_active_validator_count`](#0x1_stake_get_active_validator_count)
+-  [Function `get_pending_active_validator_count`](#0x1_stake_get_pending_active_validator_count)
+-  [Function `get_pending_inactive_validator_count`](#0x1_stake_get_pending_inactive_validator_count)
+-  [Function `get_active_validators`](#0x1_stake_get_active_validators)
+-  [Function `get_pending_active_validators`](#0x1_stake_get_pending_active_validators)
+-  [Function `get_pending_inactive_validators`](#0x1_stake_get_pending_inactive_validators)
+-  [Function `get_current_epoch_validators`](#0x1_stake_get_current_epoch_validators)
 -  [Function `initialize`](#0x1_stake_initialize)
 -  [Function `store_topo_coin_mint_cap`](#0x1_stake_store_topo_coin_mint_cap)
 -  [Function `remove_validators`](#0x1_stake_remove_validators)
@@ -159,6 +166,8 @@ A validator's voting_power in ValidatorSet = staking_registry::get_validator_tot
 -  [Function `calculate_rewards_amount`](#0x1_stake_calculate_rewards_amount)
 -  [Function `append`](#0x1_stake_append)
 -  [Function `find_validator`](#0x1_stake_find_validator)
+-  [Function `get_validator_addresses`](#0x1_stake_get_validator_addresses)
+-  [Function `range_end`](#0x1_stake_range_end)
 -  [Function `generate_validator_info`](#0x1_stake_generate_validator_info)
 -  [Function `update_voting_power_increase`](#0x1_stake_update_voting_power_increase)
 -  [Function `assert_stake_pool_exists`](#0x1_stake_assert_stake_pool_exists)
@@ -1833,6 +1842,221 @@ Returns the pending transaction fee that is accumulated in current epoch.
     };
 
     result
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_get_active_validator_count"></a>
+
+## Function `get_active_validator_count`
+
+Return the number of active validators in the current epoch.
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_active_validator_count">get_active_validator_count</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_active_validator_count">get_active_validator_count</a>(): u64 <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
+    <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework).active_validators.length()
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_get_pending_active_validator_count"></a>
+
+## Function `get_pending_active_validator_count`
+
+Return the number of validators waiting to become active next epoch.
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_active_validator_count">get_pending_active_validator_count</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_active_validator_count">get_pending_active_validator_count</a>(): u64 <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
+    <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework).pending_active.length()
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_get_pending_inactive_validator_count"></a>
+
+## Function `get_pending_inactive_validator_count`
+
+Return the number of validators still active this epoch but leaving next epoch.
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_inactive_validator_count">get_pending_inactive_validator_count</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_inactive_validator_count">get_pending_inactive_validator_count</a>(): u64 <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
+    <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework).pending_inactive.length()
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_get_active_validators"></a>
+
+## Function `get_active_validators`
+
+Return active validator pool addresses in current-epoch order.
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_active_validators">get_active_validators</a>(offset: u64, limit: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_active_validators">get_active_validators</a>(
+    offset: u64,
+    limit: u64
+): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
+    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <a href="stake.md#0x1_stake_get_validator_addresses">get_validator_addresses</a>(&validator_set.active_validators, offset, limit)
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_get_pending_active_validators"></a>
+
+## Function `get_pending_active_validators`
+
+Return pending-active validator pool addresses.
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_active_validators">get_pending_active_validators</a>(offset: u64, limit: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_active_validators">get_pending_active_validators</a>(
+    offset: u64,
+    limit: u64
+): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
+    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <a href="stake.md#0x1_stake_get_validator_addresses">get_validator_addresses</a>(&validator_set.pending_active, offset, limit)
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_get_pending_inactive_validators"></a>
+
+## Function `get_pending_inactive_validators`
+
+Return pending-inactive validator pool addresses.
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_inactive_validators">get_pending_inactive_validators</a>(offset: u64, limit: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_inactive_validators">get_pending_inactive_validators</a>(
+    offset: u64,
+    limit: u64
+): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
+    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <a href="stake.md#0x1_stake_get_validator_addresses">get_validator_addresses</a>(&validator_set.pending_inactive, offset, limit)
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_get_current_epoch_validators"></a>
+
+## Function `get_current_epoch_validators`
+
+Return validator addresses that can vote in the current epoch:
+active validators followed by pending-inactive validators.
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_current_epoch_validators">get_current_epoch_validators</a>(offset: u64, limit: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_current_epoch_validators">get_current_epoch_validators</a>(
+    offset: u64,
+    limit: u64
+): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
+    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> addresses = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> total = validator_set.active_validators.length()
+        + validator_set.pending_inactive.length();
+    <b>let</b> i = offset;
+    <b>let</b> end = <a href="stake.md#0x1_stake_range_end">range_end</a>(offset, limit, total);
+    <b>while</b> (i &lt; end) {
+        <b>if</b> (i &lt; validator_set.active_validators.length()) {
+            addresses.push_back(validator_set.active_validators.borrow(i).addr);
+        } <b>else</b> {
+            <b>let</b> pending_index = i - validator_set.active_validators.length();
+            addresses.push_back(
+                validator_set.pending_inactive.borrow(pending_index).addr
+            );
+        };
+        i += 1;
+    };
+    addresses
 }
 </code></pre>
 
@@ -4325,6 +4549,74 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 </details>
 
+<a id="0x1_stake_get_validator_addresses"></a>
+
+## Function `get_validator_addresses`
+
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_get_validator_addresses">get_validator_addresses</a>(validators: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>&gt;, offset: u64, limit: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_get_validator_addresses">get_validator_addresses</a>(
+    validators: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a>&gt;,
+    offset: u64,
+    limit: u64
+): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; {
+    <b>let</b> addresses = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> len = validators.length();
+    <b>let</b> i = offset;
+    <b>let</b> end = <a href="stake.md#0x1_stake_range_end">range_end</a>(offset, limit, len);
+    <b>while</b> (i &lt; end) {
+        addresses.push_back(validators.borrow(i).addr);
+        i += 1;
+    };
+    addresses
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_range_end"></a>
+
+## Function `range_end`
+
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_range_end">range_end</a>(offset: u64, limit: u64, len: u64): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_range_end">range_end</a>(offset: u64, limit: u64, len: u64): u64 {
+    <b>if</b> (offset &gt;= len || limit == 0) {
+        <b>return</b> offset
+    };
+    <b>let</b> remaining = len - offset;
+    <b>if</b> (limit &gt;= remaining) {
+        len
+    } <b>else</b> {
+        offset + limit
+    }
+}
+</code></pre>
+
+
+
+</details>
+
 <a id="0x1_stake_generate_validator_info"></a>
 
 ## Function `generate_validator_info`
@@ -4612,30 +4904,6 @@ All arithmetic uses u128 to avoid overflow before the final division.
 <b>global</b> <a href="stake.md#0x1_stake_ghost_active_num">ghost_active_num</a>: u64;
 <a id="0x1_stake_ghost_pending_inactive_num"></a>
 <b>global</b> <a href="stake.md#0x1_stake_ghost_pending_inactive_num">ghost_pending_inactive_num</a>: u64;
-</code></pre>
-
-
-
-
-<a id="0x1_stake_spec_is_allowed"></a>
-
-
-<pre><code><b>fun</b> <a href="stake.md#0x1_stake_spec_is_allowed">spec_is_allowed</a>(<a href="account.md#0x1_account">account</a>: <b>address</b>): bool {
-   <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@aptos_framework)) { <b>true</b> }
-   <b>else</b> {
-       <b>let</b> allowed = <b>global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@aptos_framework);
-       contains(allowed.accounts, <a href="account.md#0x1_account">account</a>)
-   }
-}
-</code></pre>
-
-
-
-
-<a id="0x1_stake_spec_find_validator"></a>
-
-
-<pre><code><b>fun</b> <a href="stake.md#0x1_stake_spec_find_validator">spec_find_validator</a>(v: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a>&gt;, addr: <b>address</b>): Option&lt;u64&gt;;
 </code></pre>
 
 
@@ -5599,6 +5867,30 @@ All arithmetic uses u128 to avoid overflow before the final division.
         len(validator_set.active_validators)
             + len(validator_set.pending_inactive)
     );
+</code></pre>
+
+
+
+
+<a id="0x1_stake_spec_is_allowed"></a>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_spec_is_allowed">spec_is_allowed</a>(<a href="account.md#0x1_account">account</a>: <b>address</b>): bool {
+   <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@aptos_framework)) { <b>true</b> }
+   <b>else</b> {
+       <b>let</b> allowed = <b>global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@aptos_framework);
+       contains(allowed.accounts, <a href="account.md#0x1_account">account</a>)
+   }
+}
+</code></pre>
+
+
+
+
+<a id="0x1_stake_spec_find_validator"></a>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_spec_find_validator">spec_find_validator</a>(v: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a>&gt;, addr: <b>address</b>): Option&lt;u64&gt;;
 </code></pre>
 
 

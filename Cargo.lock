@@ -16,7 +16,6 @@ dependencies = [
 name = "abstract-domain-derive"
 version = "0.1.0"
 dependencies = [
- "move-stackless-bytecode",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
@@ -3322,17 +3321,12 @@ dependencies = [
  "aptos-native-interface",
  "aptos-types",
  "bcs 0.1.4",
- "dir-diff",
- "file_diff",
  "move-core-types",
- "move-package",
- "move-unit-test",
  "move-vm-runtime",
  "move-vm-types",
  "sha2 0.9.9",
  "sha3 0.9.1",
  "smallvec",
- "tempfile",
 ]
 
 [[package]]
@@ -8349,7 +8343,7 @@ dependencies = [
  "pq-sys",
  "r2d2",
  "serde_json",
- "uuid 0.8.2",
+ "uuid 1.11.0",
 ]
 
 [[package]]
@@ -8457,15 +8451,6 @@ dependencies = [
  "block-buffer 0.11.0",
  "crypto-common 0.2.0",
  "ctutils",
-]
-
-[[package]]
-name = "dir-diff"
-version = "0.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7ad16bf5f84253b50d6557681c58c3ab67c47c77d39fed9aeb56e947290bd10"
-dependencies = [
- "walkdir",
 ]
 
 [[package]]
@@ -9449,12 +9434,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "file_diff"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31a7a908b8f32538a2143e59a6e4e2508988832d5d4d6f7c156b3cbc762643a5"
-
-[[package]]
 name = "filetime"
 version = "0.2.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9533,7 +9512,7 @@ checksum = "e29e5681dc8556fb9df1409e95eae050e12e8776394313da3546dcb8cf390c73"
 dependencies = [
  "az",
  "bytemuck",
- "half 1.8.2",
+ "half 2.2.1",
  "typenum",
 ]
 
@@ -13283,15 +13262,11 @@ dependencies = [
  "move-compiler-v2",
  "move-core-types",
  "move-docgen",
- "move-package",
- "move-prover",
- "move-unit-test",
  "move-vm-runtime",
  "move-vm-types",
  "sha2 0.9.9",
  "sha3 0.9.1",
  "smallvec",
- "tempfile",
  "walkdir",
 ]
 
@@ -19936,7 +19911,7 @@ dependencies = [
  "errno",
  "js-sys",
  "libc",
- "rustix 0.37.27",
+ "rustix 0.38.28",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "wasm-bindgen",
  "winapi 0.3.9",
