@@ -16,6 +16,7 @@ dependencies = [
 name = "abstract-domain-derive"
 version = "0.1.0"
 dependencies = [
+ "move-stackless-bytecode",
  "proc-macro2",
  "quote",
  "syn 1.0.109",
@@ -3321,12 +3322,17 @@ dependencies = [
  "aptos-native-interface",
  "aptos-types",
  "bcs 0.1.4",
+ "dir-diff",
+ "file_diff",
  "move-core-types",
+ "move-package",
+ "move-unit-test",
  "move-vm-runtime",
  "move-vm-types",
  "sha2 0.9.9",
  "sha3 0.9.1",
  "smallvec",
+ "tempfile",
 ]
 
 [[package]]
@@ -8454,6 +8460,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dir-diff"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7ad16bf5f84253b50d6557681c58c3ab67c47c77d39fed9aeb56e947290bd10"
+dependencies = [
+ "walkdir",
+]
+
+[[package]]
 name = "dirs"
 version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9432,6 +9447,12 @@ dependencies = [
  "uncased",
  "version_check",
 ]
+
+[[package]]
+name = "file_diff"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31a7a908b8f32538a2143e59a6e4e2508988832d5d4d6f7c156b3cbc762643a5"
 
 [[package]]
 name = "filetime"
@@ -13262,11 +13283,15 @@ dependencies = [
  "move-compiler-v2",
  "move-core-types",
  "move-docgen",
+ "move-package",
+ "move-prover",
+ "move-unit-test",
  "move-vm-runtime",
  "move-vm-types",
  "sha2 0.9.9",
  "sha3 0.9.1",
  "smallvec",
+ "tempfile",
  "walkdir",
 ]
 
