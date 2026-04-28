@@ -46,6 +46,23 @@ CREATE TABLE IF NOT EXISTS managed_keys (
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS dapp_demo_configs (
+    app_admin           TEXT PRIMARY KEY,
+    module_address      TEXT NOT NULL,
+    label               TEXT,
+    metadata_uri        TEXT,
+    initial_supply      INTEGER NOT NULL DEFAULT 0,
+    price_per_equity    INTEGER NOT NULL DEFAULT 0,
+    auto_whitelist      INTEGER NOT NULL DEFAULT 0,
+    deploy_tx_hash      TEXT,
+    register_tx_hash    TEXT,
+    whitelist_tx_hash   TEXT,
+    created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_dapp_demo_module ON dapp_demo_configs(module_address);
+
 CREATE TABLE IF NOT EXISTS chain_snapshots (
     id                              INTEGER PRIMARY KEY AUTOINCREMENT,
     sampled_at                      TEXT NOT NULL,

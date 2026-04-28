@@ -48,6 +48,8 @@ def patch_chain_client(mock_client, monkeypatch):
         "app.api.power",
         "app.api.governance",
         "app.api.staking",
+        "app.api.dapps",
+        "app.services.dapp_svc",
     ):
         module = __import__(module_name, fromlist=["get_chain_client"])
         monkeypatch.setattr(module, "get_chain_client", lambda: mock_client)

@@ -87,6 +87,9 @@ class MockChainClient:
     async def get_account(self, address: str) -> dict:
         return {"sequence_number": "0", "authentication_key": address}
 
+    async def account_exists(self, address: str) -> bool:
+        return True
+
     async def get_account_resource(self, address: str, resource_type: str) -> dict | None:
         key = f"{address}:{resource_type}"
         if key in self._resources:

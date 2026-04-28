@@ -1,0 +1,5 @@
+.generated/
+.logs/
+.pids/
+frontend/dist/
+poc-validator-cluster/

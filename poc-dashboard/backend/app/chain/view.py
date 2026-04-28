@@ -332,6 +332,54 @@ async def get_effective_weight_pbs(client: ChainClient, admin: str) -> int:
     return int(r[0])
 
 
+async def is_app_eligible_for_poc(client: ChainClient, admin: str) -> bool:
+    r = await client.call_view("0x1::poc_registry::is_app_eligible_for_poc", args=[admin])
+    return bool(r[0])
+
+
+# --- poc_demo test app ---
+
+async def demo_exists_app(client: ChainClient, module_address: str, admin: str) -> bool:
+    r = await client.call_view(f"{module_address}::poc_demo::exists_app", args=[admin])
+    return bool(r[0])
+
+
+async def demo_price_per_equity(client: ChainClient, module_address: str, admin: str) -> int:
+    r = await client.call_view(f"{module_address}::poc_demo::price_per_equity", args=[admin])
+    return int(r[0])
+
+
+async def demo_trade_count(client: ChainClient, module_address: str, admin: str) -> int:
+    r = await client.call_view(f"{module_address}::poc_demo::trade_count", args=[admin])
+    return int(r[0])
+
+
+async def demo_total_equity_sold(client: ChainClient, module_address: str, admin: str) -> int:
+    r = await client.call_view(f"{module_address}::poc_demo::total_equity_sold", args=[admin])
+    return int(r[0])
+
+
+async def demo_custody_inventory(client: ChainClient, module_address: str, admin: str) -> int:
+    r = await client.call_view(f"{module_address}::poc_demo::custody_inventory", args=[admin])
+    return int(r[0])
+
+
+async def demo_expected_payment(client: ChainClient, module_address: str, admin: str, equity_amount: int) -> int:
+    r = await client.call_view(
+        f"{module_address}::poc_demo::expected_payment",
+        args=[admin, str(equity_amount)],
+    )
+    return int(r[0])
+
+
+async def demo_user_equity_balance(client: ChainClient, module_address: str, admin: str, user: str) -> int:
+    r = await client.call_view(
+        f"{module_address}::poc_demo::user_equity_balance",
+        args=[admin, user],
+    )
+    return int(r[0])
+
+
 # --- balance ---
 
 async def get_topo_balance(client: ChainClient, address: str) -> int:

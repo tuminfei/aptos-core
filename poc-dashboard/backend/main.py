@@ -9,6 +9,7 @@ from app.chain.keys import get_key_manager
 from app.api.errors import AppError, app_error_handler
 from app.services.history_svc import start_sampler, stop_sampler
 from app.services.monitor_svc import start_monitor, stop_monitor
+from app.services.dapp_svc import stop_all_trade_tasks
 
 
 @asynccontextmanager
@@ -22,6 +23,7 @@ async def lifespan(app: FastAPI):
     if settings.server.history_sampler_enabled:
         await start_sampler(settings.server.history_sampler_interval_secs)
     yield
+    await stop_all_trade_tasks()
     await stop_sampler()
     await stop_monitor()
     await close_db()
