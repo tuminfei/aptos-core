@@ -4,6 +4,7 @@ from app.chain import view
 from app.chain.transaction import submit_entry_function
 from app.chain.keys import get_key_manager
 from app.models import operation_log
+from app.services.cache_svc import invalidate_many
 from app.api.errors import ChainTxError
 
 router = APIRouter(tags=["governance"])
@@ -21,6 +22,7 @@ async def force_end_epoch():
             "0x1::topo_governance::force_end_epoch_test_only",
         )
         await operation_log.create_log("force_end_epoch", None, {"old_epoch": old_epoch}, tx, "success")
+        await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
         return {"tx_hash": tx, "old_epoch": old_epoch, "success": True}
     except Exception as e:
         await operation_log.create_log("force_end_epoch", None, None, None, "failed", str(e))

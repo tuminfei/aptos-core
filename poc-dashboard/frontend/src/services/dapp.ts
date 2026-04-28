@@ -83,7 +83,7 @@ export async function createDemoDApp(params: {
   max_gas?: number;
   gas_unit_price?: number;
 }) {
-  const { data } = await api.post('/dapps/demo/create', params);
+  const { data } = await api.post('/dapps/demo/create', params, { timeout: 300000 });
   return data;
 }
 
@@ -138,5 +138,15 @@ export async function stopDemoAutoTrade(params: { app_admin: string }) {
 
 export async function getDemoAutoTradeStatus(app_admin?: string) {
   const { data } = await api.get('/dapps/demo/auto-trade/status', { params: { app_admin } });
+  return data;
+}
+
+export async function getContributionEvents(params: {
+  contributor?: string;
+  app_admin?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const { data } = await api.get('/contributions', { params });
   return data;
 }

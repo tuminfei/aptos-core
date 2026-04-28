@@ -2,6 +2,7 @@ from fastapi import APIRouter, Query
 from app.chain.client import get_chain_client
 from app.chain import view
 from app.services import rewards_svc
+from app.services.cache_svc import get_or_set
 
 router = APIRouter(tags=["users"])
 BPS_DENOMINATOR = 10000
@@ -126,6 +127,10 @@ def period_for_epoch(epoch: int, power_period_in_epochs: int) -> int:
 
 @router.get("/users/{address}")
 async def user_detail(address: str):
+    return await get_or_set(f"user:detail:{address.lower()}", lambda: _user_detail_uncached(address), ttl_secs=10.0)
+
+
+async def _user_detail_uncached(address: str):
     client = get_chain_client()
 
     balance_octas = await view.get_topo_balance(client, address)

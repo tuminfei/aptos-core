@@ -70,13 +70,19 @@ class ChainClient:
     async def wait_for_transaction(self, tx_hash: str, timeout_secs: int = 180) -> dict:
         import asyncio
         for _ in range(timeout_secs * 2):
-            resp = await self._client.get(f"/transactions/by_hash/{tx_hash}")
-            if resp.status_code == 200:
-                data = resp.json()
+            data = await self.get_transaction_by_hash(tx_hash)
+            if data:
                 if data.get("type") != "pending_transaction":
                     return data
             await asyncio.sleep(0.5)
         raise ChainError(f"Transaction {tx_hash} not confirmed within {timeout_secs}s")
+
+    async def get_transaction_by_hash(self, tx_hash: str) -> dict | None:
+        resp = await self._client.get(f"/transactions/by_hash/{tx_hash}")
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+        return resp.json()
 
     async def get_events(self, address: str, event_handle: str, field_name: str,
                          start: int = 0, limit: int = 25) -> list:

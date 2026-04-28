@@ -118,7 +118,33 @@ class MockChainClient:
         return {"hash": tx_hash}
 
     async def wait_for_transaction(self, tx_hash: str, timeout_secs: int = 30) -> dict:
-        return {"hash": tx_hash, "success": True, "type": "user_transaction", "vm_status": "Executed successfully"}
+        txn = await self.get_transaction_by_hash(tx_hash)
+        if txn:
+            return txn
+        return {"hash": tx_hash, "success": True, "type": "user_transaction", "vm_status": "Executed successfully", "events": []}
+
+    async def get_transaction_by_hash(self, tx_hash: str) -> dict | None:
+        tx = next((item for item in self.submitted_txns if item.get("hash") == tx_hash), None)
+        events = []
+        if tx and tx.get("payload", {}).get("function", "").endswith("::buy_equity"):
+            args = tx.get("payload", {}).get("arguments", [])
+            events = [{
+                "type": "0x1::poc_contribution::ContributionEvent",
+                "data": {
+                    "contributor": tx.get("sender", ""),
+                    "equity_token": "0xasset",
+                    "equity_amount": args[1] if len(args) > 1 else "0",
+                    "app_address": tx.get("payload", {}).get("function", "").split("::")[0],
+                },
+            }]
+        return {
+            "hash": tx_hash,
+            "version": str(self._tx_counter),
+            "success": True,
+            "type": "user_transaction",
+            "vm_status": "Executed successfully",
+            "events": events,
+        }
 
     async def get_events(self, address, event_handle, field_name, start=0, limit=25) -> list:
         return [

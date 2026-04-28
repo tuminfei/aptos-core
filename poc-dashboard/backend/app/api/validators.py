@@ -7,6 +7,7 @@ from app.chain.transaction import submit_entry_function
 from app.chain.keys import get_key_manager
 from app.models import operation_log
 from app.services.validator_svc import get_validators, get_validator_detail, prepare_join
+from app.services.cache_svc import get_or_set, invalidate_many
 from app.api.errors import ValidatorNotFound, ParamError, ChainTxError
 
 router = APIRouter(tags=["validators"])
@@ -42,7 +43,11 @@ class PrepareJoinReq(BaseModel):
 @router.get("/validators")
 async def list_validators(status: str = Query("all")):
     client = get_chain_client()
-    validators = await get_validators(client, status)
+    validators = await get_or_set(
+        f"validators:list:{status}",
+        lambda: get_validators(client, status),
+        ttl_secs=10.0,
+    )
     return {"total": len(validators), "validators": validators}
 
 
@@ -50,7 +55,11 @@ async def list_validators(status: str = Query("all")):
 async def validator_detail(address: str):
     client = get_chain_client()
     try:
-        detail = await get_validator_detail(client, address)
+        detail = await get_or_set(
+            f"validator:detail:{address.lower()}",
+            lambda: get_validator_detail(client, address),
+            ttl_secs=10.0,
+        )
         return detail
     except Exception as e:
         raise ValidatorNotFound(str(e))
@@ -67,6 +76,7 @@ async def stage_power(req: StagePowerReq):
             args=[req.user_address, str(req.power)],
         )
         await operation_log.create_log("stage_power", req.user_address, {"power": req.power}, tx, "success")
+        await invalidate_many("user:", "validators:", "validator:")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("stage_power", req.user_address, {"power": req.power}, None, "failed", str(e))
@@ -87,6 +97,7 @@ async def register_validator(req: RegisterReq):
             args=[str(req.commission_bps)],
         )
         await operation_log.create_log("register_validator", req.validator_address, {"commission_bps": req.commission_bps}, tx, "success")
+        await invalidate_many("validators:", f"validator:detail:{req.validator_address.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("register_validator", req.validator_address, None, None, "failed", str(e))
@@ -107,6 +118,7 @@ async def join_validator_set(req: JoinLeaveReq):
             args=[req.pool_address],
         )
         await operation_log.create_log("join_validator_set", req.pool_address, None, tx, "success")
+        await invalidate_many("validators:", f"validator:detail:{req.pool_address.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("join_validator_set", req.pool_address, None, None, "failed", str(e))
@@ -127,6 +139,7 @@ async def leave_validator_set(req: JoinLeaveReq):
             args=[req.pool_address],
         )
         await operation_log.create_log("leave_validator_set", req.pool_address, None, tx, "success")
+        await invalidate_many("validators:", f"validator:detail:{req.pool_address.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("leave_validator_set", req.pool_address, None, None, "failed", str(e))
@@ -177,4 +190,5 @@ async def prepare_join_endpoint(req: PrepareJoinReq):
         force_epochs_after_join=req.force_epochs_after_join,
     )
     result["validator_address"] = validator_address
+    await invalidate_many("validators:", f"validator:detail:{validator_address.lower()}", "user:")
     return result

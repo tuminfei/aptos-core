@@ -63,6 +63,27 @@ CREATE TABLE IF NOT EXISTS dapp_demo_configs (
 
 CREATE INDEX IF NOT EXISTS idx_dapp_demo_module ON dapp_demo_configs(module_address);
 
+CREATE TABLE IF NOT EXISTS contribution_events (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    tx_hash         TEXT NOT NULL,
+    event_index     INTEGER NOT NULL DEFAULT 0,
+    version         INTEGER NOT NULL DEFAULT 0,
+    app_admin       TEXT,
+    app_address     TEXT NOT NULL,
+    contributor     TEXT NOT NULL,
+    equity_token    TEXT,
+    equity_amount   INTEGER NOT NULL DEFAULT 0,
+    event_type      TEXT NOT NULL,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    raw_event       TEXT,
+    UNIQUE(tx_hash, event_index)
+);
+
+CREATE INDEX IF NOT EXISTS idx_contribution_events_contributor ON contribution_events(contributor, created_at);
+CREATE INDEX IF NOT EXISTS idx_contribution_events_app_admin ON contribution_events(app_admin, created_at);
+CREATE INDEX IF NOT EXISTS idx_contribution_events_app_address ON contribution_events(app_address, created_at);
+CREATE INDEX IF NOT EXISTS idx_contribution_events_tx_hash ON contribution_events(tx_hash);
+
 CREATE TABLE IF NOT EXISTS chain_snapshots (
     id                              INTEGER PRIMARY KEY AUTOINCREMENT,
     sampled_at                      TEXT NOT NULL,

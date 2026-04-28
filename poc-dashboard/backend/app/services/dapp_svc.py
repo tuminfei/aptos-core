@@ -12,7 +12,8 @@ from app.chain import view
 from app.chain.client import ChainClient, get_chain_client
 from app.chain.keys import Ed25519Key, get_key_manager
 from app.chain.transaction import submit_entry_function
-from app.models import dapp_demo, operation_log, watchlist
+from app.models import contribution_event, dapp_demo, operation_log, watchlist
+from app.services.cache_svc import invalidate_many
 
 
 DEFAULT_MAX_GAS = 400_000
@@ -69,6 +70,62 @@ def _normalize_address(addr: str) -> str:
     if not value:
         return value
     return value if value.startswith("0x") else f"0x{value}"
+
+
+def _event_address(value) -> str:
+    if isinstance(value, str):
+        return _normalize_address(value)
+    if isinstance(value, dict):
+        for key in ("inner", "address", "object", "object_address"):
+            if key in value:
+                return _event_address(value[key])
+    return str(value or "")
+
+
+def _extract_contribution_events(txn: dict, *, app_admin: str = "") -> list[dict]:
+    tx_hash = txn.get("hash", "")
+    try:
+        version = int(txn.get("version", 0) or 0)
+    except Exception:
+        version = 0
+
+    rows: list[dict] = []
+    for index, event in enumerate(txn.get("events") or []):
+        event_type = str(event.get("type") or "")
+        if not event_type.endswith("::poc_contribution::ContributionEvent"):
+            continue
+        data = event.get("data") or {}
+        rows.append({
+            "tx_hash": tx_hash,
+            "event_index": index,
+            "version": version,
+            "app_admin": _normalize_address(app_admin),
+            "app_address": _event_address(data.get("app_address")),
+            "contributor": _event_address(data.get("contributor")),
+            "equity_token": _event_address(data.get("equity_token")),
+            "equity_amount": int(data.get("equity_amount") or 0),
+            "event_type": event_type,
+            "raw_event": event,
+        })
+    return rows
+
+
+async def persist_contribution_events_from_tx(
+    client: ChainClient,
+    tx_hash: str,
+    *,
+    app_admin: str = "",
+) -> list[dict]:
+    txn = await client.get_transaction_by_hash(tx_hash)
+    if not txn or txn.get("type") == "pending_transaction":
+        return []
+    events = _extract_contribution_events(txn, app_admin=app_admin)
+    if not events:
+        return []
+    await contribution_event.insert_events(events)
+    for event in events:
+        await broadcast("contribution_event", event)
+    return events
 
 
 def _ensure_demo_package(repo_root: Path) -> Path:
@@ -147,6 +204,123 @@ async def deploy_demo_package(
     if proc.returncode != 0 and '"success": true' not in output and '"Result": "Success"' not in output:
         raise RuntimeError(output[-1200:] or "部署 demo dapp 失败")
     return _extract_object_address(output), _extract_tx_hash(output) or "cli:deploy-poc-demo"
+
+
+async def run_poc_framework_script(
+    script_name: str,
+    *,
+    core_key: Ed25519Key,
+    core_address: str,
+    rest_url: str,
+    args: list[str] | None = None,
+    max_gas: int = DEFAULT_MAX_GAS,
+    gas_unit_price: int = DEFAULT_GAS_UNIT_PRICE,
+    timeout_secs: int = 180,
+) -> str:
+    repo_root = _repo_root()
+    script_path = repo_root / "poc-dashboard" / "scripts" / script_name
+    framework_dir = repo_root / "aptos-move" / "framework" / "aptos-framework"
+    if not script_path.exists():
+        raise RuntimeError(f"找不到 POC 管理脚本: {script_path}")
+    if not framework_dir.exists():
+        raise RuntimeError(f"找不到正式 AptosFramework: {framework_dir}")
+
+    cmd = [
+        *_aptos_cli(repo_root),
+        "move",
+        "run-script",
+        "--script-path",
+        str(script_path),
+        "--sender-account",
+        core_address,
+        "--framework-local-dir",
+        str(framework_dir),
+        "--skip-fetch-latest-git-deps",
+        "--url",
+        rest_url,
+        "--private-key",
+        core_key.private_key_hex,
+        "--assume-yes",
+        "--max-gas",
+        str(max_gas),
+        "--gas-unit-price",
+        str(gas_unit_price),
+    ]
+    for arg in args or []:
+        cmd.extend(["--args", arg])
+
+    proc = await asyncio.to_thread(
+        subprocess.run,
+        cmd,
+        cwd=repo_root,
+        text=True,
+        capture_output=True,
+        timeout=timeout_secs,
+    )
+    output = (proc.stdout or "") + (proc.stderr or "")
+    if proc.returncode != 0 and '"success": true' not in output and '"Result": "Success"' not in output:
+        raise RuntimeError(output[-1200:] or f"执行 POC 管理脚本失败: {script_name}")
+    return _extract_tx_hash(output) or f"cli:{script_path.stem}"
+
+
+async def initialize_poc_registry_with_core_resources(
+    *,
+    core_key: Ed25519Key,
+    core_address: str,
+    rest_url: str,
+    max_gas: int = DEFAULT_MAX_GAS,
+    gas_unit_price: int = DEFAULT_GAS_UNIT_PRICE,
+) -> str:
+    return await run_poc_framework_script(
+        "initialize_poc_registry.move",
+        core_key=core_key,
+        core_address=core_address,
+        rest_url=rest_url,
+        max_gas=max_gas,
+        gas_unit_price=gas_unit_price,
+    )
+
+
+async def set_poc_listing_status_with_core_resources(
+    *,
+    core_key: Ed25519Key,
+    core_address: str,
+    rest_url: str,
+    app_admin: str,
+    status: int,
+    max_gas: int = DEFAULT_MAX_GAS,
+    gas_unit_price: int = DEFAULT_GAS_UNIT_PRICE,
+) -> str:
+    return await run_poc_framework_script(
+        "set_dapp_poc_status.move",
+        core_key=core_key,
+        core_address=core_address,
+        rest_url=rest_url,
+        args=[f"address:{_normalize_address(app_admin)}", f"u8:{status}"],
+        max_gas=max_gas,
+        gas_unit_price=gas_unit_price,
+    )
+
+
+async def set_effective_weight_with_core_resources(
+    *,
+    core_key: Ed25519Key,
+    core_address: str,
+    rest_url: str,
+    app_admin: str,
+    weight_pbs: int,
+    max_gas: int = DEFAULT_MAX_GAS,
+    gas_unit_price: int = DEFAULT_GAS_UNIT_PRICE,
+) -> str:
+    return await run_poc_framework_script(
+        "set_dapp_weight.move",
+        core_key=core_key,
+        core_address=core_address,
+        rest_url=rest_url,
+        args=[f"address:{_normalize_address(app_admin)}", f"u64:{weight_pbs}"],
+        max_gas=max_gas,
+        gas_unit_price=gas_unit_price,
+    )
 
 
 async def create_demo_dapp(
@@ -229,6 +403,19 @@ async def create_demo_dapp(
         ),
     )
 
+    await run_step(
+        "initialize_poc_registry",
+        POC_FRAMEWORK_ADDRESS,
+        None,
+        lambda: initialize_poc_registry_with_core_resources(
+            core_key=km.core_resources_key,
+            core_address=km.core_resources_address,
+            rest_url=client.base_url,
+            max_gas=max_gas,
+            gas_unit_price=gas_unit_price,
+        ),
+    )
+
     register_tx = await run_step(
         "register_demo_dapp",
         admin_address,
@@ -255,12 +442,12 @@ async def create_demo_dapp(
             "whitelist_app",
             admin_address,
             None,
-            lambda: submit_entry_function(
-                client,
-                km.core_resources_key,
-                km.core_resources_address,
-                "0x1::poc_registry::whitelist_app_for_poc",
-                args=[admin_address],
+            lambda: set_poc_listing_status_with_core_resources(
+                core_key=km.core_resources_key,
+                core_address=km.core_resources_address,
+                rest_url=client.base_url,
+                app_admin=admin_address,
+                status=2,
                 max_gas=max_gas,
                 gas_unit_price=gas_unit_price,
             ),
@@ -278,6 +465,7 @@ async def create_demo_dapp(
         register_tx_hash=register_tx,
         whitelist_tx_hash=whitelist_tx,
     )
+    await invalidate_many("dapps:", f"dapp:detail:{admin_address.lower()}")
     await broadcast("dapp_changed", {"app_admin": admin_address, "module_address": module_address})
     return {
         "success": True,
@@ -430,9 +618,33 @@ async def buy_equity(
             "equity_amount": equity_amount,
             "mint_octas": mint_octas,
         }
+        contribution_events = await persist_contribution_events_from_tx(client, tx, app_admin=app_admin)
+        await invalidate_many(
+            "dapps:",
+            f"dapp:detail:{app_admin.lower()}",
+            f"user:detail:{buyer.lower()}",
+            f"contribution:app:{app_admin.lower()}",
+            f"contribution:user:{buyer.lower()}",
+            "contribution:all:",
+        )
         await operation_log.create_log("demo_dapp_buy_equity", app_admin, params, tx, "success")
-        await broadcast("dapp_trade", {"app_admin": app_admin, "buyer": buyer, "equity_amount": equity_amount, "tx_hash": tx})
-        return {"success": True, "tx_hash": tx, "buyer": buyer, "steps": prep_steps}
+        await broadcast(
+            "dapp_trade",
+            {
+                "app_admin": app_admin,
+                "buyer": buyer,
+                "equity_amount": equity_amount,
+                "tx_hash": tx,
+                "contribution_events": len(contribution_events),
+            },
+        )
+        return {
+            "success": True,
+            "tx_hash": tx,
+            "buyer": buyer,
+            "steps": prep_steps,
+            "contribution_events": contribution_events,
+        }
     except Exception as e:
         await operation_log.create_log(
             "demo_dapp_buy_equity",

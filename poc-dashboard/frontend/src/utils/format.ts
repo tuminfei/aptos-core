@@ -81,6 +81,11 @@ export function formatRewardRate(rate: { bps?: number; numerator?: number | stri
 
 export function formatTimestamp(ts: string | number): string {
   if (!ts) return '-';
+  if (typeof ts === 'string' && /[-T:]/.test(ts)) {
+    const normalized = ts.includes('T') ? ts : ts.replace(' ', 'T');
+    const date = new Date(normalized);
+    if (!Number.isNaN(date.getTime())) return date.toLocaleString();
+  }
   const n = typeof ts === 'string' ? parseInt(ts) : ts;
   if (n > 1e15) return new Date(n / 1000).toLocaleString();
   if (n > 1e12) return new Date(n).toLocaleString();

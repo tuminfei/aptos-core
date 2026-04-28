@@ -5,6 +5,7 @@ from app.chain.transaction import submit_entry_function
 from app.chain.keys import get_key_manager
 from app.models import operation_log
 from app.services.staking_svc import USER_MAX_GAS, proxy_stake
+from app.services.cache_svc import invalidate_many
 from app.api.errors import ParamError, ChainTxError
 
 router = APIRouter(tags=["staking"])
@@ -54,6 +55,7 @@ async def deposit(req: DepositReq):
             max_gas=USER_MAX_GAS,
         )
         await operation_log.create_log("deposit", req.user_address, {"amount": req.amount}, tx, "success")
+        await invalidate_many(f"user:detail:{req.user_address.lower()}", "validators:", "validator:")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("deposit", req.user_address, {"amount": req.amount}, None, "failed", str(e))
@@ -75,6 +77,7 @@ async def delegate(req: DelegateReq):
             max_gas=USER_MAX_GAS,
         )
         await operation_log.create_log("delegate", req.user_address, {"validator": req.validator_address}, tx, "success")
+        await invalidate_many(f"user:detail:{req.user_address.lower()}", "validators:", f"validator:detail:{req.validator_address.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("delegate", req.user_address, None, None, "failed", str(e))
@@ -95,6 +98,7 @@ async def undelegate(req: UndelegateReq):
             max_gas=USER_MAX_GAS,
         )
         await operation_log.create_log("undelegate", req.user_address, None, tx, "success")
+        await invalidate_many(f"user:detail:{req.user_address.lower()}", "validators:", "validator:")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("undelegate", req.user_address, None, None, "failed", str(e))
@@ -115,6 +119,7 @@ async def withdraw(req: WithdrawReq):
             max_gas=USER_MAX_GAS,
         )
         await operation_log.create_log("withdraw", req.user_address, None, tx, "success")
+        await invalidate_many(f"user:detail:{req.user_address.lower()}", "validators:", "validator:")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("withdraw", req.user_address, None, None, "failed", str(e))
@@ -153,4 +158,5 @@ async def proxy_stake_endpoint(req: ProxyStakeReq):
         force_epochs=req.force_epochs,
     )
     result["user_address"] = user_address
+    await invalidate_many(f"user:detail:{user_address.lower()}", "validators:", f"validator:detail:{req.delegate_to.lower()}")
     return result

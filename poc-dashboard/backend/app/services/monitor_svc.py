@@ -4,6 +4,7 @@ from app.chain.client import get_chain_client
 from app.chain import view
 from app.api.ws import broadcast
 from app.config import get_settings
+from app.services.cache_svc import invalidate_many
 
 _running = False
 _task: asyncio.Task | None = None
@@ -57,6 +58,7 @@ async def _poll_once():
     })
 
     if _last_epoch > 0 and epoch != _last_epoch:
+        await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
         await broadcast("epoch_changed", {
             "old_epoch": _last_epoch,
             "new_epoch": epoch,
@@ -67,6 +69,7 @@ async def _poll_once():
     try:
         active_count = await view.get_active_validator_count(client)
         if _last_active_count > 0 and active_count != _last_active_count:
+            await invalidate_many("validators:", "validator:")
             await broadcast("validator_set_changed", {
                 "old_count": _last_active_count,
                 "new_count": active_count,
@@ -78,6 +81,7 @@ async def _poll_once():
     try:
         period = await view.get_current_period(client)
         if _last_period > 0 and period != _last_period:
+            await invalidate_many("user:", "validators:", "validator:")
             await broadcast("power_period_advanced", {
                 "old_period": _last_period,
                 "new_period": period,

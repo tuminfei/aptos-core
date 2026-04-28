@@ -5,6 +5,7 @@ from app.chain import view
 from app.chain.transaction import submit_entry_function
 from app.chain.keys import get_key_manager
 from app.models import operation_log
+from app.services.cache_svc import invalidate_many
 from app.api.errors import AmountError, ChainTxError
 
 router = APIRouter(tags=["topo"])
@@ -44,6 +45,7 @@ async def mint(req: MintReq):
             args=[req.recipient, str(req.amount)],
         )
         await operation_log.create_log("mint_topo", req.recipient, {"amount": req.amount}, tx, "success")
+        await invalidate_many(f"user:detail:{req.recipient.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("mint_topo", req.recipient, {"amount": req.amount}, None, "failed", str(e))

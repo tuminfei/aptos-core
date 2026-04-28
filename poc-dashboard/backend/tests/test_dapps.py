@@ -41,13 +41,47 @@ async def test_dapp_admin_actions_use_managed_admin_key(client, mock_client):
 
 
 @pytest.mark.asyncio
-async def test_set_poc_status_uses_core_resources(client, mock_client):
+async def test_set_poc_status_uses_core_resources_script(client, monkeypatch):
+    calls = []
+
+    async def fake_set_poc_listing_status(**kwargs):
+        calls.append(kwargs)
+        return "cli:set-poc-status"
+
+    monkeypatch.setattr(
+        "app.api.dapps.dapp_svc.set_poc_listing_status_with_core_resources",
+        fake_set_poc_listing_status,
+    )
+
     resp = await client.post("/api/v1/dapps/set-poc-status", json={"app_admin": "0xddd", "status": 2})
     assert resp.status_code == 200
-    tx = mock_client.submitted_txns[-1]
-    assert tx["sender"] == "0xa550c18"
-    assert tx["payload"]["function"] == "0x1::poc_registry::set_poc_listing_status"
-    assert tx["payload"]["arguments"] == ["0xddd", "2"]
+    assert resp.json()["tx_hash"] == "cli:set-poc-status"
+    assert calls
+    assert calls[0]["core_address"] == "0xa550c18"
+    assert calls[0]["app_admin"] == "0xddd"
+    assert calls[0]["status"] == 2
+
+
+@pytest.mark.asyncio
+async def test_set_weight_uses_core_resources_script(client, monkeypatch):
+    calls = []
+
+    async def fake_set_effective_weight(**kwargs):
+        calls.append(kwargs)
+        return "cli:set-weight"
+
+    monkeypatch.setattr(
+        "app.api.dapps.dapp_svc.set_effective_weight_with_core_resources",
+        fake_set_effective_weight,
+    )
+
+    resp = await client.post("/api/v1/dapps/set-weight", json={"app_admin": "0xddd", "weight_pbs": 7500})
+    assert resp.status_code == 200
+    assert resp.json()["tx_hash"] == "cli:set-weight"
+    assert calls
+    assert calls[0]["core_address"] == "0xa550c18"
+    assert calls[0]["app_admin"] == "0xddd"
+    assert calls[0]["weight_pbs"] == 7500
 
 
 @pytest.mark.asyncio
@@ -76,3 +110,12 @@ async def test_demo_buy_equity_uses_configured_module(client, mock_client):
     assert tx["sender"] == buyer
     assert tx["payload"]["function"] == "0xabc::poc_demo::buy_equity"
     assert tx["payload"]["arguments"] == ["0xddd", "7"]
+
+    events_resp = await client.get("/api/v1/contributions", params={"contributor": buyer})
+    assert events_resp.status_code == 200
+    events = events_resp.json()["events"]
+    assert len(events) == 1
+    assert events[0]["contributor"] == buyer
+    assert events[0]["app_admin"] == "0xddd"
+    assert events[0]["app_address"] == "0xabc"
+    assert events[0]["equity_amount"] == 7

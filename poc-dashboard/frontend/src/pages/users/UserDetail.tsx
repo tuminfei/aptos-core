@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Row, Col, Card, Statistic, Button, InputNumber, Space, Modal, message, Tag, Descriptions, Table } from 'antd';
 import ReactECharts from 'echarts-for-react';
-import { getUser, getPowerHistory } from '../../services/user';
+import { getUser, getPowerHistory, getUserContributionEvents } from '../../services/user';
 import { getUserSnapshotHistory } from '../../services/history';
 import { mintTopo } from '../../services/governance';
 import { stageSingle } from '../../services/power';
@@ -13,7 +13,7 @@ import AddressTag from '../../components/AddressTag';
 import AddressSelect from '../../components/AddressSelect';
 import HistoryWindowControl from '../../components/HistoryWindowControl';
 import { createScaledValueAxis } from '../../utils/chart';
-import { formatCompactNumber, formatNumber, formatRewardAmount, formatRewardRate, formatTopo, topoToOctas } from '../../utils/format';
+import { formatCompactNumber, formatNumber, formatRewardAmount, formatRewardRate, formatTimestamp, formatTopo, topoToOctas } from '../../utils/format';
 
 export default function UserDetail() {
   const { address } = useParams<{ address: string }>();
@@ -22,9 +22,11 @@ export default function UserDetail() {
   const fetchUser = useCallback(() => getUser(address!), [address]);
   const fetchHistory = useCallback(() => getPowerHistory(address!), [address]);
   const fetchSnapshotHistory = useCallback(() => getUserSnapshotHistory(address!, snapshotLimit, snapshotOffset), [address, snapshotLimit, snapshotOffset]);
+  const fetchContributionHistory = useCallback(() => getUserContributionEvents(address!, 50), [address]);
   const { data, loading, refresh } = usePolling(fetchUser, 0, [address]);
   const { data: historyData, refresh: refreshPowerHistory } = usePolling(fetchHistory, 0, [address]);
   const { data: snapshotData, refresh: refreshSnapshotHistory } = usePolling(fetchSnapshotHistory, 0, [address, snapshotLimit, snapshotOffset]);
+  const { data: contributionData, refresh: refreshContributionHistory } = usePolling(fetchContributionHistory, 0, [address]);
 
   const [mintAmount, setMintAmount] = useState<number>(0);
   const [powerVal, setPowerVal] = useState<number>(0);
@@ -42,6 +44,7 @@ export default function UserDetail() {
   const history = historyData?.history || [];
   const snapshots = snapshotData?.history || [];
   const cumulativeRewards = snapshotData?.cumulative_rewards || {};
+  const contributionEvents = contributionData?.events || [];
   const formatBps = (bps: number) => `${(Number(bps || 0) / 100).toFixed(2)}%`;
   const currentCalculation = powerStore.current_calculation || {};
   const nextEpochCalculation = powerStore.next_epoch_calculation || {};
@@ -188,6 +191,14 @@ export default function UserDetail() {
   useEventRefresh(['epoch_changed', 'power_period_advanced', 'history_sampled'], refresh);
   useEventRefresh(['power_period_advanced'], refreshPowerHistory);
   useEventRefresh(['history_sampled'], refreshSnapshotHistory);
+  useEventRefresh(
+    ['contribution_event', 'dapp_trade'],
+    refreshContributionHistory,
+    (event) => {
+      const contributor = event.contributor || event.buyer;
+      return !contributor || String(contributor).toLowerCase() === String(address || '').toLowerCase();
+    },
+  );
 
   const doAction = async (name: string, fn: () => Promise<any>) => {
     setSubmitting(true);
@@ -345,6 +356,28 @@ export default function UserDetail() {
         style={{ marginBottom: 16 }}
       >
         <ReactECharts option={snapshotChartOption} style={{ height: 300 }} />
+      </Card>
+
+      <Card
+        title="贡献事件历史"
+        extra={<span style={{ color: '#666' }}>累计 {formatNumber(contributionData?.total_equity_amount || 0)} Equity / {formatNumber(contributionData?.total || 0)} 条</span>}
+        style={{ marginBottom: 16 }}
+      >
+        <Table
+          dataSource={contributionEvents}
+          rowKey={(row: any) => `${row.tx_hash}:${row.event_index}`}
+          size="small"
+          pagination={{ pageSize: 10, showSizeChanger: false }}
+          scroll={{ x: 900 }}
+          columns={[
+            { title: '时间', dataIndex: 'created_at', width: 170, render: (v: string) => formatTimestamp(v) },
+            { title: 'DApp 管理员', dataIndex: 'app_admin', width: 180, render: (v: string) => v ? <AddressTag address={v} /> : '-' },
+            { title: 'App 合约', dataIndex: 'app_address', width: 180, render: (v: string) => <AddressTag address={v} /> },
+            { title: '贡献 Equity', dataIndex: 'equity_amount', width: 130, render: (v: number) => formatNumber(v || 0) },
+            { title: '权益资产', dataIndex: 'equity_token', width: 180, render: (v: string) => v ? <AddressTag address={v} /> : '-' },
+            { title: '交易', dataIndex: 'tx_hash', width: 180, render: (v: string) => <AddressTag address={v} /> },
+          ]}
+        />
       </Card>
 
       <Card title="操作区">

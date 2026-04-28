@@ -9,6 +9,7 @@ from app.chain.keys import get_key_manager
 from app.chain.transaction import submit_entry_function
 from app.models import dapp_demo, operation_log, watchlist
 from app.services import dapp_svc
+from app.services.cache_svc import get_or_set, invalidate_many
 
 router = APIRouter(tags=["dapps"])
 
@@ -103,6 +104,10 @@ class AutoTradeReq(BaseModel):
 
 @router.get("/dapps")
 async def list_dapps():
+    return await get_or_set("dapps:list", _list_dapps_uncached, ttl_secs=10.0)
+
+
+async def _list_dapps_uncached():
     addresses = await watchlist.get_addresses("dapp")
     if not addresses:
         return {"total": 0, "apps": []}
@@ -156,6 +161,10 @@ async def list_dapps():
 
 @router.get("/dapps/{app_admin}")
 async def dapp_detail(app_admin: str):
+    return await get_or_set(f"dapp:detail:{app_admin.lower()}", lambda: _dapp_detail_uncached(app_admin), ttl_secs=10.0)
+
+
+async def _dapp_detail_uncached(app_admin: str):
     client = get_chain_client()
     info = await view.get_app_info(client, app_admin)
     state_code = await view.get_app_state(client, app_admin)
@@ -200,6 +209,7 @@ async def _submit_admin_action(req: AppAdminReq, function_id: str, action: str):
         await operation_log.create_log(action, req.app_admin, None, tx, "success")
         await broadcast("dapp_operation", {"action": action, "target": req.app_admin, "status": "success", "tx_hash": tx})
         await broadcast("dapp_changed", {"app_admin": req.app_admin})
+        await invalidate_many("dapps:", f"dapp:detail:{req.app_admin.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log(action, req.app_admin, None, None, "failed", str(e))
@@ -233,6 +243,7 @@ async def register_app(req: RegisterAppReq):
         await watchlist.add_address("dapp", req.app_admin)
         await broadcast("dapp_operation", {"action": "register_app", "target": req.app_admin, "status": "success", "tx_hash": tx})
         await broadcast("dapp_changed", {"app_admin": req.app_admin})
+        await invalidate_many("dapps:", f"dapp:detail:{req.app_admin.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("register_app", req.app_admin, params, None, "failed", str(e))
@@ -274,6 +285,7 @@ async def _submit_update_address(req: UpdateAddressReq, function_id: str, action
         await operation_log.create_log(action, req.app_admin, params, tx, "success")
         await broadcast("dapp_operation", {"action": action, "target": req.app_admin, "status": "success", "tx_hash": tx})
         await broadcast("dapp_changed", {"app_admin": req.app_admin})
+        await invalidate_many("dapps:", f"dapp:detail:{req.app_admin.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log(action, req.app_admin, params, None, "failed", str(e))
@@ -312,18 +324,19 @@ async def set_poc_status(req: SetPocStatusReq):
     client = get_chain_client()
     km = get_key_manager()
     try:
-        tx = await submit_entry_function(
-            client,
-            km.core_resources_key,
-            km.core_resources_address,
-            "0x1::poc_registry::set_poc_listing_status",
-            args=[req.app_admin, str(req.status)],
+        tx = await dapp_svc.set_poc_listing_status_with_core_resources(
+            core_key=km.core_resources_key,
+            core_address=km.core_resources_address,
+            rest_url=client.base_url,
+            app_admin=req.app_admin,
+            status=req.status,
             max_gas=req.max_gas,
             gas_unit_price=req.gas_unit_price,
         )
         await operation_log.create_log("set_poc_listing_status", req.app_admin, {"status": req.status}, tx, "success")
         await broadcast("dapp_operation", {"action": "set_poc_listing_status", "target": req.app_admin, "status": "success", "tx_hash": tx})
         await broadcast("dapp_changed", {"app_admin": req.app_admin})
+        await invalidate_many("dapps:", f"dapp:detail:{req.app_admin.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("set_poc_listing_status", req.app_admin, {"status": req.status}, None, "failed", str(e))
@@ -335,18 +348,19 @@ async def set_weight(req: SetWeightReq):
     client = get_chain_client()
     km = get_key_manager()
     try:
-        tx = await submit_entry_function(
-            client,
-            km.core_resources_key,
-            km.core_resources_address,
-            "0x1::poc_registry::set_effective_weight_pbs",
-            args=[req.app_admin, str(req.weight_pbs)],
+        tx = await dapp_svc.set_effective_weight_with_core_resources(
+            core_key=km.core_resources_key,
+            core_address=km.core_resources_address,
+            rest_url=client.base_url,
+            app_admin=req.app_admin,
+            weight_pbs=req.weight_pbs,
             max_gas=req.max_gas,
             gas_unit_price=req.gas_unit_price,
         )
         await operation_log.create_log("set_app_weight", req.app_admin, {"weight": req.weight_pbs}, tx, "success")
         await broadcast("dapp_operation", {"action": "set_app_weight", "target": req.app_admin, "status": "success", "tx_hash": tx})
         await broadcast("dapp_changed", {"app_admin": req.app_admin})
+        await invalidate_many("dapps:", f"dapp:detail:{req.app_admin.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("set_app_weight", req.app_admin, None, None, "failed", str(e))
@@ -383,6 +397,7 @@ async def mint_demo_equity(req: MintEquityReq):
         await operation_log.create_log("demo_dapp_mint_equity", req.app_admin, {"amount": req.amount}, tx, "success")
         await broadcast("dapp_operation", {"action": "demo_dapp_mint_equity", "target": req.app_admin, "status": "success", "tx_hash": tx})
         await broadcast("dapp_changed", {"app_admin": req.app_admin})
+        await invalidate_many("dapps:", f"dapp:detail:{req.app_admin.lower()}")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("demo_dapp_mint_equity", req.app_admin, {"amount": req.amount}, None, "failed", str(e))

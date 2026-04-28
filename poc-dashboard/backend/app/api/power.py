@@ -5,6 +5,7 @@ from app.chain import view
 from app.chain.transaction import submit_entry_function
 from app.chain.keys import get_key_manager
 from app.models import operation_log
+from app.services.cache_svc import invalidate_many
 from app.api.errors import ChainTxError
 
 router = APIRouter(tags=["power"])
@@ -57,6 +58,7 @@ async def stage_single(req: StageSingleReq):
             args=[req.user_address, str(req.power)],
         )
         await operation_log.create_log("stage_power", req.user_address, {"power": req.power}, tx, "success")
+        await invalidate_many(f"user:detail:{req.user_address.lower()}", "validators:", "validator:")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("stage_power", req.user_address, {"power": req.power}, None, "failed", str(e))
@@ -76,6 +78,7 @@ async def stage_batch(req: StageBatchReq):
             args=[str(req.target_period), addresses, powers],
         )
         await operation_log.create_log("stage_batch_power", None, {"count": len(addresses)}, tx, "success")
+        await invalidate_many("user:", "validators:", "validator:")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("stage_batch_power", None, None, None, "failed", str(e))
@@ -93,6 +96,7 @@ async def set_period(req: SetPeriodReq):
             args=[str(req.power_period_in_epochs)],
         )
         await operation_log.create_log("set_power_period", None, {"epochs": req.power_period_in_epochs}, tx, "success")
+        await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("set_power_period", None, None, None, "failed", str(e))

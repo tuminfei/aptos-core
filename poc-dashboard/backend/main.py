@@ -10,6 +10,7 @@ from app.api.errors import AppError, app_error_handler
 from app.services.history_svc import start_sampler, stop_sampler
 from app.services.monitor_svc import start_monitor, stop_monitor
 from app.services.dapp_svc import stop_all_trade_tasks
+from app.services.cache_svc import start_cache_maintainer, stop_cache_maintainer
 
 
 @asynccontextmanager
@@ -19,6 +20,7 @@ async def lifespan(app: FastAPI):
     km = get_key_manager()
     km.load_from_config(settings.keys)
     await km.load_managed_keys()
+    await start_cache_maintainer()
     await start_monitor()
     if settings.server.history_sampler_enabled:
         await start_sampler(settings.server.history_sampler_interval_secs)
@@ -26,6 +28,7 @@ async def lifespan(app: FastAPI):
     await stop_all_trade_tasks()
     await stop_sampler()
     await stop_monitor()
+    await stop_cache_maintainer()
     await close_db()
     await close_chain_client()
 
@@ -42,7 +45,7 @@ def create_app() -> FastAPI:
 
     app.add_exception_handler(AppError, app_error_handler)
 
-    from app.api import system, dashboard, validators, users, staking, power, topo, governance, dapps, events, logs, ws, watchlist, history
+    from app.api import system, dashboard, validators, users, staking, power, topo, governance, dapps, events, logs, ws, watchlist, history, contributions
     prefix = "/api/v1"
     app.include_router(system.router, prefix=prefix)
     app.include_router(dashboard.router, prefix=prefix)
@@ -58,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(ws.router)
     app.include_router(watchlist.router, prefix=prefix)
     app.include_router(history.router, prefix=prefix)
+    app.include_router(contributions.router, prefix=prefix)
 
     return app
 
