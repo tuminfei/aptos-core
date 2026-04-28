@@ -12,7 +12,7 @@ use std::str::FromStr;
 pub fn create_proposal_v2(
     harness: &mut MoveHarness,
     account: &Account,
-    stake_pool: AccountAddress,
+    _stake_pool: AccountAddress,
     execution_hash: Vec<u8>,
     metadata_location: Vec<u8>,
     metadata_hash: Vec<u8>,
@@ -21,7 +21,6 @@ pub fn create_proposal_v2(
     harness.run_transaction_payload(
         account,
         aptos_stdlib::topo_governance_create_proposal_v2(
-            stake_pool,
             execution_hash,
             metadata_location,
             metadata_hash,
@@ -33,7 +32,7 @@ pub fn create_proposal_v2(
 pub fn partial_vote(
     harness: &mut MoveHarness,
     account: &Account,
-    stake_pool: AccountAddress,
+    _stake_pool: AccountAddress,
     proposal_id: u64,
     voting_power: u64,
     should_pass: bool,
@@ -41,7 +40,6 @@ pub fn partial_vote(
     harness.run_transaction_payload(
         account,
         aptos_stdlib::topo_governance_partial_vote(
-            stake_pool,
             proposal_id,
             voting_power,
             should_pass,
