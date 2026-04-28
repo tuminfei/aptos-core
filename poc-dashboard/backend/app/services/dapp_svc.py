@@ -215,7 +215,7 @@ async def run_poc_framework_script(
     args: list[str] | None = None,
     max_gas: int = DEFAULT_MAX_GAS,
     gas_unit_price: int = DEFAULT_GAS_UNIT_PRICE,
-    timeout_secs: int = 180,
+    timeout_secs: int = 300,
 ) -> str:
     repo_root = _repo_root()
     script_path = repo_root / "poc-dashboard" / "scripts" / script_name
@@ -669,6 +669,7 @@ class DemoTradeTask:
     amount_max: int
     max_runs: int
     buyer_addresses: list[str]
+    buyer_selection_mode: str
     auto_create_buyers: int
     mint_octas: int
     max_gas: int
@@ -682,6 +683,7 @@ class DemoTradeTask:
     last_error: str = ""
     _task: asyncio.Task | None = None
     _buyer_index: int = 0
+    _prepared_buyers: set[str] = field(default_factory=set)
 
     def public_status(self) -> dict:
         return {
@@ -694,8 +696,11 @@ class DemoTradeTask:
             "amount_max": self.amount_max,
             "max_runs": self.max_runs,
             "buyer_addresses": self.buyer_addresses,
+            "buyer_selection_mode": self.buyer_selection_mode,
+            "buyer_count": len(self.buyer_addresses),
             "auto_create_buyers": self.auto_create_buyers,
             "mint_octas": self.mint_octas,
+            "prepared_buyer_count": len(self._prepared_buyers),
             "max_gas": self.max_gas,
             "gas_unit_price": self.gas_unit_price,
             "created_at": self.created_at,
@@ -741,9 +746,13 @@ async def start_trade_task(
         raise ValueError("缺少 demo module address")
 
     normalized_buyers = [_normalize_address(b) for b in buyer_addresses if b.strip()]
-    auto_create_buyers = max(0, int(auto_create_buyers or 0))
-    if not normalized_buyers and auto_create_buyers <= 0:
-        auto_create_buyers = 1
+    buyer_selection_mode = "fixed"
+    if not normalized_buyers:
+        normalized_buyers = await _get_effective_user_buyers()
+        buyer_selection_mode = "watchlist_random"
+    if not normalized_buyers:
+        raise ValueError("没有固定买家地址，也没有可用的有效用户。请先新增普通用户，或在固定买家地址中填写托管用户地址。")
+    auto_create_buyers = 0
 
     task_id = f"{app_admin}:{int(time.time())}"
     task = DemoTradeTask(
@@ -756,29 +765,45 @@ async def start_trade_task(
         amount_max=amount_max,
         max_runs=max_runs,
         buyer_addresses=normalized_buyers,
+        buyer_selection_mode=buyer_selection_mode,
         auto_create_buyers=auto_create_buyers,
         mint_octas=mint_octas,
         max_gas=max_gas,
         gas_unit_price=gas_unit_price,
     )
     _trade_tasks[app_admin] = task
-    await _prepare_auto_buyers(task)
     task._task = asyncio.create_task(_trade_loop(task))
     await operation_log.create_log("demo_dapp_auto_trade_start", app_admin, task.public_status(), None, "success")
     await broadcast("dapp_trade_task", task.public_status())
     return task.public_status()
 
 
-async def _prepare_auto_buyers(task: DemoTradeTask) -> None:
-    for i in range(task.auto_create_buyers):
-        _, buyer, steps = await ensure_buyer_account(
-            "",
-            label=f"auto-buyer-{task.app_admin[-6:]}-{i + 1}",
-            mint_octas=task.mint_octas,
-        )
-        task.buyer_addresses.append(buyer)
-        for step in steps:
-            await broadcast("dapp_trade_task", {"task_id": task.task_id, "prep_step": step})
+async def _get_effective_user_buyers() -> list[str]:
+    km = get_key_manager()
+    buyers: list[str] = []
+    seen: set[str] = set()
+    for item in await watchlist.get_addresses("user"):
+        address = _normalize_address(item.get("address", ""))
+        if not address:
+            continue
+        lowered = address.lower()
+        if lowered in seen:
+            continue
+        if not km.get_operator_key_by_address(address):
+            continue
+        seen.add(lowered)
+        buyers.append(address)
+    return buyers
+
+
+async def _prepare_task_buyer(task: DemoTradeTask, buyer: str) -> None:
+    key = buyer.lower()
+    if key in task._prepared_buyers:
+        return
+    _, _, steps = await ensure_buyer_account(buyer, mint_octas=task.mint_octas)
+    task._prepared_buyers.add(key)
+    for step in steps:
+        await broadcast("dapp_trade_task", {"task_id": task.task_id, "buyer": buyer, "prep_step": step})
 
 
 async def stop_trade_task(app_admin: str, missing_ok: bool = False) -> dict:
@@ -825,6 +850,7 @@ async def _trade_loop(task: DemoTradeTask) -> None:
                 amount = random.randint(task.amount_min, task.amount_max)
                 task.run_count += 1
                 try:
+                    await _prepare_task_buyer(task, buyer)
                     result = await buy_equity(
                         app_admin=task.app_admin,
                         module_address=task.module_address,
@@ -853,6 +879,8 @@ async def _trade_loop(task: DemoTradeTask) -> None:
 def _next_buyer(task: DemoTradeTask) -> str:
     if not task.buyer_addresses:
         raise RuntimeError("没有可用买家地址")
+    if task.buyer_selection_mode == "watchlist_random":
+        return random.choice(task.buyer_addresses)
     buyer = task.buyer_addresses[task._buyer_index % len(task.buyer_addresses)]
     task._buyer_index += 1
     return buyer

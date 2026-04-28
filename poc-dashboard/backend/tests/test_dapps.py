@@ -1,7 +1,10 @@
+import asyncio
+
 import pytest
 
 from app.chain.keys import get_key_manager
 from app.models import dapp_demo, watchlist
+from app.services import dapp_svc
 
 
 @pytest.mark.asyncio
@@ -119,3 +122,44 @@ async def test_demo_buy_equity_uses_configured_module(client, mock_client):
     assert events[0]["app_admin"] == "0xddd"
     assert events[0]["app_address"] == "0xabc"
     assert events[0]["equity_amount"] == 7
+
+
+@pytest.mark.asyncio
+async def test_auto_trade_without_fixed_buyers_uses_watchlist_users(client, mock_client):
+    km = get_key_manager()
+    _, buyer1 = km.generate_account("trade-buyer-1")
+    _, buyer2 = km.generate_account("trade-buyer-2")
+    await watchlist.add_address("user", buyer1, "trade-buyer-1")
+    await watchlist.add_address("user", buyer2, "trade-buyer-2")
+    await dapp_demo.upsert_config(
+        app_admin="0xddd",
+        module_address="0xabc",
+        initial_supply=100,
+        price_per_equity=2,
+    )
+
+    resp = await client.post(
+        "/api/v1/dapps/demo/auto-trade/start",
+        json={
+            "app_admin": "0xddd",
+            "interval_secs": 1,
+            "tx_per_tick": 1,
+            "amount_min": 3,
+            "amount_max": 5,
+            "max_runs": 1,
+            "buyer_addresses": [],
+            "auto_create_buyers": 0,
+            "mint_octas": 0,
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["buyer_selection_mode"] == "watchlist_random"
+    assert set(data["buyer_addresses"]) == {buyer1, buyer2}
+
+    await asyncio.sleep(0.1)
+    await dapp_svc.stop_all_trade_tasks()
+    tx = next(t for t in reversed(mock_client.submitted_txns) if t["payload"]["function"] == "0xabc::poc_demo::buy_equity")
+    assert tx["sender"] in {buyer1, buyer2}
+    amount = int(tx["payload"]["arguments"][1])
+    assert 3 <= amount <= 5

@@ -1,5 +1,7 @@
 import api from './api';
 
+const POC_ADMIN_TIMEOUT_MS = 300000;
+
 export async function getDApps() {
   const { data } = await api.get('/dapps');
   return data;
@@ -11,7 +13,7 @@ export async function getDApp(admin: string) {
 }
 
 export async function whitelistApp(params: { app_admin: string }) {
-  const { data } = await api.post('/dapps/whitelist', params);
+  const { data } = await api.post('/dapps/whitelist', params, { timeout: POC_ADMIN_TIMEOUT_MS });
   return data;
 }
 
@@ -59,17 +61,17 @@ export async function updateEquityTokenAddress(params: { app_admin: string; new_
 }
 
 export async function suspendApp(params: { app_admin: string }) {
-  const { data } = await api.post('/dapps/suspend', params);
+  const { data } = await api.post('/dapps/suspend', params, { timeout: POC_ADMIN_TIMEOUT_MS });
   return data;
 }
 
 export async function setPocStatus(params: { app_admin: string; status: number; max_gas?: number; gas_unit_price?: number }) {
-  const { data } = await api.post('/dapps/set-poc-status', params);
+  const { data } = await api.post('/dapps/set-poc-status', params, { timeout: POC_ADMIN_TIMEOUT_MS });
   return data;
 }
 
 export async function setWeight(params: { app_admin: string; weight_pbs: number; max_gas?: number; gas_unit_price?: number }) {
-  const { data } = await api.post('/dapps/set-weight', params);
+  const { data } = await api.post('/dapps/set-weight', params, { timeout: POC_ADMIN_TIMEOUT_MS });
   return data;
 }
 

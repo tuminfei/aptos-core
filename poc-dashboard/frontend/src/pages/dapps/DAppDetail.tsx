@@ -49,6 +49,7 @@ import { usePolling } from '../../hooks/usePolling';
 import { useEventRefresh } from '../../hooks/useEventRefresh';
 import AddressSelect from '../../components/AddressSelect';
 import AddressTag from '../../components/AddressTag';
+import { getWatchedUsers } from '../../services/watchlist';
 import { APP_STATE_LABEL, APP_STATE_COLOR, POC_STATUS_LABEL, POC_STATUS_COLOR } from '../../utils/constants';
 import { formatNumber, formatTimestamp, formatTopo } from '../../utils/format';
 
@@ -56,13 +57,6 @@ const DEFAULT_BUYER_MINT = 1_000_000_000_000;
 
 function valueFromInfo(info: any, key: string) {
   return info?.[key] ?? info?.[key.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] ?? '-';
-}
-
-function splitAddresses(raw: string): string[] {
-  return raw
-    .split(/[\n,，\s]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
 }
 
 const TILE_COLORS = {
@@ -115,8 +109,10 @@ export default function DAppDetail() {
   const { admin } = useParams<{ admin: string }>();
   const fetchDApp = useCallback(() => getDApp(admin!), [admin]);
   const fetchContributions = useCallback(() => getContributionEvents({ app_admin: admin!, limit: 50 }), [admin]);
+  const fetchUsers = useCallback(() => getWatchedUsers(), []);
   const { data, loading, refresh } = usePolling(fetchDApp, 0, [admin]);
   const { data: contributionData, refresh: refreshContributions } = usePolling(fetchContributions, 0, [admin]);
+  const { data: usersData, refresh: refreshUsers } = usePolling(fetchUsers, 0);
   const [weightForm] = Form.useForm();
   const [pocForm] = Form.useForm();
   const [manualForm] = Form.useForm();
@@ -134,6 +130,7 @@ export default function DAppDetail() {
       return !eventAdmin || String(eventAdmin).toLowerCase() === String(admin || '').toLowerCase();
     },
   );
+  useEventRefresh(['history_sampled', 'dapp_trade_task'], refreshUsers);
   useEventRefresh(
     ['contribution_event', 'dapp_trade'],
     refreshContributions,
@@ -149,6 +146,10 @@ export default function DAppDetail() {
   const autoTrade = d.auto_trade || {};
   const contributionEvents = contributionData?.events || [];
   const totalContributionEquity = contributionData?.total_equity_amount || 0;
+  const userOptions = (usersData?.users || []).map((u: any) => ({
+    value: u.address,
+    label: u.label ? `${u.label} (${u.address.slice(0, 8)}...${u.address.slice(-6)})` : `${u.address.slice(0, 8)}...${u.address.slice(-6)}`,
+  }));
   const moduleAddress = demo.module_address || '';
   const appAddress = valueFromInfo(info, 'app_address');
   const equityTokenAddress = valueFromInfo(info, 'equity_token_address');
@@ -225,8 +226,8 @@ export default function DAppDetail() {
       amount_min: values.amount_min,
       amount_max: values.amount_max,
       max_runs: values.max_runs || 0,
-      buyer_addresses: splitAddresses(values.buyer_addresses || ''),
-      auto_create_buyers: values.auto_create_buyers || 0,
+      buyer_addresses: values.buyer_addresses || [],
+      auto_create_buyers: 0,
       mint_octas: values.mint_octas || 0,
       max_gas: values.max_gas,
       gas_unit_price: values.gas_unit_price,
@@ -438,7 +439,6 @@ export default function DAppDetail() {
                           amount_min: 1,
                           amount_max: 10,
                           max_runs: 0,
-                          auto_create_buyers: 1,
                           mint_octas: DEFAULT_BUYER_MINT,
                           max_gas: 400000,
                           gas_unit_price: 100,
@@ -450,18 +450,27 @@ export default function DAppDetail() {
                           <Col xs={12} md={4}><Form.Item name="amount_min" label="最小 Equity" rules={[{ required: true }]}><InputNumber min={1} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
                           <Col xs={12} md={4}><Form.Item name="amount_max" label="最大 Equity" rules={[{ required: true }]}><InputNumber min={1} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
                           <Col xs={12} md={4}><Form.Item name="max_runs" label="次数上限"><InputNumber min={0} precision={0} style={{ width: '100%' }} addonAfter="0不限" /></Form.Item></Col>
-                          <Col xs={12} md={4}><Form.Item name="auto_create_buyers" label="自动买家数"><InputNumber min={0} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
                           <Col xs={12} md={4}><Form.Item name="mint_octas" label="每个买家铸币"><InputNumber min={0} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
                           <Col xs={12} md={4}><Form.Item name="max_gas" label="max_gas"><InputNumber min={1} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
                           <Col xs={12} md={4}><Form.Item name="gas_unit_price" label="gas_unit_price"><InputNumber min={1} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
                           <Col xs={24} md={12}>
                             <Form.Item name="buyer_addresses" label="固定买家地址">
-                              <Input.TextArea rows={3} placeholder="可用逗号、空格或换行分隔；为空则自动生成" />
+                              <Select
+                                mode="multiple"
+                                allowClear
+                                showSearch
+                                placeholder="为空则从有效普通用户中随机选择"
+                                options={userOptions}
+                                optionFilterProp="label"
+                                maxTagCount="responsive"
+                              />
                             </Form.Item>
                           </Col>
                           <Col xs={24} md={12}>
                             <Descriptions size="small" column={1} bordered>
                               <Descriptions.Item label="任务状态"><Tag color={autoTrade.status === 'running' ? 'green' : 'default'}>{autoTrade.status === 'running' ? '运行中' : '未运行'}</Tag></Descriptions.Item>
+                              <Descriptions.Item label="买家来源">{autoTrade.buyer_selection_mode === 'watchlist_random' ? '有效用户随机' : '固定地址轮询'}</Descriptions.Item>
+                              <Descriptions.Item label="买家数量">{formatNumber(autoTrade.buyer_count || 0)}</Descriptions.Item>
                               <Descriptions.Item label="执行结果">{formatNumber(autoTrade.success_count || 0)} 成功 / {formatNumber(autoTrade.failure_count || 0)} 失败</Descriptions.Item>
                               <Descriptions.Item label="刷新方式">WebSocket 事件推送</Descriptions.Item>
                             </Descriptions>
