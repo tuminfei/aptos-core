@@ -10,6 +10,7 @@ import AddressTag from '../../components/AddressTag';
 import HistoryWindowControl from '../../components/HistoryWindowControl';
 import StatusBadge from '../../components/StatusBadge';
 import AmountDisplay from '../../components/AmountDisplay';
+import { createScaledValueAxis } from '../../utils/chart';
 import { formatCompactNumber, formatNumber, formatPercent, formatRewardAmount, formatRewardRate } from '../../utils/format';
 
 export default function ValidatorDetail() {
@@ -34,46 +35,60 @@ export default function ValidatorDetail() {
     const date = new Date(h.sampled_at);
     return Number.isNaN(date.getTime()) ? h.sampled_at : date.toLocaleTimeString();
   });
+  const votingPowerSeries = snapshots.map((h: any) => Number(h.voting_power || 0));
+  const totalPoolPowerSeries = snapshots.map((h: any) => Number(h.total_pool_power || 0));
+  const delegatorCountSeries = snapshots.map((h: any) => Number(h.delegator_count || 0));
+  const activeStakeSeries = snapshots.map((h: any) => Number(h.stake_active_octas || 0) / 1e8);
+  const estimatedRewardSeries = snapshots.map((h: any) => Number(h.estimated_epoch_total_octas || 0) / 1e8);
   const historyOption = {
     tooltip: { trigger: 'axis' as const },
     legend: { top: 0 },
     grid: { left: 56, right: 72, top: 44, bottom: 32, containLabel: true },
     xAxis: { type: 'category' as const, data: snapshotLabels },
     yAxis: [
-      { type: 'value' as const, name: '算力/人数', axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
-      { type: 'value' as const, name: 'TOPO', axisLabel: { formatter: (v: number) => formatCompactNumber(v) } },
+      createScaledValueAxis({
+        name: '算力/人数',
+        values: [...votingPowerSeries, ...totalPoolPowerSeries, ...delegatorCountSeries],
+        formatter: formatCompactNumber,
+        minInterval: 1,
+      }),
+      createScaledValueAxis({
+        name: 'TOPO',
+        values: [...activeStakeSeries, ...estimatedRewardSeries],
+        formatter: formatCompactNumber,
+      }),
     ],
     series: [
       {
         name: '投票权',
         type: 'line',
         smooth: true,
-        data: snapshots.map((h: any) => Number(h.voting_power || 0)),
+        data: votingPowerSeries,
       },
       {
         name: '池总算力',
         type: 'line',
         smooth: true,
-        data: snapshots.map((h: any) => Number(h.total_pool_power || 0)),
+        data: totalPoolPowerSeries,
       },
       {
         name: '委托人数',
         type: 'line',
         smooth: true,
-        data: snapshots.map((h: any) => Number(h.delegator_count || 0)),
+        data: delegatorCountSeries,
       },
       {
         name: '活跃质押',
         type: 'line',
         yAxisIndex: 1,
         smooth: true,
-        data: snapshots.map((h: any) => Number(h.stake_active_octas || 0) / 1e8),
+        data: activeStakeSeries,
       },
       {
         name: '预计入账',
         type: 'bar',
         yAxisIndex: 1,
-        data: snapshots.map((h: any) => Number(h.estimated_epoch_total_octas || 0) / 1e8),
+        data: estimatedRewardSeries,
       },
     ],
   };
