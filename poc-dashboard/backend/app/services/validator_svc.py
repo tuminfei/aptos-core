@@ -9,6 +9,7 @@ from app.chain import view
 from app.chain.transaction import submit_entry_function
 from app.chain.keys import Ed25519Key
 from app.models import operation_log
+from app.services import address_book_svc
 from app.services import rewards_svc
 
 
@@ -20,33 +21,40 @@ DEFAULT_GAS_UNIT_PRICE = 100
 async def get_validators(client: ChainClient, status: str = "all") -> list[dict]:
     results = []
     reward_context = await rewards_svc.get_reward_context(client)
+    address_book = await address_book_svc.build_address_book(client)
 
     if status in ("all", "active"):
         addrs = await view.get_active_validators(client, 0, 200)
         for addr in addrs:
-            v = await _build_validator_summary(client, addr, reward_context)
+            v = await _build_validator_summary(client, addr, reward_context, address_book)
             results.append(v)
 
     if status in ("all", "pending_active"):
         addrs = await view.get_pending_active_validators(client, 0, 200)
         for addr in addrs:
-            v = await _build_validator_summary(client, addr, reward_context)
+            v = await _build_validator_summary(client, addr, reward_context, address_book)
             results.append(v)
 
     if status in ("all", "pending_inactive"):
         addrs = await view.get_pending_inactive_validators(client, 0, 200)
         for addr in addrs:
-            v = await _build_validator_summary(client, addr, reward_context)
+            v = await _build_validator_summary(client, addr, reward_context, address_book)
             results.append(v)
 
     return results
 
 
-async def _build_validator_summary(client: ChainClient, addr: str, reward_context: dict | None = None) -> dict:
+async def _build_validator_summary(
+    client: ChainClient,
+    addr: str,
+    reward_context: dict | None = None,
+    address_book: dict[str, dict] | None = None,
+) -> dict:
     state = await view.get_validator_state(client, addr)
     vp = await view.get_current_epoch_voting_power(client, addr)
     stake_info = await view.get_stake(client, addr)
     operator = await view.get_operator(client, addr)
+    address_entry = (address_book or {}).get(addr.lower(), {})
 
     try:
         sr_view = await view.get_validator_view(client, addr)
@@ -81,6 +89,8 @@ async def _build_validator_summary(client: ChainClient, addr: str, reward_contex
 
     return {
         "address": addr,
+        "label": address_entry.get("label", ""),
+        "display_name": address_entry.get("display_name", ""),
         "operator": operator,
         "status": VALIDATOR_STATUS_MAP.get(state, "unknown"),
         "status_code": state,
@@ -106,6 +116,8 @@ async def _build_validator_summary(client: ChainClient, addr: str, reward_contex
 
 
 async def get_validator_detail(client: ChainClient, address: str) -> dict:
+    address_book = await address_book_svc.build_address_book(client)
+    address_entry = address_book.get(address.lower(), {})
     state = await view.get_validator_state(client, address)
     vp = await _optional_view(view.get_current_epoch_voting_power(client, address), 0)
     stake_info = await _optional_view(
@@ -138,8 +150,10 @@ async def get_validator_detail(client: ChainClient, address: str) -> dict:
         if dc > 0:
             dv = await view.get_validator_delegator_views(client, address, 0, min(dc, 100))
             for d in dv:
+                delegator_entry = address_book.get(d["delegator"].lower(), {})
                 delegators.append({
                     "address": d["delegator"],
+                    "display_name": delegator_entry.get("display_name", ""),
                     "deposit": d["deposit_octas"],
                     "deposit_topo": d["deposit_octas"] / 1e8,
                     "poc_power": d["committed_power"],
@@ -165,6 +179,8 @@ async def get_validator_detail(client: ChainClient, address: str) -> dict:
 
     return {
         "address": address,
+        "label": address_entry.get("label", ""),
+        "display_name": address_entry.get("display_name", ""),
         "operator": operator,
         "status": VALIDATOR_STATUS_MAP.get(state, "unknown"),
         "voting_power": vp,

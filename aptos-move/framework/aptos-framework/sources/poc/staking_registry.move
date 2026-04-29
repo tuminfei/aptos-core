@@ -287,6 +287,17 @@ module aptos_framework::staking_registry {
             octas_per_power;
     }
 
+    public entry fun set_cooldown_secs(
+        aptos_framework: &signer,
+        cooldown_secs: u64,
+    ) acquires StakingRegistry {
+        system_addresses::assert_aptos_framework(aptos_framework);
+        assert_registry_exists();
+
+        borrow_global_mut<StakingRegistry>(@aptos_framework).config.cooldown_secs =
+            cooldown_secs;
+    }
+
     /// Ensure the cooldown period is at least `min_cooldown_secs`.
     ///
     /// Called during governance config updates to keep cooldown >= governance voting duration.

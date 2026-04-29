@@ -26,6 +26,42 @@ async def test_user_detail(client):
     assert "rewards" in data
     assert data["rewards"]["auto_compound"] is True
     assert data["rewards"]["estimated_epoch_total_octas"] > 0
+    assert data["staking"]["is_in_cooldown"] is False
+    assert data["staking"]["cooldown_until"] == 0
+    assert data["staking"]["cooldown_remaining_secs"] == 0
+    assert data["staking"]["cooldown_reason_code"] == "none"
+
+
+@pytest.mark.asyncio
+async def test_user_detail_in_cooldown_includes_until_and_reason(client, mock_client):
+    cooldown_until = 4102444800
+    mock_client.set_view_response(
+        "0x1::staking_registry::get_user_stake_info",
+        [50000000000, "0x0", cooldown_until],
+    )
+
+    resp = await client.get("/api/v1/users/0xcooldown")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["staking"]["is_in_cooldown"] is True
+    assert data["staking"]["cooldown_until"] == cooldown_until
+    assert data["staking"]["cooldown_remaining_secs"] > 0
+    assert data["staking"]["cooldown_reason_code"] == "undelegated_or_force_exit"
+    assert "强制退出" in data["staking"]["cooldown_reason"]
+
+
+@pytest.mark.asyncio
+async def test_user_detail_without_coin_store_returns_zero_balance(client, mock_client):
+    mock_client.remove_view_response("0x1::coin::balance")
+
+    resp = await client.get("/api/v1/users/0xmissing")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["address"] == "0xmissing"
+    assert data["balance"]["topo_octas"] == 0
+    assert data["balance"]["topo"] == 0
 
 
 @pytest.mark.asyncio

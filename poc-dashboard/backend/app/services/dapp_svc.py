@@ -20,6 +20,7 @@ DEFAULT_MAX_GAS = 400_000
 DEFAULT_GAS_UNIT_PRICE = 100
 DEFAULT_DEMO_MODULE = "poc_demo"
 DEFAULT_BUYER_MINT_OCTAS = 1_000_000_000_000
+DEFAULT_AUTO_TRADE_CUSTODY_TOP_UP_TICKS = 10
 POC_FRAMEWORK_ADDRESS = "0x1"
 
 
@@ -496,7 +497,23 @@ async def get_demo_runtime(app_admin: str, module_address: str | None = None) ->
     await read("custody_inventory", lambda: view.demo_custody_inventory(client, module, app_admin), 0)
     if config:
         runtime.update(config)
+    await _apply_contribution_stats(runtime, app_admin)
     return runtime
+
+
+async def apply_contribution_stats_to_demo_configs(configs: dict[str, dict]) -> dict[str, dict]:
+    for app_admin, runtime in configs.items():
+        await _apply_contribution_stats(runtime, app_admin)
+    return configs
+
+
+async def _apply_contribution_stats(runtime: dict, app_admin: str) -> None:
+    local_trade_count = await contribution_event.count_events(app_admin=app_admin)
+    local_equity_sold = await contribution_event.sum_equity_amount(app_admin=app_admin)
+    runtime["local_trade_count"] = local_trade_count
+    runtime["local_total_equity_sold"] = local_equity_sold
+    runtime["trade_count"] = max(int(runtime.get("trade_count") or 0), local_trade_count)
+    runtime["total_equity_sold"] = max(int(runtime.get("total_equity_sold") or 0), local_equity_sold)
 
 
 async def mint_equity_to_custody(
@@ -806,6 +823,63 @@ async def _prepare_task_buyer(task: DemoTradeTask, buyer: str) -> None:
         await broadcast("dapp_trade_task", {"task_id": task.task_id, "buyer": buyer, "prep_step": step})
 
 
+async def _ensure_demo_custody_inventory(task: DemoTradeTask, required_amount: int) -> None:
+    if required_amount <= 0:
+        return
+
+    client = get_chain_client()
+    inventory = await view.demo_custody_inventory(client, task.module_address, task.app_admin)
+    if inventory >= required_amount:
+        return
+
+    top_up_amount = max(
+        required_amount - inventory,
+        task.amount_max * max(task.tx_per_tick, DEFAULT_AUTO_TRADE_CUSTODY_TOP_UP_TICKS),
+    )
+    params = {
+        "inventory": inventory,
+        "required_amount": required_amount,
+        "amount": top_up_amount,
+        "module_address": task.module_address,
+    }
+    try:
+        tx = await mint_equity_to_custody(
+            app_admin=task.app_admin,
+            amount=top_up_amount,
+            module_address=task.module_address,
+            max_gas=task.max_gas,
+            gas_unit_price=task.gas_unit_price,
+        )
+        await operation_log.create_log("demo_dapp_auto_trade_mint_equity", task.app_admin, params, tx, "success")
+        await invalidate_many("dapps:", f"dapp:detail:{task.app_admin.lower()}")
+        await broadcast(
+            "dapp_operation",
+            {
+                "action": "demo_dapp_auto_trade_mint_equity",
+                "target": task.app_admin,
+                "status": "success",
+                "tx_hash": tx,
+            },
+        )
+        await broadcast(
+            "dapp_trade_task",
+            {
+                "task_id": task.task_id,
+                "prep_step": {"step": "mint_equity_to_custody", "status": "success", "tx_hash": tx},
+            },
+        )
+    except Exception as e:
+        await operation_log.create_log(
+            "demo_dapp_auto_trade_mint_equity",
+            task.app_admin,
+            params,
+            None,
+            "failed",
+            str(e),
+        )
+        raise
+
+
 async def stop_trade_task(app_admin: str, missing_ok: bool = False) -> dict:
     task = _trade_tasks.get(app_admin)
     if not task:
@@ -851,6 +925,7 @@ async def _trade_loop(task: DemoTradeTask) -> None:
                 task.run_count += 1
                 try:
                     await _prepare_task_buyer(task, buyer)
+                    await _ensure_demo_custody_inventory(task, amount)
                     result = await buy_equity(
                         app_admin=task.app_admin,
                         module_address=task.module_address,

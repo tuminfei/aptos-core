@@ -2,6 +2,13 @@ from app.chain.client import ChainClient
 from typing import Any
 
 
+# --- block ---
+
+async def get_epoch_interval_secs(client: ChainClient) -> int:
+    r = await client.call_view("0x1::block::get_epoch_interval_secs")
+    return int(r[0])
+
+
 # --- poc_power_store ---
 
 async def get_current_period(client: ChainClient) -> int:
@@ -37,6 +44,13 @@ async def get_user_committed_powers(client: ChainClient, addresses: list[str]) -
 async def get_user_power_for_period(client: ChainClient, address: str, period: int) -> int:
     r = await client.call_view("0x1::poc_power_store::get_user_power_for_period", args=[address, str(period)])
     return int(r[0])
+
+
+async def get_user_powers_for_period(client: ChainClient, addresses: list[str], period: int) -> list[int]:
+    if not addresses:
+        return []
+    r = await client.call_view("0x1::poc_power_store::get_user_powers_for_period", args=[addresses, str(period)])
+    return [int(x) for x in r[0]]
 
 
 async def get_user_power_for_next_epoch(client: ChainClient, address: str) -> int:

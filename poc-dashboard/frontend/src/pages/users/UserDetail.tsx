@@ -1,9 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
-import { Row, Col, Card, Statistic, Button, InputNumber, Space, Modal, message, Tag, Descriptions, Table } from 'antd';
+import { Row, Col, Card, Statistic, Button, InputNumber, Space, Modal, message, Tag, Descriptions, Table, Tabs, Tooltip, Typography } from 'antd';
 import ReactECharts from 'echarts-for-react';
-import { getUser, getPowerHistory, getUserContributionEvents } from '../../services/user';
-import { getUserSnapshotHistory } from '../../services/history';
+import { getUser, getUserContributionEvents } from '../../services/user';
+import { getUserPowerPeriodHistory, getUserSnapshotHistory } from '../../services/history';
 import { mintTopo } from '../../services/governance';
 import { stageSingle } from '../../services/power';
 import { deposit, delegate, undelegate, withdraw } from '../../services/staking';
@@ -13,19 +13,40 @@ import AddressTag from '../../components/AddressTag';
 import AddressSelect from '../../components/AddressSelect';
 import HistoryWindowControl from '../../components/HistoryWindowControl';
 import { createScaledValueAxis } from '../../utils/chart';
-import { formatCompactNumber, formatNumber, formatRewardAmount, formatRewardRate, formatTimestamp, formatTopo, topoToOctas } from '../../utils/format';
+import { formatCompactNumber, formatDuration, formatNumber, formatRewardAmount, formatRewardRate, formatTimestamp, formatTopo, topoToOctas } from '../../utils/format';
+
+const { Text } = Typography;
+
+function DetailPanel({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div
+      style={{
+        height: '100%',
+        border: '1px solid #f0f0f0',
+        borderRadius: 8,
+        padding: 12,
+        background: '#fafafa',
+      }}
+    >
+      <div style={{ marginBottom: 8, fontWeight: 600, color: '#262626' }}>{title}</div>
+      {children}
+    </div>
+  );
+}
 
 export default function UserDetail() {
   const { address } = useParams<{ address: string }>();
-  const [snapshotLimit, setSnapshotLimit] = useState(200);
+  const [snapshotLimit, setSnapshotLimit] = useState(50);
   const [snapshotOffset, setSnapshotOffset] = useState(0);
+  const [powerPeriodLimit, setPowerPeriodLimit] = useState(200);
+  const [powerPeriodOffset, setPowerPeriodOffset] = useState(0);
   const fetchUser = useCallback(() => getUser(address!), [address]);
-  const fetchHistory = useCallback(() => getPowerHistory(address!), [address]);
   const fetchSnapshotHistory = useCallback(() => getUserSnapshotHistory(address!, snapshotLimit, snapshotOffset), [address, snapshotLimit, snapshotOffset]);
+  const fetchPowerPeriodHistory = useCallback(() => getUserPowerPeriodHistory(address!, powerPeriodLimit, powerPeriodOffset), [address, powerPeriodLimit, powerPeriodOffset]);
   const fetchContributionHistory = useCallback(() => getUserContributionEvents(address!, 50), [address]);
   const { data, loading, refresh } = usePolling(fetchUser, 0, [address]);
-  const { data: historyData, refresh: refreshPowerHistory } = usePolling(fetchHistory, 0, [address]);
   const { data: snapshotData, refresh: refreshSnapshotHistory } = usePolling(fetchSnapshotHistory, 0, [address, snapshotLimit, snapshotOffset]);
+  const { data: powerPeriodData, refresh: refreshPowerPeriodHistory } = usePolling(fetchPowerPeriodHistory, 0, [address, powerPeriodLimit, powerPeriodOffset]);
   const { data: contributionData, refresh: refreshContributionHistory } = usePolling(fetchContributionHistory, 0, [address]);
 
   const [mintAmount, setMintAmount] = useState<number>(0);
@@ -41,101 +62,120 @@ export default function UserDetail() {
   const staking = u.staking || {};
   const rewards = u.rewards || {};
   const rewardRate = rewards.reward_rate || {};
-  const history = historyData?.history || [];
   const snapshots = snapshotData?.history || [];
+  const powerPeriods = powerPeriodData?.history || [];
   const cumulativeRewards = snapshotData?.cumulative_rewards || {};
   const contributionEvents = contributionData?.events || [];
   const formatBps = (bps: number) => `${(Number(bps || 0) / 100).toFixed(2)}%`;
   const currentCalculation = powerStore.current_calculation || {};
   const nextEpochCalculation = powerStore.next_epoch_calculation || {};
-  const powerGap = powerStore.power_gap || {};
   const versionRows = (powerStore.version_rows || []).map((row: any) => ({ key: row.slot, ...row }));
+  const cooldownUntil = Number(staking.cooldown_until || 0);
+  const cooldownRemaining = Number(staking.cooldown_remaining_secs || 0);
+  const cooldownReason = staking.cooldown_reason || '该账户已解除委托并处于链上冷却期。';
+  const cooldownSource = staking.cooldown_source;
+  const currentRawPower = Number(currentCalculation.base_power || 0);
   const calcRows = [
     { key: 'current', label: '当前 period', ...currentCalculation },
     { key: 'next', label: '下一 epoch period', ...nextEpochCalculation },
   ];
-  const historyPowers = history.map((h: any) => Number(h.power || 0));
-  const hasHistoryPowers = historyPowers.length > 0;
-  const powerMin = hasHistoryPowers ? Math.min(...historyPowers) : 0;
-  const powerMax = hasHistoryPowers ? Math.max(...historyPowers) : 0;
-  const powerRange = powerMax - powerMin;
-  const flatPowerPadding = Math.max(1, Math.ceil(Math.max(powerMax, 1) * 0.05));
-  const historyYAxisMin = hasHistoryPowers && powerRange > 0 ? powerMin : Math.max(0, powerMin - flatPowerPadding);
-  const historyYAxisMax = hasHistoryPowers && powerRange > 0 ? powerMax : powerMax + flatPowerPadding;
-
-  const chartOption = {
-    grid: { left: 56, right: 32, top: 32, bottom: 32, containLabel: true },
-    xAxis: { type: 'category' as const, data: history.map((h: any) => `P${h.period}`) },
-    yAxis: {
-      type: 'value' as const,
-      min: historyYAxisMin,
-      max: historyYAxisMax,
-      scale: true,
-      axisLabel: {
-        formatter: (v: number) => formatCompactNumber(v),
-        showMinLabel: true,
-        showMaxLabel: true,
-      },
-    },
-    series: [{
-      type: 'line',
-      data: historyPowers,
-      smooth: true,
-      areaStyle: {},
-      markPoint: {
-        symbolSize: 56,
-        label: { formatter: ({ value }: any) => formatNumber(value) },
-        data: [
-          { type: 'max', name: '最大值' },
-          { type: 'min', name: '最小值' },
-        ],
-      },
-    }],
-    tooltip: { trigger: 'axis' as const },
+  const powerPeriodInEpochs = Number(powerStore.power_period_in_epochs || 0);
+  const powerTrendByPeriod = new Map<number, { period: number; rawPower: number | null; effectivePower: number | null }>();
+  const ensurePowerTrendPoint = (period: number) => {
+    const existing = powerTrendByPeriod.get(period);
+    if (existing) {
+      return existing;
+    }
+    const created = { period, rawPower: null, effectivePower: null };
+    powerTrendByPeriod.set(period, created);
+    return created;
   };
-  const snapshotLabels = snapshots.map((h: any) => {
-    const date = new Date(h.sampled_at);
-    return Number.isNaN(date.getTime()) ? h.sampled_at : date.toLocaleTimeString();
+  powerPeriods.forEach((row: any) => {
+    const period = Number(row.period);
+    if (!Number.isFinite(period)) {
+      return;
+    }
+    ensurePowerTrendPoint(period).rawPower = Number(row.raw_power || 0);
   });
-  const effectivePowerSeries = snapshots.map((h: any) => Number(h.effective_power || 0));
-  const committedPowerSeries = snapshots.map((h: any) => Number(h.committed_power || 0));
-  const depositSeries = snapshots.map((h: any) => Number(h.deposit_octas || 0) / 1e8);
-  const balanceSeries = snapshots.map((h: any) => Number(h.balance_octas || 0) / 1e8);
-  const estimatedRewardSeries = snapshots.map((h: any) => Number(h.estimated_epoch_total_octas || 0) / 1e8);
-  const snapshotChartOption = {
-    tooltip: { trigger: 'axis' as const },
+  snapshots.forEach((row: any) => {
+    const epoch = Number(row.epoch || 0);
+    if (epoch <= 0 || powerPeriodInEpochs <= 0) {
+      return;
+    }
+    const period = Math.floor((epoch - 1) / powerPeriodInEpochs);
+    ensurePowerTrendPoint(period).effectivePower = Number(row.effective_power || 0);
+  });
+  const currentPeriod = Number(powerStore.current_period || 0);
+  if (Number.isFinite(currentPeriod) && currentPeriod >= 0) {
+    ensurePowerTrendPoint(currentPeriod).effectivePower = Number(power.effective_power || 0);
+  }
+  if (Number.isFinite(currentRawPower) && currentRawPower > 0) {
+    const rawPowerPeriod = Number(currentCalculation.base_period || 0);
+    if (Number.isFinite(rawPowerPeriod)) {
+      ensurePowerTrendPoint(rawPowerPeriod).rawPower = currentRawPower;
+    }
+  }
+  const powerTrendRows = Array.from(powerTrendByPeriod.values()).sort((a, b) => a.period - b.period);
+  const rawPowerPeriodSeries = powerTrendRows.map((row) => row.rawPower);
+  const effectivePowerSeries = powerTrendRows.map((row) => row.effectivePower);
+  const powerTrendValues = [...rawPowerPeriodSeries, ...effectivePowerSeries].filter((value): value is number => value !== null && Number.isFinite(value));
+  const powerTrendChartOption = {
+    grid: { left: 56, right: 32, top: 32, bottom: 32, containLabel: true },
+    tooltip: {
+      trigger: 'axis' as const,
+      valueFormatter: (value: number | string) => typeof value === 'number' ? formatNumber(value) : value,
+    },
     legend: { top: 0 },
-    grid: { left: 56, right: 72, top: 44, bottom: 32, containLabel: true },
-    xAxis: { type: 'category' as const, data: snapshotLabels },
-    yAxis: [
-      createScaledValueAxis({
-        name: '算力',
-        values: [...effectivePowerSeries, ...committedPowerSeries],
-        formatter: formatCompactNumber,
-      }),
-      createScaledValueAxis({
-        name: 'TOPO',
-        values: [...depositSeries, ...balanceSeries, ...estimatedRewardSeries],
-        formatter: formatCompactNumber,
-      }),
-    ],
+    xAxis: { type: 'category' as const, data: powerTrendRows.map((row) => `P${row.period}`) },
+    yAxis: createScaledValueAxis({
+      values: powerTrendValues,
+      formatter: formatCompactNumber,
+    }),
     series: [
+      {
+        name: '原始算力',
+        type: 'bar',
+        barMaxWidth: 36,
+        data: rawPowerPeriodSeries,
+      },
       {
         name: '有效算力',
         type: 'line',
         smooth: true,
         data: effectivePowerSeries,
       },
-      {
-        name: '已提交算力',
-        type: 'line',
-        smooth: true,
-        data: committedPowerSeries,
-      },
+    ],
+  };
+  const snapshotLabels = snapshots.map((h: any) => {
+    const date = new Date(h.sampled_at);
+    return Number.isNaN(date.getTime()) ? h.sampled_at : date.toLocaleTimeString();
+  });
+  const depositSeries = snapshots.map((h: any) => Number(h.deposit_octas || 0) / 1e8);
+  const balanceSeries = snapshots.map((h: any) => Number(h.balance_octas || 0) / 1e8);
+  const estimatedRewardSeries = snapshots.map((h: any) => Number(h.estimated_epoch_total_octas || 0) / 1e8);
+  const snapshotAssetChartOption = {
+    tooltip: { trigger: 'axis' as const },
+    legend: { top: 0 },
+    grid: { left: 56, right: 64, top: 44, bottom: 32, containLabel: true },
+    xAxis: { type: 'category' as const, data: snapshotLabels },
+    yAxis: [
+      createScaledValueAxis({
+        name: '保证金',
+        values: depositSeries,
+        formatter: formatCompactNumber,
+        position: 'left',
+      }),
+      createScaledValueAxis({
+        name: '余额',
+        values: balanceSeries,
+        formatter: formatCompactNumber,
+        position: 'right',
+      }),
+    ],
+    series: [
       {
         name: '保证金',
         type: 'line',
-        yAxisIndex: 1,
         smooth: true,
         data: depositSeries,
       },
@@ -146,10 +186,22 @@ export default function UserDetail() {
         smooth: true,
         data: balanceSeries,
       },
+    ],
+  };
+  const snapshotRewardChartOption = {
+    tooltip: { trigger: 'axis' as const },
+    legend: { top: 0 },
+    grid: { left: 56, right: 32, top: 44, bottom: 32, containLabel: true },
+    xAxis: { type: 'category' as const, data: snapshotLabels },
+    yAxis: createScaledValueAxis({
+      name: 'TOPO',
+      values: estimatedRewardSeries,
+      formatter: formatCompactNumber,
+    }),
+    series: [
       {
         name: '预计入账',
         type: 'bar',
-        yAxisIndex: 1,
         data: estimatedRewardSeries,
       },
     ],
@@ -172,9 +224,7 @@ export default function UserDetail() {
     { title: '原始算力 raw_power', dataIndex: 'raw_power', render: (v: number) => formatNumber(v || 0) },
     { title: '当前是否生效', dataIndex: 'active_for_current_period', render: (v: boolean) => <Tag color={v ? 'green' : 'default'}>{v ? '是' : '否'}</Tag> },
     { title: '当前衰减周期', dataIndex: 'current_periods_elapsed', render: (v: number) => formatNumber(v || 0) },
-    { title: '当前衰减后算力', dataIndex: 'current_decayed_power', render: (v: number) => formatNumber(v || 0) },
     { title: '下一 epoch 是否生效', dataIndex: 'active_for_next_epoch', render: (v: boolean) => <Tag color={v ? 'green' : 'default'}>{v ? '是' : '否'}</Tag> },
-    { title: '下一 epoch 衰减后算力', dataIndex: 'next_epoch_decayed_power', render: (v: number) => formatNumber(v || 0) },
   ];
   const calcColumns = [
     { title: '目标', dataIndex: 'label', width: 140 },
@@ -183,14 +233,11 @@ export default function UserDetail() {
     { title: '基准 Period', dataIndex: 'base_period', render: (v: number) => formatNumber(v || 0) },
     { title: '基准原始算力', dataIndex: 'base_power', render: (v: number) => formatNumber(v || 0) },
     { title: '衰减周期数', dataIndex: 'periods_elapsed', render: (v: number) => formatNumber(v || 0) },
-    { title: '计算值', dataIndex: 'calculated_power', render: (v: number) => formatNumber(v || 0) },
-    { title: '链上返回值', dataIndex: 'chain_power', render: (v: number) => formatNumber(v || 0) },
-    { title: '差值', dataIndex: 'delta', render: (v: number) => formatNumber(v || 0) },
   ];
 
   useEventRefresh(['epoch_changed', 'power_period_advanced', 'history_sampled'], refresh);
-  useEventRefresh(['power_period_advanced'], refreshPowerHistory);
   useEventRefresh(['history_sampled'], refreshSnapshotHistory);
+  useEventRefresh(['history_sampled'], refreshPowerPeriodHistory);
   useEventRefresh(
     ['contribution_event', 'dapp_trade'],
     refreshContributionHistory,
@@ -220,17 +267,37 @@ export default function UserDetail() {
         </Col>
         <Col span={8}>
           <Card loading={loading}>
-            <Statistic title="已提交算力" value={formatNumber(power.committed_power || 0)} />
-            <div style={{ fontSize: 12, color: '#999' }}>有效: {formatNumber(power.effective_power || 0)} | 下周期: {formatNumber(power.power_for_next_epoch || 0)}</div>
+            <Statistic title="原始算力" value={formatNumber(currentRawPower || 0)} />
+            <div style={{ fontSize: 12, color: '#999' }}>有效: {formatNumber(power.effective_power || 0)}</div>
           </Card>
         </Col>
         <Col span={8}>
           <Card loading={loading}>
             <Statistic title="保证金" value={formatTopo(staking.deposit_octas || 0)} suffix="TOPO" />
-            <div style={{ fontSize: 12, color: '#999' }}>
-              委托: <AddressTag address={staking.delegated_to || '0x0'} />
-              {staking.is_in_cooldown && <span style={{ color: 'orange' }}> 冷却中</span>}
-            </div>
+            <Space direction="vertical" size={2} style={{ width: '100%', fontSize: 12 }}>
+              <span style={{ color: '#999' }}>
+                委托: <AddressTag address={staking.delegated_to || '0x0'} />
+              </span>
+              {staking.is_in_cooldown && (
+                <Tooltip
+                  title={
+                    <div>
+                      <div>{cooldownReason}</div>
+                      {cooldownSource?.created_at && <div>本地记录: {formatTimestamp(cooldownSource.created_at)}</div>}
+                    </div>
+                  }
+                >
+                  <Space size={6} wrap>
+                    <Tag color="orange" style={{ width: 'fit-content', marginInlineEnd: 0 }}>冷却中</Tag>
+                    <Text type="secondary">
+                      到期: {formatTimestamp(cooldownUntil)}
+                      {cooldownRemaining > 0 ? `（剩余 ${formatDuration(cooldownRemaining)}）` : ''}
+                    </Text>
+                  </Space>
+                </Tooltip>
+              )}
+              {staking.is_in_cooldown && <Text type="secondary">{cooldownReason}</Text>}
+            </Space>
           </Card>
         </Col>
       </Row>
@@ -268,10 +335,10 @@ export default function UserDetail() {
         </Space>
       </Card>
 
-      <Card title="Power Store 原始版本与衰减" loading={loading} style={{ marginBottom: 16 }}>
+      <Card title="Power Store 当前状态" loading={loading} style={{ marginBottom: 16 }}>
         <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
           <Col xs={24} md={8}>
-            <Card size="small" title="周期与衰减">
+            <DetailPanel title="周期与衰减">
               <Descriptions column={1} size="small">
                 <Descriptions.Item label="当前 Epoch">{formatNumber(powerStore.current_epoch || 0)}</Descriptions.Item>
                 <Descriptions.Item label="当前 Period">{formatNumber(powerStore.current_period || 0)}</Descriptions.Item>
@@ -280,102 +347,153 @@ export default function UserDetail() {
                 <Descriptions.Item label="保留系数">{formatNumber(powerStore.retention_bps || 0)} ({formatBps(powerStore.retention_bps || 0)})</Descriptions.Item>
                 <Descriptions.Item label="每 Period 衰减">{formatNumber(powerStore.decay_bps || 0)} ({formatBps(powerStore.decay_bps || 0)})</Descriptions.Item>
               </Descriptions>
-            </Card>
+            </DetailPanel>
           </Col>
           <Col xs={24} md={8}>
-            <Card size="small" title="当前算力">
+            <DetailPanel title="原始 / 有效算力">
               <Descriptions column={1} size="small">
-                <Descriptions.Item label="PowerStore 当前">{formatNumber(power.committed_power || 0)}</Descriptions.Item>
-                <Descriptions.Item label="Staking 有效">{formatNumber(powerStore.staking_effective_power || power.effective_power || 0)}</Descriptions.Item>
-                <Descriptions.Item label="Staking - PowerStore">{formatNumber(powerGap.staking_effective_minus_power_store || 0)}</Descriptions.Item>
                 <Descriptions.Item label="当前选中版本"><Tag color="green">{currentCalculation.selected_slot || 'none'}</Tag></Descriptions.Item>
-                <Descriptions.Item label="当前基准">{formatNumber(currentCalculation.base_power || 0)} @ P{formatNumber(currentCalculation.base_period || 0)}</Descriptions.Item>
+                <Descriptions.Item label="原始算力">{formatNumber(currentCalculation.base_power || 0)} @ P{formatNumber(currentCalculation.base_period || 0)}</Descriptions.Item>
+                <Descriptions.Item label="有效算力">{formatNumber(powerStore.staking_effective_power || power.effective_power || 0)}</Descriptions.Item>
                 <Descriptions.Item label="当前衰减周期">{formatNumber(currentCalculation.periods_elapsed || 0)}</Descriptions.Item>
               </Descriptions>
-            </Card>
+            </DetailPanel>
           </Col>
           <Col xs={24} md={8}>
-            <Card size="small" title="下一 Epoch 算力">
+            <DetailPanel title="下一 Epoch 原始槽位">
               <Descriptions column={1} size="small">
-                <Descriptions.Item label="PowerStore 下一">{formatNumber(power.power_for_next_epoch || 0)}</Descriptions.Item>
-                <Descriptions.Item label="下一 - 当前">{formatNumber(powerGap.next_epoch_minus_current || 0)}</Descriptions.Item>
                 <Descriptions.Item label="下一选中版本"><Tag color="cyan">{nextEpochCalculation.selected_slot || 'none'}</Tag></Descriptions.Item>
-                <Descriptions.Item label="下一基准">{formatNumber(nextEpochCalculation.base_power || 0)} @ P{formatNumber(nextEpochCalculation.base_period || 0)}</Descriptions.Item>
+                <Descriptions.Item label="原始算力">{formatNumber(nextEpochCalculation.base_power || 0)} @ P{formatNumber(nextEpochCalculation.base_period || 0)}</Descriptions.Item>
                 <Descriptions.Item label="下一衰减周期">{formatNumber(nextEpochCalculation.periods_elapsed || 0)}</Descriptions.Item>
-                <Descriptions.Item label="计算差值">{formatNumber(nextEpochCalculation.delta || 0)}</Descriptions.Item>
               </Descriptions>
-            </Card>
+            </DetailPanel>
           </Col>
         </Row>
-        <Row gutter={[16, 16]}>
-          <Col xs={24}>
-            <Table
-              title={() => '双版本原始算力槽位'}
-              dataSource={versionRows}
-              columns={versionColumns}
-              rowKey="key"
-              pagination={false}
-              size="small"
-              scroll={{ x: 1180 }}
-            />
-          </Col>
-          <Col xs={24}>
-            <Table
-              title={() => '衰减计算路径'}
-              dataSource={calcRows}
-              columns={calcColumns}
-              rowKey="key"
-              pagination={false}
-              size="small"
-              scroll={{ x: 980 }}
-            />
-          </Col>
-        </Row>
-      </Card>
-
-      <Card
-        title="算力历史"
-        extra={<span style={{ color: '#666' }}>最小 {formatNumber(powerMin)} / 最大 {formatNumber(powerMax)}</span>}
-        style={{ marginBottom: 16 }}
-      >
-        <ReactECharts option={chartOption} style={{ height: 250 }} />
-      </Card>
-
-      <Card
-        title="本地快照历史"
-        extra={(
-          <HistoryWindowControl
-            limit={snapshotLimit}
-            offset={snapshotOffset}
-            total={snapshotData?.total || 0}
-            shown={snapshots.length}
-            onLimitChange={setSnapshotLimit}
-            onOffsetChange={setSnapshotOffset}
-          />
-        )}
-        style={{ marginBottom: 16 }}
-      >
-        <ReactECharts option={snapshotChartOption} style={{ height: 300 }} />
-      </Card>
-
-      <Card
-        title="贡献事件历史"
-        extra={<span style={{ color: '#666' }}>累计 {formatNumber(contributionData?.total_equity_amount || 0)} Equity / {formatNumber(contributionData?.total || 0)} 条</span>}
-        style={{ marginBottom: 16 }}
-      >
-        <Table
-          dataSource={contributionEvents}
-          rowKey={(row: any) => `${row.tx_hash}:${row.event_index}`}
+        <Tabs
           size="small"
-          pagination={{ pageSize: 10, showSizeChanger: false }}
-          scroll={{ x: 900 }}
-          columns={[
-            { title: '时间', dataIndex: 'created_at', width: 170, render: (v: string) => formatTimestamp(v) },
-            { title: 'DApp 管理员', dataIndex: 'app_admin', width: 180, render: (v: string) => v ? <AddressTag address={v} /> : '-' },
-            { title: 'App 合约', dataIndex: 'app_address', width: 180, render: (v: string) => <AddressTag address={v} /> },
-            { title: '贡献 Equity', dataIndex: 'equity_amount', width: 130, render: (v: number) => formatNumber(v || 0) },
-            { title: '权益资产', dataIndex: 'equity_token', width: 180, render: (v: string) => v ? <AddressTag address={v} /> : '-' },
-            { title: '交易', dataIndex: 'tx_hash', width: 180, render: (v: string) => <AddressTag address={v} /> },
+          items={[
+            {
+              key: 'versions',
+              label: '原始算力槽位',
+              children: (
+                <Table
+                  dataSource={versionRows}
+                  columns={versionColumns}
+                  rowKey="key"
+                  pagination={false}
+                  size="small"
+                  scroll={{ x: 1180 }}
+                />
+              ),
+            },
+            {
+              key: 'calculation',
+              label: '衰减计算路径',
+              children: (
+                <Table
+                  dataSource={calcRows}
+                  columns={calcColumns}
+                  rowKey="key"
+                  pagination={false}
+                  size="small"
+                  scroll={{ x: 980 }}
+                />
+              ),
+            },
+          ]}
+        />
+      </Card>
+
+      <Card
+        title="历史观察"
+        style={{ marginBottom: 16 }}
+      >
+        <Tabs
+          defaultActiveKey="power"
+          items={[
+            {
+              key: 'power',
+              label: '算力',
+              children: (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                    <HistoryWindowControl
+                      limit={powerPeriodLimit}
+                      offset={powerPeriodOffset}
+                      total={powerPeriodData?.total || 0}
+                      shown={powerPeriods.length}
+                      onLimitChange={setPowerPeriodLimit}
+                      onOffsetChange={setPowerPeriodOffset}
+                    />
+                  </div>
+                  <ReactECharts option={powerTrendChartOption} style={{ height: 300 }} />
+                </>
+              ),
+            },
+            {
+              key: 'assets',
+              label: '资产',
+              children: (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                    <HistoryWindowControl
+                      limit={snapshotLimit}
+                      offset={snapshotOffset}
+                      total={snapshotData?.total || 0}
+                      shown={snapshots.length}
+                      onLimitChange={setSnapshotLimit}
+                      onOffsetChange={setSnapshotOffset}
+                    />
+                  </div>
+                  <ReactECharts option={snapshotAssetChartOption} style={{ height: 300 }} />
+                </>
+              ),
+            },
+            {
+              key: 'rewards',
+              label: '奖励',
+              children: (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                    <HistoryWindowControl
+                      limit={snapshotLimit}
+                      offset={snapshotOffset}
+                      total={snapshotData?.total || 0}
+                      shown={snapshots.length}
+                      onLimitChange={setSnapshotLimit}
+                      onOffsetChange={setSnapshotOffset}
+                    />
+                  </div>
+                  <ReactECharts option={snapshotRewardChartOption} style={{ height: 300 }} />
+                </>
+              ),
+            },
+            {
+              key: 'contributions',
+              label: '贡献',
+              children: (
+                <>
+                  <div style={{ color: '#666', marginBottom: 12 }}>
+                    累计 {formatNumber(contributionData?.total_equity_amount || 0)} Equity / {formatNumber(contributionData?.total || 0)} 条
+                  </div>
+                  <Table
+                    dataSource={contributionEvents}
+                    rowKey={(row: any) => `${row.tx_hash}:${row.event_index}`}
+                    size="small"
+                    pagination={{ pageSize: 10, showSizeChanger: false }}
+                    scroll={{ x: 900 }}
+                    columns={[
+                      { title: '时间', dataIndex: 'created_at', width: 170, render: (v: string) => formatTimestamp(v) },
+                      { title: 'DApp 管理员', dataIndex: 'app_admin', width: 180, render: (v: string) => v ? <AddressTag address={v} /> : '-' },
+                      { title: 'App 合约', dataIndex: 'app_address', width: 180, render: (v: string) => <AddressTag address={v} /> },
+                      { title: '贡献 Equity', dataIndex: 'equity_amount', width: 130, render: (v: number) => formatNumber(v || 0) },
+                      { title: '权益资产', dataIndex: 'equity_token', width: 180, render: (v: string) => v ? <AddressTag address={v} /> : '-' },
+                      { title: '交易', dataIndex: 'tx_hash', width: 180, render: (v: string) => <AddressTag address={v} /> },
+                    ]}
+                  />
+                </>
+              ),
+            },
           ]}
         />
       </Card>

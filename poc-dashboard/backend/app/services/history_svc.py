@@ -7,6 +7,8 @@ from app.chain import view
 from app.chain.client import ChainClient, get_chain_client
 from app.api.ws import broadcast
 from app.models import history, watchlist
+from app.api.watchlist import _get_user_like_watch_items
+from app.services import consensus_svc
 from app.services import rewards_svc
 
 
@@ -35,6 +37,11 @@ async def sample_once(client: ChainClient | None = None) -> dict:
     user_rows = await _build_user_snapshots(client, sampled_at, epoch, reward_context)
     await history.insert_user_snapshots(user_rows)
 
+    user_power_period_rows = await _build_user_power_period_history_rows(client, sampled_at, epoch, user_rows)
+    await history.upsert_user_power_period_history(user_power_period_rows)
+
+    consensus_result = await _sample_consensus_voting_power_safely(force=True)
+
     global _last_sample_epoch
     if _last_sample_epoch is None or epoch != _last_sample_epoch:
         await _record_epoch_reward_estimates(epoch, validator_rows, user_rows)
@@ -45,6 +52,8 @@ async def sample_once(client: ChainClient | None = None) -> dict:
         "epoch": epoch,
         "validators": len(validator_rows),
         "users": len(user_rows),
+        "user_power_periods": len(user_power_period_rows),
+        "consensus_voting_power": consensus_result,
     }
     await broadcast("history_sampled", result)
     return result
@@ -84,6 +93,14 @@ async def _sampler_loop(interval_secs: int, stop_event: asyncio.Event) -> None:
             await asyncio.wait_for(stop_event.wait(), timeout=interval_secs)
         except asyncio.TimeoutError:
             pass
+
+
+async def _sample_consensus_voting_power_safely(force: bool = False) -> dict:
+    try:
+        return await consensus_svc.sample_consensus_epoch_voting_power(force=force)
+    except Exception as exc:
+        logger.warning("consensus voting power sampler failed: %s", exc)
+        return {"captured": False, "reason": str(exc)}
 
 
 async def _build_chain_snapshot(
@@ -199,7 +216,7 @@ async def _build_user_snapshots(
     epoch: int,
     reward_context: dict,
 ) -> list[dict]:
-    watched = await watchlist.get_addresses("user")
+    watched = await _get_user_like_watch_items(client)
     rows = []
     now_secs = int(time.time())
     for item in watched:
@@ -239,6 +256,64 @@ async def _build_user_snapshots(
             "estimated_owner_commission_octas": int(rewards.get("estimated_owner_commission_octas", 0) or 0),
         })
     return rows
+
+
+async def _build_user_power_period_history_rows(
+    client: ChainClient,
+    sampled_at: str,
+    epoch: int,
+    user_rows: list[dict],
+) -> list[dict]:
+    if not user_rows:
+        return []
+
+    addresses = [row["address"] for row in user_rows]
+    labels = {row["address"].lower(): row.get("label", "") for row in user_rows}
+    current_period = await _optional(view.get_current_period(client), 0)
+    power_period_in_epochs = await _optional(view.get_power_period_in_epochs(client), 0)
+    next_epoch_period = _period_for_epoch(epoch + 1, power_period_in_epochs)
+    versions = await _optional(view.get_user_power_versions(client, addresses), [])
+    committed = await _optional(view.get_user_committed_powers(client, addresses), [0] * len(addresses))
+    committed_by_address = {
+        address.lower(): int(committed[index] if index < len(committed) else 0)
+        for index, address in enumerate(addresses)
+    }
+
+    rows: list[dict] = []
+    seen: set[tuple[str, int]] = set()
+    for version in versions:
+        address = version.get("user", "")
+        if not address:
+            continue
+        key = address.lower()
+        for slot in ("older", "newer"):
+            period = int(version.get(f"{slot}_period", 0) or 0)
+            raw_power = int(version.get(f"{slot}_power", 0) or 0)
+            if period <= 0 and raw_power <= 0:
+                continue
+            unique = (key, period)
+            if unique in seen:
+                continue
+            seen.add(unique)
+            rows.append({
+                "sampled_at": sampled_at,
+                "epoch": epoch,
+                "address": address,
+                "label": labels.get(key, ""),
+                "period": period,
+                "raw_power": raw_power,
+                "source_slot": slot,
+                "observed_current_period": current_period,
+                "observed_next_epoch_period": next_epoch_period,
+                "observed_committed_power": committed_by_address.get(key, int(version.get("committed_power", 0) or 0)),
+            })
+    return rows
+
+
+def _period_for_epoch(epoch: int, power_period_in_epochs: int) -> int:
+    if epoch <= 0 or power_period_in_epochs <= 0:
+        return 0
+    return (epoch - 1) // power_period_in_epochs
 
 
 async def _record_epoch_reward_estimates(

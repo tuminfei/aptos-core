@@ -52,3 +52,42 @@ async def test_generate_account_persists_key_and_watchlist(client):
     assert len(rows) == 1
     assert rows[0][0] == data["private_key"]
     assert rows[0][1] == "alice"
+
+
+@pytest.mark.asyncio
+async def test_watched_users_include_validator_addresses(client):
+    await add_address("validator", "0x1a2b", "validator-a")
+
+    resp = await client.get("/api/v1/watchlist/users")
+
+    assert resp.status_code == 200
+    users = resp.json()["users"]
+    validator_user = next(item for item in users if item["address"] == "0x1a2b")
+    assert validator_user["is_validator_user"] is True
+    assert validator_user["in_validator_watchlist"] is True
+    assert validator_user["label"] == "validator-a"
+    assert validator_user["display_name"] == "validator-a"
+
+
+@pytest.mark.asyncio
+async def test_update_watchlist_label_updates_user_display_name(client):
+    await add_address("user", "0xaaa", "alice")
+
+    resp = await client.put("/api/v1/watchlist/user/0xaaa/label", json={"label": "alice-new"})
+
+    assert resp.status_code == 200
+    assert resp.json()["label"] == "alice-new"
+
+    users_resp = await client.get("/api/v1/watchlist/users")
+    user = next(item for item in users_resp.json()["users"] if item["address"] == "0xaaa")
+    assert user["label"] == "alice-new"
+    assert user["display_name"] == "alice-new"
+
+
+@pytest.mark.asyncio
+async def test_chain_validator_gets_default_display_name(client):
+    resp = await client.get("/api/v1/watchlist/validators")
+
+    assert resp.status_code == 200
+    validator = next(item for item in resp.json()["validators"] if item["address"] == "0x1a2b")
+    assert validator["display_name"] == "验证者0"

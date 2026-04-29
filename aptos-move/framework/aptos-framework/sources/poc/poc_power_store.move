@@ -10,7 +10,7 @@
 /// Architecture Overview:
 /// This module serves as the on-chain power registry for the Proof of Contribution (POC) system.
 /// Power values represent a user's contribution-based voting weight, computed off-chain from ContributionEvents
-/// and uploaded periodically by a trusted operator. The two-version sliding window design ensures:
+/// and uploaded periodically by a trusted operator or framework governance. The two-version sliding window design ensures:
 /// 1. Current epoch reads remain stable even when next-period data is being staged
 /// 2. Smooth transitions at period boundaries without requiring atomic global updates
 /// 3. Automatic decay for inactive users via retention_bps_per_period
@@ -70,7 +70,7 @@ module aptos_framework::poc_power_store {
     /// Global power store, stored under @aptos_framework.
     ///
     /// Invariants:
-    /// - Only `operator` may call `stage_batch_update`
+    /// - Only `operator` or @aptos_framework may call `stage_batch_update`
     /// - `current_period` only advances forward, never backward
     /// - Each user has at most two PowerVersion slots (older + newer)
     /// - `last_epoch` is incremented once per on-chain epoch via `commit_next_period_if_boundary`
@@ -245,7 +245,7 @@ module aptos_framework::poc_power_store {
     ///   `effective_period = current_period + 1` (i.e., target_period).
     ///
     /// Constraints:
-    /// - Only the designated `operator` may call this.
+    /// - Only the designated `operator` or @aptos_framework may call this.
     /// - `target_period` must equal `current_period + 1`; staging further ahead is not allowed
     ///   to prevent the operator from pre-loading multiple future periods at once.
     /// - `users` and `powers` must have the same length.
@@ -265,7 +265,7 @@ module aptos_framework::poc_power_store {
         );
 
         let store = borrow_global_mut<PowerStore>(@aptos_framework);
-        assert_operator(store, signer::address_of(operator));
+        assert_power_update_authority(store, signer::address_of(operator));
         assert!(
             target_period == store.current_period + 1,
             error::invalid_argument(EINVALID_TARGET_PERIOD),
@@ -568,9 +568,9 @@ module aptos_framework::poc_power_store {
         );
     }
 
-    fun assert_operator(store: &PowerStore, caller: address) {
+    fun assert_power_update_authority(store: &PowerStore, caller: address) {
         assert!(
-            store.operator == caller,
+            store.operator == caller || system_addresses::is_aptos_framework_address(caller),
             error::permission_denied(ENOT_OPERATOR),
         );
     }
@@ -867,6 +867,27 @@ module aptos_framework::poc_power_store {
         commit_next_period_if_boundary();
         assert!(get_current_period() == 1, 0);
         assert!(get_user_committed_power(signer::address_of(&user1)) == 55, 1);
+    }
+
+    #[test(framework = @aptos_framework, operator = @0xA, new_operator = @0xD, user1 = @0xB)]
+    public entry fun test_framework_can_stage_after_operator_change(
+        framework: signer,
+        operator: signer,
+        new_operator: signer,
+        user1: signer,
+    ) acquires PowerStore {
+        initialize_with_power_period(&framework, signer::address_of(&operator), 1);
+        set_genesis_committed_power(&framework, signer::address_of(&user1), 100);
+        set_operator(&framework, signer::address_of(&new_operator));
+
+        stage_batch_update(
+            &framework,
+            1,
+            vector[signer::address_of(&user1)],
+            vector[80u64],
+        );
+
+        assert!(get_user_power_for_period(signer::address_of(&user1), 1) == 80, 0);
     }
 
     #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB)]

@@ -11,7 +11,7 @@ async def test_history_sample_and_query(client):
     sample = sample_resp.json()
     assert sample["success"] is True
     assert sample["epoch"] == 142
-    assert sample["users"] == 1
+    assert sample["users"] >= 4
     assert sample["validators"] >= 1
 
     chain_resp = await client.get("/api/v1/history/chain")
@@ -33,6 +33,15 @@ async def test_history_sample_and_query(client):
     assert user_data["history"][0]["deposit_octas"] == 50000000000
     assert user_data["cumulative_rewards"]["epochs"] == 1
     assert user_data["cumulative_rewards"]["total_estimated_reward_octas"] > 0
+    assert sample["user_power_periods"] >= 2
+
+    power_period_resp = await client.get("/api/v1/history/users/0xaaa/power-periods")
+    assert power_period_resp.status_code == 200
+    power_period_data = power_period_resp.json()
+    assert power_period_data["total"] == 2
+    raw_by_period = {row["period"]: row["raw_power"] for row in power_period_data["history"]}
+    assert raw_by_period[20] == 4000
+    assert raw_by_period[23] == 5000
 
     validator_resp = await client.get("/api/v1/history/validators/0x1a2b")
     assert validator_resp.status_code == 200

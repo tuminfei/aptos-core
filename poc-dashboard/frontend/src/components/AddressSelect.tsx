@@ -3,6 +3,7 @@ import { Select, Space, Input, Button, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { getWatchedUsers, getWatchedValidators, addToWatchlist } from '../services/watchlist';
 import { shortenAddress } from '../utils/format';
+import { useAddressBook } from '../contexts/AddressBookContext';
 
 interface Props {
   kind: 'user' | 'validator';
@@ -20,6 +21,7 @@ interface Option {
 }
 
 export default function AddressSelect({ kind, value, onChange, placeholder, style, allowAdd = true }: Props) {
+  const { refresh: refreshAddressBook } = useAddressBook();
   const [options, setOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -33,14 +35,14 @@ export default function AddressSelect({ kind, value, onChange, placeholder, styl
         const data = await getWatchedUsers();
         setOptions((data.users || []).map((u: any) => ({
           address: u.address,
-          label: u.label,
-          extra: `${u.balance_topo?.toFixed(1) ?? 0} TOPO | 算力 ${u.committed_power ?? 0}`,
+          label: u.display_name || u.label,
+          extra: `${u.balance_topo?.toFixed(1) ?? 0} TOPO | 原始算力 ${u.raw_power ?? 0}`,
         })));
       } else {
         const data = await getWatchedValidators();
         setOptions((data.validators || []).map((v: any) => ({
           address: v.address,
-          label: v.label,
+          label: v.display_name || v.label,
           extra: v.status ? `${v.status} | 投票权 ${v.voting_power ?? 0}` : '',
         })));
       }
@@ -62,6 +64,7 @@ export default function AddressSelect({ kind, value, onChange, placeholder, styl
       setNewLabel('');
       setAdding(false);
       await fetchOptions();
+      await refreshAddressBook();
       onChange?.(newAddr);
     } catch {}
   };
@@ -98,7 +101,7 @@ export default function AddressSelect({ kind, value, onChange, placeholder, styl
               <div style={{ padding: '8px', borderTop: '1px solid #f0f0f0' }}>
                 <Space direction="vertical" style={{ width: '100%' }}>
                   <Input size="small" placeholder="地址 0x..." value={newAddr} onChange={(e) => setNewAddr(e.target.value)} />
-                  <Input size="small" placeholder="备注（可选）" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+                  <Input size="small" placeholder={`${kindLabel}名（可选）`} value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
                   <Space>
                     <Button size="small" type="primary" onClick={handleAdd}>确认</Button>
                     <Button size="small" onClick={() => setAdding(false)}>取消</Button>

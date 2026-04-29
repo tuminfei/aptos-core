@@ -163,3 +163,47 @@ async def test_auto_trade_without_fixed_buyers_uses_watchlist_users(client, mock
     assert tx["sender"] in {buyer1, buyer2}
     amount = int(tx["payload"]["arguments"][1])
     assert 3 <= amount <= 5
+
+
+@pytest.mark.asyncio
+async def test_auto_trade_tops_up_custody_inventory_before_buy(client, mock_client):
+    km = get_key_manager()
+    admin_key, app_admin = km.generate_account("trade-app")
+    buyer_key, buyer = km.generate_account("trade-buyer")
+    await km.persist_key(admin_key, app_admin, "trade-app")
+    await km.persist_key(buyer_key, buyer, "trade-buyer")
+    await watchlist.add_address("user", buyer, "trade-buyer")
+    await dapp_demo.upsert_config(
+        app_admin=app_admin,
+        module_address="0xabc",
+        initial_supply=1,
+        price_per_equity=2,
+    )
+    mock_client.set_view_response("0xabc::poc_demo::custody_inventory", [0])
+
+    resp = await client.post(
+        "/api/v1/dapps/demo/auto-trade/start",
+        json={
+            "app_admin": app_admin,
+            "interval_secs": 1,
+            "tx_per_tick": 1,
+            "amount_min": 7,
+            "amount_max": 7,
+            "max_runs": 1,
+            "buyer_addresses": [buyer],
+            "auto_create_buyers": 0,
+            "mint_octas": 0,
+        },
+    )
+    assert resp.status_code == 200
+
+    await asyncio.sleep(0.1)
+    await dapp_svc.stop_all_trade_tasks()
+
+    txns = mock_client.submitted_txns
+    mint_tx = next(t for t in txns if t["payload"]["function"] == "0xabc::poc_demo::mint_equity_to_custody")
+    buy_tx = next(t for t in txns if t["payload"]["function"] == "0xabc::poc_demo::buy_equity")
+    assert mint_tx["sender"] == app_admin
+    assert int(mint_tx["payload"]["arguments"][0]) >= 7
+    assert txns.index(mint_tx) < txns.index(buy_tx)
+    assert buy_tx["sender"] == buyer

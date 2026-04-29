@@ -13,7 +13,7 @@ export default function ValidatorList() {
   const navigate = useNavigate();
   const fetchValidators = useCallback(() => getWatchedValidators(), []);
   const { data, loading, refresh } = usePolling(fetchValidators, 0);
-  useEventRefresh(['epoch_changed', 'validator_set_changed', 'power_period_advanced', 'history_sampled'], refresh);
+  useEventRefresh(['epoch_changed', 'validator_set_changed', 'power_period_advanced', 'history_sampled', 'address_book_changed'], refresh);
 
   const [showAdd, setShowAdd] = useState(false);
   const [newAddr, setNewAddr] = useState('');
@@ -47,8 +47,7 @@ export default function ValidatorList() {
   };
 
   const columns = [
-    { title: '地址', dataIndex: 'address', render: (v: string) => <AddressTag address={v} /> },
-    { title: '备注', dataIndex: 'label', render: (v: string) => v || <span style={{ color: '#ccc' }}>-</span> },
+    { title: '验证者名', dataIndex: 'display_name', render: (v: string, r: any) => <AddressTag address={r.address} name={v || r.label} showAddress /> },
     { title: '状态', dataIndex: 'status', render: (v: string) => <StatusBadge status={v} /> },
     { title: '投票权', dataIndex: 'voting_power', render: formatNumber },
     { title: '委托人数', dataIndex: 'delegator_count', render: (v: number) => formatNumber(v || 0) },
@@ -94,7 +93,7 @@ export default function ValidatorList() {
       <Modal title="添加验证者到列表" open={showAdd} onOk={handleAdd} onCancel={() => setShowAdd(false)} okText="添加">
         <Space direction="vertical" style={{ width: '100%', marginTop: 16 }}>
           <Input placeholder="验证者地址 0x..." value={newAddr} onChange={(e) => setNewAddr(e.target.value)} />
-          <Input placeholder="备注（可选）" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+          <Input placeholder="验证者名（可选）" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
         </Space>
       </Modal>
     </div>

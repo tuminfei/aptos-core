@@ -1,4 +1,5 @@
 import pytest
+from app.models.watchlist import add_address
 
 
 @pytest.mark.asyncio
@@ -9,6 +10,21 @@ async def test_power_overview(client):
     assert data["current_period"] == 23
     assert data["power_period_in_epochs"] == 5
     assert data["retention_bps"] == 9950
+
+
+@pytest.mark.asyncio
+async def test_power_store_includes_validator_users(client):
+    await add_address("validator", "0x1a2b", "validator-a")
+
+    resp = await client.get("/api/v1/power/store")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    validator_user = next(item for item in data["watched_users"] if item["address"] == "0x1a2b")
+    assert validator_user["is_validator_user"] is True
+    assert validator_user["in_validator_watchlist"] is True
+    assert validator_user["label"] == "validator-a"
+    assert data["validator_user_count"] >= 1
 
 
 @pytest.mark.asyncio

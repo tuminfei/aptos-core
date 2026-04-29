@@ -125,8 +125,8 @@ export default function AddValidator() {
               )}
             </Form.Item>
           )}
-          <Form.Item name="label" label="备注（可选）">
-            <input className="ant-input" placeholder="如: validator-4" />
+          <Form.Item name="label" label="验证者名（可选）">
+            <input className="ant-input" placeholder="如: 验证者4" />
           </Form.Item>
           <Form.Item name="power" label="目标算力"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
           <Form.Item name="mint_topo" label="铸造 TOPO 数量"><InputNumber min={0} style={{ width: '100%' }} addonAfter="TOPO" /></Form.Item>

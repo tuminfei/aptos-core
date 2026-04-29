@@ -1,20 +1,22 @@
 import { useState, useCallback } from 'react';
 import { Table, Button, Space, Modal, Input, message, Tag, Radio, Alert, Typography } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { getWatchedUsers, addToWatchlist, removeFromWatchlist, generateAccount } from '../../services/watchlist';
+import { getWatchedUsers, addToWatchlist, removeFromWatchlist, generateAccount, updateWatchlistLabel } from '../../services/watchlist';
 import { usePolling } from '../../hooks/usePolling';
 import { useEventRefresh } from '../../hooks/useEventRefresh';
 import AddressTag from '../../components/AddressTag';
+import { useAddressBook } from '../../contexts/AddressBookContext';
 import { formatNumber, formatRewardAmount } from '../../utils/format';
 
 const { Text } = Typography;
 
 export default function UserSearch() {
   const navigate = useNavigate();
+  const { refresh: refreshAddressBook } = useAddressBook();
   const fetchUsers = useCallback(() => getWatchedUsers(), []);
   const { data, loading, refresh } = usePolling(fetchUsers, 0);
-  useEventRefresh(['epoch_changed', 'power_period_advanced', 'history_sampled'], refresh);
+  useEventRefresh(['epoch_changed', 'power_period_advanced', 'history_sampled', 'address_book_changed'], refresh);
 
   const [showAdd, setShowAdd] = useState(false);
   const [addMode, setAddMode] = useState<'generate' | 'existing'>('generate');
@@ -41,6 +43,7 @@ export default function UserSearch() {
         closeAddModal();
       }
       refresh();
+      refreshAddressBook();
     } catch {}
     setCreating(false);
   };
@@ -62,15 +65,59 @@ export default function UserSearch() {
         await removeFromWatchlist('user', address);
         message.success('已移除');
         refresh();
+        refreshAddressBook();
+      },
+    });
+  };
+
+  const handleRename = (row: any) => {
+    const currentName = row.display_name || row.label || '';
+    let nextName = currentName;
+    Modal.confirm({
+      title: '修改用户名',
+      content: (
+        <Input
+          defaultValue={currentName}
+          placeholder={row.is_validator_user && !row.in_user_watchlist ? '验证者名' : '用户名'}
+          onChange={(event) => { nextName = event.target.value; }}
+        />
+      ),
+      okText: '保存',
+      cancelText: '取消',
+      onOk: async () => {
+        const kind = row.in_user_watchlist || !row.is_validator_user ? 'user' : 'validator';
+        await updateWatchlistLabel(kind, row.address, nextName.trim());
+        message.success('名称已更新');
+        refresh();
+        refreshAddressBook();
       },
     });
   };
 
   const columns = [
-    { title: '地址', dataIndex: 'address', render: (v: string) => <AddressTag address={v} /> },
-    { title: '备注', dataIndex: 'label', render: (v: string) => v || <span style={{ color: '#ccc' }}>-</span> },
+    {
+      title: '用户名',
+      dataIndex: 'display_name',
+      render: (v: string, r: any) => (
+        <Space direction="vertical" size={2}>
+          <AddressTag address={r.address} name={v || r.label} showAddress />
+          <Space size={4}>
+            {r.is_validator_user ? <Tag color="blue">验证者</Tag> : null}
+            <Button
+              size="small"
+              type="text"
+              icon={<EditOutlined />}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleRename(r);
+              }}
+            />
+          </Space>
+        </Space>
+      ),
+    },
     { title: 'TOPO 余额', dataIndex: 'balance_topo', render: (v: number) => v?.toFixed(2) ?? '-' },
-    { title: '已提交算力', dataIndex: 'committed_power', render: formatNumber },
+    { title: '原始算力', dataIndex: 'raw_power', render: (v: number) => formatNumber(v || 0) },
     { title: '有效算力', dataIndex: 'effective_power', render: (v: number) => formatNumber(v || 0) },
     { title: '保证金 TOPO', dataIndex: 'deposit_topo', render: (v: number) => v?.toFixed(2) ?? '-' },
     { title: '预计奖励', render: (_: any, r: any) => formatRewardAmount(r.rewards?.estimated_epoch_reward_octas || 0) },
@@ -81,7 +128,9 @@ export default function UserSearch() {
       title: '操作', render: (_: any, r: any) => (
         <Space>
           <Button size="small" type="primary" onClick={() => navigate(`/users/${r.address}`)}>详情</Button>
-          <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleRemove(r.address)} />
+          {r.in_user_watchlist ? (
+            <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleRemove(r.address)} />
+          ) : null}
         </Space>
       ),
     },
@@ -124,7 +173,7 @@ export default function UserSearch() {
             <Radio.Button value="generate">生成新账户</Radio.Button>
             <Radio.Button value="existing">添加已有地址</Radio.Button>
           </Radio.Group>
-          <Input placeholder="备注（可选）" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+          <Input placeholder="用户名（可选）" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
           {addMode === 'existing' && (
             <Input placeholder="用户地址 0x..." value={newAddr} onChange={(e) => setNewAddr(e.target.value)} />
           )}

@@ -130,7 +130,7 @@ async def _list_dapps_uncached():
     except Exception:
         infos = []
 
-    demo_configs = await dapp_demo.get_configs(valid_admins)
+    demo_configs = await dapp_svc.apply_contribution_stats_to_demo_configs(await dapp_demo.get_configs(valid_admins))
     apps = []
     for i, admin in enumerate(valid_admins):
         info = infos[i] if i < len(infos) else {}

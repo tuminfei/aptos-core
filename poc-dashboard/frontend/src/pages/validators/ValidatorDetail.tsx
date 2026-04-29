@@ -16,7 +16,7 @@ import { formatCompactNumber, formatNumber, formatPercent, formatRewardAmount, f
 export default function ValidatorDetail() {
   const { address } = useParams<{ address: string }>();
   const navigate = useNavigate();
-  const [historyLimit, setHistoryLimit] = useState(200);
+  const [historyLimit, setHistoryLimit] = useState(50);
   const [historyOffset, setHistoryOffset] = useState(0);
   const fetchDetail = useCallback(() => getValidator(address!), [address]);
   const fetchHistory = useCallback(() => getValidatorSnapshotHistory(address!, historyLimit, historyOffset), [address, historyLimit, historyOffset]);
@@ -40,22 +40,23 @@ export default function ValidatorDetail() {
   const delegatorCountSeries = snapshots.map((h: any) => Number(h.delegator_count || 0));
   const activeStakeSeries = snapshots.map((h: any) => Number(h.stake_active_octas || 0) / 1e8);
   const estimatedRewardSeries = snapshots.map((h: any) => Number(h.estimated_epoch_total_octas || 0) / 1e8);
-  const historyOption = {
+  const powerHistoryOption = {
     tooltip: { trigger: 'axis' as const },
     legend: { top: 0 },
-    grid: { left: 56, right: 72, top: 44, bottom: 32, containLabel: true },
+    grid: { left: 56, right: 64, top: 44, bottom: 32, containLabel: true },
     xAxis: { type: 'category' as const, data: snapshotLabels },
     yAxis: [
       createScaledValueAxis({
-        name: '算力/人数',
-        values: [...votingPowerSeries, ...totalPoolPowerSeries, ...delegatorCountSeries],
+        name: '投票权',
+        values: votingPowerSeries,
         formatter: formatCompactNumber,
-        minInterval: 1,
+        position: 'left',
       }),
       createScaledValueAxis({
-        name: 'TOPO',
-        values: [...activeStakeSeries, ...estimatedRewardSeries],
+        name: '池算力',
+        values: totalPoolPowerSeries,
         formatter: formatCompactNumber,
+        position: 'right',
       }),
     ],
     series: [
@@ -68,19 +69,55 @@ export default function ValidatorDetail() {
       {
         name: '池总算力',
         type: 'line',
+        yAxisIndex: 1,
         smooth: true,
         data: totalPoolPowerSeries,
       },
+    ],
+  };
+  const delegatorHistoryOption = {
+    tooltip: { trigger: 'axis' as const },
+    legend: { top: 0 },
+    grid: { left: 56, right: 32, top: 44, bottom: 32, containLabel: true },
+    xAxis: { type: 'category' as const, data: snapshotLabels },
+    yAxis: createScaledValueAxis({
+      name: '人数',
+      values: delegatorCountSeries,
+      formatter: formatCompactNumber,
+      minInterval: 1,
+    }),
+    series: [
       {
         name: '委托人数',
         type: 'line',
         smooth: true,
         data: delegatorCountSeries,
       },
+    ],
+  };
+  const stakeRewardHistoryOption = {
+    tooltip: { trigger: 'axis' as const },
+    legend: { top: 0 },
+    grid: { left: 56, right: 64, top: 44, bottom: 32, containLabel: true },
+    xAxis: { type: 'category' as const, data: snapshotLabels },
+    yAxis: [
+      createScaledValueAxis({
+        name: '质押',
+        values: activeStakeSeries,
+        formatter: formatCompactNumber,
+        position: 'left',
+      }),
+      createScaledValueAxis({
+        name: '入账',
+        values: estimatedRewardSeries,
+        formatter: formatCompactNumber,
+        position: 'right',
+      }),
+    ],
+    series: [
       {
         name: '活跃质押',
         type: 'line',
-        yAxisIndex: 1,
         smooth: true,
         data: activeStakeSeries,
       },
@@ -93,7 +130,7 @@ export default function ValidatorDetail() {
     ],
   };
 
-  useEventRefresh(['epoch_changed', 'validator_set_changed', 'power_period_advanced', 'history_sampled'], refresh);
+  useEventRefresh(['epoch_changed', 'validator_set_changed', 'power_period_advanced', 'history_sampled', 'address_book_changed'], refresh);
   useEventRefresh(['history_sampled'], refreshHistory);
 
   if (!data && !loading) return <div>验证者不存在</div>;
@@ -136,7 +173,7 @@ export default function ValidatorDetail() {
   };
 
   const delegatorColumns = [
-    { title: '地址', dataIndex: 'address', render: (v: string) => <AddressTag address={v} /> },
+    { title: '用户', dataIndex: 'address', render: (v: string, r: any) => <AddressTag address={v} name={r.display_name} showAddress /> },
     { title: '保证金 TOPO', dataIndex: 'deposit_topo', render: (v: number) => v?.toFixed(2) },
     { title: 'POC算力', dataIndex: 'poc_power', render: formatNumber },
     { title: '有效算力', dataIndex: 'effective_power', render: formatNumber },
@@ -149,7 +186,7 @@ export default function ValidatorDetail() {
   return (
     <div>
       <Card loading={loading} style={{ marginBottom: 16 }}>
-        <Descriptions title={<Space>验证者 <AddressTag address={address || ''} short={false} /> <StatusBadge status={v.status || ''} /></Space>} bordered column={2}>
+        <Descriptions title={<Space>验证者 <AddressTag address={address || ''} name={v.display_name} showAddress /> <StatusBadge status={v.status || ''} /></Space>} bordered column={2}>
           <Descriptions.Item label="Operator"><AddressTag address={v.operator || ''} /></Descriptions.Item>
           <Descriptions.Item label="Validator Index">{v.validator_index}</Descriptions.Item>
           <Descriptions.Item label="投票权">{formatNumber(v.voting_power || 0)}</Descriptions.Item>
@@ -194,7 +231,20 @@ export default function ValidatorDetail() {
         )}
         style={{ marginBottom: 16 }}
       >
-        <ReactECharts option={historyOption} style={{ height: 300 }} />
+        <Row gutter={[16, 16]}>
+          <Col xs={24} xl={8}>
+            <div style={{ marginBottom: 4, color: '#666', fontSize: 12 }}>投票权 / 池总算力</div>
+            <ReactECharts option={powerHistoryOption} style={{ height: 260 }} />
+          </Col>
+          <Col xs={24} xl={8}>
+            <div style={{ marginBottom: 4, color: '#666', fontSize: 12 }}>委托人数</div>
+            <ReactECharts option={delegatorHistoryOption} style={{ height: 260 }} />
+          </Col>
+          <Col xs={24} xl={8}>
+            <div style={{ marginBottom: 4, color: '#666', fontSize: 12 }}>活跃质押 / 预计入账</div>
+            <ReactECharts option={stakeRewardHistoryOption} style={{ height: 260 }} />
+          </Col>
+        </Row>
       </Card>
 
       <Card title={`委托者 (${v.pool?.delegators?.length || 0})`} style={{ marginBottom: 16 }}>

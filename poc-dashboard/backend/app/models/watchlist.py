@@ -49,3 +49,20 @@ async def update_label(kind: str, address: str, label: str):
         (label, kind, address),
     )
     await db.commit()
+
+
+async def upsert_label(kind: str, address: str, label: str) -> int:
+    db = await get_db()
+    cursor = await db.execute(
+        """
+        INSERT INTO watch_addresses (kind, address, label, updated_at)
+        VALUES (?, ?, ?, datetime('now'))
+        ON CONFLICT(kind, address) DO UPDATE SET
+            label = excluded.label,
+            enabled = 1,
+            updated_at = datetime('now')
+        """,
+        (kind, address, label),
+    )
+    await db.commit()
+    return cursor.lastrowid

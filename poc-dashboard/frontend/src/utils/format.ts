@@ -39,6 +39,14 @@ export function formatCompactNumber(n: number | string): string {
   if (!Number.isFinite(value) || value === 0) return '0';
 
   const abs = Math.abs(value);
+  if (abs < 0.01) {
+    const exponent = Math.floor(Math.log10(abs));
+    const coefficient = value / Math.pow(10, exponent);
+    return `${coefficient.toLocaleString(undefined, { maximumFractionDigits: 2 })}x10${formatSuperscriptExponent(exponent)}`;
+  }
+  if (abs < 1) {
+    return value.toLocaleString(undefined, { maximumFractionDigits: 6 });
+  }
   if (abs < 10_000) {
     return value.toLocaleString(undefined, { maximumFractionDigits: abs >= 100 ? 0 : 2 });
   }
@@ -64,6 +72,24 @@ export function formatRewardAmount(octas: number | string): string {
 
 export function formatPercent(bps: number): string {
   return (bps / 100).toFixed(1) + '%';
+}
+
+export function formatDuration(seconds: number | string): string {
+  const value = Math.max(0, Math.floor(Number(seconds || 0)));
+  if (!Number.isFinite(value) || value === 0) return '0 秒';
+
+  const days = Math.floor(value / 86400);
+  const hours = Math.floor((value % 86400) / 3600);
+  const minutes = Math.floor((value % 3600) / 60);
+  const secs = value % 60;
+  const parts: string[] = [];
+
+  if (days) parts.push(`${days} 天`);
+  if (hours) parts.push(`${hours} 小时`);
+  if (minutes && parts.length < 2) parts.push(`${minutes} 分钟`);
+  if (!parts.length) parts.push(`${secs} 秒`);
+
+  return parts.slice(0, 2).join(' ');
 }
 
 export function formatRewardRate(rate: { bps?: number; numerator?: number | string; denominator?: number | string } | undefined): string {

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Query
+from datetime import datetime, timezone
 from app.chain.client import get_chain_client
 from app.chain import view
+from app.models import operation_log
 from app.services import rewards_svc
 from app.services.cache_svc import get_or_set
 
@@ -125,6 +127,64 @@ def period_for_epoch(epoch: int, power_period_in_epochs: int) -> int:
     return (epoch - 1) // power_period_in_epochs
 
 
+def _parse_log_created_at_secs(value: str | None) -> int:
+    if not value:
+        return 0
+    try:
+        normalized = value.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(normalized)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return int(dt.timestamp())
+    except Exception:
+        return 0
+
+
+async def build_cooldown_info(address: str, stake_info: dict, now_secs: int, cooldown_secs: int = 0) -> dict:
+    cooldown_until = int(stake_info.get("cooldown_until_secs", 0) or 0)
+    delegated_to = stake_info.get("delegated_to", "0x0")
+    is_in_cooldown = cooldown_until > now_secs
+    reason_code = "none"
+    reason = ""
+    latest_undelegate = None
+
+    if is_in_cooldown:
+        if delegated_to != "0x0":
+            reason_code = "inconsistent_delegation"
+            reason = "链上仍有委托目标，但冷却截止时间在未来；请刷新或检查链上状态。"
+        else:
+            latest_undelegate = await operation_log.get_latest_success_for_target("undelegate", address)
+            if latest_undelegate:
+                log_secs = _parse_log_created_at_secs(latest_undelegate.get("created_at"))
+                cooldown_started_after = cooldown_until - int(cooldown_secs or 0)
+                is_current_window = (
+                    cooldown_secs <= 0
+                    or log_secs == 0
+                    or log_secs >= cooldown_started_after - 300
+                )
+                if is_current_window:
+                    reason_code = "manual_undelegate"
+                    reason = "最近通过 Dashboard 取消委托后进入冷却期。"
+                else:
+                    latest_undelegate = None
+            else:
+                reason_code = "undelegated_or_force_exit"
+                reason = "该账户已解除委托并处于链上冷却期；可能是系统因有效算力低于维持阈值强制退出，或通过外部工具取消委托。"
+
+            if not reason:
+                reason_code = "undelegated_or_force_exit"
+                reason = "该账户已解除委托并处于链上冷却期；可能是系统因有效算力低于维持阈值强制退出，或通过外部工具取消委托。"
+
+    return {
+        "cooldown_until": cooldown_until,
+        "is_in_cooldown": is_in_cooldown,
+        "cooldown_remaining_secs": max(0, cooldown_until - now_secs) if is_in_cooldown else 0,
+        "cooldown_reason_code": reason_code,
+        "cooldown_reason": reason,
+        "cooldown_source": latest_undelegate,
+    }
+
+
 @router.get("/users/{address}")
 async def user_detail(address: str):
     return await get_or_set(f"user:detail:{address.lower()}", lambda: _user_detail_uncached(address), ttl_secs=10.0)
@@ -177,7 +237,13 @@ async def _user_detail_uncached(address: str):
         pass
     deposit_octas = stake_info["deposit"]
     delegated_to = stake_info["delegated_to"]
-    cooldown_until = stake_info["cooldown_until_secs"]
+    import time
+    now_secs = int(time.time())
+    try:
+        cooldown_secs = await view.get_cooldown_secs(client)
+    except Exception:
+        cooldown_secs = 0
+    cooldown_info = await build_cooldown_info(address, stake_info, now_secs, cooldown_secs)
 
     rewards = await rewards_svc.estimate_user_rewards(
         client,
@@ -186,7 +252,6 @@ async def _user_detail_uncached(address: str):
         effective_power=effective,
     )
 
-    import time
     return {
         "address": address,
         "balance": {
@@ -245,8 +310,7 @@ async def _user_detail_uncached(address: str):
             "deposit_octas": deposit_octas,
             "deposit_topo": deposit_octas / 1e8,
             "delegated_to": delegated_to,
-            "cooldown_until": cooldown_until,
-            "is_in_cooldown": cooldown_until > int(time.time()),
+            **cooldown_info,
         },
         "rewards": rewards,
     }

@@ -51,7 +51,10 @@ async def sample_consensus_epoch_voting_power(force: bool = False, expected_epoc
                     if not metrics["validators"]:
                         last_error = f"{source_url} 没有 validator voting power metrics"
                         continue
-                    return await _store_metrics(source_url, metrics, force)
+                    stored = await _store_metrics(source_url, metrics, force)
+                    if stored.get("captured") or stored.get("skipped"):
+                        return stored
+                    last_error = str(stored.get("reason") or f"{source_url} 采集失败")
                 except Exception as exc:
                     last_error = f"{source_url}: {exc}"
                     continue
@@ -79,7 +82,7 @@ def _inspection_urls() -> list[str]:
         except Exception as exc:
             logger.debug("failed to parse cluster state for inspection urls: %s", exc)
 
-    for node_yaml in sorted(glob.glob(os.path.join(cluster_dir, "nodes", "*", "node.yaml"))):
+    for node_yaml in _node_yaml_paths(cluster_dir):
         try:
             with open(node_yaml) as f:
                 node_cfg = yaml.safe_load(f) or {}
@@ -98,6 +101,28 @@ def _inspection_urls() -> list[str]:
             deduped.append(candidate)
             seen.add(candidate)
     return deduped
+
+
+def _node_yaml_paths(cluster_dir: str) -> list[str]:
+    patterns = [
+        os.path.join(cluster_dir, "node.yaml"),
+        os.path.join(cluster_dir, "nodes", "*", "node.yaml"),
+        os.path.join(cluster_dir, "*", "node.yaml"),
+    ]
+    seen: set[str] = set()
+    paths: list[str] = []
+    for pattern in patterns:
+        for path in glob.glob(pattern):
+            if path in seen:
+                continue
+            seen.add(path)
+            paths.append(path)
+    return sorted(paths, key=_node_path_sort_key)
+
+
+def _node_path_sort_key(path: str) -> tuple[str, int, str]:
+    name = os.path.basename(os.path.dirname(path))
+    return ("", int(name), path) if name.isdigit() else (name, -1, path)
 
 
 def _local_http_url(address: str, port: int | str) -> str:

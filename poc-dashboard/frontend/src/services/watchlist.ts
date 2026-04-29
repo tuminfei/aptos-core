@@ -10,6 +10,11 @@ export async function addToWatchlist(params: { kind: string; address: string; la
   return data;
 }
 
+export async function updateWatchlistLabel(kind: string, address: string, label: string) {
+  const { data } = await api.put(`/watchlist/${kind}/${address}/label`, { label });
+  return data;
+}
+
 export async function generateAccount(params: { kind: 'user' | 'validator' | 'dapp'; label?: string }) {
   const { data } = await api.post('/watchlist/generate-account', params);
   return data;
@@ -27,5 +32,10 @@ export async function getWatchedUsers() {
 
 export async function getWatchedValidators() {
   const { data } = await api.get('/watchlist/validators');
+  return data;
+}
+
+export async function getAddressBook() {
+  const { data } = await api.get('/address-book');
   return data;
 }

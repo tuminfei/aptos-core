@@ -1,6 +1,6 @@
 # 集群目录路径（相对于本文件或绝对路径）
-# 启动时自动从此目录读取: API地址、chain_id、密钥
-cluster_dir: "./poc-validator-cluster"
+# 启动时自动从此目录读取: API地址、chain_id、core_resources 密钥、validator/operator 密钥
+cluster_dir: "/home/appuser/chain-data"
 
 server:
   host: "0.0.0.0"

@@ -71,12 +71,16 @@ class MockChainClient:
             "0x1::poc_registry::get_app_state": [1],
             "0x1::poc_registry::get_poc_listing_status": [2],
             "0x1::poc_registry::get_effective_weight_pbs": [5000],
+            "0xabc::poc_demo::custody_inventory": [100],
             "0x1::coin::balance": [100000000000],
         }
         self._view_responses = v
 
     def set_view_response(self, function_id: str, response: list):
         self._view_responses[function_id] = response
+
+    def remove_view_response(self, function_id: str):
+        self._view_responses.pop(function_id, None)
 
     async def close(self):
         pass

@@ -3,7 +3,10 @@ from pydantic import BaseModel
 from app.models import watchlist
 from app.chain.client import get_chain_client
 from app.chain import view
+from app.api.ws import broadcast
+from app.services import address_book_svc
 from app.services import rewards_svc
+from app.services.cache_svc import invalidate_many
 from app.api.errors import ParamError
 
 router = APIRouter(tags=["watchlist"])
@@ -11,10 +14,28 @@ router = APIRouter(tags=["watchlist"])
 VALID_WATCH_KINDS = {"user", "validator", "dapp"}
 
 
+def _current_raw_power(power_versions: dict, current_period: int) -> dict:
+    newer_period = int(power_versions.get("newer_period", 0) or 0)
+    newer_power = int(power_versions.get("newer_power", 0) or 0)
+    if (newer_period > 0 or newer_power > 0) and newer_period <= current_period:
+        return {"raw_power": newer_power, "raw_power_period": newer_period, "raw_power_slot": "newer"}
+
+    older_period = int(power_versions.get("older_period", 0) or 0)
+    older_power = int(power_versions.get("older_power", 0) or 0)
+    if (older_period > 0 or older_power > 0) and older_period <= current_period:
+        return {"raw_power": older_power, "raw_power_period": older_period, "raw_power_slot": "older"}
+
+    return {"raw_power": 0, "raw_power_period": 0, "raw_power_slot": "none"}
+
+
 class AddAddressReq(BaseModel):
     kind: str
     address: str
     label: str | None = None
+
+
+class UpdateLabelReq(BaseModel):
+    label: str = ""
 
 
 @router.get("/watchlist")
@@ -26,6 +47,7 @@ async def list_watchlist(kind: str = Query(None)):
 @router.post("/watchlist")
 async def add_to_watchlist(req: AddAddressReq):
     wid = await watchlist.add_address(req.kind, req.address, req.label)
+    await broadcast("address_book_changed", {"kind": req.kind, "address": req.address})
     return {"id": wid, "success": True}
 
 
@@ -37,7 +59,19 @@ class GenerateAccountReq(BaseModel):
 @router.delete("/watchlist/{kind}/{address}")
 async def remove_from_watchlist(kind: str, address: str):
     await watchlist.remove_address(kind, address)
+    await broadcast("address_book_changed", {"kind": kind, "address": address})
     return {"success": True}
+
+
+@router.put("/watchlist/{kind}/{address}/label")
+async def update_watchlist_label(kind: str, address: str, req: UpdateLabelReq):
+    if kind not in VALID_WATCH_KINDS:
+        raise ParamError(f"Unsupported watchlist kind: {kind}")
+    label = (req.label or "").strip()
+    await watchlist.upsert_label(kind, address, label)
+    await invalidate_many("user:", "validators:", "validator:")
+    await broadcast("address_book_changed", {"kind": kind, "address": address, "label": label})
+    return {"success": True, "kind": kind, "address": address, "label": label}
 
 
 @router.post("/watchlist/generate-account")
@@ -51,6 +85,7 @@ async def generate_account(req: GenerateAccountReq):
     key, address = km.generate_account(req.label or "")
     await km.persist_key(key, address, req.label or "")
     await watchlist.add_address(req.kind, address, req.label)
+    await broadcast("address_book_changed", {"kind": req.kind, "address": address})
     return {
         "address": address,
         "public_key": key.public_key_hex,
@@ -61,26 +96,48 @@ async def generate_account(req: GenerateAccountReq):
     }
 
 
+@router.get("/address-book")
+async def address_book():
+    client = get_chain_client()
+    entries = await address_book_svc.build_address_book(client)
+    return {"total": len(entries), "entries": entries}
+
+
 @router.get("/watchlist/users")
 async def list_watched_users():
-    """返回所有已添加的用户，附带链上状态"""
-    items = await watchlist.get_addresses("user")
+    """返回所有可作为用户操作的地址，附带链上状态。"""
     client = get_chain_client()
+    items = await _get_user_like_watch_items(client)
+    address_book = await address_book_svc.build_address_book(client)
     reward_context = await rewards_svc.get_reward_context(client)
+    try:
+        current_period = await view.get_current_period(client)
+    except Exception:
+        current_period = 0
     results = []
     for item in items:
         addr = item["address"]
-        entry = {"address": addr, "label": item.get("label", "")}
+        display_name = address_book.get(addr.lower(), {}).get("display_name", "")
+        entry = {
+            "address": addr,
+            "label": item.get("label", ""),
+            "display_name": display_name,
+            "source": item.get("source", "user"),
+            "sources": item.get("sources", ["user"]),
+            "is_validator_user": bool(item.get("is_validator_user", False)),
+            "in_user_watchlist": bool(item.get("in_user_watchlist", False)),
+            "in_validator_watchlist": bool(item.get("in_validator_watchlist", False)),
+        }
         try:
             balance = await view.get_topo_balance(client, addr)
             entry["balance_topo"] = balance / 1e8
         except Exception:
             entry["balance_topo"] = 0
         try:
-            power = await view.get_user_committed_power(client, addr)
-            entry["committed_power"] = power
+            power_versions = await view.get_user_power_version(client, addr)
+            entry.update(_current_raw_power(power_versions, current_period))
         except Exception:
-            entry["committed_power"] = 0
+            entry.update({"raw_power": 0, "raw_power_period": 0, "raw_power_slot": "none"})
         stake = {"deposit": 0, "delegated_to": "0x0", "cooldown_until_secs": 0}
         try:
             stake = await view.get_user_stake_info(client, addr)
@@ -108,6 +165,71 @@ async def list_watched_users():
     return {"total": len(results), "users": results}
 
 
+async def _get_user_like_watch_items(client=None, include_chain_validators: bool = True) -> list[dict]:
+    """Merge explicit users with validator addresses that are also self-delegated users."""
+    users = await watchlist.get_addresses("user")
+    validators = await watchlist.get_addresses("validator")
+    address_book = await address_book_svc.build_address_book(client, include_chain_validators=False)
+    by_address: dict[str, dict] = {}
+
+    def add_item(item: dict, source: str, *, label: str = "", in_watchlist: bool = True) -> None:
+        address = item.get("address", "")
+        if not address:
+            return
+        key = address.lower()
+        current = by_address.get(key)
+        if not current:
+            current = {
+                "address": address,
+                "label": "",
+                "source": source,
+                "sources": [],
+                "is_validator_user": False,
+                "in_user_watchlist": False,
+                "in_validator_watchlist": False,
+            }
+            by_address[key] = current
+        if source not in current["sources"]:
+            current["sources"].append(source)
+        if source == "user":
+            current["in_user_watchlist"] = bool(current.get("in_user_watchlist")) or in_watchlist
+            current["source"] = "user"
+        if source == "validator":
+            current["in_validator_watchlist"] = bool(current.get("in_validator_watchlist")) or in_watchlist
+            current["is_validator_user"] = True
+        if label and (not current.get("label") or source == "user"):
+            current["label"] = label
+        display_name = address_book.get(key, {}).get("display_name", "")
+        if display_name:
+            current["display_name"] = display_name
+
+    for item in users:
+        add_item(item, "user", label=item.get("label", ""), in_watchlist=True)
+    for item in validators:
+        add_item(item, "validator", label=item.get("label", ""), in_watchlist=True)
+
+    if include_chain_validators:
+        if client is None:
+            client = get_chain_client()
+        for getter in (view.get_active_validators, view.get_pending_active_validators):
+            try:
+                for address in await getter(client, 0, 200):
+                    add_item({"address": address}, "validator", in_watchlist=False)
+            except Exception:
+                pass
+
+    return sorted(
+        by_address.values(),
+        key=lambda item: (
+            0 if item.get("in_user_watchlist") else 1,
+            0 if item.get("in_validator_watchlist") else 1,
+            item.get("label") or "",
+            item.get("display_name") or "",
+            item["address"].lower(),
+        ),
+    )
+
+
 @router.get("/watchlist/validators")
 async def list_watched_validators():
     """返回所有已添加的验证者（watchlist + 链上活跃），附带链上状态"""
@@ -116,6 +238,7 @@ async def list_watched_validators():
     watched_labels = {item["address"].lower(): item.get("label", "") for item in items}
 
     client = get_chain_client()
+    address_book = await address_book_svc.build_address_book(client, include_chain_validators=False)
     reward_context = await rewards_svc.get_reward_context(client)
     all_addrs = set()
     labels = {}
@@ -143,9 +266,11 @@ async def list_watched_validators():
 
     results = []
     for addr in all_addrs:
+        display_name = labels.get(addr.lower(), "") or address_book.get(addr.lower(), {}).get("display_name", "")
         entry = {
             "address": addr,
             "label": labels.get(addr.lower(), ""),
+            "display_name": display_name,
             "in_watchlist": addr.lower() in watched_addrs,
         }
         try:
@@ -172,9 +297,13 @@ async def list_watched_validators():
             entry["total_pool_power"] = 0
         try:
             idx = await view.get_validator_index(client, addr)
+            if not entry["display_name"]:
+                entry["display_name"] = f"验证者{idx}"
+            entry["validator_index"] = idx
             proposals = await view.get_proposal_counts(client, idx)
         except Exception:
             idx = -1
+            entry["validator_index"] = -1
             proposals = {"successful": 0, "failed": 0}
         rewards = await rewards_svc.estimate_validator_rewards(
             client,

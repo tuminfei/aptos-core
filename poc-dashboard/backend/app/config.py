@@ -2,6 +2,7 @@ import os
 import glob
 import json
 import urllib.request
+from dataclasses import dataclass
 from urllib.parse import urlsplit, urlunsplit
 from typing import Optional
 from pydantic import BaseModel
@@ -50,6 +51,7 @@ _settings: Optional[Settings] = None
 # The cluster script uses this hardcoded default private key for core_resources.
 # layout.yaml only stores the public key, so we need the private key separately.
 DEFAULT_ROOT_PRIVATE_KEY = "0xD04470F43AB6AEAA4EB616B72128881EEF77346F2075FFE68E14BA7DEBD8095E"
+CORE_RESOURCES_ADDRESS = "0xa550c18"
 
 
 class ClusterInfo:
@@ -58,7 +60,20 @@ class ClusterInfo:
         self.chain_id: int | None = None
 
 
+@dataclass
+class ApiInfo:
+    url: str
+    chain_id: int | None = None
+
+
 def _load_cluster(cluster_dir: str) -> ClusterInfo | None:
+    info = _load_layout_cluster(cluster_dir)
+    if info:
+        return info
+    return _load_node_dir_cluster(cluster_dir)
+
+
+def _load_layout_cluster(cluster_dir: str) -> ClusterInfo | None:
     layout_path = os.path.join(cluster_dir, "genesis-workspace", "layout.yaml")
     if not os.path.exists(layout_path):
         return None
@@ -73,7 +88,7 @@ def _load_cluster(cluster_dir: str) -> ClusterInfo | None:
     # The actual private key is either in config.yaml or the hardcoded default.
     core_resources = KeyEntry(
         private_key=DEFAULT_ROOT_PRIVATE_KEY,
-        address="0xa550c18",
+        address=CORE_RESOURCES_ADDRESS,
         name="core_resources",
     )
 
@@ -97,9 +112,136 @@ def _load_cluster(cluster_dir: str) -> ClusterInfo | None:
     return info
 
 
-def _detect_api_url(cluster_dir: str) -> str | None:
-    candidates: list[str] = []
-    for node_yaml in sorted(glob.glob(os.path.join(cluster_dir, "nodes", "*", "node.yaml"))):
+def _load_node_dir_cluster(cluster_dir: str) -> ClusterInfo | None:
+    node_paths = _node_yaml_paths(cluster_dir)
+    root_key = _read_root_private_key(cluster_dir)
+    operators: list[KeyEntry] = []
+
+    for node_yaml in node_paths:
+        try:
+            with open(node_yaml) as f:
+                node_cfg = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+
+        if _node_role(node_cfg) == "full_node":
+            continue
+
+        node_dir = os.path.dirname(node_yaml)
+        identity_path = _validator_identity_path(node_cfg, node_dir)
+        if not identity_path or not os.path.exists(identity_path):
+            continue
+
+        try:
+            with open(identity_path) as f:
+                identity = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+
+        private_key = _normalize_hex(identity.get("account_private_key", ""))
+        address = _normalize_address(identity.get("account_address", ""))
+        if not private_key or not address:
+            continue
+
+        node_name = os.path.basename(node_dir)
+        name = f"validator-{node_name}" if node_name.isdigit() else node_name
+        operators.append(KeyEntry(private_key=private_key, address=address, name=name))
+
+    if not root_key and not operators:
+        return None
+
+    info = ClusterInfo()
+    info.keys = KeysConfig(
+        core_resources=KeyEntry(
+            private_key=root_key or DEFAULT_ROOT_PRIVATE_KEY,
+            address=CORE_RESOURCES_ADDRESS,
+            name="core_resources",
+        ),
+        operators=operators,
+    )
+    return info
+
+
+def _read_root_private_key(cluster_dir: str) -> str | None:
+    text_path = os.path.join(cluster_dir, "root_key")
+    if os.path.exists(text_path):
+        try:
+            with open(text_path) as f:
+                key = _normalize_hex(f.read())
+            if key:
+                return key
+        except Exception:
+            pass
+
+    bin_path = os.path.join(cluster_dir, "root_key.bin")
+    if os.path.exists(bin_path):
+        try:
+            with open(bin_path, "rb") as f:
+                data = f.read()
+            if data.endswith(b"\n"):
+                data = data[:-1]
+            if data:
+                return "0x" + data.hex()
+        except Exception:
+            pass
+
+    return None
+
+
+def _normalize_hex(value: object) -> str:
+    text = str(value or "").strip().strip('"').strip("'")
+    if text.startswith(("0x", "0X")):
+        text = text[2:]
+    if not text:
+        return ""
+    return "0x" + text.lower()
+
+
+def _normalize_address(value: object) -> str:
+    return _normalize_hex(value)
+
+
+def _node_yaml_paths(cluster_dir: str) -> list[str]:
+    patterns = [
+        os.path.join(cluster_dir, "node.yaml"),
+        os.path.join(cluster_dir, "nodes", "*", "node.yaml"),
+        os.path.join(cluster_dir, "*", "node.yaml"),
+    ]
+    seen: set[str] = set()
+    paths: list[str] = []
+    for pattern in patterns:
+        for path in glob.glob(pattern):
+            if path not in seen:
+                seen.add(path)
+                paths.append(path)
+    return sorted(paths, key=_node_path_sort_key)
+
+
+def _node_path_sort_key(path: str) -> tuple[str, int, str]:
+    name = os.path.basename(os.path.dirname(path))
+    return ("", int(name), path) if name.isdigit() else (name, -1, path)
+
+
+def _node_role(node_cfg: dict) -> str:
+    role = str((node_cfg.get("base") or {}).get("role") or "").lower()
+    if role:
+        return role
+    return "validator" if node_cfg.get("validator_network") or node_cfg.get("consensus") else ""
+
+
+def _validator_identity_path(node_cfg: dict, node_dir: str) -> str:
+    safety_rules = ((node_cfg.get("consensus") or {}).get("safety_rules") or {})
+    initial_config = safety_rules.get("initial_safety_rules_config") or {}
+    from_file = initial_config.get("from_file") or {}
+    identity_path = from_file.get("identity_blob_path")
+    if identity_path:
+        return identity_path
+    return os.path.join(node_dir, "validator-identity.yaml")
+
+
+def _detect_api_info(cluster_dir: str) -> ApiInfo | None:
+    candidates: list[tuple[str, str]] = []
+    for node_yaml in _node_yaml_paths(cluster_dir):
         try:
             with open(node_yaml) as f:
                 node_cfg = yaml.safe_load(f) or {}
@@ -110,25 +252,41 @@ def _detect_api_url(cluster_dir: str) -> str | None:
             continue
         addr = api_cfg.get("address", "")
         if addr:
-            candidates.append(_client_url_from_bind_address(addr))
+            candidates.append((_client_url_from_bind_address(addr), _node_role(node_cfg)))
 
     if not candidates:
         return None
 
-    latest_url = None
-    latest_version = -1
-    for url in candidates:
+    validator_best: tuple[int, ApiInfo] | None = None
+    fallback_best: tuple[int, ApiInfo] | None = None
+    for url, configured_role in candidates:
         try:
             with urllib.request.urlopen(url, timeout=1.0) as resp:
                 ledger = json.loads(resp.read().decode("utf-8"))
             version = int(ledger.get("ledger_version", 0))
+            role = str(ledger.get("node_role") or configured_role or "").lower()
+            chain_id = int(ledger["chain_id"]) if ledger.get("chain_id") is not None else None
         except Exception:
             continue
-        if version > latest_version:
-            latest_url = url
-            latest_version = version
+        api_info = ApiInfo(url=url, chain_id=chain_id)
+        if role == "full_node":
+            if fallback_best is None or version > fallback_best[0]:
+                fallback_best = (version, api_info)
+            continue
+        # The dashboard uses this singleton client for transaction submission.
+        # Prefer a validator API when available; fullnodes can lag or keep txs pending.
+        if validator_best is None or version > validator_best[0]:
+            validator_best = (version, api_info)
 
-    return latest_url or candidates[0]
+    if validator_best:
+        return validator_best[1]
+    if fallback_best:
+        return fallback_best[1]
+
+    for url, configured_role in candidates:
+        if configured_role != "full_node":
+            return ApiInfo(url=url)
+    return ApiInfo(url=candidates[0][0])
 
 
 def _client_url_from_bind_address(address: str) -> str:
@@ -187,10 +345,13 @@ def load_settings(config_path: Optional[str] = None) -> Settings:
                 chain_config.chain_id = cluster_info.chain_id
                 print(f"[config] 从集群 layout.yaml 读取 chain_id: {cluster_info.chain_id}")
 
-        api_url = _detect_api_url(cluster_dir)
-        if api_url:
-            chain_config.rest_url = api_url
-            print(f"[config] 从集群 node.yaml 读取 API 地址: {api_url}")
+        api_info = _detect_api_info(cluster_dir)
+        if api_info:
+            chain_config.rest_url = api_info.url
+            print(f"[config] 从集群 node.yaml 读取 API 地址: {api_info.url}")
+            if api_info.chain_id is not None:
+                chain_config.chain_id = api_info.chain_id
+                print(f"[config] 从链上 ledger info 读取 chain_id: {api_info.chain_id}")
 
     if keys_config is None:
         keys_raw = raw.get("keys", {})

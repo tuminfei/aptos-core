@@ -161,6 +161,26 @@ CREATE TABLE IF NOT EXISTS user_snapshots (
 CREATE INDEX IF NOT EXISTS idx_user_snapshots_address_sampled ON user_snapshots(address, sampled_at);
 CREATE INDEX IF NOT EXISTS idx_user_snapshots_epoch ON user_snapshots(epoch);
 
+CREATE TABLE IF NOT EXISTS user_power_period_history (
+    id                              INTEGER PRIMARY KEY AUTOINCREMENT,
+    sampled_at                      TEXT NOT NULL,
+    epoch                           INTEGER NOT NULL DEFAULT 0,
+    address                         TEXT NOT NULL,
+    label                           TEXT,
+    period                          INTEGER NOT NULL,
+    raw_power                       INTEGER NOT NULL DEFAULT 0,
+    source_slot                     TEXT NOT NULL DEFAULT '',
+    observed_current_period         INTEGER NOT NULL DEFAULT 0,
+    observed_next_epoch_period      INTEGER NOT NULL DEFAULT 0,
+    observed_committed_power        INTEGER NOT NULL DEFAULT 0,
+    created_at                      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at                      TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(address, period)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_power_period_address_period ON user_power_period_history(address, period);
+CREATE INDEX IF NOT EXISTS idx_user_power_period_sampled ON user_power_period_history(sampled_at);
+
 CREATE TABLE IF NOT EXISTS reward_epoch_estimates (
     id                              INTEGER PRIMARY KEY AUTOINCREMENT,
     kind                            TEXT NOT NULL,
@@ -176,6 +196,22 @@ CREATE TABLE IF NOT EXISTS reward_epoch_estimates (
 );
 
 CREATE INDEX IF NOT EXISTS idx_reward_epoch_address ON reward_epoch_estimates(kind, address, epoch);
+
+CREATE TABLE IF NOT EXISTS consensus_validator_epoch_snapshots (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    sampled_at          TEXT NOT NULL,
+    epoch               INTEGER NOT NULL,
+    source_url          TEXT,
+    peer_id             TEXT NOT NULL,
+    voting_power        INTEGER NOT NULL DEFAULT 0,
+    total_voting_power  INTEGER NOT NULL DEFAULT 0,
+    validator_count     INTEGER NOT NULL DEFAULT 0,
+    created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(epoch, peer_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_consensus_validator_epoch ON consensus_validator_epoch_snapshots(epoch);
+CREATE INDEX IF NOT EXISTS idx_consensus_validator_peer_epoch ON consensus_validator_epoch_snapshots(peer_id, epoch);
 """
 
 

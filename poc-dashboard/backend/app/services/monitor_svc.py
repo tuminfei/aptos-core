@@ -5,6 +5,7 @@ from app.chain import view
 from app.api.ws import broadcast
 from app.config import get_settings
 from app.services.cache_svc import invalidate_many
+from app.services.consensus_svc import sample_consensus_epoch_voting_power
 
 _running = False
 _task: asyncio.Task | None = None
@@ -56,6 +57,11 @@ async def _poll_once():
         "block_height": int(ledger.get("block_height", 0)),
         "timestamp": ledger.get("ledger_timestamp", ""),
     })
+
+    try:
+        await sample_consensus_epoch_voting_power(expected_epoch=epoch)
+    except Exception:
+        pass
 
     if _last_epoch > 0 and epoch != _last_epoch:
         await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
