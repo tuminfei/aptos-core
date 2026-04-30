@@ -39,6 +39,8 @@ class MockChainClient:
             "0x1::staking_config::reward_rate": [1, 100],
             "0x1::staking_registry::get_cooldown_secs": [3600],
             "0x1::staking_registry::get_octas_per_power": [10000000],
+            "0x1::staking_registry::get_min_active_power": [1],
+            "0x1::staking_registry::get_force_exit_power_bps": [8000],
             "0x1::staking_registry::validator_exists": [True],
             "0x1::staking_registry::get_validator_view": ["0x1a2b", "0x1a2b", 1000, 2, 5, 5000, 10000],
             "0x1::staking_registry::get_validator_views_by_addresses": [["0x1a2b"], ["0x1a2b"], [1000], [2], [5], [5000], [10000]],

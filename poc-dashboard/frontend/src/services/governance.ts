@@ -28,6 +28,16 @@ export async function setOctasPerPower(params: { octas_per_power: number; max_ga
   return data;
 }
 
+export async function setMinActivePower(params: { min_active_power: number; max_gas?: number; gas_unit_price?: number }) {
+  const { data } = await api.post('/governance/set-min-active-power', params, { timeout: GOVERNANCE_ADMIN_TIMEOUT_MS });
+  return data;
+}
+
+export async function setForceExitPowerBps(params: { force_exit_power_bps: number; max_gas?: number; gas_unit_price?: number }) {
+  const { data } = await api.post('/governance/set-force-exit-power-bps', params, { timeout: GOVERNANCE_ADMIN_TIMEOUT_MS });
+  return data;
+}
+
 export async function setCooldownSecs(params: { cooldown_secs: number; max_gas?: number; gas_unit_price?: number }) {
   const { data } = await api.post('/governance/set-cooldown-secs', params, { timeout: GOVERNANCE_ADMIN_TIMEOUT_MS });
   return data;

@@ -28,6 +28,8 @@ import {
   mintTopo,
   setCooldownSecs,
   setEpochInterval,
+  setForceExitPowerBps,
+  setMinActivePower,
   setOctasPerPower,
   updateGovernanceConfig,
   upgradeFramework,
@@ -79,6 +81,8 @@ export default function System() {
   const [retentionVal, setRetentionVal] = useState<number>(9950);
   const [epochIntervalSecsVal, setEpochIntervalSecsVal] = useState<number | null>(null);
   const [octasPerPowerVal, setOctasPerPowerVal] = useState<number | null>(null);
+  const [minActivePowerVal, setMinActivePowerVal] = useState<number | null>(null);
+  const [forceExitPowerBpsVal, setForceExitPowerBpsVal] = useState<number | null>(null);
   const [minVotingThresholdVal, setMinVotingThresholdVal] = useState<number | null>(null);
   const [requiredProposerStakeVal, setRequiredProposerStakeVal] = useState<number | null>(null);
   const [votingDurationVal, setVotingDurationVal] = useState<number | null>(null);
@@ -179,6 +183,8 @@ export default function System() {
   const nextPeriod = Number(powerStore?.current_period || 0) + 1;
   const effectiveEpochIntervalSecs = epochIntervalSecsVal ?? Number(chainCfg.epoch_interval_secs || 0);
   const effectiveOctasPerPower = octasPerPowerVal ?? Number(stk.octas_per_power || 0);
+  const effectiveMinActivePower = minActivePowerVal ?? Number(stk.min_active_power || 0);
+  const effectiveForceExitPowerBps = forceExitPowerBpsVal ?? Number(stk.force_exit_power_bps || 0);
   const effectiveMinVotingThreshold = minVotingThresholdVal ?? Number(gov.min_voting_threshold || 0);
   const effectiveRequiredProposerStake = requiredProposerStakeVal ?? Number(gov.required_proposer_stake || 0);
   const effectiveVotingDuration = votingDurationVal ?? Number(gov.voting_duration_secs || 0);
@@ -190,6 +196,22 @@ export default function System() {
       return;
     }
     doAction('修改 octas_per_power', () => setOctasPerPower({ octas_per_power: effectiveOctasPerPower }));
+  };
+
+  const handleSetMinActivePower = () => {
+    if (effectiveMinActivePower <= 0) {
+      message.warning('min_active_power 必须大于 0');
+      return;
+    }
+    doAction('修改 min_active_power', () => setMinActivePower({ min_active_power: effectiveMinActivePower }));
+  };
+
+  const handleSetForceExitPowerBps = () => {
+    if (effectiveForceExitPowerBps <= 0 || effectiveForceExitPowerBps > 10000) {
+      message.warning('force_exit_power_bps 必须在 1 到 10000 之间');
+      return;
+    }
+    doAction('修改 force_exit_power_bps', () => setForceExitPowerBps({ force_exit_power_bps: effectiveForceExitPowerBps }));
   };
 
   const handleSetCooldownSecs = () => {
@@ -296,6 +318,8 @@ export default function System() {
               <Descriptions.Item label="retention_bps">{pwr.retention_bps || 0} ({formatBps(pwr.retention_bps || 0)})</Descriptions.Item>
               <Descriptions.Item label="epoch_interval_secs">{formatNumber(chainCfg.epoch_interval_secs || 0)}</Descriptions.Item>
               <Descriptions.Item label="octas_per_power">{formatNumber(stk.octas_per_power || 0)}</Descriptions.Item>
+              <Descriptions.Item label="min_active_power">{formatNumber(stk.min_active_power || 0)}</Descriptions.Item>
+              <Descriptions.Item label="force_exit_power_bps">{formatNumber(stk.force_exit_power_bps || 0)} ({formatBps(stk.force_exit_power_bps || 0)})</Descriptions.Item>
               <Descriptions.Item label="voting_duration_secs">{formatNumber(gov.voting_duration_secs || 0)}</Descriptions.Item>
             </Descriptions>
           </Card>
@@ -376,6 +400,8 @@ export default function System() {
                       <Descriptions bordered column={1} size="small">
                         <Descriptions.Item label="epoch_interval_secs">{formatNumber(chainCfg.epoch_interval_secs || 0)}</Descriptions.Item>
                         <Descriptions.Item label="octas_per_power">{formatNumber(stk.octas_per_power || 0)}</Descriptions.Item>
+                        <Descriptions.Item label="min_active_power">{formatNumber(stk.min_active_power || 0)}</Descriptions.Item>
+                        <Descriptions.Item label="force_exit_power_bps">{formatNumber(stk.force_exit_power_bps || 0)} ({formatBps(stk.force_exit_power_bps || 0)})</Descriptions.Item>
                         <Descriptions.Item label="cooldown_secs">{formatNumber(stk.cooldown_secs || 0)}</Descriptions.Item>
                         <Descriptions.Item label="min_voting_threshold">{formatNumber(gov.min_voting_threshold || 0)}</Descriptions.Item>
                         <Descriptions.Item label="required_proposer_stake">{formatNumber(gov.required_proposer_stake || 0)}</Descriptions.Item>
@@ -399,6 +425,38 @@ export default function System() {
                                   style={{ width: '100%' }}
                                 />
                                 <Button loading={submitting} onClick={handleSetOctasPerPower}>修改</Button>
+                              </Space.Compact>
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} md={12}>
+                            <Form.Item label="经济参数 / min_active_power">
+                              <Space.Compact style={{ width: '100%' }}>
+                                <InputNumber
+                                  value={minActivePowerVal ?? undefined}
+                                  onChange={(value) => setMinActivePowerVal(value ?? null)}
+                                  min={1}
+                                  precision={0}
+                                  placeholder={`当前 ${formatNumber(stk.min_active_power || 0)}`}
+                                  style={{ width: '100%' }}
+                                />
+                                <Button loading={submitting} onClick={handleSetMinActivePower}>修改</Button>
+                              </Space.Compact>
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} md={12}>
+                            <Form.Item label="经济参数 / force_exit_power_bps">
+                              <Space.Compact style={{ width: '100%' }}>
+                                <InputNumber
+                                  value={forceExitPowerBpsVal ?? undefined}
+                                  onChange={(value) => setForceExitPowerBpsVal(value ?? null)}
+                                  min={1}
+                                  max={10000}
+                                  precision={0}
+                                  addonAfter="bps"
+                                  placeholder={`当前 ${formatNumber(stk.force_exit_power_bps || 0)}`}
+                                  style={{ width: '100%' }}
+                                />
+                                <Button loading={submitting} onClick={handleSetForceExitPowerBps}>修改</Button>
                               </Space.Compact>
                             </Form.Item>
                           </Col>

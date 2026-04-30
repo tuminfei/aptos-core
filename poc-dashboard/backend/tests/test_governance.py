@@ -11,4 +11,6 @@ async def test_governance_config(client):
     assert "power" in data
     assert data["governance"]["voting_duration_secs"] == 86400
     assert data["staking"]["cooldown_secs"] == 3600
+    assert data["staking"]["min_active_power"] == 1
+    assert data["staking"]["force_exit_power_bps"] == 8000
     assert data["power"]["power_period_in_epochs"] == 5

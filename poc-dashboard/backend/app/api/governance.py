@@ -28,6 +28,18 @@ class SetOctasPerPowerReq(BaseModel):
     gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
 
 
+class SetMinActivePowerReq(BaseModel):
+    min_active_power: int = Field(gt=0)
+    max_gas: int = dapp_svc.DEFAULT_MAX_GAS
+    gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
+
+
+class SetForceExitPowerBpsReq(BaseModel):
+    force_exit_power_bps: int = Field(gt=0, le=10000)
+    max_gas: int = dapp_svc.DEFAULT_MAX_GAS
+    gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
+
+
 class SetCooldownSecsReq(BaseModel):
     cooldown_secs: int = Field(ge=0)
     max_gas: int = dapp_svc.DEFAULT_MAX_GAS
@@ -82,9 +94,23 @@ async def governance_config():
 
     try:
         cooldown = await view.get_cooldown_secs(client)
+    except Exception:
+        cooldown = 0
+
+    try:
         octas_per_power = await view.get_octas_per_power(client)
     except Exception:
-        cooldown = octas_per_power = 0
+        octas_per_power = 0
+
+    try:
+        min_active_power = await view.get_min_active_power(client)
+    except Exception:
+        min_active_power = 0
+
+    try:
+        force_exit_power_bps = await view.get_force_exit_power_bps(client)
+    except Exception:
+        force_exit_power_bps = 0
 
     try:
         period_in_epochs = await view.get_power_period_in_epochs(client)
@@ -109,6 +135,8 @@ async def governance_config():
         "staking": {
             "cooldown_secs": cooldown,
             "octas_per_power": octas_per_power,
+            "min_active_power": min_active_power,
+            "force_exit_power_bps": force_exit_power_bps,
         },
         "power": {
             "power_period_in_epochs": period_in_epochs,
@@ -167,6 +195,52 @@ async def set_octas_per_power(req: SetOctasPerPowerReq):
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("set_octas_per_power", None, {"octas_per_power": req.octas_per_power}, None, "failed", str(e))
+        raise ChainTxError(str(e))
+
+
+@router.post("/governance/set-min-active-power")
+async def set_min_active_power(req: SetMinActivePowerReq):
+    client = get_chain_client()
+    km = get_key_manager()
+    details = {"min_active_power": req.min_active_power}
+    try:
+        tx = await dapp_svc.run_poc_framework_script(
+            "set_staking_min_active_power.move",
+            core_key=km.core_resources_key,
+            core_address=km.core_resources_address,
+            rest_url=client.base_url,
+            args=[f"u64:{req.min_active_power}"],
+            max_gas=req.max_gas,
+            gas_unit_price=req.gas_unit_price,
+        )
+        await operation_log.create_log("set_min_active_power", None, details, tx, "success")
+        await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
+        return {"tx_hash": tx, "success": True}
+    except Exception as e:
+        await operation_log.create_log("set_min_active_power", None, details, None, "failed", str(e))
+        raise ChainTxError(str(e))
+
+
+@router.post("/governance/set-force-exit-power-bps")
+async def set_force_exit_power_bps(req: SetForceExitPowerBpsReq):
+    client = get_chain_client()
+    km = get_key_manager()
+    details = {"force_exit_power_bps": req.force_exit_power_bps}
+    try:
+        tx = await dapp_svc.run_poc_framework_script(
+            "set_staking_force_exit_power_bps.move",
+            core_key=km.core_resources_key,
+            core_address=km.core_resources_address,
+            rest_url=client.base_url,
+            args=[f"u64:{req.force_exit_power_bps}"],
+            max_gas=req.max_gas,
+            gas_unit_price=req.gas_unit_price,
+        )
+        await operation_log.create_log("set_force_exit_power_bps", None, details, tx, "success")
+        await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
+        return {"tx_hash": tx, "success": True}
+    except Exception as e:
+        await operation_log.create_log("set_force_exit_power_bps", None, details, None, "failed", str(e))
         raise ChainTxError(str(e))
 
 

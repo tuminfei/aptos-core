@@ -139,6 +139,16 @@ async def get_octas_per_power(client: ChainClient) -> int:
     return int(r[0])
 
 
+async def get_min_active_power(client: ChainClient) -> int:
+    r = await client.call_view("0x1::staking_registry::get_min_active_power")
+    return int(r[0])
+
+
+async def get_force_exit_power_bps(client: ChainClient) -> int:
+    r = await client.call_view("0x1::staking_registry::get_force_exit_power_bps")
+    return int(r[0])
+
+
 async def validator_exists(client: ChainClient, address: str) -> bool:
     r = await client.call_view("0x1::staking_registry::validator_exists", args=[address])
     return r[0]
