@@ -10,6 +10,7 @@ from app.models import history, watchlist
 from app.api.watchlist import _get_user_like_watch_items
 from app.services import consensus_svc
 from app.services import rewards_svc
+from app.utils.address import address_key
 
 
 logger = logging.getLogger(__name__)
@@ -151,7 +152,7 @@ async def _build_validator_snapshots(
     reward_context: dict,
 ) -> list[dict]:
     watched = await watchlist.get_addresses("validator")
-    labels = {item["address"].lower(): item.get("label", "") for item in watched}
+    labels = {address_key(item["address"]): item.get("label", "") for item in watched}
     watched_keys = set(labels)
     addresses = {item["address"] for item in watched}
 
@@ -183,7 +184,7 @@ async def _build_validator_snapshots(
             context=reward_context,
         )
 
-        key = addr.lower()
+        key = address_key(addr)
         rows.append({
             "sampled_at": sampled_at,
             "epoch": epoch,
@@ -268,14 +269,14 @@ async def _build_user_power_period_history_rows(
         return []
 
     addresses = [row["address"] for row in user_rows]
-    labels = {row["address"].lower(): row.get("label", "") for row in user_rows}
+    labels = {address_key(row["address"]): row.get("label", "") for row in user_rows}
     current_period = await _optional(view.get_current_period(client), 0)
     power_period_in_epochs = await _optional(view.get_power_period_in_epochs(client), 0)
     next_epoch_period = _period_for_epoch(epoch + 1, power_period_in_epochs)
     versions = await _optional(view.get_user_power_versions(client, addresses), [])
     committed = await _optional(view.get_user_committed_powers(client, addresses), [0] * len(addresses))
     committed_by_address = {
-        address.lower(): int(committed[index] if index < len(committed) else 0)
+        address_key(address): int(committed[index] if index < len(committed) else 0)
         for index, address in enumerate(addresses)
     }
 
@@ -285,7 +286,7 @@ async def _build_user_power_period_history_rows(
         address = version.get("user", "")
         if not address:
             continue
-        key = address.lower()
+        key = address_key(address)
         for slot in ("older", "newer"):
             period = int(version.get(f"{slot}_period", 0) or 0)
             raw_power = int(version.get(f"{slot}_power", 0) or 0)

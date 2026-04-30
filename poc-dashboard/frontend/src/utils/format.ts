@@ -4,6 +4,14 @@ export function shortenAddress(addr: string, chars = 6): string {
   return `${addr.slice(0, chars + 2)}...${addr.slice(-chars)}`;
 }
 
+export function addressKey(address?: string): string {
+  const value = String(address || '').trim().toLowerCase();
+  if (!value) return '';
+  const body = value.startsWith('0x') ? value.slice(2) : value;
+  if (!/^[0-9a-f]+$/.test(body)) return value;
+  return `0x${body.replace(/^0+/, '') || '0'}`;
+}
+
 export function octasToTopo(octas: number | string): number {
   return Number(octas) / 1e8;
 }

@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.models.db import get_db
+from app.utils.address import address_variants
 
 
 def _row_to_dict(row) -> dict:
@@ -266,12 +267,14 @@ async def get_chain_history(limit: int = 200, offset: int = 0) -> list[dict]:
 
 async def count_validator_history(address: str) -> int:
     db = await get_db()
+    variants = address_variants(address)
+    placeholders = ",".join("lower(?)" for _ in variants)
     cursor = await db.execute(
-        """
+        f"""
         SELECT COUNT(*) AS total FROM validator_snapshots
-        WHERE lower(address) = lower(?)
+        WHERE lower(address) IN ({placeholders})
         """,
-        (address,),
+        variants,
     )
     row = await cursor.fetchone()
     return int(row["total"] or 0)
@@ -279,26 +282,30 @@ async def count_validator_history(address: str) -> int:
 
 async def get_validator_history(address: str, limit: int = 200, offset: int = 0) -> list[dict]:
     db = await get_db()
+    variants = address_variants(address)
+    placeholders = ",".join("lower(?)" for _ in variants)
     rows = await db.execute_fetchall(
-        """
+        f"""
         SELECT * FROM validator_snapshots
-        WHERE lower(address) = lower(?)
+        WHERE lower(address) IN ({placeholders})
         ORDER BY sampled_at DESC, id DESC
         LIMIT ? OFFSET ?
         """,
-        (address, limit, offset),
+        [*variants, limit, offset],
     )
     return [_row_to_dict(row) for row in reversed(rows)]
 
 
 async def count_user_history(address: str) -> int:
     db = await get_db()
+    variants = address_variants(address)
+    placeholders = ",".join("lower(?)" for _ in variants)
     cursor = await db.execute(
-        """
+        f"""
         SELECT COUNT(*) AS total FROM user_snapshots
-        WHERE lower(address) = lower(?)
+        WHERE lower(address) IN ({placeholders})
         """,
-        (address,),
+        variants,
     )
     row = await cursor.fetchone()
     return int(row["total"] or 0)
@@ -306,26 +313,30 @@ async def count_user_history(address: str) -> int:
 
 async def get_user_history(address: str, limit: int = 200, offset: int = 0) -> list[dict]:
     db = await get_db()
+    variants = address_variants(address)
+    placeholders = ",".join("lower(?)" for _ in variants)
     rows = await db.execute_fetchall(
-        """
+        f"""
         SELECT * FROM user_snapshots
-        WHERE lower(address) = lower(?)
+        WHERE lower(address) IN ({placeholders})
         ORDER BY sampled_at DESC, id DESC
         LIMIT ? OFFSET ?
         """,
-        (address, limit, offset),
+        [*variants, limit, offset],
     )
     return [_row_to_dict(row) for row in reversed(rows)]
 
 
 async def count_user_power_period_history(address: str) -> int:
     db = await get_db()
+    variants = address_variants(address)
+    placeholders = ",".join("lower(?)" for _ in variants)
     cursor = await db.execute(
-        """
+        f"""
         SELECT COUNT(*) AS total FROM user_power_period_history
-        WHERE lower(address) = lower(?)
+        WHERE lower(address) IN ({placeholders})
         """,
-        (address,),
+        variants,
     )
     row = await cursor.fetchone()
     return int(row["total"] or 0)
@@ -333,22 +344,26 @@ async def count_user_power_period_history(address: str) -> int:
 
 async def get_user_power_period_history(address: str, limit: int = 200, offset: int = 0) -> list[dict]:
     db = await get_db()
+    variants = address_variants(address)
+    placeholders = ",".join("lower(?)" for _ in variants)
     rows = await db.execute_fetchall(
-        """
+        f"""
         SELECT * FROM user_power_period_history
-        WHERE lower(address) = lower(?)
+        WHERE lower(address) IN ({placeholders})
         ORDER BY period DESC
         LIMIT ? OFFSET ?
         """,
-        (address, limit, offset),
+        [*variants, limit, offset],
     )
     return [_row_to_dict(row) for row in reversed(rows)]
 
 
 async def get_cumulative_reward(kind: str, address: str) -> dict:
     db = await get_db()
+    variants = address_variants(address)
+    placeholders = ",".join("lower(?)" for _ in variants)
     cursor = await db.execute(
-        """
+        f"""
         SELECT
             COALESCE(SUM(reward_octas), 0) AS reward_octas,
             COALESCE(SUM(fee_octas), 0) AS fee_octas,
@@ -356,9 +371,9 @@ async def get_cumulative_reward(kind: str, address: str) -> dict:
             COALESCE(SUM(owner_commission_octas), 0) AS owner_commission_octas,
             COUNT(*) AS epochs
         FROM reward_epoch_estimates
-        WHERE kind = ? AND lower(address) = lower(?)
+        WHERE kind = ? AND lower(address) IN ({placeholders})
         """,
-        (kind, address),
+        [kind, *variants],
     )
     row = await cursor.fetchone()
     return _row_to_dict(row)
@@ -366,14 +381,16 @@ async def get_cumulative_reward(kind: str, address: str) -> dict:
 
 async def get_recent_reward_estimates(kind: str, address: str, limit: int = 50) -> list[dict]:
     db = await get_db()
+    variants = address_variants(address)
+    placeholders = ",".join("lower(?)" for _ in variants)
     rows = await db.execute_fetchall(
-        """
+        f"""
         SELECT * FROM reward_epoch_estimates
-        WHERE kind = ? AND lower(address) = lower(?)
+        WHERE kind = ? AND lower(address) IN ({placeholders})
         ORDER BY epoch DESC
         LIMIT ?
         """,
-        (kind, address, limit),
+        [kind, *variants, limit],
     )
     return [_row_to_dict(row) for row in reversed(rows)]
 

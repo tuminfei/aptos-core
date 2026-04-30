@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from app.chain.keys import get_key_manager
-from app.models import dapp_demo, watchlist
+from app.models import contribution_event, dapp_demo, watchlist
 from app.services import dapp_svc
 
 
@@ -122,6 +122,31 @@ async def test_demo_buy_equity_uses_configured_module(client, mock_client):
     assert events[0]["app_admin"] == "0xddd"
     assert events[0]["app_address"] == "0xabc"
     assert events[0]["equity_amount"] == 7
+
+
+@pytest.mark.asyncio
+async def test_contributions_filter_matches_padded_address(client):
+    await contribution_event.insert_events([
+        {
+            "tx_hash": "0x" + "1" * 64,
+            "event_index": 0,
+            "version": 1,
+            "app_admin": "0xddd",
+            "app_address": "0xabc",
+            "contributor": "0xabc",
+            "equity_token": "0xdef",
+            "equity_amount": 7,
+            "event_type": "0x1::poc_contribution::ContributionEvent",
+            "raw_event": {},
+        },
+    ])
+
+    resp = await client.get("/api/v1/contributions", params={"contributor": "0x0abc"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["events"][0]["contributor"] == "0xabc"
 
 
 @pytest.mark.asyncio

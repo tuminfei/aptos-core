@@ -1,4 +1,5 @@
 import pytest
+from app.models import history
 
 
 @pytest.mark.asyncio
@@ -84,3 +85,28 @@ async def test_history_window_pagination(client):
     assert user_page["limit"] == 2
     assert user_page["offset"] == 1
     assert len(user_page["history"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_power_period_history_matches_padded_address(client):
+    await history.upsert_user_power_period_history([
+        {
+            "sampled_at": "2026-04-30T00:00:00+00:00",
+            "epoch": 1,
+            "address": "0xabc",
+            "label": "alice",
+            "period": 7,
+            "raw_power": 1234,
+            "source_slot": "newer",
+            "observed_current_period": 7,
+            "observed_next_epoch_period": 8,
+            "observed_committed_power": 1234,
+        },
+    ])
+
+    resp = await client.get("/api/v1/history/users/0x0abc/power-periods")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] == 1
+    assert data["history"][0]["raw_power"] == 1234

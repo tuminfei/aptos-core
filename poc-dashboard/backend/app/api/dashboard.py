@@ -4,6 +4,7 @@ from app.chain.client import get_chain_client
 from app.chain import view
 from app.api.errors import ChainUnreachable
 from app.services import address_book_svc
+from app.utils.address import address_key
 
 router = APIRouter(tags=["dashboard"])
 
@@ -60,7 +61,7 @@ async def overview():
         active_addrs = await view.get_active_validators(client, 0, 100)
         for addr in active_addrs:
             try:
-                address_entry = address_book.get(addr.lower(), {})
+                address_entry = address_book.get(address_key(addr), {})
                 vp = await view.get_current_epoch_voting_power(client, addr)
                 dc = await view.get_validator_delegator_count(client, addr)
                 idx = await view.get_validator_index(client, addr)

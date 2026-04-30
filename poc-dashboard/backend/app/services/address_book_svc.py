@@ -2,6 +2,7 @@ from app.chain import view
 from app.chain.client import ChainClient, get_chain_client
 from app.chain.keys import get_key_manager
 from app.models import watchlist
+from app.utils.address import address_key, address_variants
 
 
 def _normalize_default_validator_name(name: str) -> str:
@@ -17,7 +18,7 @@ async def build_address_book(client: ChainClient | None = None, include_chain_va
     def put(address: str, kind: str, name: str = "", label: str = "", source: str = "") -> None:
         if not address:
             return
-        key = address.lower()
+        key = address_key(address)
         current = entries.get(key)
         if not current:
             current = {
@@ -68,14 +69,18 @@ async def build_address_book(client: ChainClient | None = None, include_chain_va
     for address in validator_addresses:
         try:
             idx = await view.get_validator_index(client, address)
-            entries[address.lower()]["name"] = f"验证者{idx}"
+            entries[address_key(address)]["name"] = f"验证者{idx}"
         except Exception:
-            entries[address.lower()]["name"] = "验证者"
+            entries[address_key(address)]["name"] = "验证者"
 
     for entry in entries.values():
         if not entry.get("name"):
             entry["name"] = entry.get("label") or ""
         entry["display_name"] = entry.get("name") or entry.get("label") or ""
+
+    for entry in list(entries.values()):
+        for alias in address_variants(entry.get("address", "")):
+            entries.setdefault(alias, entry)
 
     return entries
 
@@ -84,7 +89,7 @@ async def get_display_name(address: str, kind: str = "", client: ChainClient | N
     if not address:
         return ""
     book = await build_address_book(client)
-    entry = book.get(address.lower())
+    entry = book.get(address_key(address))
     if entry and (not kind or entry.get("kind") == kind):
         return entry.get("display_name", "")
     return ""

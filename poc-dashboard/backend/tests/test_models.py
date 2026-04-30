@@ -85,6 +85,20 @@ async def test_update_watchlist_label_updates_user_display_name(client):
 
 
 @pytest.mark.asyncio
+async def test_address_book_matches_padded_and_unpadded_addresses(client):
+    padded = "0x0abc"
+    unpadded = "0xabc"
+    await add_address("user", padded, "alice")
+
+    resp = await client.get("/api/v1/address-book")
+
+    assert resp.status_code == 200
+    entries = resp.json()["entries"]
+    assert entries[padded]["display_name"] == "alice"
+    assert entries[unpadded]["display_name"] == "alice"
+
+
+@pytest.mark.asyncio
 async def test_chain_validator_gets_default_display_name(client):
     resp = await client.get("/api/v1/watchlist/validators")
 

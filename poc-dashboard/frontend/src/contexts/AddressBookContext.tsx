@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { getAddressBook } from '../services/watchlist';
 import { useWebSocketEvents } from '../hooks/useWebSocket';
+import { addressKey } from '../utils/format';
 
 type AddressBookEntry = {
   address: string;
@@ -45,7 +46,7 @@ export function AddressBookProvider({ children }: { children: ReactNode }) {
     refresh,
     nameOf: (address?: string, fallback = '') => {
       if (!address) return fallback;
-      const entry = entries[address.toLowerCase()];
+      const entry = entries[address.toLowerCase()] || entries[addressKey(address)];
       return entry?.display_name || entry?.name || entry?.label || fallback;
     },
   }), [entries, refresh]);

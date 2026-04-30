@@ -13,7 +13,7 @@ import AddressTag from '../../components/AddressTag';
 import AddressSelect from '../../components/AddressSelect';
 import HistoryWindowControl from '../../components/HistoryWindowControl';
 import { createScaledValueAxis } from '../../utils/chart';
-import { formatCompactNumber, formatDuration, formatNumber, formatRewardAmount, formatRewardRate, formatTimestamp, formatTopo, topoToOctas } from '../../utils/format';
+import { addressKey, formatCompactNumber, formatDuration, formatNumber, formatRewardAmount, formatRewardRate, formatTimestamp, formatTopo, topoToOctas } from '../../utils/format';
 
 const { Text } = Typography;
 
@@ -243,7 +243,7 @@ export default function UserDetail() {
     refreshContributionHistory,
     (event) => {
       const contributor = event.contributor || event.buyer;
-      return !contributor || String(contributor).toLowerCase() === String(address || '').toLowerCase();
+      return !contributor || addressKey(String(contributor)) === addressKey(address);
     },
   );
 

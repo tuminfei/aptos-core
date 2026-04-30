@@ -2,6 +2,7 @@ import json
 from typing import Any
 
 from app.models.db import get_db
+from app.utils.address import address_variants
 
 
 def _row_to_dict(row) -> dict:
@@ -44,11 +45,13 @@ async def count_events(*, contributor: str | None = None, app_admin: str | None 
     conditions = []
     params: list[Any] = []
     if contributor:
-        conditions.append("lower(contributor) = lower(?)")
-        params.append(contributor)
+        variants = address_variants(contributor)
+        conditions.append(f"lower(contributor) IN ({','.join('lower(?)' for _ in variants)})")
+        params.extend(variants)
     if app_admin:
-        conditions.append("lower(app_admin) = lower(?)")
-        params.append(app_admin)
+        variants = address_variants(app_admin)
+        conditions.append(f"lower(app_admin) IN ({','.join('lower(?)' for _ in variants)})")
+        params.extend(variants)
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     cursor = await db.execute(f"SELECT COUNT(*) AS total FROM contribution_events {where}", params)
     row = await cursor.fetchone()
@@ -66,11 +69,13 @@ async def get_events(
     conditions = []
     params: list[Any] = []
     if contributor:
-        conditions.append("lower(contributor) = lower(?)")
-        params.append(contributor)
+        variants = address_variants(contributor)
+        conditions.append(f"lower(contributor) IN ({','.join('lower(?)' for _ in variants)})")
+        params.extend(variants)
     if app_admin:
-        conditions.append("lower(app_admin) = lower(?)")
-        params.append(app_admin)
+        variants = address_variants(app_admin)
+        conditions.append(f"lower(app_admin) IN ({','.join('lower(?)' for _ in variants)})")
+        params.extend(variants)
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     rows = await db.execute_fetchall(
         f"""
@@ -89,11 +94,13 @@ async def sum_equity_amount(*, contributor: str | None = None, app_admin: str | 
     conditions = []
     params: list[Any] = []
     if contributor:
-        conditions.append("lower(contributor) = lower(?)")
-        params.append(contributor)
+        variants = address_variants(contributor)
+        conditions.append(f"lower(contributor) IN ({','.join('lower(?)' for _ in variants)})")
+        params.extend(variants)
     if app_admin:
-        conditions.append("lower(app_admin) = lower(?)")
-        params.append(app_admin)
+        variants = address_variants(app_admin)
+        conditions.append(f"lower(app_admin) IN ({','.join('lower(?)' for _ in variants)})")
+        params.extend(variants)
     where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     cursor = await db.execute(f"SELECT COALESCE(SUM(equity_amount), 0) AS total FROM contribution_events {where}", params)
     row = await cursor.fetchone()

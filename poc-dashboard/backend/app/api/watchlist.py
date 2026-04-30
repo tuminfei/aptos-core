@@ -8,6 +8,7 @@ from app.services import address_book_svc
 from app.services import rewards_svc
 from app.services.cache_svc import invalidate_many
 from app.api.errors import ParamError
+from app.utils.address import address_key
 
 router = APIRouter(tags=["watchlist"])
 
@@ -117,7 +118,7 @@ async def list_watched_users():
     results = []
     for item in items:
         addr = item["address"]
-        display_name = address_book.get(addr.lower(), {}).get("display_name", "")
+        display_name = address_book.get(address_key(addr), {}).get("display_name", "")
         entry = {
             "address": addr,
             "label": item.get("label", ""),
@@ -176,7 +177,7 @@ async def _get_user_like_watch_items(client=None, include_chain_validators: bool
         address = item.get("address", "")
         if not address:
             return
-        key = address.lower()
+        key = address_key(address)
         current = by_address.get(key)
         if not current:
             current = {
@@ -234,8 +235,8 @@ async def _get_user_like_watch_items(client=None, include_chain_validators: bool
 async def list_watched_validators():
     """返回所有已添加的验证者（watchlist + 链上活跃），附带链上状态"""
     items = await watchlist.get_addresses("validator")
-    watched_addrs = {item["address"].lower() for item in items}
-    watched_labels = {item["address"].lower(): item.get("label", "") for item in items}
+    watched_addrs = {address_key(item["address"]) for item in items}
+    watched_labels = {address_key(item["address"]): item.get("label", "") for item in items}
 
     client = get_chain_client()
     address_book = await address_book_svc.build_address_book(client, include_chain_validators=False)
@@ -245,33 +246,34 @@ async def list_watched_validators():
 
     for item in items:
         all_addrs.add(item["address"])
-        labels[item["address"].lower()] = item.get("label", "")
+        labels[address_key(item["address"])] = item.get("label", "")
 
     try:
         active = await view.get_active_validators(client, 0, 200)
         for a in active:
             all_addrs.add(a)
-            if a.lower() not in labels:
-                labels[a.lower()] = ""
+            if address_key(a) not in labels:
+                labels[address_key(a)] = ""
     except Exception:
         pass
     try:
         pending = await view.get_pending_active_validators(client, 0, 200)
         for a in pending:
             all_addrs.add(a)
-            if a.lower() not in labels:
-                labels[a.lower()] = ""
+            if address_key(a) not in labels:
+                labels[address_key(a)] = ""
     except Exception:
         pass
 
     results = []
     for addr in all_addrs:
-        display_name = labels.get(addr.lower(), "") or address_book.get(addr.lower(), {}).get("display_name", "")
+        key = address_key(addr)
+        display_name = labels.get(key, "") or address_book.get(key, {}).get("display_name", "")
         entry = {
             "address": addr,
-            "label": labels.get(addr.lower(), ""),
+            "label": labels.get(key, ""),
             "display_name": display_name,
-            "in_watchlist": addr.lower() in watched_addrs,
+            "in_watchlist": key in watched_addrs,
         }
         try:
             state = await view.get_validator_state(client, addr)

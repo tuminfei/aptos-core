@@ -10,6 +10,7 @@ from app.services.cache_svc import invalidate_many
 from app.api.errors import ChainTxError
 from app.api.users import build_power_calculation, build_version_rows, period_for_epoch
 from app.api.watchlist import _get_user_like_watch_items
+from app.utils.address import address_key
 
 router = APIRouter(tags=["power"])
 
@@ -248,11 +249,13 @@ async def _build_power_store_user_rows(
     committed_powers = await _optional(view.get_user_committed_powers(client, addresses), [0] * len(addresses))
     target_powers = await _optional(view.get_user_powers_for_period(client, addresses, target_period), [0] * len(addresses))
     watch_items = await _get_user_like_watch_items(client)
-    metadata = {item["address"].lower(): item for item in watch_items}
+    metadata = {address_key(item["address"]): item for item in watch_items}
     rows = []
-    by_address = {item["user"].lower(): item for item in versions}
+    by_address = {address_key(item["user"]): item for item in versions}
     for index, address in enumerate(addresses):
-        version = by_address.get(address.lower(), {
+        key = address_key(address)
+        meta = metadata.get(key, {})
+        version = by_address.get(key, {
             "older_period": 0,
             "older_power": 0,
             "newer_period": 0,
@@ -263,12 +266,12 @@ async def _build_power_store_user_rows(
         target_power = int(target_powers[index] if index < len(target_powers) else 0)
         rows.append({
             "address": address,
-            "label": metadata.get(address.lower(), {}).get("label", ""),
-            "source": metadata.get(address.lower(), {}).get("source", ""),
-            "sources": metadata.get(address.lower(), {}).get("sources", []),
-            "is_validator_user": bool(metadata.get(address.lower(), {}).get("is_validator_user", False)),
-            "in_user_watchlist": bool(metadata.get(address.lower(), {}).get("in_user_watchlist", False)),
-            "in_validator_watchlist": bool(metadata.get(address.lower(), {}).get("in_validator_watchlist", False)),
+            "label": meta.get("label", ""),
+            "source": meta.get("source", ""),
+            "sources": meta.get("sources", []),
+            "is_validator_user": bool(meta.get("is_validator_user", False)),
+            "in_user_watchlist": bool(meta.get("in_user_watchlist", False)),
+            "in_validator_watchlist": bool(meta.get("in_validator_watchlist", False)),
             "committed_power": current_power,
             "target_period": target_period,
             "target_power": target_power,

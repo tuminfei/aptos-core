@@ -11,6 +11,7 @@ from app.chain.keys import Ed25519Key
 from app.models import operation_log
 from app.services import address_book_svc
 from app.services import rewards_svc
+from app.utils.address import address_key
 
 
 VALIDATOR_STATUS_MAP = {1: "pending_active", 2: "active", 3: "pending_inactive", 4: "inactive"}
@@ -54,7 +55,7 @@ async def _build_validator_summary(
     vp = await view.get_current_epoch_voting_power(client, addr)
     stake_info = await view.get_stake(client, addr)
     operator = await view.get_operator(client, addr)
-    address_entry = (address_book or {}).get(addr.lower(), {})
+    address_entry = (address_book or {}).get(address_key(addr), {})
 
     try:
         sr_view = await view.get_validator_view(client, addr)
@@ -117,7 +118,7 @@ async def _build_validator_summary(
 
 async def get_validator_detail(client: ChainClient, address: str) -> dict:
     address_book = await address_book_svc.build_address_book(client)
-    address_entry = address_book.get(address.lower(), {})
+    address_entry = address_book.get(address_key(address), {})
     state = await view.get_validator_state(client, address)
     vp = await _optional_view(view.get_current_epoch_voting_power(client, address), 0)
     stake_info = await _optional_view(
@@ -150,7 +151,7 @@ async def get_validator_detail(client: ChainClient, address: str) -> dict:
         if dc > 0:
             dv = await view.get_validator_delegator_views(client, address, 0, min(dc, 100))
             for d in dv:
-                delegator_entry = address_book.get(d["delegator"].lower(), {})
+                delegator_entry = address_book.get(address_key(d["delegator"]), {})
                 delegators.append({
                     "address": d["delegator"],
                     "display_name": delegator_entry.get("display_name", ""),
