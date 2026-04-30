@@ -2,6 +2,10 @@
 # 启动时自动从此目录读取: API地址、chain_id、core_resources 密钥、validator/operator 密钥
 cluster_dir: "/home/appuser/chain-data"
 
+chain:
+  rest_url: "http://127.0.0.1:39090/v1"
+  chain_id: 164
+
 server:
   host: "0.0.0.0"
   port: 38000

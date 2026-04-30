@@ -327,6 +327,7 @@ def load_settings(config_path: Optional[str] = None) -> Settings:
 
     chain_raw = raw.get("chain", {})
     chain_config = ChainConfig(**chain_raw)
+    explicit_rest_url = bool(str(chain_raw.get("rest_url", "")).strip())
 
     cluster_dir = raw.get("cluster_dir", "")
     if cluster_dir and not os.path.isabs(cluster_dir):
@@ -345,13 +346,16 @@ def load_settings(config_path: Optional[str] = None) -> Settings:
                 chain_config.chain_id = cluster_info.chain_id
                 print(f"[config] 从集群 layout.yaml 读取 chain_id: {cluster_info.chain_id}")
 
-        api_info = _detect_api_info(cluster_dir)
-        if api_info:
-            chain_config.rest_url = api_info.url
-            print(f"[config] 从集群 node.yaml 读取 API 地址: {api_info.url}")
-            if api_info.chain_id is not None:
-                chain_config.chain_id = api_info.chain_id
-                print(f"[config] 从链上 ledger info 读取 chain_id: {api_info.chain_id}")
+        if explicit_rest_url:
+            print(f"[config] 从配置文件读取 API 地址: {chain_config.rest_url}")
+        else:
+            api_info = _detect_api_info(cluster_dir)
+            if api_info:
+                chain_config.rest_url = api_info.url
+                print(f"[config] 从集群 node.yaml 读取 API 地址: {api_info.url}")
+                if api_info.chain_id is not None:
+                    chain_config.chain_id = api_info.chain_id
+                    print(f"[config] 从链上 ledger info 读取 chain_id: {api_info.chain_id}")
 
     if keys_config is None:
         keys_raw = raw.get("keys", {})

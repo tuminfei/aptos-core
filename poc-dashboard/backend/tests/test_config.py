@@ -4,7 +4,7 @@ import urllib.request
 
 import yaml
 
-from app.config import _detect_api_info
+from app.config import _detect_api_info, load_settings
 
 
 class _FakeResponse:
@@ -81,3 +81,24 @@ def test_detect_api_info_falls_back_to_fullnode_when_no_validator_alive(tmp_path
     assert api_info is not None
     assert api_info.url == "http://127.0.0.1:39090/v1"
     assert api_info.chain_id == 164
+
+
+def test_explicit_rest_url_is_not_overridden_by_cluster_detection(tmp_path, monkeypatch):
+    _write_node_yaml(tmp_path / "0", address="127.0.0.1:39417")
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        yaml.safe_dump({
+            "cluster_dir": str(tmp_path),
+            "chain": {"rest_url": "http://127.0.0.1:39091/v1"},
+        }),
+        encoding="utf-8",
+    )
+
+    def fail_urlopen(url, timeout=1.0):
+        raise AssertionError("cluster API detection should not run when rest_url is explicit")
+
+    monkeypatch.setattr(urllib.request, "urlopen", fail_urlopen)
+
+    settings = load_settings(str(config_path))
+
+    assert settings.chain.rest_url == "http://127.0.0.1:39091/v1"
