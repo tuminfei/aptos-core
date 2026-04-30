@@ -269,6 +269,42 @@ module aptos_framework::staking_registry {
         registry.config.force_exit_power_bps = force_exit_power_bps;
     }
 
+    /// Update only the minimum effective power required to join or remain in a validator pool.
+    ///
+    /// Keeps the existing force-exit BPS unchanged. Only the framework account may change
+    /// this parameter.
+    public entry fun set_min_active_power(
+        aptos_framework: &signer,
+        min_active_power: u64,
+    ) acquires StakingRegistry {
+        system_addresses::assert_aptos_framework(aptos_framework);
+        assert_registry_exists();
+        assert!(min_active_power > 0, error::invalid_argument(EINVALID_CONFIG));
+
+        borrow_global_mut<StakingRegistry>(@aptos_framework).config.min_active_power =
+            min_active_power;
+    }
+
+    /// Update only the force-exit threshold in basis points.
+    ///
+    /// Users whose effective power falls below
+    /// `(min_active_power * force_exit_power_bps / 10000)` are force-undelegated
+    /// at epoch boundaries. Keeps the existing min_active_power unchanged.
+    public entry fun set_force_exit_power_bps(
+        aptos_framework: &signer,
+        force_exit_power_bps: u64,
+    ) acquires StakingRegistry {
+        system_addresses::assert_aptos_framework(aptos_framework);
+        assert_registry_exists();
+        assert!(
+            force_exit_power_bps > 0 && force_exit_power_bps <= BPS_DENOMINATOR,
+            error::invalid_argument(EINVALID_CONFIG),
+        );
+
+        borrow_global_mut<StakingRegistry>(@aptos_framework).config.force_exit_power_bps =
+            force_exit_power_bps;
+    }
+
     /// Update how much deposited TOPO is required to back one unit of POC power.
     ///
     /// Only the framework account may change this economic parameter. Lowering the value
@@ -934,6 +970,24 @@ module aptos_framework::staking_registry {
             0
         } else {
             borrow_global<StakingRegistry>(@aptos_framework).config.octas_per_power
+        }
+    }
+
+    #[view]
+    public fun get_min_active_power(): u64 acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            0
+        } else {
+            borrow_global<StakingRegistry>(@aptos_framework).config.min_active_power
+        }
+    }
+
+    #[view]
+    public fun get_force_exit_power_bps(): u64 acquires StakingRegistry {
+        if (!exists<StakingRegistry>(@aptos_framework)) {
+            0
+        } else {
+            borrow_global<StakingRegistry>(@aptos_framework).config.force_exit_power_bps
         }
     }
 
