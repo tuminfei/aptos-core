@@ -6,15 +6,20 @@
 /// It integrates equity token transfer + registry validation + contribution event emission into a
 /// single atomic function call.
 ///
-/// ## Core Design Principle: Non-Interference with Application Business Logic
+/// ## Core Design Principle: Non-Interference by Default, Strict When Requested
 ///
-/// The equity token transfer ALWAYS executes, regardless of POC validation results.
-/// Validation results only determine whether a `ContributionEvent` is emitted.
-/// This means:
+/// The default `grant_equity_with_contribution` path keeps the legacy non-interference
+/// behavior: the equity token transfer executes even if POC validation fails, and
+/// validation results only determine whether a `ContributionEvent` is emitted. This means:
 /// - A failed validation never blocks the token transfer (the user always receives their tokens)
 /// - Only the POC power accounting is affected by validation failures
 /// - Applications can safely call this function without worrying about POC validation
 ///   causing unexpected transaction failures
+///
+/// Applications that promise POC credit should call
+/// `grant_equity_with_contribution_strict` instead. The strict path validates POC
+/// eligibility and custody identity before transfer, so validation failure aborts the
+/// transaction and no equity tokens move.
 ///
 /// ## Why This Module Exists (Trust Boundary)
 ///
@@ -40,16 +45,19 @@
 /// 2. Application completes its own business validation
 /// 3. Application generates `app_signer` (signer for the contract deployment address)
 ///    and `custody_actor` (signer for the custody address)
-/// 4. Application calls `grant_equity_with_contribution(app_signer, custody_actor, contributor, equity_amount)`
-/// 5. This module executes the equity token transfer (always, regardless of validation)
-/// 6. This module validates app identity, POC eligibility, and custody address from the registry
-/// 7. If all validations pass → emit `ContributionEvent`; otherwise → no event, transfer already done
+/// 4. Application calls either:
+///    - `grant_equity_with_contribution` for non-blocking business transfers
+///    - `grant_equity_with_contribution_strict` when POC credit is part of the promise
+/// 5. This module resolves app identity, equity token, and custody address from the registry
+/// 6. Non-strict path transfers first and emits only if validation passes
+/// 7. Strict path validates first, aborting before transfer if validation fails
 ///
 /// ## Behavioral Guarantees
 ///
 /// - Transfer fails → transaction aborts (transfer errors still propagate normally)
 /// - Transfer succeeds but validation fails → transfer takes effect, no event emitted
 /// - Transfer succeeds and validation passes → transfer takes effect, `ContributionEvent` emitted
+/// - Strict validation fails → transaction aborts before transfer
 module aptos_framework::poc_contribution {
     use std::error;
     use std::signer;
@@ -64,6 +72,10 @@ module aptos_framework::poc_contribution {
     // ========== Error Codes ==========
     /// Equity amount must be greater than zero
     const EZERO_AMOUNT: u64 = 1;
+    /// Strict contribution requires the app to be ACTIVE and WHITELISTED
+    const EAPP_NOT_ELIGIBLE_FOR_POC: u64 = 2;
+    /// Strict contribution requires the custody signer to match the registered custody address
+    const ECUSTODY_ADDRESS_MISMATCH: u64 = 3;
 
     // ========== Contribution Event ==========
 
@@ -155,10 +167,13 @@ module aptos_framework::poc_contribution {
         // guarantee that the actual received amount equals equity_amount. If the FA
         // has hooks or fees that reduce the received amount, the transaction aborts
         // rather than emitting a ContributionEvent with an inflated equity_amount.
-        let app_address = signer::address_of(app_signer);
-        let app_admin = poc_registry::get_app_admin_by_app_address(app_address);
-        let equity_token_address = poc_registry::get_equity_token_address(app_admin);
-        let metadata = object::address_to_object<Metadata>(equity_token_address);
+        let (
+            app_admin,
+            app_address,
+            registered_custody_address,
+            actual_custody_address,
+            metadata,
+        ) = resolve_contribution_context(app_signer, custody_actor);
         primary_fungible_store::transfer_assert_minimum_deposit(
             custody_actor,
             metadata,
@@ -179,16 +194,235 @@ module aptos_framework::poc_contribution {
         //    custody_address registered in poc_registry. This prevents a whitelisted app
         //    from using an unregistered custody account to emit contribution events.
         if (poc_registry::is_app_eligible_for_poc(app_admin)) {
-            let registered_custody_address = poc_registry::get_custody_address(app_admin);
-            let actual_custody_address = signer::address_of(custody_actor);
             if (actual_custody_address == registered_custody_address) {
-                event::emit(ContributionEvent {
-                    contributor,
-                    equity_token: metadata,
-                    equity_amount,
-                    app_address
-                });
+                emit_contribution_event(contributor, metadata, equity_amount, app_address);
             };
         };
+    }
+
+    /// Strict contribution distribution — validate first, then transfer and emit.
+    ///
+    /// Use this path when the application promises the recipient that the equity
+    /// transfer will also be POC-counted. If the app is not ACTIVE + WHITELISTED or
+    /// the custody signer is not the registered custody address, this function aborts
+    /// before moving any equity tokens.
+    public fun grant_equity_with_contribution_strict(
+        app_signer: &signer,
+        custody_actor: &signer,
+        contributor: address,
+        equity_amount: u64,
+    ) {
+        assert!(equity_amount > 0, error::invalid_argument(EZERO_AMOUNT));
+
+        let (
+            app_admin,
+            app_address,
+            registered_custody_address,
+            actual_custody_address,
+            metadata,
+        ) = resolve_contribution_context(app_signer, custody_actor);
+        assert!(
+            poc_registry::is_app_eligible_for_poc(app_admin),
+            error::permission_denied(EAPP_NOT_ELIGIBLE_FOR_POC),
+        );
+        assert!(
+            actual_custody_address == registered_custody_address,
+            error::permission_denied(ECUSTODY_ADDRESS_MISMATCH),
+        );
+
+        primary_fungible_store::transfer_assert_minimum_deposit(
+            custody_actor,
+            metadata,
+            contributor,
+            equity_amount,
+            equity_amount,
+        );
+        emit_contribution_event(contributor, metadata, equity_amount, app_address);
+    }
+
+    fun resolve_contribution_context(
+        app_signer: &signer,
+        custody_actor: &signer,
+    ): (address, address, address, address, Object<Metadata>) {
+        let app_address = signer::address_of(app_signer);
+        let app_admin = poc_registry::get_app_admin_by_app_address(app_address);
+        let equity_token_address = poc_registry::get_equity_token_address(app_admin);
+        let metadata = object::address_to_object<Metadata>(equity_token_address);
+        let registered_custody_address = poc_registry::get_custody_address(app_admin);
+        let actual_custody_address = signer::address_of(custody_actor);
+        (
+            app_admin,
+            app_address,
+            registered_custody_address,
+            actual_custody_address,
+            metadata,
+        )
+    }
+
+    fun emit_contribution_event(
+        contributor: address,
+        metadata: Object<Metadata>,
+        equity_amount: u64,
+        app_address: address,
+    ) {
+        event::emit(ContributionEvent {
+            contributor,
+            equity_token: metadata,
+            equity_amount,
+            app_address
+        });
+    }
+
+    #[test_only]
+    use std::string;
+    #[test_only]
+    use aptos_framework::fungible_asset::{
+        Self,
+        Metadata as TestMetadata,
+        MintRef,
+        TestToken,
+    };
+    #[test_only]
+    use aptos_framework::timestamp;
+
+    #[test_only]
+    fun setup_test_app(
+        framework: &signer,
+        app_admin: &signer,
+        custody: address,
+        mint_to_custody_amount: u64,
+        whitelist: bool,
+    ): (Object<TestMetadata>, MintRef) {
+        timestamp::set_time_has_started_for_testing(framework);
+        poc_registry::initialize_registry(framework);
+
+        let (constructor_ref, token_object) = fungible_asset::create_test_token(app_admin);
+        let (mint_ref, _transfer_ref, _burn_ref) =
+            primary_fungible_store::init_test_metadata_with_primary_store_enabled(&constructor_ref);
+        let metadata = token_object.convert<TestToken, TestMetadata>();
+        if (mint_to_custody_amount > 0) {
+            primary_fungible_store::mint(&mint_ref, custody, mint_to_custody_amount);
+        };
+
+        let app_admin_address = signer::address_of(app_admin);
+        poc_registry::register_app(
+            app_admin,
+            app_admin_address,
+            object::object_address(&metadata),
+            custody,
+            string::utf8(b"https://app.example"),
+        );
+        if (whitelist) {
+            poc_registry::whitelist_app_for_poc(framework, app_admin_address);
+        };
+        (metadata, mint_ref)
+    }
+
+    #[test(framework = @aptos_framework, app_admin = @0xcafe, contributor = @0xface)]
+    fun test_strict_contribution_transfers_and_emits(
+        framework: &signer,
+        app_admin: &signer,
+        contributor: &signer,
+    ) {
+        let app_admin_address = signer::address_of(app_admin);
+        let contributor_address = signer::address_of(contributor);
+        let (metadata, _mint_ref) = setup_test_app(
+            framework,
+            app_admin,
+            app_admin_address,
+            50,
+            true,
+        );
+
+        grant_equity_with_contribution_strict(
+            app_admin,
+            app_admin,
+            contributor_address,
+            20,
+        );
+
+        assert!(primary_fungible_store::balance(app_admin_address, metadata) == 30, 0);
+        assert!(primary_fungible_store::balance(contributor_address, metadata) == 20, 1);
+        assert!(
+            event::emitted_events<ContributionEvent>().contains(&ContributionEvent {
+                contributor: contributor_address,
+                equity_token: metadata,
+                equity_amount: 20,
+                app_address: app_admin_address,
+            }),
+            2,
+        );
+    }
+
+    #[test(framework = @aptos_framework, app_admin = @0xcafe, contributor = @0xface)]
+    #[expected_failure(abort_code = 0x50002, location = Self)]
+    fun test_strict_contribution_aborts_when_not_whitelisted(
+        framework: &signer,
+        app_admin: &signer,
+        contributor: &signer,
+    ) {
+        let app_admin_address = signer::address_of(app_admin);
+        let contributor_address = signer::address_of(contributor);
+        setup_test_app(framework, app_admin, app_admin_address, 50, false);
+
+        grant_equity_with_contribution_strict(
+            app_admin,
+            app_admin,
+            contributor_address,
+            20,
+        );
+    }
+
+    #[test(
+        framework = @aptos_framework,
+        app_admin = @0xcafe,
+        custody = @0xbeef,
+        contributor = @0xface
+    )]
+    #[expected_failure(abort_code = 0x50003, location = Self)]
+    fun test_strict_contribution_aborts_on_custody_mismatch(
+        framework: &signer,
+        app_admin: &signer,
+        custody: &signer,
+        contributor: &signer,
+    ) {
+        let custody_address = signer::address_of(custody);
+        let contributor_address = signer::address_of(contributor);
+        setup_test_app(framework, app_admin, custody_address, 50, true);
+
+        grant_equity_with_contribution_strict(
+            app_admin,
+            app_admin,
+            contributor_address,
+            20,
+        );
+    }
+
+    #[test(framework = @aptos_framework, app_admin = @0xcafe, contributor = @0xface)]
+    fun test_legacy_contribution_still_transfers_without_event_when_not_whitelisted(
+        framework: &signer,
+        app_admin: &signer,
+        contributor: &signer,
+    ) {
+        let app_admin_address = signer::address_of(app_admin);
+        let contributor_address = signer::address_of(contributor);
+        let (metadata, _mint_ref) = setup_test_app(
+            framework,
+            app_admin,
+            app_admin_address,
+            50,
+            false,
+        );
+
+        grant_equity_with_contribution(
+            app_admin,
+            app_admin,
+            contributor_address,
+            20,
+        );
+
+        assert!(primary_fungible_store::balance(app_admin_address, metadata) == 30, 0);
+        assert!(primary_fungible_store::balance(contributor_address, metadata) == 20, 1);
+        assert!(event::emitted_events<ContributionEvent>().is_empty(), 2);
     }
 }
