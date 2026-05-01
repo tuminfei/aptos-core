@@ -17,6 +17,8 @@
 ///
 /// Key Concepts:
 /// - Power Period: A configurable number of on-chain epochs (default 60). Power values are updated once per period.
+///   Period advancement is driven by an epoch countdown, so changing the configured period length
+///   only affects future periods and never reinterprets historical epochs.
 /// - Effective Period: The period from which a power version becomes active. Versions with effective_period > current_period are "staged" for future use.
 /// - Retention: A decay factor (in basis points) applied per period to power values that haven't been refreshed.
 ///   Default 9950 bps (99.5%) means power decays by 0.5% per period if not updated.
@@ -74,19 +76,22 @@ module aptos_framework::poc_power_store {
     /// - `current_period` only advances forward, never backward
     /// - Each user has at most two PowerVersion slots (older + newer)
     /// - `last_epoch` is incremented once per on-chain epoch via `commit_next_period_if_boundary`
+    /// - `current_period` advances by at most one per committed epoch
     struct PowerStore has key {
         /// The single trusted address allowed to upload power updates
         operator: address,
-        /// Number of on-chain epochs that constitute one power period
+        /// Number of on-chain epochs used when starting the next power period
         power_period_in_epochs: u64,
         /// Monotonically increasing count of epochs that have been committed
         last_epoch: u64,
-        /// The current power period index; advances when last_epoch crosses a period boundary
+        /// The current power period index
         current_period: u64,
         /// Per-user storage: address → two-slot power version window
         users: Table<address, UserPowerInfo>,
         /// Decay factor applied per period to stale power values (in basis points, e.g. 9950 = 99.5%)
         retention_bps_per_period: u64,
+        /// Number of epoch transitions remaining before the next power period starts
+        epochs_until_next_power_period: u64,
     }
 
     /// A single versioned power snapshot for a user.
@@ -199,11 +204,11 @@ module aptos_framework::poc_power_store {
             retention_bps_per_period;
     }
 
-    /// Update the power-period length used to advance `current_period`.
+    /// Update the power-period length used when the next power period starts.
     ///
-    /// This is a framework-governed operational parameter. Production deployments can
-    /// keep the default long period, while tests can shorten it to make staged power
-    /// updates become live after fewer epoch transitions.
+    /// The current period's remaining countdown is not recomputed. This prevents a
+    /// parameter change from reinterpreting historical epochs and making
+    /// `current_period` jump by more than one at the next epoch boundary.
     public entry fun set_power_period_in_epochs(
         aptos_framework: &signer,
         power_period_in_epochs: u64,
@@ -317,11 +322,15 @@ module aptos_framework::poc_power_store {
     /// This is the only place where `current_period` advances, ensuring all reads
     /// within an epoch see a consistent period value.
     ///
-    /// Period boundary formula: period = (epoch - 1) / power_period_in_epochs
+    /// Period boundary rule:
+    /// - `epochs_until_next_power_period` is decremented once per committed epoch.
+    /// - When it reaches zero, the next committed epoch advances `current_period` by one
+    ///   and reloads the countdown from `power_period_in_epochs`.
+    ///
     /// Example with power_period_in_epochs = 60:
-    ///   epoch 1-60  → period 0
-    ///   epoch 61-120 → period 1
-    ///   epoch 121-180 → period 2
+    ///   first 60 committed epochs   → period 0
+    ///   next 60 committed epochs    → period 1
+    ///   next 60 committed epochs    → period 2
     public(friend) fun commit_next_period_if_boundary() acquires PowerStore {
         if (!exists<PowerStore>(@aptos_framework)) {
             return
@@ -329,18 +338,19 @@ module aptos_framework::poc_power_store {
 
         let store = borrow_global_mut<PowerStore>(@aptos_framework);
         store.last_epoch += 1;
-        let next_epoch = store.last_epoch;
-        let target_period = period_for_epoch(next_epoch, store.power_period_in_epochs);
-        if (target_period <= store.current_period) {
-            return
+
+        if (store.epochs_until_next_power_period == 0) {
+            let previous_period = store.current_period;
+            let target_period = previous_period + 1;
+            store.current_period = target_period;
+            store.epochs_until_next_power_period = store.power_period_in_epochs;
+            event::emit(PowerPeriodCommittedEvent {
+                previous_period,
+                current_period: target_period,
+            });
         };
 
-        let previous_period = store.current_period;
-        store.current_period = target_period;
-        event::emit(PowerPeriodCommittedEvent {
-            previous_period,
-            current_period: target_period,
-        });
+        store.epochs_until_next_power_period -= 1;
     }
 
     // ========== Query Interface ==========
@@ -369,7 +379,11 @@ module aptos_framework::poc_power_store {
 
         let store = borrow_global<PowerStore>(@aptos_framework);
         let target_period =
-            period_for_epoch(store.last_epoch + 1, store.power_period_in_epochs);
+            if (store.epochs_until_next_power_period == 0) {
+                store.current_period + 1
+            } else {
+                store.current_period
+            };
         get_user_power_for_period_internal(store, user, target_period)
     }
 
@@ -557,6 +571,7 @@ module aptos_framework::poc_power_store {
                 current_period: 0,
                 users: table::new(),
                 retention_bps_per_period,
+                epochs_until_next_power_period: power_period_in_epochs,
             });
         };
     }
@@ -761,24 +776,6 @@ module aptos_framework::poc_power_store {
         retained_power
     }
 
-    /// Map an on-chain epoch number to its power period index.
-    ///
-    /// Epoch 0 is a special pre-genesis state → period 0.
-    /// For epoch >= 1: period = (epoch - 1) / power_period_in_epochs
-    ///
-    /// With power_period_in_epochs = 60:
-    ///   epoch 0       → period 0  (pre-genesis)
-    ///   epoch 1..60   → period 0
-    ///   epoch 61..120 → period 1
-    ///   epoch 121..180 → period 2
-    fun period_for_epoch(epoch: u64, power_period_in_epochs: u64): u64 {
-        if (epoch == 0) {
-            0
-        } else {
-            (epoch - 1) / power_period_in_epochs
-        }
-    }
-
     /// Returns the zero-value sentinel PowerVersion used to initialize empty slots.
     fun empty_power_version(): PowerVersion {
         PowerVersion {
@@ -949,5 +946,64 @@ module aptos_framework::poc_power_store {
         commit_next_period_if_boundary();
         assert!(get_current_period() == 1, 2);
         assert!(get_user_committed_power(signer::address_of(&user1)) == 0, 3);
+    }
+
+    #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB)]
+    public entry fun test_shortening_power_period_does_not_jump_current_period(
+        framework: signer,
+        operator: signer,
+        user1: signer,
+    ) acquires PowerStore {
+        initialize_with_power_period(&framework, signer::address_of(&operator), 3);
+        set_genesis_committed_power(&framework, signer::address_of(&user1), 100);
+
+        stage_batch_update(
+            &operator,
+            1,
+            vector[signer::address_of(&user1)],
+            vector[90u64],
+        );
+
+        commit_next_period_if_boundary();
+        commit_next_period_if_boundary();
+        assert!(get_current_period() == 0, 0);
+
+        set_power_period_in_epochs(&framework, 1);
+
+        commit_next_period_if_boundary();
+        assert!(get_current_period() == 0, 1);
+        assert!(get_user_committed_power(signer::address_of(&user1)) == 100, 2);
+        assert!(get_user_committed_power_for_next_epoch(signer::address_of(&user1)) == 90, 3);
+
+        commit_next_period_if_boundary();
+        assert!(get_current_period() == 1, 4);
+        assert!(get_user_committed_power(signer::address_of(&user1)) == 90, 5);
+    }
+
+    #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB)]
+    public entry fun test_lengthening_power_period_does_not_delay_ready_boundary(
+        framework: signer,
+        operator: signer,
+        user1: signer,
+    ) acquires PowerStore {
+        initialize_with_power_period(&framework, signer::address_of(&operator), 1);
+        set_genesis_committed_power(&framework, signer::address_of(&user1), 100);
+
+        stage_batch_update(
+            &operator,
+            1,
+            vector[signer::address_of(&user1)],
+            vector[90u64],
+        );
+
+        commit_next_period_if_boundary();
+        assert!(get_current_period() == 0, 0);
+        assert!(get_user_committed_power_for_next_epoch(signer::address_of(&user1)) == 90, 1);
+
+        set_power_period_in_epochs(&framework, 60);
+
+        commit_next_period_if_boundary();
+        assert!(get_current_period() == 1, 2);
+        assert!(get_user_committed_power(signer::address_of(&user1)) == 90, 3);
     }
 }
