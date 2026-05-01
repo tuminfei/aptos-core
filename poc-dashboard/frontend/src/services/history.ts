@@ -15,7 +15,7 @@ export async function getUserSnapshotHistory(address: string, limit = 50, offset
   return data;
 }
 
-export async function getUserPowerPeriodHistory(address: string, limit = 200, offset = 0) {
+export async function getUserPowerPeriodHistory(address: string, limit = 50, offset = 0) {
   const { data } = await api.get(`/history/users/${address}/power-periods`, { params: { limit, offset } });
   return data;
 }

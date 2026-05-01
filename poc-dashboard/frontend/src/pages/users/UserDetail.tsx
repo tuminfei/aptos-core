@@ -38,7 +38,7 @@ export default function UserDetail() {
   const { address } = useParams<{ address: string }>();
   const [snapshotLimit, setSnapshotLimit] = useState(50);
   const [snapshotOffset, setSnapshotOffset] = useState(0);
-  const [powerPeriodLimit, setPowerPeriodLimit] = useState(200);
+  const [powerPeriodLimit, setPowerPeriodLimit] = useState(50);
   const [powerPeriodOffset, setPowerPeriodOffset] = useState(0);
   const fetchUser = useCallback(() => getUser(address!), [address]);
   const fetchSnapshotHistory = useCallback(() => getUserSnapshotHistory(address!, snapshotLimit, snapshotOffset), [address, snapshotLimit, snapshotOffset]);
@@ -74,51 +74,95 @@ export default function UserDetail() {
   const cooldownRemaining = Number(staking.cooldown_remaining_secs || 0);
   const cooldownReason = staking.cooldown_reason || '该账户已解除委托并处于链上冷却期。';
   const cooldownSource = staking.cooldown_source;
-  const currentRawPower = Number(currentCalculation.base_power || 0);
+  const currentBasePower = Number(currentCalculation.base_power || 0);
+  const currentRawPower = currentBasePower;
   const calcRows = [
     { key: 'current', label: '当前 period', ...currentCalculation },
     { key: 'next', label: '下一 epoch period', ...nextEpochCalculation },
   ];
   const powerPeriodInEpochs = Number(powerStore.power_period_in_epochs || 0);
-  const powerTrendByPeriod = new Map<number, { period: number; rawPower: number | null; effectivePower: number | null }>();
-  const ensurePowerTrendPoint = (period: number) => {
-    const existing = powerTrendByPeriod.get(period);
-    if (existing) {
-      return existing;
+  const rawPowerByPeriod = new Map<number, {
+    period: number;
+    rawPower: number;
+    sourceSlot: string;
+    sampledAt?: string;
+    epoch?: number;
+  }>();
+  const effectivePowerByPeriod = new Map<number, number>();
+  const setRawPowerPoint = (
+    period: number,
+    rawPower: number,
+    sourceSlot: string,
+    options: {
+      sampledAt?: string;
+      epoch?: number;
+    } = {},
+  ) => {
+    if (!Number.isFinite(period) || !Number.isFinite(rawPower) || period <= 0) {
+      return;
     }
-    const created = { period, rawPower: null, effectivePower: null };
-    powerTrendByPeriod.set(period, created);
-    return created;
+    const existing = rawPowerByPeriod.get(period);
+    if (!existing || options.sampledAt || (sourceSlot === 'current' && !existing.sampledAt)) {
+      rawPowerByPeriod.set(period, {
+        period,
+        rawPower,
+        sourceSlot,
+        sampledAt: options.sampledAt,
+        epoch: options.epoch,
+      });
+    }
   };
   powerPeriods.forEach((row: any) => {
     const period = Number(row.period);
-    if (!Number.isFinite(period)) {
+    const rawPower = Number(row.raw_power);
+    if (!Number.isFinite(period) || !Number.isFinite(rawPower)) {
       return;
     }
-    ensurePowerTrendPoint(period).rawPower = Number(row.raw_power || 0);
+    setRawPowerPoint(period, rawPower, row.source_slot || 'history', {
+      sampledAt: row.sampled_at,
+      epoch: Number(row.epoch || 0),
+    });
+  });
+  versionRows.forEach((row: any) => {
+    if (!row.present) {
+      return;
+    }
+    setRawPowerPoint(
+      Number(row.effective_period),
+      Number(row.raw_power),
+      row.selected_for_current_period ? 'current' : row.slot || 'slot',
+    );
   });
   snapshots.forEach((row: any) => {
     const epoch = Number(row.epoch || 0);
+    const snapshotPeriod = Number(row.current_period);
+    if (Number.isFinite(snapshotPeriod) && snapshotPeriod > 0) {
+      effectivePowerByPeriod.set(snapshotPeriod, Number(row.effective_power || 0));
+      return;
+    }
     if (epoch <= 0 || powerPeriodInEpochs <= 0) {
       return;
     }
     const period = Math.floor((epoch - 1) / powerPeriodInEpochs);
-    ensurePowerTrendPoint(period).effectivePower = Number(row.effective_power || 0);
+    effectivePowerByPeriod.set(period, Number(row.effective_power || 0));
   });
   const currentPeriod = Number(powerStore.current_period || 0);
   if (Number.isFinite(currentPeriod) && currentPeriod >= 0) {
-    ensurePowerTrendPoint(currentPeriod).effectivePower = Number(power.effective_power || 0);
+    effectivePowerByPeriod.set(currentPeriod, Number(power.effective_power || 0));
   }
-  if (Number.isFinite(currentRawPower) && currentRawPower > 0) {
-    const rawPowerPeriod = Number(currentCalculation.base_period || 0);
-    if (Number.isFinite(rawPowerPeriod)) {
-      ensurePowerTrendPoint(rawPowerPeriod).rawPower = currentRawPower;
-    }
-  }
-  const powerTrendRows = Array.from(powerTrendByPeriod.values()).sort((a, b) => a.period - b.period);
+  const powerTrendRows = Array.from(rawPowerByPeriod.values())
+    .sort((a, b) => a.period - b.period)
+    .map((row) => ({ ...row, effectivePower: effectivePowerByPeriod.get(row.period) ?? null }));
   const rawPowerPeriodSeries = powerTrendRows.map((row) => row.rawPower);
   const effectivePowerSeries = powerTrendRows.map((row) => row.effectivePower);
   const powerTrendValues = [...rawPowerPeriodSeries, ...effectivePowerSeries].filter((value): value is number => value !== null && Number.isFinite(value));
+  const powerTrendYAxis = {
+    ...createScaledValueAxis({
+      values: powerTrendValues,
+      formatter: formatCompactNumber,
+    }),
+    min: 0,
+  };
   const powerTrendChartOption = {
     grid: { left: 56, right: 32, top: 32, bottom: 32, containLabel: true },
     tooltip: {
@@ -127,10 +171,7 @@ export default function UserDetail() {
     },
     legend: { top: 0 },
     xAxis: { type: 'category' as const, data: powerTrendRows.map((row) => `P${row.period}`) },
-    yAxis: createScaledValueAxis({
-      values: powerTrendValues,
-      formatter: formatCompactNumber,
-    }),
+    yAxis: powerTrendYAxis,
     series: [
       {
         name: '原始算力',
@@ -421,7 +462,7 @@ export default function UserDetail() {
                       limit={powerPeriodLimit}
                       offset={powerPeriodOffset}
                       total={powerPeriodData?.total || 0}
-                      shown={powerPeriods.length}
+                      shown={powerTrendRows.length}
                       onLimitChange={setPowerPeriodLimit}
                       onOffsetChange={setPowerPeriodOffset}
                     />

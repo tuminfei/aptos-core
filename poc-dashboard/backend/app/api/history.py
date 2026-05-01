@@ -22,7 +22,7 @@ async def sample_history_now():
 
 
 @router.get("/history/chain")
-async def chain_history(limit: int = Query(200), offset: int = Query(0)):
+async def chain_history(limit: int = Query(50), offset: int = Query(0)):
     normalized_limit = _limit(limit)
     normalized_offset = _offset(offset)
     rows = await history.get_chain_history(normalized_limit, normalized_offset)
@@ -77,7 +77,7 @@ async def consensus_validator_power_epoch(epoch: int):
 
 
 @router.get("/history/users/{address}")
-async def user_history(address: str, limit: int = Query(200), offset: int = Query(0)):
+async def user_history(address: str, limit: int = Query(50), offset: int = Query(0)):
     normalized_limit = _limit(limit)
     normalized_offset = _offset(offset)
     rows = await history.get_user_history(address, normalized_limit, normalized_offset)
@@ -96,7 +96,7 @@ async def user_history(address: str, limit: int = Query(200), offset: int = Quer
 
 
 @router.get("/history/users/{address}/power-periods")
-async def user_power_period_history(address: str, limit: int = Query(200), offset: int = Query(0)):
+async def user_power_period_history(address: str, limit: int = Query(50), offset: int = Query(0)):
     normalized_limit = _limit(limit)
     normalized_offset = _offset(offset)
     rows = await history.get_user_power_period_history(address, normalized_limit, normalized_offset)
@@ -111,7 +111,7 @@ async def user_power_period_history(address: str, limit: int = Query(200), offse
 
 
 @router.get("/history/validators/{address}")
-async def validator_history(address: str, limit: int = Query(200), offset: int = Query(0)):
+async def validator_history(address: str, limit: int = Query(50), offset: int = Query(0)):
     normalized_limit = _limit(limit)
     normalized_offset = _offset(offset)
     rows = await history.get_validator_history(address, normalized_limit, normalized_offset)

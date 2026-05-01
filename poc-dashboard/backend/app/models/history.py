@@ -317,9 +317,25 @@ async def get_user_history(address: str, limit: int = 200, offset: int = 0) -> l
     placeholders = ",".join("lower(?)" for _ in variants)
     rows = await db.execute_fetchall(
         f"""
-        SELECT * FROM user_snapshots
-        WHERE lower(address) IN ({placeholders})
-        ORDER BY sampled_at DESC, id DESC
+        SELECT
+            user_snapshots.*,
+            (
+                SELECT chain_snapshots.current_period
+                FROM chain_snapshots
+                WHERE chain_snapshots.sampled_at <= user_snapshots.sampled_at
+                ORDER BY chain_snapshots.sampled_at DESC, chain_snapshots.id DESC
+                LIMIT 1
+            ) AS current_period,
+            (
+                SELECT chain_snapshots.power_period_in_epochs
+                FROM chain_snapshots
+                WHERE chain_snapshots.sampled_at <= user_snapshots.sampled_at
+                ORDER BY chain_snapshots.sampled_at DESC, chain_snapshots.id DESC
+                LIMIT 1
+            ) AS power_period_in_epochs
+        FROM user_snapshots
+        WHERE lower(user_snapshots.address) IN ({placeholders})
+        ORDER BY user_snapshots.sampled_at DESC, user_snapshots.id DESC
         LIMIT ? OFFSET ?
         """,
         [*variants, limit, offset],

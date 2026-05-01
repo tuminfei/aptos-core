@@ -20,7 +20,7 @@ async def test_history_sample_and_query(client):
     chain_data = chain_resp.json()
     chain_history = chain_data["history"]
     assert chain_data["total"] == 1
-    assert chain_data["limit"] == 200
+    assert chain_data["limit"] == 50
     assert chain_data["offset"] == 0
     assert len(chain_history) == 1
     assert chain_history[0]["active_validator_count"] == 4
