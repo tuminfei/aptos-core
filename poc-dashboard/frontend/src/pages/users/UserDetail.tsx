@@ -81,7 +81,7 @@ export default function UserDetail() {
     { key: 'next', label: '下一 epoch period', ...nextEpochCalculation },
   ];
   const powerPeriodInEpochs = Number(powerStore.power_period_in_epochs || 0);
-  const rawPowerByPeriod = new Map<number, {
+  const rawPowerEventsByPeriod = new Map<number, {
     period: number;
     rawPower: number;
     sourceSlot: string;
@@ -101,9 +101,9 @@ export default function UserDetail() {
     if (!Number.isFinite(period) || !Number.isFinite(rawPower) || period <= 0) {
       return;
     }
-    const existing = rawPowerByPeriod.get(period);
+    const existing = rawPowerEventsByPeriod.get(period);
     if (!existing || options.sampledAt || (sourceSlot === 'current' && !existing.sampledAt)) {
-      rawPowerByPeriod.set(period, {
+      rawPowerEventsByPeriod.set(period, {
         period,
         rawPower,
         sourceSlot,
@@ -150,9 +150,22 @@ export default function UserDetail() {
   if (Number.isFinite(currentPeriod) && currentPeriod >= 0) {
     effectivePowerByPeriod.set(currentPeriod, Number(power.effective_power || 0));
   }
-  const powerTrendRows = Array.from(rawPowerByPeriod.values())
-    .sort((a, b) => a.period - b.period)
-    .map((row) => ({ ...row, effectivePower: effectivePowerByPeriod.get(row.period) ?? null }));
+  const rawPowerEvents = Array.from(rawPowerEventsByPeriod.values()).sort((a, b) => a.period - b.period);
+  const effectivePowerPeriods = Array.from(effectivePowerByPeriod.keys()).sort((a, b) => a - b);
+  const powerTrendPeriods = effectivePowerPeriods.length > 0
+    ? effectivePowerPeriods
+    : rawPowerEvents.map((row) => row.period);
+  const powerTrendRows = powerTrendPeriods.map((period) => {
+    const rawPoint = rawPowerEventsByPeriod.get(period);
+    return {
+      period,
+      rawPower: rawPoint?.rawPower ?? null,
+      sourceSlot: rawPoint?.sourceSlot,
+      sampledAt: rawPoint?.sampledAt,
+      epoch: rawPoint?.epoch,
+      effectivePower: effectivePowerByPeriod.get(period) ?? null,
+    };
+  });
   const rawPowerPeriodSeries = powerTrendRows.map((row) => row.rawPower);
   const effectivePowerSeries = powerTrendRows.map((row) => row.effectivePower);
   const powerTrendValues = [...rawPowerPeriodSeries, ...effectivePowerSeries].filter((value): value is number => value !== null && Number.isFinite(value));

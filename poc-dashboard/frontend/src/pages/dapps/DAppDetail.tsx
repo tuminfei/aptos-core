@@ -53,7 +53,7 @@ import { getWatchedUsers } from '../../services/watchlist';
 import { APP_STATE_LABEL, APP_STATE_COLOR, POC_STATUS_LABEL, POC_STATUS_COLOR } from '../../utils/constants';
 import { formatNumber, formatTimestamp, formatTopo } from '../../utils/format';
 
-const DEFAULT_BUYER_MINT = 1_000_000_000_000;
+const DEFAULT_BUYER_MINT = 100_000_000;
 
 function valueFromInfo(info: any, key: string) {
   return info?.[key] ?? info?.[key.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] ?? '-';
