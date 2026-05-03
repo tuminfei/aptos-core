@@ -175,7 +175,7 @@ async def _dapp_detail_uncached(app_admin: str):
     except Exception:
         eligible = False
     demo = await dapp_svc.get_demo_runtime(app_admin)
-    task = dapp_svc.get_trade_task_status(app_admin)
+    task = await dapp_svc.get_trade_task_status(app_admin)
 
     return {
         "app_admin": app_admin,
@@ -453,4 +453,4 @@ async def stop_demo_auto_trade(req: AppAdminReq):
 
 @router.get("/dapps/demo/auto-trade/status")
 async def demo_auto_trade_status(app_admin: str | None = None):
-    return dapp_svc.get_trade_task_status(app_admin)
+    return await dapp_svc.get_trade_task_status(app_admin)

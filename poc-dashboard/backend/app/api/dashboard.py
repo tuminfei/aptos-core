@@ -40,9 +40,11 @@ async def overview():
         power_period_in_epochs = await view.get_power_period_in_epochs(client)
         retention_bps = await view.get_retention_bps(client)
         power_operator = await view.get_power_operator(client)
+        power_clock = await view.get_power_period_clock(client)
     except Exception:
         current_period = power_period_in_epochs = retention_bps = 0
         power_operator = ""
+        power_clock = {"power_period_clock_initialized": False, "power_period_clock_countdown": None}
 
     try:
         total_staked_power = await view.get_total_staked_power(client)
@@ -51,9 +53,7 @@ async def overview():
     except Exception:
         total_staked_power = octas_per_power = cooldown_secs = 0
 
-    epochs_until_next = 0
-    if power_period_in_epochs > 0:
-        epochs_until_next = power_period_in_epochs - (epoch % power_period_in_epochs)
+    power_clock_fields = view.period_clock_fields(power_period_in_epochs, power_clock)
 
     validators_summary = []
     try:
@@ -97,7 +97,7 @@ async def overview():
             "power_period_in_epochs": power_period_in_epochs,
             "retention_bps": retention_bps,
             "operator": power_operator,
-            "epochs_until_next_period": epochs_until_next,
+            **power_clock_fields,
         },
         "staking": {
             "total_staked_power": total_staked_power,

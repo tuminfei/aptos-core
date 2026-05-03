@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+import json
+
+from fastapi import APIRouter, Body
 from pydantic import BaseModel, Field
 from app.chain.client import get_chain_client
 from app.chain import view
@@ -8,7 +10,7 @@ from app.models import operation_log
 from app.services import dapp_svc
 from app.services.cache_svc import invalidate_many
 from app.api.errors import ChainTxError
-from app.api.users import build_power_calculation, build_version_rows, period_for_epoch
+from app.api.users import build_power_calculation, build_version_rows
 from app.api.watchlist import _get_user_like_watch_items
 from app.utils.address import address_key
 
@@ -35,6 +37,11 @@ class SetRetentionReq(BaseModel):
     gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
 
 
+class AdminGasReq(BaseModel):
+    max_gas: int = dapp_svc.DEFAULT_MAX_GAS
+    gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
+
+
 class SetOperatorReq(BaseModel):
     operator: str
     max_gas: int = dapp_svc.DEFAULT_MAX_GAS
@@ -53,10 +60,11 @@ async def power_overview():
     period_in_epochs = await view.get_power_period_in_epochs(client)
     retention = await view.get_retention_bps(client)
     operator = await view.get_power_operator(client)
+    clock = await view.get_power_period_clock(client)
 
     ledger = await client.get_ledger_info()
     epoch = int(ledger.get("epoch", 0))
-    epochs_until = period_in_epochs - (epoch % period_in_epochs) if period_in_epochs > 0 else 0
+    clock_fields = view.period_clock_fields(period_in_epochs, clock)
 
     return {
         "current_period": current_period,
@@ -64,7 +72,7 @@ async def power_overview():
         "retention_bps": retention,
         "operator": operator,
         "current_epoch": epoch,
-        "epochs_until_next_period": epochs_until,
+        **clock_fields,
     }
 
 
@@ -75,11 +83,12 @@ async def power_store_overview():
     period_in_epochs = await view.get_power_period_in_epochs(client)
     retention = await view.get_retention_bps(client)
     operator = await view.get_power_operator(client)
+    clock = await view.get_power_period_clock(client)
 
     ledger = await client.get_ledger_info()
     epoch = int(ledger.get("epoch", 0))
-    next_epoch_period = period_for_epoch(epoch + 1, period_in_epochs)
-    epochs_until = period_in_epochs - (epoch % period_in_epochs) if period_in_epochs > 0 else 0
+    next_epoch_period = view.next_epoch_period_from_clock(current_period, clock)
+    clock_fields = view.period_clock_fields(period_in_epochs, clock)
 
     watched_users = await _get_user_like_watch_items(client)
     user_addresses = [item["address"] for item in watched_users[:200]]
@@ -100,7 +109,7 @@ async def power_store_overview():
         "retention_bps": retention,
         "retention_percent": retention / 100,
         "decay_bps": max(0, 10000 - retention),
-        "epochs_until_next_period": epochs_until,
+        **clock_fields,
         "watched_user_count": len(watched_users),
         "validator_user_count": sum(1 for item in watched_users if item.get("is_validator_user")),
         "watched_users": watched_summary,
@@ -113,9 +122,10 @@ async def query_power_store_users(req: UserPowerQueryReq):
     current_period = await view.get_current_period(client)
     period_in_epochs = await view.get_power_period_in_epochs(client)
     retention = await view.get_retention_bps(client)
+    clock = await view.get_power_period_clock(client)
     ledger = await client.get_ledger_info()
     epoch = int(ledger.get("epoch", 0))
-    next_epoch_period = period_for_epoch(epoch + 1, period_in_epochs)
+    next_epoch_period = view.next_epoch_period_from_clock(current_period, clock)
     target_period = req.target_period if req.target_period is not None else next_epoch_period
     addresses = [_normalize_address(address) for address in req.addresses if address.strip()]
     return {
@@ -123,6 +133,7 @@ async def query_power_store_users(req: UserPowerQueryReq):
         "current_period": current_period,
         "next_epoch_period": next_epoch_period,
         "target_period": target_period,
+        **view.period_clock_fields(period_in_epochs, clock),
         "retention_bps": retention,
         "users": await _build_power_store_user_rows(
             addresses,
@@ -156,19 +167,46 @@ async def stage_single(req: StageSingleReq):
 async def stage_batch(req: StageBatchReq):
     client = get_chain_client()
     km = get_key_manager()
-    addresses = [u["address"] for u in req.updates]
-    powers = [str(u["power"]) for u in req.updates]
+    addresses = [_normalize_address(u["address"]) for u in req.updates]
+    powers = [int(u["power"]) for u in req.updates]
     try:
-        tx = await submit_entry_function(
-            client, km.core_resources_key, km.core_resources_address,
-            "0x1::poc_power_store::stage_batch_update",
-            args=[str(req.target_period), addresses, powers],
+        tx = await dapp_svc.run_poc_framework_script(
+            "stage_power_store_batch.move",
+            core_key=km.core_resources_key,
+            core_address=km.core_resources_address,
+            rest_url=client.base_url,
+            args=[
+                f"u64:{req.target_period}",
+                f"address:{json.dumps(addresses)}",
+                f"u64:{json.dumps(powers)}",
+            ],
         )
         await operation_log.create_log("stage_batch_power", None, {"count": len(addresses)}, tx, "success")
         await invalidate_many("user:", "validators:", "validator:")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("stage_batch_power", None, None, None, "failed", str(e))
+        raise ChainTxError(str(e))
+
+
+@router.post("/power/initialize-clock")
+async def initialize_clock(req: AdminGasReq = Body(default_factory=AdminGasReq)):
+    client = get_chain_client()
+    km = get_key_manager()
+    try:
+        tx = await dapp_svc.run_poc_framework_script(
+            "initialize_power_period_clock.move",
+            core_key=km.core_resources_key,
+            core_address=km.core_resources_address,
+            rest_url=client.base_url,
+            max_gas=req.max_gas,
+            gas_unit_price=req.gas_unit_price,
+        )
+        await operation_log.create_log("initialize_power_period_clock", None, None, tx, "success")
+        await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
+        return {"tx_hash": tx, "success": True}
+    except Exception as e:
+        await operation_log.create_log("initialize_power_period_clock", None, None, None, "failed", str(e))
         raise ChainTxError(str(e))
 
 

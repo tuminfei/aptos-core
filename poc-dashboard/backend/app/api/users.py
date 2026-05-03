@@ -121,12 +121,6 @@ def build_power_calculation(versions: dict, target_period: int, retention_bps: i
     }
 
 
-def period_for_epoch(epoch: int, power_period_in_epochs: int) -> int:
-    if epoch <= 0 or power_period_in_epochs <= 0:
-        return 0
-    return (epoch - 1) // power_period_in_epochs
-
-
 def _parse_log_created_at_secs(value: str | None) -> int:
     if not value:
         return 0
@@ -201,10 +195,12 @@ async def _user_detail_uncached(address: str):
         current_period = await view.get_current_period(client)
         power_period_in_epochs = await view.get_power_period_in_epochs(client)
         retention_bps = await view.get_retention_bps(client)
+        power_clock = await view.get_power_period_clock(client)
         ledger = await client.get_ledger_info()
         current_epoch = int(ledger.get("epoch", 0))
-        next_epoch_period = period_for_epoch(current_epoch + 1, power_period_in_epochs)
+        next_epoch_period = view.next_epoch_period_from_clock(current_period, power_clock)
     except Exception:
+        power_clock = {"power_period_clock_initialized": False, "power_period_clock_countdown": None}
         pass
 
     power_versions = {
@@ -268,6 +264,7 @@ async def _user_detail_uncached(address: str):
             "current_period": current_period,
             "next_epoch_period": next_epoch_period,
             "power_period_in_epochs": power_period_in_epochs,
+            **view.period_clock_fields(power_period_in_epochs, power_clock),
             "retention_bps": retention_bps,
             "retention_ratio": retention_bps / BPS_DENOMINATOR if retention_bps else 0,
             "decay_bps": max(0, BPS_DENOMINATOR - retention_bps),

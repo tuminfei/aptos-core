@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from app.chain.keys import get_key_manager
-from app.models import contribution_event, dapp_demo, watchlist
+from app.models import contribution_event, dapp_demo, dapp_trade_task, watchlist
 from app.services import dapp_svc
 
 
@@ -232,3 +232,64 @@ async def test_auto_trade_tops_up_custody_inventory_before_buy(client, mock_clie
     assert int(mint_tx["payload"]["arguments"][0]) >= 7
     assert txns.index(mint_tx) < txns.index(buy_tx)
     assert buy_tx["sender"] == buyer
+
+
+@pytest.mark.asyncio
+async def test_auto_trade_task_persists_and_survives_shutdown(client, monkeypatch):
+    km = get_key_manager()
+    _, buyer = km.generate_account("persisted-trade-buyer")
+    await watchlist.add_address("user", buyer, "persisted-trade-buyer")
+    await dapp_demo.upsert_config(
+        app_admin="0xddd",
+        module_address="0xabc",
+        initial_supply=100,
+        price_per_equity=2,
+    )
+
+    async def idle_trade_loop(task):
+        task.status = "running"
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            raise
+
+    monkeypatch.setattr(dapp_svc, "_trade_loop", idle_trade_loop)
+
+    resp = await client.post(
+        "/api/v1/dapps/demo/auto-trade/start",
+        json={
+            "app_admin": "0xddd",
+            "interval_secs": 1,
+            "tx_per_tick": 1,
+            "amount_min": 3,
+            "amount_max": 5,
+            "max_runs": 0,
+            "buyer_addresses": [buyer],
+            "auto_create_buyers": 0,
+            "mint_octas": 0,
+        },
+    )
+
+    assert resp.status_code == 200
+    row = await dapp_trade_task.get_task("0xddd")
+    assert row["status"] == "running"
+    assert row["module_address"] == "0xabc"
+    assert row["buyer_addresses"] == [buyer]
+
+    await dapp_svc.stop_all_trade_tasks()
+
+    row = await dapp_trade_task.get_task("0xddd")
+    assert row["status"] == "running"
+    assert await dapp_svc.get_trade_task_status("0xddd") == row
+
+    restored = await dapp_svc.restore_trade_tasks()
+
+    assert len(restored) == 1
+    assert restored[0]["app_admin"] == "0xddd"
+    status = await dapp_svc.get_trade_task_status("0xddd")
+    assert status["status"] == "running"
+    assert status["module_address"] == "0xabc"
+
+    await dapp_svc.stop_trade_task("0xddd")
+    row = await dapp_trade_task.get_task("0xddd")
+    assert row["status"] == "stopped"

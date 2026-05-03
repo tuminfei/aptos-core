@@ -1,6 +1,9 @@
 from app.chain.client import ChainClient
 from typing import Any
 
+APTOS_FRAMEWORK_ADDRESS = "0x1"
+POWER_PERIOD_CLOCK_RESOURCE = "0x1::poc_power_store::PowerPeriodClock"
+
 
 # --- block ---
 
@@ -19,6 +22,50 @@ async def get_current_period(client: ChainClient) -> int:
 async def get_power_period_in_epochs(client: ChainClient) -> int:
     r = await client.call_view("0x1::poc_power_store::get_power_period_in_epochs")
     return int(r[0])
+
+
+async def get_power_period_clock(client: ChainClient) -> dict:
+    resource = await client.get_account_resource(APTOS_FRAMEWORK_ADDRESS, POWER_PERIOD_CLOCK_RESOURCE)
+    if not resource:
+        return {
+            "power_period_clock_initialized": False,
+            "power_period_clock_countdown": None,
+        }
+
+    data = resource.get("data") or {}
+    return {
+        "power_period_clock_initialized": True,
+        "power_period_clock_countdown": int(data.get("epochs_until_next_power_period", 0) or 0),
+    }
+
+
+def next_epoch_period_from_clock(current_period: int, clock: dict) -> int:
+    if clock.get("power_period_clock_initialized") and int(clock.get("power_period_clock_countdown") or 0) == 0:
+        return current_period + 1
+    return current_period
+
+
+def period_clock_fields(power_period_in_epochs: int, clock: dict) -> dict:
+    initialized = bool(clock.get("power_period_clock_initialized"))
+    if not initialized:
+        return {
+            "power_period_clock_initialized": False,
+            "power_period_clock_countdown": None,
+            "epochs_until_next_period": 0,
+            "power_period_progress_epochs": 0,
+            "power_period_progress_percent": 0,
+        }
+
+    countdown = max(0, int(clock.get("power_period_clock_countdown") or 0))
+    period = max(0, int(power_period_in_epochs or 0))
+    progress_epochs = max(0, period - min(countdown, period)) if period > 0 else 0
+    return {
+        "power_period_clock_initialized": True,
+        "power_period_clock_countdown": countdown,
+        "epochs_until_next_period": countdown + 1,
+        "power_period_progress_epochs": progress_epochs,
+        "power_period_progress_percent": round(progress_epochs * 100 / period) if period > 0 else 0,
+    }
 
 
 async def get_retention_bps(client: ChainClient) -> int:

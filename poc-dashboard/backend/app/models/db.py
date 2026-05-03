@@ -63,6 +63,34 @@ CREATE TABLE IF NOT EXISTS dapp_demo_configs (
 
 CREATE INDEX IF NOT EXISTS idx_dapp_demo_module ON dapp_demo_configs(module_address);
 
+CREATE TABLE IF NOT EXISTS dapp_demo_trade_tasks (
+    app_admin             TEXT PRIMARY KEY,
+    task_id               TEXT NOT NULL,
+    module_address        TEXT NOT NULL,
+    interval_secs         REAL NOT NULL,
+    tx_per_tick           INTEGER NOT NULL DEFAULT 1,
+    amount_min            INTEGER NOT NULL DEFAULT 0,
+    amount_max            INTEGER NOT NULL DEFAULT 0,
+    max_runs              INTEGER NOT NULL DEFAULT 0,
+    buyer_addresses       TEXT NOT NULL DEFAULT '[]',
+    buyer_selection_mode  TEXT NOT NULL DEFAULT 'fixed',
+    auto_create_buyers    INTEGER NOT NULL DEFAULT 0,
+    mint_octas            INTEGER NOT NULL DEFAULT 0,
+    max_gas               INTEGER NOT NULL DEFAULT 0,
+    gas_unit_price        INTEGER NOT NULL DEFAULT 0,
+    status                TEXT NOT NULL DEFAULT 'running',
+    run_count             INTEGER NOT NULL DEFAULT 0,
+    success_count         INTEGER NOT NULL DEFAULT 0,
+    failure_count         INTEGER NOT NULL DEFAULT 0,
+    last_tx_hash          TEXT,
+    last_error            TEXT,
+    created_at_epoch      REAL NOT NULL DEFAULT 0,
+    created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_dapp_demo_trade_tasks_status ON dapp_demo_trade_tasks(status);
+
 CREATE TABLE IF NOT EXISTS contribution_events (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     tx_hash         TEXT NOT NULL,

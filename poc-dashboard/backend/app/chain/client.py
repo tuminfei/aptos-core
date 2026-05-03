@@ -84,6 +84,14 @@ class ChainClient:
         resp.raise_for_status()
         return resp.json()
 
+    async def get_transactions(self, start: int | None = None, limit: int = 25) -> list:
+        params: dict[str, int] = {"limit": limit}
+        if start is not None:
+            params["start"] = start
+        resp = await self._client.get("/transactions", params=params)
+        resp.raise_for_status()
+        return resp.json()
+
     async def get_events(self, address: str, event_handle: str, field_name: str,
                          start: int = 0, limit: int = 25) -> list:
         resp = await self._client.get(

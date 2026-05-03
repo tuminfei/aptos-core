@@ -10,6 +10,9 @@ async def test_power_overview(client):
     assert data["current_period"] == 23
     assert data["power_period_in_epochs"] == 5
     assert data["retention_bps"] == 9950
+    assert data["power_period_clock_initialized"] is True
+    assert data["power_period_clock_countdown"] == 2
+    assert data["epochs_until_next_period"] == 3
 
 
 @pytest.mark.asyncio
@@ -25,6 +28,27 @@ async def test_power_store_includes_validator_users(client):
     assert validator_user["in_validator_watchlist"] is True
     assert validator_user["label"] == "validator-a"
     assert data["validator_user_count"] >= 1
+    assert data["next_epoch_period"] == 23
+
+
+@pytest.mark.asyncio
+async def test_power_store_next_epoch_period_uses_clock(client, mock_client):
+    mock_client.set_resource(
+        "0x1",
+        "0x1::poc_power_store::PowerPeriodClock",
+        {
+            "type": "0x1::poc_power_store::PowerPeriodClock",
+            "data": {"epochs_until_next_power_period": "0"},
+        },
+    )
+
+    resp = await client.get("/api/v1/power/store")
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["current_period"] == 23
+    assert data["next_epoch_period"] == 24
+    assert data["epochs_until_next_period"] == 1
 
 
 @pytest.mark.asyncio

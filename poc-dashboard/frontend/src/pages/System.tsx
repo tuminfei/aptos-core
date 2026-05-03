@@ -36,6 +36,7 @@ import {
 } from '../services/governance';
 import {
   getPowerStore,
+  initializePowerPeriodClock,
   queryPowerStoreUsers,
   setOperator,
   setPeriod,
@@ -180,7 +181,8 @@ export default function System() {
   const pwr = config?.power || {};
   const stk = config?.staking || {};
   const gov = config?.governance || {};
-  const nextPeriod = Number(powerStore?.current_period || 0) + 1;
+  const stageTargetPeriod = Number(powerStore?.current_period || 0) + 1;
+  const defaultQueryPeriod = Number(powerStore?.next_epoch_period ?? powerStore?.current_period ?? 0);
   const effectiveEpochIntervalSecs = epochIntervalSecsVal ?? Number(chainCfg.epoch_interval_secs || 0);
   const effectiveOctasPerPower = octasPerPowerVal ?? Number(stk.octas_per_power || 0);
   const effectiveMinActivePower = minActivePowerVal ?? Number(stk.min_active_power || 0);
@@ -301,7 +303,7 @@ export default function System() {
               <Col xs={12} md={4}><Statistic title="Chain ID" value={chain?.chain_id || 0} /></Col>
               <Col xs={12} md={4}><Statistic title="Epoch" value={chain?.epoch || 0} /></Col>
               <Col xs={12} md={4}><Statistic title="当前 Period" value={formatNumber(powerStore?.current_period || 0)} /></Col>
-              <Col xs={12} md={4}><Statistic title="下一打点" value={`P${formatNumber(nextPeriod)}`} /></Col>
+              <Col xs={12} md={4}><Statistic title="下一打点" value={`P${formatNumber(stageTargetPeriod)}`} /></Col>
               <Col xs={12} md={4}><Statistic title="区块高度" value={formatNumber(chain?.block_height || 0)} /></Col>
               <Col xs={12} md={4}><Statistic title="版本" value={formatNumber(chain?.ledger_version || 0)} /></Col>
             </Row>
@@ -533,9 +535,11 @@ export default function System() {
                         <Descriptions.Item label="当前 Epoch">{formatNumber(powerStore?.current_epoch || 0)}</Descriptions.Item>
                         <Descriptions.Item label="当前 Period">{formatNumber(powerStore?.current_period || 0)}</Descriptions.Item>
                         <Descriptions.Item label="下一 Epoch Period">{formatNumber(powerStore?.next_epoch_period || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="下一打点 Period">{formatNumber(nextPeriod)}</Descriptions.Item>
+                        <Descriptions.Item label="下一打点 Period">{formatNumber(stageTargetPeriod)}</Descriptions.Item>
                         <Descriptions.Item label="周期长度">{formatNumber(powerStore?.power_period_in_epochs || 0)} Epoch</Descriptions.Item>
-                        <Descriptions.Item label="距离下个 Period">{formatNumber(powerStore?.epochs_until_next_period || 0)} Epoch</Descriptions.Item>
+                        <Descriptions.Item label="Clock 状态">{powerStore?.power_period_clock_initialized ? <Tag color="green">已初始化</Tag> : <Tag color="orange">未初始化</Tag>}</Descriptions.Item>
+                        <Descriptions.Item label="Clock 倒计时">{powerStore?.power_period_clock_initialized ? `${formatNumber(powerStore?.power_period_clock_countdown || 0)} Epoch` : '-'}</Descriptions.Item>
+                        <Descriptions.Item label="距离下个 Period">{powerStore?.power_period_clock_initialized ? `${formatNumber(powerStore?.epochs_until_next_period || 0)} Epoch` : '-'}</Descriptions.Item>
                         <Descriptions.Item label="保留系数">{formatNumber(powerStore?.retention_bps || 0)} ({formatBps(powerStore?.retention_bps || 0)})</Descriptions.Item>
                         <Descriptions.Item label="每 Period 衰减">{formatNumber(powerStore?.decay_bps || 0)} ({formatBps(powerStore?.decay_bps || 0)})</Descriptions.Item>
                         <Descriptions.Item label="已关注用户">{formatNumber(powerStore?.watched_user_count || 0)}</Descriptions.Item>
@@ -571,7 +575,7 @@ export default function System() {
                             </Form.Item>
                           </Col>
                           <Col xs={24} md={12}>
-                            <Form.Item label={`单用户打点 (P${formatNumber(nextPeriod)})`}>
+                            <Form.Item label={`单用户打点 (P${formatNumber(stageTargetPeriod)})`}>
                               <Space.Compact style={{ width: '100%' }}>
                                 <AddressSelect kind="user" value={stageAddr || undefined} onChange={setStageAddr} placeholder="选择用户" style={{ width: '100%' }} />
                                 <InputNumber value={stagePower} onChange={(value) => setStagePower(value || 0)} min={0} precision={0} placeholder="power" style={{ width: 130 }} />
@@ -579,6 +583,16 @@ export default function System() {
                               </Space.Compact>
                             </Form.Item>
                           </Col>
+                          {!powerStore?.power_period_clock_initialized ? (
+                            <Col xs={24}>
+                              <Alert
+                                type="warning"
+                                showIcon
+                                message="PowerPeriodClock 未初始化"
+                                action={<Button size="small" loading={submitting} onClick={() => doAction('初始化 PowerPeriodClock', () => initializePowerPeriodClock())}>初始化</Button>}
+                              />
+                            </Col>
+                          ) : null}
                         </Row>
                       </Form>
                     </Card>
@@ -605,7 +619,7 @@ export default function System() {
                             onChange={(value) => setBatchPeriod(value || 0)}
                             min={0}
                             precision={0}
-                            placeholder={`默认 ${nextPeriod}`}
+                            placeholder={`默认 ${stageTargetPeriod}`}
                             style={{ width: '100%' }}
                           />
                         </Form.Item>
@@ -647,7 +661,7 @@ export default function System() {
                     </Col>
                     <Col xs={16} md={8}>
                       <Form.Item label="目标 Period" style={{ marginBottom: 0 }}>
-                        <InputNumber value={targetPeriod ?? undefined} onChange={(value) => setTargetPeriod(value ?? null)} min={0} precision={0} placeholder={`默认 P${nextPeriod}`} style={{ width: '100%' }} />
+                        <InputNumber value={targetPeriod ?? undefined} onChange={(value) => setTargetPeriod(value ?? null)} min={0} precision={0} placeholder={`默认 P${formatNumber(defaultQueryPeriod)}`} style={{ width: '100%' }} />
                       </Form.Item>
                     </Col>
                     <Col xs={8} md={4}>

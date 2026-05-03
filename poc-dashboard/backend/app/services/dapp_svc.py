@@ -12,7 +12,7 @@ from app.chain import view
 from app.chain.client import ChainClient, get_chain_client
 from app.chain.keys import Ed25519Key, get_key_manager
 from app.chain.transaction import submit_entry_function
-from app.models import contribution_event, dapp_demo, operation_log, watchlist
+from app.models import contribution_event, dapp_demo, dapp_trade_task, operation_log, watchlist
 from app.services.cache_svc import invalidate_many
 
 
@@ -733,6 +733,32 @@ class DemoTradeTask:
 _trade_tasks: dict[str, DemoTradeTask] = {}
 
 
+def _task_from_status(status: dict) -> DemoTradeTask:
+    return DemoTradeTask(
+        task_id=status.get("task_id", ""),
+        app_admin=status.get("app_admin", ""),
+        module_address=status.get("module_address", ""),
+        interval_secs=float(status.get("interval_secs", 0) or 0),
+        tx_per_tick=int(status.get("tx_per_tick", 0) or 0),
+        amount_min=int(status.get("amount_min", 0) or 0),
+        amount_max=int(status.get("amount_max", 0) or 0),
+        max_runs=int(status.get("max_runs", 0) or 0),
+        buyer_addresses=list(status.get("buyer_addresses") or []),
+        buyer_selection_mode=status.get("buyer_selection_mode", "fixed"),
+        auto_create_buyers=int(status.get("auto_create_buyers", 0) or 0),
+        mint_octas=int(status.get("mint_octas", 0) or 0),
+        max_gas=int(status.get("max_gas", DEFAULT_MAX_GAS) or DEFAULT_MAX_GAS),
+        gas_unit_price=int(status.get("gas_unit_price", DEFAULT_GAS_UNIT_PRICE) or DEFAULT_GAS_UNIT_PRICE),
+        created_at=float(status.get("created_at", 0) or time.time()),
+        status=status.get("status", "running"),
+        run_count=int(status.get("run_count", 0) or 0),
+        success_count=int(status.get("success_count", 0) or 0),
+        failure_count=int(status.get("failure_count", 0) or 0),
+        last_tx_hash=status.get("last_tx_hash", "") or "",
+        last_error=status.get("last_error", "") or "",
+    )
+
+
 async def start_trade_task(
     *,
     app_admin: str,
@@ -789,6 +815,7 @@ async def start_trade_task(
         gas_unit_price=gas_unit_price,
     )
     _trade_tasks[app_admin] = task
+    await dapp_trade_task.upsert_task(task.public_status())
     task._task = asyncio.create_task(_trade_loop(task))
     await operation_log.create_log("demo_dapp_auto_trade_start", app_admin, task.public_status(), None, "success")
     await broadcast("dapp_trade_task", task.public_status())
@@ -880,44 +907,79 @@ async def _ensure_demo_custody_inventory(task: DemoTradeTask, required_amount: i
         raise
 
 
-async def stop_trade_task(app_admin: str, missing_ok: bool = False) -> dict:
+async def stop_trade_task(app_admin: str, missing_ok: bool = False, persist: bool = True) -> dict:
     task = _trade_tasks.get(app_admin)
     if not task:
         if missing_ok:
+            if persist:
+                await dapp_trade_task.update_task_state(app_admin, status="stopped")
             return {"running": False}
         raise ValueError("没有运行中的定时交易任务")
-    task.status = "stopping"
+    task.status = "stopping" if persist else "shutdown"
     if task._task:
         task._task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await task._task
-    task.status = "stopped"
+    task.status = "stopped" if persist else "running"
     _trade_tasks.pop(app_admin, None)
-    await operation_log.create_log("demo_dapp_auto_trade_stop", app_admin, task.public_status(), None, "success")
-    await broadcast("dapp_trade_task", task.public_status())
+    if persist:
+        await dapp_trade_task.update_task_state(app_admin, status="stopped")
+        await operation_log.create_log("demo_dapp_auto_trade_stop", app_admin, task.public_status(), None, "success")
+        await broadcast("dapp_trade_task", task.public_status())
     return task.public_status()
 
 
-def get_trade_task_status(app_admin: str | None = None) -> dict:
+async def get_trade_task_status(app_admin: str | None = None) -> dict:
     if app_admin:
         task = _trade_tasks.get(app_admin)
-        return task.public_status() if task else {"running": False}
+        if task:
+            return task.public_status()
+        persisted = await dapp_trade_task.get_task(app_admin)
+        return persisted if persisted else {"running": False}
     return {"tasks": [task.public_status() for task in _trade_tasks.values()]}
 
 
 async def stop_all_trade_tasks() -> None:
     for app_admin in list(_trade_tasks.keys()):
         with contextlib.suppress(Exception):
-            await stop_trade_task(app_admin, missing_ok=True)
+            await stop_trade_task(app_admin, missing_ok=True, persist=False)
+
+
+async def restore_trade_tasks() -> list[dict]:
+    restored: list[dict] = []
+    for row in await dapp_trade_task.get_running_tasks():
+        app_admin = row.get("app_admin", "")
+        if not app_admin or app_admin in _trade_tasks:
+            continue
+        task = _task_from_status(row)
+        if not task.module_address:
+            await dapp_trade_task.update_task_state(app_admin, status="stopped", last_error="restore failed: missing module_address")
+            continue
+        task.status = "running"
+        _trade_tasks[app_admin] = task
+        task._task = asyncio.create_task(_trade_loop(task))
+        restored.append(task.public_status())
+        await broadcast("dapp_trade_task", task.public_status())
+    return restored
 
 
 async def _trade_loop(task: DemoTradeTask) -> None:
     task.status = "running"
+    await dapp_trade_task.update_task_state(task.app_admin, status=task.status)
     try:
         while task.status == "running":
             for _ in range(task.tx_per_tick):
                 if task.max_runs and task.run_count >= task.max_runs:
                     task.status = "completed"
+                    await dapp_trade_task.update_task_state(
+                        task.app_admin,
+                        status=task.status,
+                        run_count=task.run_count,
+                        success_count=task.success_count,
+                        failure_count=task.failure_count,
+                        last_tx_hash=task.last_tx_hash,
+                        last_error=task.last_error,
+                    )
                     await broadcast("dapp_trade_task", task.public_status())
                     return
                 buyer = _next_buyer(task)
@@ -942,6 +1004,15 @@ async def _trade_loop(task: DemoTradeTask) -> None:
                 except Exception as e:
                     task.failure_count += 1
                     task.last_error = str(e)
+                await dapp_trade_task.update_task_state(
+                    task.app_admin,
+                    status=task.status,
+                    run_count=task.run_count,
+                    success_count=task.success_count,
+                    failure_count=task.failure_count,
+                    last_tx_hash=task.last_tx_hash,
+                    last_error=task.last_error,
+                )
                 await broadcast("dapp_trade_task", task.public_status())
             await asyncio.sleep(task.interval_secs)
     except asyncio.CancelledError:
@@ -949,6 +1020,7 @@ async def _trade_loop(task: DemoTradeTask) -> None:
     finally:
         if task.status == "running":
             task.status = "stopped"
+            await dapp_trade_task.update_task_state(task.app_admin, status=task.status)
 
 
 def _next_buyer(task: DemoTradeTask) -> str:

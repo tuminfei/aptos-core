@@ -272,7 +272,11 @@ async def _build_user_power_period_history_rows(
     labels = {address_key(row["address"]): row.get("label", "") for row in user_rows}
     current_period = await _optional(view.get_current_period(client), 0)
     power_period_in_epochs = await _optional(view.get_power_period_in_epochs(client), 0)
-    next_epoch_period = _period_for_epoch(epoch + 1, power_period_in_epochs)
+    power_clock = await _optional(
+        view.get_power_period_clock(client),
+        {"power_period_clock_initialized": False, "power_period_clock_countdown": None},
+    )
+    next_epoch_period = view.next_epoch_period_from_clock(current_period, power_clock)
     versions = await _optional(view.get_user_power_versions(client, addresses), [])
     committed = await _optional(view.get_user_committed_powers(client, addresses), [0] * len(addresses))
     committed_by_address = {
@@ -309,12 +313,6 @@ async def _build_user_power_period_history_rows(
                 "observed_committed_power": committed_by_address.get(key, int(version.get("committed_power", 0) or 0)),
             })
     return rows
-
-
-def _period_for_epoch(epoch: int, power_period_in_epochs: int) -> int:
-    if epoch <= 0 or power_period_in_epochs <= 0:
-        return 0
-    return (epoch - 1) // power_period_in_epochs
 
 
 async def _record_epoch_reward_estimates(

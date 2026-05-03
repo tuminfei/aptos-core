@@ -74,17 +74,16 @@ export default function Dashboard() {
   const powerPeriodInEpochs = Number(power.power_period_in_epochs || 0);
   const currentPowerPeriod = Number(power.current_period || 0);
   const epochsUntilNextPeriod = Number(power.epochs_until_next_period || 0);
-  const nextPowerPeriodEpoch = powerPeriodInEpochs > 0 ? currentEpoch + epochsUntilNextPeriod : 0;
+  const powerPeriodClockInitialized = Boolean(power.power_period_clock_initialized);
+  const powerPeriodClockCountdown = power.power_period_clock_countdown;
   const retentionBps = Number(power.retention_bps || 0);
   const decayBps = Math.max(0, 10000 - retentionBps);
   const activeValidators = Number(validators.active || 0);
   const totalValidators = Number(validators.total || 0);
   const pendingValidators = Number(validators.pending_active || 0) + Number(validators.pending_inactive || 0);
   const validatorActivePercent = totalValidators > 0 ? Math.round((activeValidators / totalValidators) * 100) : 0;
-  const periodEpochPosition = powerPeriodInEpochs > 0 ? (currentEpoch % powerPeriodInEpochs) + 1 : 0;
-  const periodProgressPercent = powerPeriodInEpochs > 0 ? Math.round((periodEpochPosition / powerPeriodInEpochs) * 100) : 0;
-  const periodStartEpoch = powerPeriodInEpochs > 0 ? currentPowerPeriod * powerPeriodInEpochs : 0;
-  const periodEndEpoch = powerPeriodInEpochs > 0 ? periodStartEpoch + powerPeriodInEpochs - 1 : 0;
+  const periodProgressPercent = Number(power.power_period_progress_percent || 0);
+  const periodProgressEpochs = Number(power.power_period_progress_epochs || 0);
 
   const sortedSummary = useMemo(
     () => [...summary].sort((a: any, b: any) => Number(b.voting_power || 0) - Number(a.voting_power || 0)),
@@ -362,9 +361,10 @@ export default function Dashboard() {
             <Statistic title="当前算力 Period" value={currentPowerPeriod} />
             <Progress percent={periodProgressPercent} size="small" />
             <Space direction="vertical" size={2} style={{ marginTop: 8 }}>
-              <Text type="secondary">{formatEpochInterval(powerPeriodInEpochs)}，Epoch {periodStartEpoch}-{periodEndEpoch}</Text>
-              <Text type="secondary">当前第 {periodEpochPosition || '-'} / {powerPeriodInEpochs || '-'} 个 Epoch</Text>
-              <Text type="secondary">下次衰减 Epoch {nextPowerPeriodEpoch || '-'}，还有 {epochsUntilNextPeriod || 0}E</Text>
+              <Text type="secondary">{formatEpochInterval(powerPeriodInEpochs)}，链上倒计时驱动</Text>
+              <Text type="secondary">已走 {periodProgressEpochs || 0} / {powerPeriodInEpochs || '-'} 个 Epoch</Text>
+              <Text type="secondary">距离下个 Period 还有 {powerPeriodClockInitialized ? `${epochsUntilNextPeriod}E` : '-'}</Text>
+              <Text type="secondary">clock: {powerPeriodClockInitialized ? String(powerPeriodClockCountdown ?? 0) : '未初始化'}</Text>
               <Text type="secondary">保留 {formatBps(retentionBps)}，衰减 {formatBps(decayBps)}</Text>
             </Space>
           </Card>

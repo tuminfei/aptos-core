@@ -32,6 +32,11 @@ export async function setPeriod(params: { power_period_in_epochs: number }) {
   return data;
 }
 
+export async function initializePowerPeriodClock(params: { max_gas?: number; gas_unit_price?: number } = {}) {
+  const { data } = await api.post('/power/initialize-clock', params, { timeout: POWER_ADMIN_TIMEOUT_MS });
+  return data;
+}
+
 export async function setRetention(params: { retention_bps_per_period: number; max_gas?: number; gas_unit_price?: number }) {
   const { data } = await api.post('/power/set-retention', params, { timeout: POWER_ADMIN_TIMEOUT_MS });
   return data;

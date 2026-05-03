@@ -77,9 +77,20 @@ class MockChainClient:
             "0x1::coin::balance": [100000000000],
         }
         self._view_responses = v
+        self.set_resource(
+            "0x1",
+            "0x1::poc_power_store::PowerPeriodClock",
+            {
+                "type": "0x1::poc_power_store::PowerPeriodClock",
+                "data": {"epochs_until_next_power_period": "2"},
+            },
+        )
 
     def set_view_response(self, function_id: str, response: list):
         self._view_responses[function_id] = response
+
+    def set_resource(self, address: str, resource_type: str, resource: dict):
+        self._resources[f"{address}:{resource_type}"] = resource
 
     def remove_view_response(self, function_id: str):
         self._view_responses.pop(function_id, None)
@@ -151,6 +162,32 @@ class MockChainClient:
             "vm_status": "Executed successfully",
             "events": events,
         }
+
+    async def get_transactions(self, start: int | None = None, limit: int = 25) -> list:
+        return [
+            {
+                "version": "58901",
+                "events": [
+                    {
+                        "sequence_number": "0",
+                        "type": "0x1::poc_power_store::PowerUpdateStagedEvent",
+                        "data": {"target_period": "24", "effective_period": "24", "user": "0xaaa", "power": "5000"},
+                    }
+                ],
+                "type": "user_transaction",
+            },
+            {
+                "version": "58900",
+                "events": [
+                    {
+                        "sequence_number": "0",
+                        "type": "0x1::test::TestEvent",
+                        "data": {"key": "value"},
+                    }
+                ],
+                "type": "user_transaction",
+            },
+        ][:limit]
 
     async def get_events(self, address, event_handle, field_name, start=0, limit=25) -> list:
         return [
