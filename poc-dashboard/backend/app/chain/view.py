@@ -181,8 +181,8 @@ async def get_cooldown_secs(client: ChainClient) -> int:
     return int(r[0])
 
 
-async def get_octas_per_power(client: ChainClient) -> int:
-    r = await client.call_view("0x1::staking_registry::get_octas_per_power")
+async def get_octas_per_million_power(client: ChainClient) -> int:
+    r = await client.call_view("0x1::staking_registry::get_octas_per_million_power")
     return int(r[0])
 
 

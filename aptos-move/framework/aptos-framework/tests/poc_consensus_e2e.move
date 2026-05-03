@@ -21,8 +21,10 @@ module aptos_framework::poc_consensus_e2e {
     const EREDELEGATION_DID_NOT_SUCCEED: u64 = 12;
     const ESET_SIZE_MISMATCH: u64 = 13;
     const EPOWER_SHOULD_BE_VISIBLE: u64 = 14;
-    const EDEFAULT_OCTAS_PER_POWER: u64 = 15;
-    const EUPDATED_OCTAS_PER_POWER: u64 = 16;
+    const EDEFAULT_OCTAS_PER_MILLION_POWER: u64 = 15;
+    const EUPDATED_OCTAS_PER_MILLION_POWER: u64 = 16;
+    const EZERO_BACKING_SHOULD_USE_COMMITTED_POWER: u64 = 17;
+    const ESCALED_BACKING_SHOULD_LIMIT_POWER: u64 = 18;
 
     // Validate the public validator lifecycle from creation to active membership.
     #[test(aptos_framework = @aptos_framework, validator = @0x100)]
@@ -67,26 +69,74 @@ module aptos_framework::poc_consensus_e2e {
     // Validate that the registry starts with the genesis bootstrap exchange rate and that
     // the framework account can tune the deposit-to-power backing ratio after initialization.
     #[test(aptos_framework = @aptos_framework)]
-    fun test_octas_per_power_is_mutable_by_framework(aptos_framework: &signer) {
+    fun test_octas_per_million_power_is_mutable_by_framework(aptos_framework: &signer) {
         poc_test_utils::setup_poc_env(aptos_framework);
         assert!(
-            staking_registry::get_octas_per_power() == 1,
-            EDEFAULT_OCTAS_PER_POWER,
+            staking_registry::get_octas_per_million_power() == 1_000_000,
+            EDEFAULT_OCTAS_PER_MILLION_POWER,
         );
 
-        staking_registry::set_octas_per_power(aptos_framework, 100_000);
+        staking_registry::set_octas_per_million_power(aptos_framework, 100_000);
         assert!(
-            staking_registry::get_octas_per_power() == 100_000,
-            EUPDATED_OCTAS_PER_POWER,
+            staking_registry::get_octas_per_million_power() == 100_000,
+            EUPDATED_OCTAS_PER_MILLION_POWER,
         );
     }
 
-    // The exchange rate must stay positive because effective power divides deposit by it.
-    #[test(aptos_framework = @aptos_framework)]
-    #[expected_failure(abort_code = 0x1000d, location = aptos_framework::staking_registry)]
-    fun test_set_octas_per_power_rejects_zero(aptos_framework: &signer) {
+    #[test(
+        aptos_framework = @aptos_framework,
+        validator = @0x107,
+        delegator = @0x207
+    )]
+    fun test_zero_octas_per_million_power_disables_deposit_backing(
+        aptos_framework: &signer,
+        validator: &signer,
+        delegator: &signer,
+    ) {
         poc_test_utils::setup_poc_env(aptos_framework);
-        staking_registry::set_octas_per_power(aptos_framework, 0);
+        staking_registry::set_octas_per_million_power(aptos_framework, 0);
+        poc_test_utils::create_validator(aptos_framework, validator, 100);
+
+        let validator_address = signer::address_of(validator);
+        let delegator_address = signer::address_of(delegator);
+        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 1_000);
+        stake::mint_and_add_stake(delegator, 1);
+        staking_registry::delegate(delegator, validator_address);
+        stake::join_validator_set(validator, validator_address);
+        stake::end_epoch();
+
+        assert!(
+            staking_registry::get_effective_power(delegator_address) == 1_000,
+            EZERO_BACKING_SHOULD_USE_COMMITTED_POWER,
+        );
+    }
+
+    #[test(
+        aptos_framework = @aptos_framework,
+        validator = @0x108,
+        delegator = @0x208
+    )]
+    fun test_octas_per_million_power_scales_deposit_cover(
+        aptos_framework: &signer,
+        validator: &signer,
+        delegator: &signer,
+    ) {
+        poc_test_utils::setup_poc_env(aptos_framework);
+        staking_registry::set_octas_per_million_power(aptos_framework, 100_000_000);
+        poc_test_utils::create_validator(aptos_framework, validator, 100);
+
+        let validator_address = signer::address_of(validator);
+        let delegator_address = signer::address_of(delegator);
+        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 2_000);
+        stake::mint_and_add_stake(delegator, 100_000);
+        staking_registry::delegate(delegator, validator_address);
+        stake::join_validator_set(validator, validator_address);
+        stake::end_epoch();
+
+        assert!(
+            staking_registry::get_effective_power(delegator_address) == 1_000,
+            ESCALED_BACKING_SHOULD_LIMIT_POWER,
+        );
     }
 
     // Validate the full delegator lifecycle against the production staking registry.

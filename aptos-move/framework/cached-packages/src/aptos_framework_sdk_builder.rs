@@ -944,7 +944,9 @@ pub enum EntryFunctionCall {
     ///
     /// Deposited coins are held in escrow by the registry and cannot be withdrawn
     /// while the user is delegated to a validator. They serve as economic collateral
-    /// that backs the user's POC power: effective_power = min(poc_power, deposit / octas_per_power).
+    /// that backs the user's POC power:
+    /// effective_power = min(poc_power, deposit * 1,000,000 / octas_per_million_power).
+    /// If octas_per_million_power is 0, no deposit backing is required.
     ///
     /// Deposits auto-compound: epoch rewards and fee shares are minted directly into
     /// the user's deposit balance, increasing their deposit coverage over time.
@@ -968,14 +970,15 @@ pub enum EntryFunctionCall {
         force_exit_power_bps: u64,
     },
 
-    /// Update how much deposited TOPO is required to back one unit of POC power.
+    /// Update how much deposited TOPO is required to back 1,000,000 units of POC power.
     ///
-    /// Only the framework account may change this economic parameter. Lowering the value
+    /// Only the framework account may change this economic parameter. Setting the value
+    /// to 0 disables the deposit backing requirement. Lowering a non-zero value
     /// increases the amount of committed POC power that can become effective for a fixed
     /// deposit; raising it can reduce effective power and may cause low-coverage delegators
     /// to be force-undelegated at the next epoch boundary.
-    StakingRegistrySetOctasPerPower {
-        octas_per_power: u64,
+    StakingRegistrySetOctasPerMillionPower {
+        octas_per_million_power: u64,
     },
 
     /// Remove the user's delegation from their current validator pool.
@@ -1641,8 +1644,10 @@ impl EntryFunctionCall {
             } => {
                 staking_registry_set_active_power_thresholds(min_active_power, force_exit_power_bps)
             },
-            StakingRegistrySetOctasPerPower { octas_per_power } => {
-                staking_registry_set_octas_per_power(octas_per_power)
+            StakingRegistrySetOctasPerMillionPower {
+                octas_per_million_power,
+            } => {
+                staking_registry_set_octas_per_million_power(octas_per_million_power)
             },
             StakingRegistryUndelegate {} => staking_registry_undelegate(),
             StakingRegistryWithdrawDeposit {} => staking_registry_withdraw_deposit(),
@@ -4063,7 +4068,9 @@ pub fn staking_registry_delegate(validator_address: AccountAddress) -> Transacti
 ///
 /// Deposited coins are held in escrow by the registry and cannot be withdrawn
 /// while the user is delegated to a validator. They serve as economic collateral
-/// that backs the user's POC power: effective_power = min(poc_power, deposit / octas_per_power).
+/// that backs the user's POC power:
+/// effective_power = min(poc_power, deposit * 1,000,000 / octas_per_million_power).
+/// If octas_per_million_power is 0, no deposit backing is required.
 ///
 /// Deposits auto-compound: epoch rewards and fee shares are minted directly into
 /// the user's deposit balance, increasing their deposit coverage over time.
@@ -4125,13 +4132,16 @@ pub fn staking_registry_set_active_power_thresholds(
     ))
 }
 
-/// Update how much deposited TOPO is required to back one unit of POC power.
+/// Update how much deposited TOPO is required to back 1,000,000 units of POC power.
 ///
-/// Only the framework account may change this economic parameter. Lowering the value
+/// Only the framework account may change this economic parameter. Setting the value
+/// to 0 disables the deposit backing requirement. Lowering a non-zero value
 /// increases the amount of committed POC power that can become effective for a fixed
 /// deposit; raising it can reduce effective power and may cause low-coverage delegators
 /// to be force-undelegated at the next epoch boundary.
-pub fn staking_registry_set_octas_per_power(octas_per_power: u64) -> TransactionPayload {
+pub fn staking_registry_set_octas_per_million_power(
+    octas_per_million_power: u64,
+) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
             AccountAddress::new([
@@ -4140,9 +4150,9 @@ pub fn staking_registry_set_octas_per_power(octas_per_power: u64) -> Transaction
             ]),
             ident_str!("staking_registry").to_owned(),
         ),
-        ident_str!("set_octas_per_power").to_owned(),
+        ident_str!("set_octas_per_million_power").to_owned(),
         vec![],
-        vec![bcs::to_bytes(&octas_per_power).unwrap()],
+        vec![bcs::to_bytes(&octas_per_million_power).unwrap()],
     ))
 }
 
@@ -5935,12 +5945,12 @@ mod decoder {
         }
     }
 
-    pub fn staking_registry_set_octas_per_power(
+    pub fn staking_registry_set_octas_per_million_power(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
-            Some(EntryFunctionCall::StakingRegistrySetOctasPerPower {
-                octas_per_power: bcs::from_bytes(script.args().get(0)?).ok()?,
+            Some(EntryFunctionCall::StakingRegistrySetOctasPerMillionPower {
+                octas_per_million_power: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -6652,8 +6662,8 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::staking_registry_set_active_power_thresholds),
         );
         map.insert(
-            "staking_registry_set_octas_per_power".to_string(),
-            Box::new(decoder::staking_registry_set_octas_per_power),
+            "staking_registry_set_octas_per_million_power".to_string(),
+            Box::new(decoder::staking_registry_set_octas_per_million_power),
         );
         map.insert(
             "staking_registry_undelegate".to_string(),

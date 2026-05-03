@@ -17,7 +17,7 @@ async def insert_chain_snapshot(snapshot: dict[str, Any]) -> None:
             current_period, power_period_in_epochs, retention_bps,
             reward_rate_numerator, reward_rate_denominator, reward_rate_bps,
             active_validator_count, pending_active_validator_count, pending_inactive_validator_count,
-            total_staked_power, octas_per_power, cooldown_secs, voting_duration_secs
+            total_staked_power, octas_per_million_power, cooldown_secs, voting_duration_secs
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
@@ -37,7 +37,7 @@ async def insert_chain_snapshot(snapshot: dict[str, Any]) -> None:
             snapshot.get("pending_active_validator_count", 0),
             snapshot.get("pending_inactive_validator_count", 0),
             snapshot.get("total_staked_power", 0),
-            snapshot.get("octas_per_power", 0),
+            snapshot.get("octas_per_million_power", 0),
             snapshot.get("cooldown_secs", 0),
             snapshot.get("voting_duration_secs", 0),
         ),

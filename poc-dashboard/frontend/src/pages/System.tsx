@@ -30,7 +30,7 @@ import {
   setEpochInterval,
   setForceExitPowerBps,
   setMinActivePower,
-  setOctasPerPower,
+  setOctasPerMillionPower,
   updateGovernanceConfig,
   upgradeFramework,
 } from '../services/governance';
@@ -81,7 +81,7 @@ export default function System() {
   const [periodVal, setPeriodVal] = useState<number>(5);
   const [retentionVal, setRetentionVal] = useState<number>(9950);
   const [epochIntervalSecsVal, setEpochIntervalSecsVal] = useState<number | null>(null);
-  const [octasPerPowerVal, setOctasPerPowerVal] = useState<number | null>(null);
+  const [octasPerMillionPowerVal, setOctasPerMillionPowerVal] = useState<number | null>(null);
   const [minActivePowerVal, setMinActivePowerVal] = useState<number | null>(null);
   const [forceExitPowerBpsVal, setForceExitPowerBpsVal] = useState<number | null>(null);
   const [minVotingThresholdVal, setMinVotingThresholdVal] = useState<number | null>(null);
@@ -184,7 +184,7 @@ export default function System() {
   const stageTargetPeriod = Number(powerStore?.current_period || 0) + 1;
   const defaultQueryPeriod = Number(powerStore?.next_epoch_period ?? powerStore?.current_period ?? 0);
   const effectiveEpochIntervalSecs = epochIntervalSecsVal ?? Number(chainCfg.epoch_interval_secs || 0);
-  const effectiveOctasPerPower = octasPerPowerVal ?? Number(stk.octas_per_power || 0);
+  const effectiveOctasPerMillionPower = octasPerMillionPowerVal ?? Number(stk.octas_per_million_power || 0);
   const effectiveMinActivePower = minActivePowerVal ?? Number(stk.min_active_power || 0);
   const effectiveForceExitPowerBps = forceExitPowerBpsVal ?? Number(stk.force_exit_power_bps || 0);
   const effectiveMinVotingThreshold = minVotingThresholdVal ?? Number(gov.min_voting_threshold || 0);
@@ -192,12 +192,12 @@ export default function System() {
   const effectiveVotingDuration = votingDurationVal ?? Number(gov.voting_duration_secs || 0);
   const effectiveCooldownSecs = cooldownSecsVal ?? Number(stk.cooldown_secs || 0);
 
-  const handleSetOctasPerPower = () => {
-    if (effectiveOctasPerPower <= 0) {
-      message.warning('octas_per_power 必须大于 0');
+  const handleSetOctasPerMillionPower = () => {
+    if (effectiveOctasPerMillionPower < 0) {
+      message.warning('octas_per_million_power 不能为负数');
       return;
     }
-    doAction('修改 octas_per_power', () => setOctasPerPower({ octas_per_power: effectiveOctasPerPower }));
+    doAction('修改 octas_per_million_power', () => setOctasPerMillionPower({ octas_per_million_power: effectiveOctasPerMillionPower }));
   };
 
   const handleSetMinActivePower = () => {
@@ -319,7 +319,7 @@ export default function System() {
               <Descriptions.Item label="power_period_in_epochs">{formatNumber(pwr.power_period_in_epochs || 0)}</Descriptions.Item>
               <Descriptions.Item label="retention_bps">{pwr.retention_bps || 0} ({formatBps(pwr.retention_bps || 0)})</Descriptions.Item>
               <Descriptions.Item label="epoch_interval_secs">{formatNumber(chainCfg.epoch_interval_secs || 0)}</Descriptions.Item>
-              <Descriptions.Item label="octas_per_power">{formatNumber(stk.octas_per_power || 0)}</Descriptions.Item>
+              <Descriptions.Item label="octas_per_million_power">{formatNumber(stk.octas_per_million_power || 0)}</Descriptions.Item>
               <Descriptions.Item label="min_active_power">{formatNumber(stk.min_active_power || 0)}</Descriptions.Item>
               <Descriptions.Item label="force_exit_power_bps">{formatNumber(stk.force_exit_power_bps || 0)} ({formatBps(stk.force_exit_power_bps || 0)})</Descriptions.Item>
               <Descriptions.Item label="voting_duration_secs">{formatNumber(gov.voting_duration_secs || 0)}</Descriptions.Item>
@@ -401,7 +401,7 @@ export default function System() {
                     <Card title="当前参数" size="small">
                       <Descriptions bordered column={1} size="small">
                         <Descriptions.Item label="epoch_interval_secs">{formatNumber(chainCfg.epoch_interval_secs || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="octas_per_power">{formatNumber(stk.octas_per_power || 0)}</Descriptions.Item>
+                        <Descriptions.Item label="octas_per_million_power">{formatNumber(stk.octas_per_million_power || 0)}</Descriptions.Item>
                         <Descriptions.Item label="min_active_power">{formatNumber(stk.min_active_power || 0)}</Descriptions.Item>
                         <Descriptions.Item label="force_exit_power_bps">{formatNumber(stk.force_exit_power_bps || 0)} ({formatBps(stk.force_exit_power_bps || 0)})</Descriptions.Item>
                         <Descriptions.Item label="cooldown_secs">{formatNumber(stk.cooldown_secs || 0)}</Descriptions.Item>
@@ -416,17 +416,17 @@ export default function System() {
                       <Form layout="vertical">
                         <Row gutter={12}>
                           <Col xs={24} md={12}>
-                            <Form.Item label="经济参数 / octas_per_power">
+                            <Form.Item label="经济参数 / octas_per_million_power">
                               <Space.Compact style={{ width: '100%' }}>
                                 <InputNumber
-                                  value={octasPerPowerVal ?? undefined}
-                                  onChange={(value) => setOctasPerPowerVal(value ?? null)}
-                                  min={1}
+                                  value={octasPerMillionPowerVal ?? undefined}
+                                  onChange={(value) => setOctasPerMillionPowerVal(value ?? null)}
+                                  min={0}
                                   precision={0}
-                                  placeholder={`当前 ${formatNumber(stk.octas_per_power || 0)}`}
+                                  placeholder={`当前 ${formatNumber(stk.octas_per_million_power || 0)}`}
                                   style={{ width: '100%' }}
                                 />
-                                <Button loading={submitting} onClick={handleSetOctasPerPower}>修改</Button>
+                                <Button loading={submitting} onClick={handleSetOctasPerMillionPower}>修改</Button>
                               </Space.Compact>
                             </Form.Item>
                           </Col>

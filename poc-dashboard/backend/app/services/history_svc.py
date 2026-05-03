@@ -117,7 +117,7 @@ async def _build_chain_snapshot(
     pending_active_count = await _optional(view.get_pending_active_validator_count(client), 0)
     pending_inactive_count = await _optional(view.get_pending_inactive_validator_count(client), 0)
     total_staked_power = await _optional(view.get_total_staked_power(client), 0)
-    octas_per_power = await _optional(view.get_octas_per_power(client), 0)
+    octas_per_million_power = await _optional(view.get_octas_per_million_power(client), 0)
     cooldown_secs = await _optional(view.get_cooldown_secs(client), 0)
     voting_duration_secs = await _optional(view.get_voting_duration_secs(client), 0)
     reward_rate = reward_context.get("reward_rate") or {}
@@ -139,7 +139,7 @@ async def _build_chain_snapshot(
         "pending_active_validator_count": pending_active_count,
         "pending_inactive_validator_count": pending_inactive_count,
         "total_staked_power": total_staked_power,
-        "octas_per_power": octas_per_power,
+        "octas_per_million_power": octas_per_million_power,
         "cooldown_secs": cooldown_secs,
         "voting_duration_secs": voting_duration_secs,
     }

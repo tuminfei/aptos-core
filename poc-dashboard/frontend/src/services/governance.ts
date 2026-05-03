@@ -23,8 +23,8 @@ export async function updateGovernanceConfig(params: {
   return data;
 }
 
-export async function setOctasPerPower(params: { octas_per_power: number; max_gas?: number; gas_unit_price?: number }) {
-  const { data } = await api.post('/governance/set-octas-per-power', params, { timeout: GOVERNANCE_ADMIN_TIMEOUT_MS });
+export async function setOctasPerMillionPower(params: { octas_per_million_power: number; max_gas?: number; gas_unit_price?: number }) {
+  const { data } = await api.post('/governance/set-octas-per-million-power', params, { timeout: GOVERNANCE_ADMIN_TIMEOUT_MS });
   return data;
 }
 

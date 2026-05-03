@@ -43,7 +43,7 @@
 ///
 /// A validator's voting_power in ValidatorSet = staking_registry::get_validator_total_power(pool_address)
 /// = sum of effective_power for all delegators in the pool
-/// = sum of min(poc_power_i, deposit_i / octas_per_power) for each delegator i
+/// = sum of min(poc_power_i, deposit_i * 1,000,000 / octas_per_million_power) for each delegator i
 module aptos_framework::stake {
     use std::error;
     use std::features;
@@ -2215,7 +2215,7 @@ module aptos_framework::stake {
             );
             staking_registry::initialize(
                 aptos_framework,
-                1,
+                1000000,
                 1000,
                 recurring_lockup_secs,
             );

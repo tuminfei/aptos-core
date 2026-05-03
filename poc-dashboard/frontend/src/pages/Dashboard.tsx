@@ -351,7 +351,7 @@ export default function Dashboard() {
           <Card loading={loading}>
             <Statistic title="总质押算力" value={formatNumber(staking.total_staked_power || 0)} />
             <Space direction="vertical" size={2} style={{ marginTop: 8 }}>
-              <Text type="secondary">octas_per_power: {formatNumber(staking.octas_per_power || 0)}</Text>
+              <Text type="secondary">octas_per_million_power: {formatNumber(staking.octas_per_million_power || 0)}</Text>
               <Text type="secondary">冷却期: {formatCooldown(Number(staking.cooldown_secs || 0))}</Text>
             </Space>
           </Card>

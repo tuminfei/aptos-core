@@ -22,8 +22,8 @@ class UpdateGovernanceConfigReq(BaseModel):
     gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
 
 
-class SetOctasPerPowerReq(BaseModel):
-    octas_per_power: int = Field(gt=0)
+class SetOctasPerMillionPowerReq(BaseModel):
+    octas_per_million_power: int = Field(ge=0)
     max_gas: int = dapp_svc.DEFAULT_MAX_GAS
     gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
 
@@ -98,9 +98,9 @@ async def governance_config():
         cooldown = 0
 
     try:
-        octas_per_power = await view.get_octas_per_power(client)
+        octas_per_million_power = await view.get_octas_per_million_power(client)
     except Exception:
-        octas_per_power = 0
+        octas_per_million_power = 0
 
     try:
         min_active_power = await view.get_min_active_power(client)
@@ -134,7 +134,7 @@ async def governance_config():
         },
         "staking": {
             "cooldown_secs": cooldown,
-            "octas_per_power": octas_per_power,
+            "octas_per_million_power": octas_per_million_power,
             "min_active_power": min_active_power,
             "force_exit_power_bps": force_exit_power_bps,
         },
@@ -176,25 +176,26 @@ async def update_governance_config(req: UpdateGovernanceConfigReq):
         raise ChainTxError(str(e))
 
 
-@router.post("/governance/set-octas-per-power")
-async def set_octas_per_power(req: SetOctasPerPowerReq):
+@router.post("/governance/set-octas-per-million-power")
+async def set_octas_per_million_power(req: SetOctasPerMillionPowerReq):
     client = get_chain_client()
     km = get_key_manager()
+    details = {"octas_per_million_power": req.octas_per_million_power}
     try:
         tx = await dapp_svc.run_poc_framework_script(
-            "set_staking_octas_per_power.move",
+            "set_staking_octas_per_million_power.move",
             core_key=km.core_resources_key,
             core_address=km.core_resources_address,
             rest_url=client.base_url,
-            args=[f"u64:{req.octas_per_power}"],
+            args=[f"u64:{req.octas_per_million_power}"],
             max_gas=req.max_gas,
             gas_unit_price=req.gas_unit_price,
         )
-        await operation_log.create_log("set_octas_per_power", None, {"octas_per_power": req.octas_per_power}, tx, "success")
+        await operation_log.create_log("set_octas_per_million_power", None, details, tx, "success")
         await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
-        await operation_log.create_log("set_octas_per_power", None, {"octas_per_power": req.octas_per_power}, None, "failed", str(e))
+        await operation_log.create_log("set_octas_per_million_power", None, details, None, "failed", str(e))
         raise ChainTxError(str(e))
 
 

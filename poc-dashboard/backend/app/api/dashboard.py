@@ -48,10 +48,10 @@ async def overview():
 
     try:
         total_staked_power = await view.get_total_staked_power(client)
-        octas_per_power = await view.get_octas_per_power(client)
+        octas_per_million_power = await view.get_octas_per_million_power(client)
         cooldown_secs = await view.get_cooldown_secs(client)
     except Exception:
-        total_staked_power = octas_per_power = cooldown_secs = 0
+        total_staked_power = octas_per_million_power = cooldown_secs = 0
 
     power_clock_fields = view.period_clock_fields(power_period_in_epochs, power_clock)
 
@@ -101,7 +101,7 @@ async def overview():
         },
         "staking": {
             "total_staked_power": total_staked_power,
-            "octas_per_power": octas_per_power,
+            "octas_per_million_power": octas_per_million_power,
             "cooldown_secs": cooldown_secs,
         },
         "active_validators_summary": validators_summary,

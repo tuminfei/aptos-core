@@ -38,7 +38,7 @@ class MockChainClient:
             "0x1::stake::get_pending_transaction_fee": [[110000000, 220000000]],
             "0x1::staking_config::reward_rate": [1, 100],
             "0x1::staking_registry::get_cooldown_secs": [3600],
-            "0x1::staking_registry::get_octas_per_power": [10000000],
+            "0x1::staking_registry::get_octas_per_million_power": [10000000],
             "0x1::staking_registry::get_min_active_power": [1],
             "0x1::staking_registry::get_force_exit_power_bps": [8000],
             "0x1::staking_registry::validator_exists": [True],
