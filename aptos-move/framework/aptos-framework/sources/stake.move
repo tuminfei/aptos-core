@@ -387,7 +387,9 @@ module aptos_framework::stake {
         // Both active and pending inactive validators can still vote in the current epoch.
         if (validator_state == VALIDATOR_STATUS_ACTIVE
             || validator_state == VALIDATOR_STATUS_PENDING_INACTIVE) {
-            staking_registry::get_validator_total_power(pool_address)
+            let (_, maximum_stake) =
+                staking_config::get_required_stake(&staking_config::get());
+            min_u64(staking_registry::get_validator_total_power(pool_address), maximum_stake)
         } else { 0 }
     }
 
@@ -1293,6 +1295,8 @@ module aptos_framework::stake {
             staking_registry::set_validator_inactive(validator.addr);
         });
 
+        let previous_active_count = validator_set.active_validators.length();
+
         // Activate currently pending_active validators.
         append(&mut validator_set.active_validators, &mut validator_set.pending_active);
 
@@ -1303,7 +1307,15 @@ module aptos_framework::stake {
         // Moreover, recalculate the total voting power, and deactivate the validator whose
         // voting power is less than the minimum required stake.
         let next_epoch_validators = vector::empty();
-        let (minimum_stake, _) = staking_config::get_required_stake(&config);
+        let (minimum_stake, maximum_stake) = staking_config::get_required_stake(&config);
+        let voting_power_increase_limit =
+            staking_config::get_voting_power_increase_limit(&config);
+        let max_voting_power_increase =
+            calculate_max_voting_power_increase(
+                validator_set.total_voting_power,
+                voting_power_increase_limit,
+            );
+        let used_voting_power_increase = 0u128;
         let vlen = validator_set.active_validators.length();
         let total_voting_power = 0;
         let dropped_validators = vector[];
@@ -1318,11 +1330,29 @@ module aptos_framework::stake {
             let old_validator_info = validator_set.active_validators.borrow_mut(i);
             let pool_address = old_validator_info.addr;
             let validator_config = borrow_global<ValidatorConfig>(pool_address);
-            let new_validator_info =
+            let raw_validator_info =
                 generate_validator_info(pool_address, *validator_config);
+            let baseline_voting_power =
+                if (i < previous_active_count) {
+                    old_validator_info.voting_power
+                } else {
+                    0
+                };
+            let new_validator_info =
+                cap_validator_info_voting_power_for_epoch(
+                    raw_validator_info,
+                    maximum_stake,
+                    baseline_voting_power,
+                    max_voting_power_increase,
+                    used_voting_power_increase,
+                );
 
             // A validator needs at least the min stake required to join the validator set.
             if (new_validator_info.voting_power >= minimum_stake) {
+                used_voting_power_increase += voting_power_increase(
+                    baseline_voting_power,
+                    new_validator_info.voting_power,
+                );
                 spec {
                     assume total_voting_power + new_validator_info.voting_power
                         <= MAX_U128;
@@ -1360,8 +1390,26 @@ module aptos_framework::stake {
                     validator_set.active_validators.borrow(fallback_i);
                 let pool_address = old_validator_info.addr;
                 let validator_config = &ValidatorConfig[pool_address];
-                let new_validator_info =
+                let raw_validator_info =
                     generate_validator_info(pool_address, *validator_config);
+                let baseline_voting_power =
+                    if (fallback_i < previous_active_count) {
+                        old_validator_info.voting_power
+                    } else {
+                        0
+                    };
+                let new_validator_info =
+                    cap_validator_info_voting_power_for_epoch(
+                        raw_validator_info,
+                        maximum_stake,
+                        baseline_voting_power,
+                        max_voting_power_increase,
+                        used_voting_power_increase,
+                    );
+                used_voting_power_increase += voting_power_increase(
+                    baseline_voting_power,
+                    new_validator_info.voting_power,
+                );
                 refreshed_validators.push_back(new_validator_info);
                 emergency_total_voting_power +=(new_validator_info.voting_power as u128);
                 fallback_i += 1;
@@ -1473,14 +1521,21 @@ module aptos_framework::stake {
         };
 
         let cur_validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let (_, maximum_stake) = staking_config::get_required_stake(&staking_config::get());
         let total_power = 0u128;
         cur_validator_set.active_validators.for_each_ref(|validator| {
             let validator: &ValidatorInfo = validator;
-            total_power += (staking_registry::get_validator_total_power(validator.addr) as u128);
+            total_power += (
+                min_u64(staking_registry::get_validator_total_power(validator.addr), maximum_stake)
+                    as u128
+            );
         });
         cur_validator_set.pending_inactive.for_each_ref(|validator| {
             let validator: &ValidatorInfo = validator;
-            total_power += (staking_registry::get_validator_total_power(validator.addr) as u128);
+            total_power += (
+                min_u64(staking_registry::get_validator_total_power(validator.addr), maximum_stake)
+                    as u128
+            );
         });
         if (total_power > MAX_U64) {
             MAX_U64 as u64
@@ -1499,7 +1554,15 @@ module aptos_framework::stake {
         let config = staking_config::get();
         let validator_perf = borrow_global<ValidatorPerformance>(@aptos_framework);
         let simulated_deposit_deltas = simple_map::create<address, u64>();
-        let (minimum_stake, _) = staking_config::get_required_stake(&config);
+        let (minimum_stake, maximum_stake) = staking_config::get_required_stake(&config);
+        let voting_power_increase_limit =
+            staking_config::get_voting_power_increase_limit(&config);
+        let max_voting_power_increase =
+            calculate_max_voting_power_increase(
+                cur_validator_set.total_voting_power,
+                voting_power_increase_limit,
+            );
+        let used_voting_power_increase = 0u128;
         let (rewards_rate, rewards_rate_denominator) =
             staking_config::get_reward_rate(&config);
 
@@ -1556,12 +1619,26 @@ module aptos_framework::stake {
                         num_candidates - 1 - candidate_idx
                     )
                 };
+            let baseline_voting_power =
+                if (candidate_in_current) {
+                    candidate.voting_power
+                } else {
+                    0
+                };
             let (new_voting_power, new_validator_info) = compute_simulated_validator_info(
                 candidate,
                 num_new_actives,
                 &simulated_deposit_deltas,
+                maximum_stake,
+                baseline_voting_power,
+                max_voting_power_increase,
+                used_voting_power_increase,
             );
             if (new_voting_power >= minimum_stake) {
+                used_voting_power_increase += voting_power_increase(
+                    baseline_voting_power,
+                    new_voting_power,
+                );
                 spec {
                     assume new_total_power + new_voting_power <= MAX_U128;
                 };
@@ -1591,6 +1668,14 @@ module aptos_framework::stake {
                     candidate,
                     new_active_validators.length(),
                     &simulated_deposit_deltas,
+                    maximum_stake,
+                    if (in_active) { candidate.voting_power } else { 0 },
+                    max_voting_power_increase,
+                    used_voting_power_increase,
+                );
+                used_voting_power_increase += voting_power_increase(
+                    if (in_active) { candidate.voting_power } else { 0 },
+                    new_voting_power,
                 );
                 new_active_validators.push_back(new_validator_info);
                 new_total_power +=(new_voting_power as u128);
@@ -1613,10 +1698,21 @@ module aptos_framework::stake {
         candidate: &ValidatorInfo,
         validator_index: u64,
         simulated_deposit_deltas: &SimpleMap<address, u64>,
+        maximum_stake: u64,
+        baseline_voting_power: u64,
+        max_voting_power_increase: u128,
+        used_voting_power_increase: u128,
     ): (u64, ValidatorInfo) acquires ValidatorConfig {
-        let new_voting_power = get_validator_total_power_with_extra_deposit_for_next_epoch(
+        let raw_voting_power = get_validator_total_power_with_extra_deposit_for_next_epoch(
             candidate.addr,
             simulated_deposit_deltas,
+        );
+        let new_voting_power = cap_voting_power_for_epoch(
+            raw_voting_power,
+            maximum_stake,
+            baseline_voting_power,
+            max_voting_power_increase,
+            used_voting_power_increase,
         );
         let config = *borrow_global<ValidatorConfig>(candidate.addr);
         config.validator_index = validator_index;
@@ -2072,6 +2168,79 @@ module aptos_framework::stake {
     ): ValidatorInfo {
         let voting_power = staking_registry::get_validator_total_power(addr);
         ValidatorInfo { addr, voting_power, config }
+    }
+
+    fun cap_validator_info_voting_power_for_epoch(
+        info: ValidatorInfo,
+        maximum_stake: u64,
+        baseline_voting_power: u64,
+        max_voting_power_increase: u128,
+        used_voting_power_increase: u128,
+    ): ValidatorInfo {
+        ValidatorInfo {
+            addr: info.addr,
+            voting_power: cap_voting_power_for_epoch(
+                info.voting_power,
+                maximum_stake,
+                baseline_voting_power,
+                max_voting_power_increase,
+                used_voting_power_increase,
+            ),
+            config: info.config,
+        }
+    }
+
+    fun cap_voting_power_for_epoch(
+        raw_voting_power: u64,
+        maximum_stake: u64,
+        baseline_voting_power: u64,
+        max_voting_power_increase: u128,
+        used_voting_power_increase: u128,
+    ): u64 {
+        let capped_by_maximum = min_u64(raw_voting_power, maximum_stake);
+        if (capped_by_maximum <= baseline_voting_power) {
+            return capped_by_maximum
+        };
+
+        let remaining_increase =
+            if (used_voting_power_increase >= max_voting_power_increase) {
+                0
+            } else {
+                max_voting_power_increase - used_voting_power_increase
+            };
+        let allowed_voting_power =
+            (baseline_voting_power as u128) + remaining_increase;
+        if ((capped_by_maximum as u128) > allowed_voting_power) {
+            allowed_voting_power as u64
+        } else {
+            capped_by_maximum
+        }
+    }
+
+    fun calculate_max_voting_power_increase(
+        total_voting_power: u128,
+        voting_power_increase_limit: u64,
+    ): u128 {
+        if (total_voting_power == 0) {
+            MAX_U64
+        } else {
+            (total_voting_power * (voting_power_increase_limit as u128)) / 100
+        }
+    }
+
+    fun voting_power_increase(
+        baseline_voting_power: u64,
+        new_voting_power: u64,
+    ): u128 {
+        if (new_voting_power > baseline_voting_power) {
+            ((new_voting_power - baseline_voting_power) as u128)
+        } else {
+            0
+        }
+    }
+
+    fun min_u64(a: u64, b: u64): u64 {
+        if (a < b) { a } else { b }
     }
 
     fun update_voting_power_increase(increase_amount: u64) acquires ValidatorSet {

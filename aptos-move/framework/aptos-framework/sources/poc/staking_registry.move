@@ -51,6 +51,7 @@ module aptos_framework::staking_registry {
 
     use aptos_framework::coin::{Self, Coin, MintCapability};
     use aptos_framework::poc_power_store;
+    use aptos_framework::staking_config;
     use aptos_framework::system_addresses;
     use aptos_framework::timestamp;
     use aptos_framework::topo_coin::TopoCoin;
@@ -90,6 +91,8 @@ module aptos_framework::staking_registry {
     const EALREADY_INITIALIZED: u64 = 14;
     /// User's effective power is below the minimum required to join a validator pool
     const EPOWER_BELOW_MIN_ACTIVE: u64 = 15;
+    /// Delegating would push the validator pool above the configured maximum stake.
+    const EVALIDATOR_POWER_EXCEEDS_MAX: u64 = 16;
 
     // ========== Constants ==========
     /// At genesis, each octa of stake maps to this many units of power (default 1:1)
@@ -1278,7 +1281,8 @@ module aptos_framework::staking_registry {
     /// 2. User must not already be delegated
     /// 3. Cooldown must have elapsed
     /// 4. User's effective power must be >= min_active_power
-    /// 5. Pool must not exceed max_delegators_per_validator
+    /// 5. Pool must not exceed maximum_stake
+    /// 6. Pool must not exceed max_delegators_per_validator
     ///
     /// On success: adds user to pool's delegator_list, sets delegated_to, clears cooldown.
     fun delegate_internal(
@@ -1305,6 +1309,14 @@ module aptos_framework::staking_registry {
         assert!(
             effective_power >= registry.config.min_active_power,
             error::invalid_argument(EPOWER_BELOW_MIN_ACTIVE),
+        );
+
+        let (_, maximum_stake) = staking_config::get_required_stake(&staking_config::get());
+        let pool = registry.validators.borrow(validator_address);
+        let current_pool_power = calculate_validator_total_power(registry, pool, validator_address);
+        assert!(
+            (current_pool_power as u128) + (effective_power as u128) <= (maximum_stake as u128),
+            error::invalid_argument(EVALIDATOR_POWER_EXCEEDS_MAX),
         );
 
         let max_delegators = registry.config.max_delegators_per_validator;

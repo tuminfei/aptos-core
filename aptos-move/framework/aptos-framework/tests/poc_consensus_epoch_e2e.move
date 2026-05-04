@@ -25,6 +25,8 @@ module aptos_framework::poc_consensus_epoch_e2e {
     const EVALIDATOR_SHOULD_REMAIN_ACTIVE: u64 = 15;
     const EPOWER_SHOULD_INCLUDE_REWARDS: u64 = 16;
     const EHIGH_POWER_VALIDATOR_MISSING: u64 = 17;
+    const EPOWER_SHOULD_BE_CAPPED: u64 = 18;
+    const EPOWER_INCREASE_SHOULD_BE_CAPPED: u64 = 19;
 
     // Rewards for the current epoch must use the current committed power snapshot, while
     // force-undelegation at the period boundary must use the staged next-period power.
@@ -188,6 +190,66 @@ module aptos_framework::poc_consensus_epoch_e2e {
             low_address,
             4,
             EVALIDATOR_SHOULD_BE_DROPPED,
+        );
+    }
+
+    #[test(aptos_framework = @aptos_framework, validator = @0x30a)]
+    fun test_validator_power_is_capped_at_maximum_stake_on_epoch_recompute(
+        aptos_framework: &signer,
+        validator: &signer,
+    ) {
+        poc_test_utils::setup_poc_env(aptos_framework);
+        staking_config::update_voting_power_increase_limit(aptos_framework, 50);
+        let validator_address = signer::address_of(validator);
+
+        poc_test_utils::create_validator(aptos_framework, validator, 9_900);
+        poc_test_utils::seed_genesis_power(aptos_framework, validator_address, 20_000);
+        stake::join_validator_set(validator, validator_address);
+        stake::end_epoch();
+
+        staking_config::update_rewards_rate(aptos_framework, 1, 1);
+        stake::set_validator_performance_for_test(0, 1, 0);
+
+        poc_test_utils::assert_next_voting_power(
+            validator_address,
+            10_000,
+            EPOWER_SHOULD_BE_CAPPED,
+        );
+        stake::end_epoch();
+        poc_test_utils::assert_current_voting_power(
+            validator_address,
+            10_000,
+            EPOWER_SHOULD_BE_CAPPED,
+        );
+    }
+
+    #[test(aptos_framework = @aptos_framework, validator = @0x30b)]
+    fun test_active_validator_power_increase_is_capped_on_epoch_recompute(
+        aptos_framework: &signer,
+        validator: &signer,
+    ) {
+        poc_test_utils::setup_poc_env(aptos_framework);
+        let validator_address = signer::address_of(validator);
+
+        poc_test_utils::create_validator(aptos_framework, validator, 1_000);
+        poc_test_utils::seed_genesis_power(aptos_framework, validator_address, 5_000);
+        stake::join_validator_set(validator, validator_address);
+        stake::end_epoch();
+
+        staking_config::update_voting_power_increase_limit(aptos_framework, 50);
+        staking_config::update_rewards_rate(aptos_framework, 1, 1);
+        stake::set_validator_performance_for_test(0, 1, 0);
+
+        poc_test_utils::assert_next_voting_power(
+            validator_address,
+            1_500,
+            EPOWER_INCREASE_SHOULD_BE_CAPPED,
+        );
+        stake::end_epoch();
+        poc_test_utils::assert_current_voting_power(
+            validator_address,
+            1_500,
+            EPOWER_INCREASE_SHOULD_BE_CAPPED,
         );
     }
 

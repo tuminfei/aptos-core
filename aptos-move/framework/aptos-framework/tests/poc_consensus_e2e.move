@@ -344,4 +344,28 @@ module aptos_framework::poc_consensus_e2e {
 
         staking_registry::delegate(delegator, validator_address);
     }
+
+    #[test(
+        aptos_framework = @aptos_framework,
+        validator = @0x109,
+        delegator = @0x209
+    )]
+    #[expected_failure(abort_code = 0x10010, location = aptos_framework::staking_registry)]
+    fun test_delegate_rejects_pool_power_above_maximum_stake(
+        aptos_framework: &signer,
+        validator: &signer,
+        delegator: &signer,
+    ) {
+        poc_test_utils::setup_poc_env(aptos_framework);
+        poc_test_utils::create_validator(aptos_framework, validator, 9_950);
+
+        let validator_address = signer::address_of(validator);
+        let delegator_address = signer::address_of(delegator);
+        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 100);
+        stake::mint_and_add_stake(delegator, 100);
+        stake::join_validator_set(validator, validator_address);
+        stake::end_epoch();
+
+        staking_registry::delegate(delegator, validator_address);
+    }
 }

@@ -425,8 +425,16 @@ spec aptos_framework::stake {
         candidate: &ValidatorInfo,
         validator_index: u64,
         simulated_deposit_deltas: &SimpleMap<address, u64>,
+        maximum_stake: u64,
+        baseline_voting_power: u64,
+        max_voting_power_increase: u128,
+        used_voting_power_increase: u128,
     ): (u64, ValidatorInfo) {
         let _unused_simulated_deposit_deltas = simulated_deposit_deltas;
+        let _unused_maximum_stake = maximum_stake;
+        let _unused_baseline_voting_power = baseline_voting_power;
+        let _unused_max_voting_power_increase = max_voting_power_increase;
+        let _unused_used_voting_power_increase = used_voting_power_increase;
         aborts_if false;
         ensures result_2.addr == candidate.addr;
         ensures result_2.config.validator_index == validator_index;
