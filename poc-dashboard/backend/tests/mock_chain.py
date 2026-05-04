@@ -67,6 +67,7 @@ class MockChainClient:
             "0x1::topo_governance::get_voting_duration_secs": [86400],
             "0x1::topo_governance::get_min_voting_threshold": [50000],
             "0x1::topo_governance::get_required_proposer_stake": [10000],
+            "0x1::features::is_enabled": [True],
             "0x1::poc_registry::get_app_info": [{"admin": "0xddd", "app_address": "0xeee"}],
             "0x1::poc_registry::get_app_infos_by_admins": [[{"admin": "0xddd"}]],
             "0x1::poc_registry::exists_apps": [[True]],
@@ -83,6 +84,36 @@ class MockChainClient:
             {
                 "type": "0x1::poc_power_store::PeriodClock",
                 "data": {"epochs_until_next_power_period": "2"},
+            },
+        )
+        self.set_resource(
+            "0x1",
+            "0x1::staking_config::StakingConfig",
+            {
+                "type": "0x1::staking_config::StakingConfig",
+                "data": {
+                    "minimum_stake": "1000",
+                    "maximum_stake": "1000000",
+                    "recurring_lockup_duration_secs": "604800",
+                    "allow_validator_set_change": True,
+                    "rewards_rate": "10000",
+                    "rewards_rate_denominator": "1000000000",
+                    "voting_power_increase_limit": "20",
+                },
+            },
+        )
+        self.set_resource(
+            "0x1",
+            "0x1::staking_config::StakingRewardsConfig",
+            {
+                "type": "0x1::staking_config::StakingRewardsConfig",
+                "data": {
+                    "rewards_rate": {"value": "184467440737095"},
+                    "min_rewards_rate": {"value": "0"},
+                    "rewards_rate_period_in_secs": "31536000",
+                    "last_rewards_rate_period_start_in_secs": "1719000000",
+                    "rewards_rate_decrease_rate": {"value": "0"},
+                },
             },
         )
 

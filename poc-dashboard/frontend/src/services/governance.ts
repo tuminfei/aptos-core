@@ -48,6 +48,42 @@ export async function setEpochInterval(params: { epoch_interval_secs: number; ma
   return data;
 }
 
+export async function setStakingConfig(params: {
+  minimum_stake: number;
+  maximum_stake: number;
+  recurring_lockup_duration_secs: number;
+  voting_power_increase_limit: number;
+  max_gas?: number;
+  gas_unit_price?: number;
+}) {
+  const { data } = await api.post('/governance/set-staking-config', params, { timeout: GOVERNANCE_ADMIN_TIMEOUT_MS });
+  return data;
+}
+
+export async function setStakingRewardRate(params: {
+  new_rewards_rate: number;
+  new_rewards_rate_denominator: number;
+  max_gas?: number;
+  gas_unit_price?: number;
+}) {
+  const { data } = await api.post('/governance/set-staking-reward-rate', params, { timeout: GOVERNANCE_ADMIN_TIMEOUT_MS });
+  return data;
+}
+
+export async function setStakingRewardsConfig(params: {
+  rewards_rate_numerator: number;
+  rewards_rate_denominator: number;
+  min_rewards_rate_numerator: number;
+  min_rewards_rate_denominator: number;
+  rewards_rate_decrease_rate_numerator: number;
+  rewards_rate_decrease_rate_denominator: number;
+  max_gas?: number;
+  gas_unit_price?: number;
+}) {
+  const { data } = await api.post('/governance/set-staking-rewards-config', params, { timeout: GOVERNANCE_ADMIN_TIMEOUT_MS });
+  return data;
+}
+
 export async function mintTopo(params: { recipient: string; amount: number }) {
   const { data } = await api.post('/topo/mint', params);
   return data;

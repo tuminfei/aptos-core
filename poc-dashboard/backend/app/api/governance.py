@@ -9,7 +9,7 @@ from app.chain.keys import get_key_manager
 from app.models import operation_log
 from app.services import dapp_svc, upgrade_svc
 from app.services.cache_svc import invalidate_many
-from app.api.errors import ChainTxError
+from app.api.errors import ChainTxError, ParamError
 
 router = APIRouter(tags=["governance"])
 
@@ -48,6 +48,33 @@ class SetCooldownSecsReq(BaseModel):
 
 class SetEpochIntervalReq(BaseModel):
     epoch_interval_secs: int = Field(gt=0)
+    max_gas: int = dapp_svc.DEFAULT_MAX_GAS
+    gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
+
+
+class UpdateStakingConfigReq(BaseModel):
+    minimum_stake: int = Field(ge=0)
+    maximum_stake: int = Field(gt=0)
+    recurring_lockup_duration_secs: int = Field(gt=0)
+    voting_power_increase_limit: int = Field(gt=0, le=50)
+    max_gas: int = dapp_svc.DEFAULT_MAX_GAS
+    gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
+
+
+class UpdateStakingRewardsConfigReq(BaseModel):
+    rewards_rate_numerator: int = Field(ge=0)
+    rewards_rate_denominator: int = Field(gt=0)
+    min_rewards_rate_numerator: int = Field(ge=0)
+    min_rewards_rate_denominator: int = Field(gt=0)
+    rewards_rate_decrease_rate_numerator: int = Field(ge=0)
+    rewards_rate_decrease_rate_denominator: int = Field(gt=0)
+    max_gas: int = dapp_svc.DEFAULT_MAX_GAS
+    gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
+
+
+class UpdateStakingRewardRateReq(BaseModel):
+    new_rewards_rate: int = Field(ge=0)
+    new_rewards_rate_denominator: int = Field(gt=0)
     max_gas: int = dapp_svc.DEFAULT_MAX_GAS
     gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
 
@@ -123,6 +150,26 @@ async def governance_config():
     except Exception:
         epoch_interval_secs = 0
 
+    try:
+        staking_config = await view.get_staking_config(client)
+    except Exception:
+        staking_config = {}
+
+    try:
+        staking_rewards_config = await view.get_staking_rewards_config(client)
+    except Exception:
+        staking_rewards_config = {}
+
+    try:
+        reward_rate = await view.get_reward_rate(client)
+    except Exception:
+        reward_rate = {"numerator": 0, "denominator": 0, "bps": 0}
+
+    try:
+        periodical_reward_rate_decrease_enabled = await view.get_periodical_reward_rate_decrease_enabled(client)
+    except Exception:
+        periodical_reward_rate_decrease_enabled = False
+
     return {
         "chain": {
             "epoch_interval_secs": epoch_interval_secs,
@@ -138,11 +185,149 @@ async def governance_config():
             "min_active_power": min_active_power,
             "force_exit_power_bps": force_exit_power_bps,
         },
+        "staking_config": staking_config,
+        "staking_rewards_config": staking_rewards_config,
+        "reward_rate": reward_rate,
+        "periodical_reward_rate_decrease_enabled": periodical_reward_rate_decrease_enabled,
         "power": {
             "power_period_in_epochs": period_in_epochs,
             "retention_bps": retention,
         },
     }
+
+
+@router.post("/governance/set-staking-config")
+async def set_staking_config(req: UpdateStakingConfigReq):
+    if req.minimum_stake > req.maximum_stake:
+        raise ParamError("minimum_stake 不能大于 maximum_stake")
+    client = get_chain_client()
+    km = get_key_manager()
+    details = {
+        "minimum_stake": req.minimum_stake,
+        "maximum_stake": req.maximum_stake,
+        "recurring_lockup_duration_secs": req.recurring_lockup_duration_secs,
+        "voting_power_increase_limit": req.voting_power_increase_limit,
+    }
+    try:
+        tx = await dapp_svc.run_poc_framework_script(
+            "set_staking_config.move",
+            core_key=km.core_resources_key,
+            core_address=km.core_resources_address,
+            rest_url=client.base_url,
+            args=[
+                f"u64:{req.minimum_stake}",
+                f"u64:{req.maximum_stake}",
+                f"u64:{req.recurring_lockup_duration_secs}",
+                f"u64:{req.voting_power_increase_limit}",
+            ],
+            max_gas=req.max_gas,
+            gas_unit_price=req.gas_unit_price,
+        )
+        await operation_log.create_log("set_staking_config", None, details, tx, "success")
+        await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
+        return {"tx_hash": tx, "success": True}
+    except Exception as e:
+        await operation_log.create_log("set_staking_config", None, details, None, "failed", str(e))
+        raise ChainTxError(str(e))
+
+
+@router.post("/governance/set-staking-rewards-config")
+async def set_staking_rewards_config(req: UpdateStakingRewardsConfigReq):
+    if req.rewards_rate_numerator > req.rewards_rate_denominator:
+        raise ParamError("rewards_rate 不能大于 100%")
+    if req.min_rewards_rate_numerator * req.rewards_rate_denominator > req.rewards_rate_numerator * req.min_rewards_rate_denominator:
+        raise ParamError("min_rewards_rate 不能大于 rewards_rate")
+    if req.rewards_rate_decrease_rate_numerator > req.rewards_rate_decrease_rate_denominator:
+        raise ParamError("rewards_rate_decrease_rate 不能大于 100%")
+    client = get_chain_client()
+    km = get_key_manager()
+    details = {
+        "rewards_rate_numerator": req.rewards_rate_numerator,
+        "rewards_rate_denominator": req.rewards_rate_denominator,
+        "min_rewards_rate_numerator": req.min_rewards_rate_numerator,
+        "min_rewards_rate_denominator": req.min_rewards_rate_denominator,
+        "rewards_rate_decrease_rate_numerator": req.rewards_rate_decrease_rate_numerator,
+        "rewards_rate_decrease_rate_denominator": req.rewards_rate_decrease_rate_denominator,
+    }
+    enabled = await view.get_periodical_reward_rate_decrease_enabled(client)
+    if not enabled:
+        await operation_log.create_log(
+            "set_staking_rewards_config",
+            None,
+            details,
+            None,
+            "failed",
+            "当前网络未启用周期性奖励衰减",
+        )
+        raise ChainTxError("当前网络未启用周期性奖励衰减，请使用 legacy reward rate 接口")
+    staking_rewards_config = await view.get_staking_rewards_config(client)
+    rewards_rate_period_in_secs = int(staking_rewards_config.get("rewards_rate_period_in_secs") or 0)
+    if rewards_rate_period_in_secs <= 0:
+        await operation_log.create_log(
+            "set_staking_rewards_config",
+            None,
+            details,
+            None,
+            "failed",
+            "链上 StakingRewardsConfig 缺少 rewards_rate_period_in_secs",
+        )
+        raise ChainTxError("链上 StakingRewardsConfig 缺少 rewards_rate_period_in_secs")
+    details["rewards_rate_period_in_secs"] = rewards_rate_period_in_secs
+    try:
+        tx = await dapp_svc.run_poc_framework_script(
+            "set_staking_rewards_config.move",
+            core_key=km.core_resources_key,
+            core_address=km.core_resources_address,
+            rest_url=client.base_url,
+            args=[
+                f"u128:{req.rewards_rate_numerator}",
+                f"u128:{req.rewards_rate_denominator}",
+                f"u128:{req.min_rewards_rate_numerator}",
+                f"u128:{req.min_rewards_rate_denominator}",
+                f"u128:{req.rewards_rate_decrease_rate_numerator}",
+                f"u128:{req.rewards_rate_decrease_rate_denominator}",
+                f"u64:{rewards_rate_period_in_secs}",
+            ],
+            max_gas=req.max_gas,
+            gas_unit_price=req.gas_unit_price,
+        )
+        await operation_log.create_log("set_staking_rewards_config", None, details, tx, "success")
+        await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
+        return {"tx_hash": tx, "success": True}
+    except Exception as e:
+        await operation_log.create_log("set_staking_rewards_config", None, details, None, "failed", str(e))
+        raise ChainTxError(str(e))
+
+
+@router.post("/governance/set-staking-reward-rate")
+async def set_staking_reward_rate(req: UpdateStakingRewardRateReq):
+    if req.new_rewards_rate > req.new_rewards_rate_denominator:
+        raise ParamError("new_rewards_rate 不能大于 new_rewards_rate_denominator")
+    client = get_chain_client()
+    km = get_key_manager()
+    details = {
+        "new_rewards_rate": req.new_rewards_rate,
+        "new_rewards_rate_denominator": req.new_rewards_rate_denominator,
+    }
+    try:
+        tx = await dapp_svc.run_poc_framework_script(
+            "set_staking_reward_rate.move",
+            core_key=km.core_resources_key,
+            core_address=km.core_resources_address,
+            rest_url=client.base_url,
+            args=[
+                f"u64:{req.new_rewards_rate}",
+                f"u64:{req.new_rewards_rate_denominator}",
+            ],
+            max_gas=req.max_gas,
+            gas_unit_price=req.gas_unit_price,
+        )
+        await operation_log.create_log("set_staking_reward_rate", None, details, tx, "success")
+        await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
+        return {"tx_hash": tx, "success": True}
+    except Exception as e:
+        await operation_log.create_log("set_staking_reward_rate", None, details, None, "failed", str(e))
+        raise ChainTxError(str(e))
 
 
 @router.post("/governance/update-config")

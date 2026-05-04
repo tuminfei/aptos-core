@@ -31,6 +31,9 @@ import {
   setForceExitPowerBps,
   setMinActivePower,
   setOctasPerMillionPower,
+  setStakingConfig,
+  setStakingRewardRate,
+  setStakingRewardsConfig,
   updateGovernanceConfig,
   upgradeFramework,
 } from '../services/governance';
@@ -50,12 +53,30 @@ import { usePolling } from '../hooks/usePolling';
 import { useWebSocketEvent } from '../hooks/useWebSocket';
 import AddressSelect from '../components/AddressSelect';
 import AddressTag from '../components/AddressTag';
-import { formatNumber, formatTimestamp, topoToOctas } from '../utils/format';
+import { formatDuration, formatNumber, formatRewardRate, formatTimestamp, topoToOctas } from '../utils/format';
 
 const { Text } = Typography;
 
 function formatBps(bps: number): string {
   return `${(Number(bps || 0) / 100).toFixed(2)}%`;
+}
+
+function formatFixedPointPercent(rate: { percent?: number; raw?: string } | undefined): string {
+  if (!rate) return '0%';
+  const percent = Number(rate.percent || 0);
+  if (!Number.isFinite(percent) || percent === 0) return '0%';
+  if (Math.abs(percent) < 0.000001) return `${percent.toExponential(2)}%`;
+  return `${percent.toLocaleString(undefined, { maximumFractionDigits: 8 })}%`;
+}
+
+const DEFAULT_REWARD_RATE_DENOMINATOR = 1_000_000_000;
+
+function percentToFraction(percent: number, denominator = DEFAULT_REWARD_RATE_DENOMINATOR): { numerator: number; denominator: number } {
+  const safePercent = Number.isFinite(percent) ? Math.max(0, percent) : 0;
+  return {
+    numerator: Math.max(0, Math.round((safePercent / 100) * denominator)),
+    denominator,
+  };
 }
 
 function parseBatchUpdates(input: string): { address: string; power: number }[] {
@@ -102,6 +123,15 @@ export default function System() {
   const [requiredProposerStakeVal, setRequiredProposerStakeVal] = useState<number | null>(null);
   const [votingDurationVal, setVotingDurationVal] = useState<number | null>(null);
   const [cooldownSecsVal, setCooldownSecsVal] = useState<number | null>(null);
+  const [stakingMinimumStakeVal, setStakingMinimumStakeVal] = useState<number | null>(null);
+  const [stakingMaximumStakeVal, setStakingMaximumStakeVal] = useState<number | null>(null);
+  const [stakingLockupSecsVal, setStakingLockupSecsVal] = useState<number | null>(null);
+  const [stakingVotingPowerIncreaseLimitVal, setStakingVotingPowerIncreaseLimitVal] = useState<number | null>(null);
+  const [legacyRewardsRateVal, setLegacyRewardsRateVal] = useState<number | null>(null);
+  const [legacyRewardsRateDenominatorVal, setLegacyRewardsRateDenominatorVal] = useState<number | null>(null);
+  const [rewardsRatePercentVal, setRewardsRatePercentVal] = useState<number | null>(null);
+  const [minRewardsRatePercentVal, setMinRewardsRatePercentVal] = useState<number | null>(null);
+  const [rewardsRateDecreasePercentVal, setRewardsRateDecreasePercentVal] = useState<number | null>(null);
   const [operatorAddr, setOperatorAddr] = useState('');
   const [stageAddr, setStageAddr] = useState('');
   const [stagePower, setStagePower] = useState<number>(0);
@@ -193,6 +223,10 @@ export default function System() {
   const chainCfg = config?.chain || {};
   const pwr = config?.power || {};
   const stk = config?.staking || {};
+  const stakingConfig = config?.staking_config || {};
+  const stakingRewardsConfig = config?.staking_rewards_config || {};
+  const rewardRate = config?.reward_rate || {};
+  const rewardsRateDecreaseEnabled = Boolean(config?.periodical_reward_rate_decrease_enabled);
   const gov = config?.governance || {};
   const stageTargetPeriod = Number(powerStore?.current_period || 0) + 1;
   const defaultQueryPeriod = Number(powerStore?.next_epoch_period ?? powerStore?.current_period ?? 0);
@@ -204,6 +238,15 @@ export default function System() {
   const effectiveRequiredProposerStake = requiredProposerStakeVal ?? Number(gov.required_proposer_stake || 0);
   const effectiveVotingDuration = votingDurationVal ?? Number(gov.voting_duration_secs || 0);
   const effectiveCooldownSecs = cooldownSecsVal ?? Number(stk.cooldown_secs || 0);
+  const effectiveStakingMinimumStake = stakingMinimumStakeVal ?? Number(stakingConfig.minimum_stake || 0);
+  const effectiveStakingMaximumStake = stakingMaximumStakeVal ?? Number(stakingConfig.maximum_stake || 0);
+  const effectiveStakingLockupSecs = stakingLockupSecsVal ?? Number(stakingConfig.recurring_lockup_duration_secs || 0);
+  const effectiveStakingVotingPowerIncreaseLimit = stakingVotingPowerIncreaseLimitVal ?? Number(stakingConfig.voting_power_increase_limit || 0);
+  const effectiveLegacyRewardsRate = legacyRewardsRateVal ?? Number(stakingConfig.rewards_rate || rewardRate.numerator || 0);
+  const effectiveLegacyRewardsRateDenominator = legacyRewardsRateDenominatorVal ?? Number(stakingConfig.rewards_rate_denominator || rewardRate.denominator || 0);
+  const effectiveRewardsRatePercent = rewardsRatePercentVal ?? Number(stakingRewardsConfig.rewards_rate?.percent || 0);
+  const effectiveMinRewardsRatePercent = minRewardsRatePercentVal ?? Number(stakingRewardsConfig.min_rewards_rate?.percent || 0);
+  const effectiveRewardsRateDecreasePercent = rewardsRateDecreasePercentVal ?? Number(stakingRewardsConfig.rewards_rate_decrease_rate?.percent || 0);
   const writebackSettings = writebackTask?.settings || {};
   const effectiveWritebackEnabled = writebackEnabled ?? Boolean(writebackSettings.enabled);
   const effectiveWritebackInterval = writebackInterval ?? Number(writebackSettings.interval_secs || 60);
@@ -290,6 +333,64 @@ export default function System() {
     }));
   };
 
+  const handleSetStakingConfig = () => {
+    if (effectiveStakingMinimumStake > effectiveStakingMaximumStake || effectiveStakingMaximumStake <= 0) {
+      message.warning('minimum_stake 不能大于 maximum_stake，且 maximum_stake 必须大于 0');
+      return;
+    }
+    if (effectiveStakingLockupSecs <= 0) {
+      message.warning('recurring_lockup_duration_secs 必须大于 0');
+      return;
+    }
+    if (effectiveStakingVotingPowerIncreaseLimit <= 0 || effectiveStakingVotingPowerIncreaseLimit > 50) {
+      message.warning('voting_power_increase_limit 必须在 1 到 50 之间');
+      return;
+    }
+    doAction('修改 StakingConfig', () => setStakingConfig({
+      minimum_stake: effectiveStakingMinimumStake,
+      maximum_stake: effectiveStakingMaximumStake,
+      recurring_lockup_duration_secs: effectiveStakingLockupSecs,
+      voting_power_increase_limit: effectiveStakingVotingPowerIncreaseLimit,
+    }));
+  };
+
+  const handleSetLegacyRewardRate = () => {
+    if (effectiveLegacyRewardsRateDenominator <= 0) {
+      message.warning('rewards_rate_denominator 必须大于 0');
+      return;
+    }
+    if (effectiveLegacyRewardsRate > effectiveLegacyRewardsRateDenominator) {
+      message.warning('rewards_rate 不能大于 rewards_rate_denominator');
+      return;
+    }
+    doAction('修改 legacy rewards_rate', () => setStakingRewardRate({
+      new_rewards_rate: effectiveLegacyRewardsRate,
+      new_rewards_rate_denominator: effectiveLegacyRewardsRateDenominator,
+    }));
+  };
+
+  const handleSetStakingRewardsConfig = () => {
+    if (effectiveMinRewardsRatePercent > effectiveRewardsRatePercent) {
+      message.warning('min_rewards_rate 不能大于 rewards_rate');
+      return;
+    }
+    if (effectiveRewardsRatePercent > 100 || effectiveRewardsRateDecreasePercent > 100) {
+      message.warning('奖励率和下降率不能超过 100%');
+      return;
+    }
+    const rewardsRate = percentToFraction(effectiveRewardsRatePercent);
+    const minRewardsRate = percentToFraction(effectiveMinRewardsRatePercent);
+    const decreaseRate = percentToFraction(effectiveRewardsRateDecreasePercent);
+    doAction('修改 StakingRewardsConfig', () => setStakingRewardsConfig({
+      rewards_rate_numerator: rewardsRate.numerator,
+      rewards_rate_denominator: rewardsRate.denominator,
+      min_rewards_rate_numerator: minRewardsRate.numerator,
+      min_rewards_rate_denominator: minRewardsRate.denominator,
+      rewards_rate_decrease_rate_numerator: decreaseRate.numerator,
+      rewards_rate_decrease_rate_denominator: decreaseRate.denominator,
+    }));
+  };
+
   const userColumns = useMemo(() => [
     {
       title: '用户',
@@ -368,6 +469,8 @@ export default function System() {
               <Descriptions.Item label="octas_per_million_power">{formatNumber(stk.octas_per_million_power || 0)}</Descriptions.Item>
               <Descriptions.Item label="min_active_power">{formatNumber(stk.min_active_power || 0)}</Descriptions.Item>
               <Descriptions.Item label="force_exit_power_bps">{formatNumber(stk.force_exit_power_bps || 0)} ({formatBps(stk.force_exit_power_bps || 0)})</Descriptions.Item>
+              <Descriptions.Item label="maximum_stake">{formatNumber(stakingConfig.maximum_stake || 0)}</Descriptions.Item>
+              <Descriptions.Item label="reward_rate">{formatRewardRate(rewardRate)}</Descriptions.Item>
               <Descriptions.Item label="voting_duration_secs">{formatNumber(gov.voting_duration_secs || 0)}</Descriptions.Item>
             </Descriptions>
           </Card>
@@ -451,6 +554,33 @@ export default function System() {
                         <Descriptions.Item label="min_active_power">{formatNumber(stk.min_active_power || 0)}</Descriptions.Item>
                         <Descriptions.Item label="force_exit_power_bps">{formatNumber(stk.force_exit_power_bps || 0)} ({formatBps(stk.force_exit_power_bps || 0)})</Descriptions.Item>
                         <Descriptions.Item label="cooldown_secs">{formatNumber(stk.cooldown_secs || 0)}</Descriptions.Item>
+                        <Descriptions.Item label="minimum_stake">{formatNumber(stakingConfig.minimum_stake || 0)}</Descriptions.Item>
+                        <Descriptions.Item label="maximum_stake">{formatNumber(stakingConfig.maximum_stake || 0)}</Descriptions.Item>
+                        <Descriptions.Item label="recurring_lockup_duration_secs">
+                          {formatNumber(stakingConfig.recurring_lockup_duration_secs || 0)} ({formatDuration(stakingConfig.recurring_lockup_duration_secs || 0)})
+                        </Descriptions.Item>
+                        <Descriptions.Item label="allow_validator_set_change">
+                          {stakingConfig.allow_validator_set_change ? <Tag color="green">允许</Tag> : <Tag>不允许</Tag>}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="voting_power_increase_limit">
+                          {formatNumber(stakingConfig.voting_power_increase_limit || 0)}%
+                        </Descriptions.Item>
+                        <Descriptions.Item label="legacy rewards_rate">
+                          {formatNumber(stakingConfig.rewards_rate || 0)} / {formatNumber(stakingConfig.rewards_rate_denominator || 0)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="effective reward_rate">{formatRewardRate(rewardRate)}</Descriptions.Item>
+                        <Descriptions.Item label="periodical_rewards">
+                          {rewardsRateDecreaseEnabled ? <Tag color="green">启用</Tag> : <Tag>未启用</Tag>}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="StakingRewardsConfig.rewards_rate">{formatFixedPointPercent(stakingRewardsConfig.rewards_rate)}</Descriptions.Item>
+                        <Descriptions.Item label="StakingRewardsConfig.min_rewards_rate">{formatFixedPointPercent(stakingRewardsConfig.min_rewards_rate)}</Descriptions.Item>
+                        <Descriptions.Item label="StakingRewardsConfig.decrease_rate">{formatFixedPointPercent(stakingRewardsConfig.rewards_rate_decrease_rate)}</Descriptions.Item>
+                        <Descriptions.Item label="rewards_rate_period_in_secs">
+                          {formatNumber(stakingRewardsConfig.rewards_rate_period_in_secs || 0)} ({formatDuration(stakingRewardsConfig.rewards_rate_period_in_secs || 0)})
+                        </Descriptions.Item>
+                        <Descriptions.Item label="last_rewards_period_start">
+                          {formatTimestamp(stakingRewardsConfig.last_rewards_rate_period_start_in_secs || 0)}
+                        </Descriptions.Item>
                         <Descriptions.Item label="min_voting_threshold">{formatNumber(gov.min_voting_threshold || 0)}</Descriptions.Item>
                         <Descriptions.Item label="required_proposer_stake">{formatNumber(gov.required_proposer_stake || 0)}</Descriptions.Item>
                         <Descriptions.Item label="voting_duration_secs">{formatNumber(gov.voting_duration_secs || 0)}</Descriptions.Item>
@@ -561,6 +691,187 @@ export default function System() {
                           </Col>
                         </Row>
                         <Button loading={submitting} onClick={handleUpdateGovernanceConfig}>修改治理参数</Button>
+                      </Form>
+                    </Card>
+                  </Col>
+                </Row>
+
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                  <Col xs={24} xl={9}>
+                    <Card title="StakingConfig / StakingRewardsConfig" size="small">
+                      <Descriptions bordered column={1} size="small">
+                        <Descriptions.Item label="minimum_stake">{formatNumber(stakingConfig.minimum_stake || 0)}</Descriptions.Item>
+                        <Descriptions.Item label="maximum_stake">{formatNumber(stakingConfig.maximum_stake || 0)}</Descriptions.Item>
+                        <Descriptions.Item label="recurring_lockup_duration_secs">
+                          {formatNumber(stakingConfig.recurring_lockup_duration_secs || 0)} ({formatDuration(stakingConfig.recurring_lockup_duration_secs || 0)})
+                        </Descriptions.Item>
+                        <Descriptions.Item label="allow_validator_set_change">
+                          {stakingConfig.allow_validator_set_change ? <Tag color="green">允许</Tag> : <Tag>不允许</Tag>}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="voting_power_increase_limit">{formatNumber(stakingConfig.voting_power_increase_limit || 0)}%</Descriptions.Item>
+                        <Descriptions.Item label="legacy rewards_rate">
+                          {formatNumber(stakingConfig.rewards_rate || 0)} / {formatNumber(stakingConfig.rewards_rate_denominator || 0)}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="effective reward_rate">{formatRewardRate(rewardRate)}</Descriptions.Item>
+                        <Descriptions.Item label="periodical reward decrease">
+                          {rewardsRateDecreaseEnabled ? <Tag color="green">启用</Tag> : <Tag>未启用</Tag>}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="rewards_rate">{formatFixedPointPercent(stakingRewardsConfig.rewards_rate)}</Descriptions.Item>
+                        <Descriptions.Item label="min_rewards_rate">{formatFixedPointPercent(stakingRewardsConfig.min_rewards_rate)}</Descriptions.Item>
+                        <Descriptions.Item label="decrease_rate">{formatFixedPointPercent(stakingRewardsConfig.rewards_rate_decrease_rate)}</Descriptions.Item>
+                        <Descriptions.Item label="reward period">
+                          {formatNumber(stakingRewardsConfig.rewards_rate_period_in_secs || 0)} 秒
+                        </Descriptions.Item>
+                      </Descriptions>
+                    </Card>
+                  </Col>
+                  <Col xs={24} xl={15}>
+                    <Card title="Staking 参数修改" size="small">
+                      <Form layout="vertical">
+                        <Row gutter={12}>
+                          <Col xs={24} md={12}>
+                            <Form.Item label="StakingConfig / minimum_stake">
+                              <InputNumber
+                                value={stakingMinimumStakeVal ?? undefined}
+                                onChange={(value) => setStakingMinimumStakeVal(value ?? null)}
+                                min={0}
+                                precision={0}
+                                placeholder={`当前 ${formatNumber(stakingConfig.minimum_stake || 0)}`}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} md={12}>
+                            <Form.Item label="StakingConfig / maximum_stake">
+                              <InputNumber
+                                value={stakingMaximumStakeVal ?? undefined}
+                                onChange={(value) => setStakingMaximumStakeVal(value ?? null)}
+                                min={1}
+                                precision={0}
+                                placeholder={`当前 ${formatNumber(stakingConfig.maximum_stake || 0)}`}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} md={12}>
+                            <Form.Item label="StakingConfig / recurring_lockup_duration_secs">
+                              <InputNumber
+                                value={stakingLockupSecsVal ?? undefined}
+                                onChange={(value) => setStakingLockupSecsVal(value ?? null)}
+                                min={1}
+                                precision={0}
+                                addonAfter="秒"
+                                placeholder={`当前 ${formatNumber(stakingConfig.recurring_lockup_duration_secs || 0)}`}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} md={12}>
+                            <Form.Item label="StakingConfig / voting_power_increase_limit">
+                              <InputNumber
+                                value={stakingVotingPowerIncreaseLimitVal ?? undefined}
+                                onChange={(value) => setStakingVotingPowerIncreaseLimitVal(value ?? null)}
+                                min={1}
+                                max={50}
+                                precision={0}
+                                addonAfter="%"
+                                placeholder={`当前 ${formatNumber(stakingConfig.voting_power_increase_limit || 0)}`}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                        <Button loading={submitting} onClick={handleSetStakingConfig}>修改 StakingConfig</Button>
+
+                        <Alert
+                          type="info"
+                          showIcon
+                          style={{ marginTop: 16, marginBottom: 16 }}
+                          message={rewardsRateDecreaseEnabled ? '当前链使用 StakingRewardsConfig 计算奖励率' : '当前链使用 legacy rewards_rate 计算奖励率'}
+                        />
+
+                        <Row gutter={12}>
+                          <Col xs={24} md={12}>
+                            <Form.Item label="Legacy / rewards_rate">
+                              <InputNumber
+                                value={legacyRewardsRateVal ?? undefined}
+                                onChange={(value) => setLegacyRewardsRateVal(value ?? null)}
+                                min={0}
+                                precision={0}
+                                placeholder={`当前 ${formatNumber(stakingConfig.rewards_rate || 0)}`}
+                                style={{ width: '100%' }}
+                                disabled={rewardsRateDecreaseEnabled}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} md={12}>
+                            <Form.Item label="Legacy / rewards_rate_denominator">
+                              <InputNumber
+                                value={legacyRewardsRateDenominatorVal ?? undefined}
+                                onChange={(value) => setLegacyRewardsRateDenominatorVal(value ?? null)}
+                                min={1}
+                                precision={0}
+                                placeholder={`当前 ${formatNumber(stakingConfig.rewards_rate_denominator || 0)}`}
+                                style={{ width: '100%' }}
+                                disabled={rewardsRateDecreaseEnabled}
+                              />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                        <Button loading={submitting} disabled={rewardsRateDecreaseEnabled} onClick={handleSetLegacyRewardRate}>
+                          修改 legacy rewards_rate
+                        </Button>
+
+                        <Row gutter={12} style={{ marginTop: 16 }}>
+                          <Col xs={24} md={8}>
+                            <Form.Item label="StakingRewardsConfig / rewards_rate">
+                              <InputNumber
+                                value={rewardsRatePercentVal ?? undefined}
+                                onChange={(value) => setRewardsRatePercentVal(value ?? null)}
+                                min={0}
+                                max={100}
+                                precision={8}
+                                addonAfter="%"
+                                placeholder={`当前 ${formatFixedPointPercent(stakingRewardsConfig.rewards_rate)}`}
+                                style={{ width: '100%' }}
+                                disabled={!rewardsRateDecreaseEnabled}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} md={8}>
+                            <Form.Item label="StakingRewardsConfig / min_rewards_rate">
+                              <InputNumber
+                                value={minRewardsRatePercentVal ?? undefined}
+                                onChange={(value) => setMinRewardsRatePercentVal(value ?? null)}
+                                min={0}
+                                max={100}
+                                precision={8}
+                                addonAfter="%"
+                                placeholder={`当前 ${formatFixedPointPercent(stakingRewardsConfig.min_rewards_rate)}`}
+                                style={{ width: '100%' }}
+                                disabled={!rewardsRateDecreaseEnabled}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} md={8}>
+                            <Form.Item label="StakingRewardsConfig / decrease_rate">
+                              <InputNumber
+                                value={rewardsRateDecreasePercentVal ?? undefined}
+                                onChange={(value) => setRewardsRateDecreasePercentVal(value ?? null)}
+                                min={0}
+                                max={100}
+                                precision={8}
+                                addonAfter="%"
+                                placeholder={`当前 ${formatFixedPointPercent(stakingRewardsConfig.rewards_rate_decrease_rate)}`}
+                                style={{ width: '100%' }}
+                                disabled={!rewardsRateDecreaseEnabled}
+                              />
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                        <Button loading={submitting} disabled={!rewardsRateDecreaseEnabled} onClick={handleSetStakingRewardsConfig}>
+                          修改 StakingRewardsConfig
+                        </Button>
                       </Form>
                     </Card>
                   </Col>

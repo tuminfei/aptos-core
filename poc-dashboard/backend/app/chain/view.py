@@ -3,6 +3,34 @@ from typing import Any
 
 APTOS_FRAMEWORK_ADDRESS = "0x1"
 PERIOD_CLOCK_RESOURCE = "0x1::poc_power_store::PeriodClock"
+STAKING_CONFIG_RESOURCE = "0x1::staking_config::StakingConfig"
+STAKING_REWARDS_CONFIG_RESOURCE = "0x1::staking_config::StakingRewardsConfig"
+FIXED_POINT64_SCALE = 1 << 64
+PERIODICAL_REWARD_RATE_DECREASE_FEATURE = 16
+
+
+def _int_value(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _fixed_point64_raw(value: Any) -> int:
+    if isinstance(value, dict):
+        value = value.get("value")
+    return _int_value(value)
+
+
+def _fixed_point64_view(value: Any) -> dict:
+    raw = _fixed_point64_raw(value)
+    ratio = raw / FIXED_POINT64_SCALE if FIXED_POINT64_SCALE else 0
+    return {
+        "raw": str(raw),
+        "scale": str(FIXED_POINT64_SCALE),
+        "percent": ratio * 100,
+        "bps": ratio * 10000,
+    }
 
 
 # --- block ---
@@ -174,6 +202,44 @@ async def get_reward_rate(client: ChainClient) -> dict:
         "denominator": denominator,
         "bps": (numerator * 10000 // denominator) if denominator else 0,
     }
+
+
+async def get_staking_config(client: ChainClient) -> dict:
+    resource = await client.get_account_resource(APTOS_FRAMEWORK_ADDRESS, STAKING_CONFIG_RESOURCE)
+    if not resource:
+        return {}
+    data = resource.get("data") or {}
+    return {
+        "minimum_stake": _int_value(data.get("minimum_stake")),
+        "maximum_stake": _int_value(data.get("maximum_stake")),
+        "recurring_lockup_duration_secs": _int_value(data.get("recurring_lockup_duration_secs")),
+        "allow_validator_set_change": bool(data.get("allow_validator_set_change")),
+        "rewards_rate": _int_value(data.get("rewards_rate")),
+        "rewards_rate_denominator": _int_value(data.get("rewards_rate_denominator")),
+        "voting_power_increase_limit": _int_value(data.get("voting_power_increase_limit")),
+    }
+
+
+async def get_staking_rewards_config(client: ChainClient) -> dict:
+    resource = await client.get_account_resource(APTOS_FRAMEWORK_ADDRESS, STAKING_REWARDS_CONFIG_RESOURCE)
+    if not resource:
+        return {}
+    data = resource.get("data") or {}
+    return {
+        "rewards_rate": _fixed_point64_view(data.get("rewards_rate")),
+        "min_rewards_rate": _fixed_point64_view(data.get("min_rewards_rate")),
+        "rewards_rate_period_in_secs": _int_value(data.get("rewards_rate_period_in_secs")),
+        "last_rewards_rate_period_start_in_secs": _int_value(data.get("last_rewards_rate_period_start_in_secs")),
+        "rewards_rate_decrease_rate": _fixed_point64_view(data.get("rewards_rate_decrease_rate")),
+    }
+
+
+async def get_periodical_reward_rate_decrease_enabled(client: ChainClient) -> bool:
+    r = await client.call_view(
+        "0x1::features::is_enabled",
+        args=[str(PERIODICAL_REWARD_RATE_DECREASE_FEATURE)],
+    )
+    return bool(r[0])
 
 
 async def get_cooldown_secs(client: ChainClient) -> int:
