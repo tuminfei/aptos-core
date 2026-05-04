@@ -37,7 +37,6 @@ import {
 import {
   getPowerStore,
   getPowerWritebackTask,
-  initializePowerPeriodClock,
   configurePowerWritebackTask,
   queryPowerStoreUsers,
   runPowerWritebackOnce,
@@ -584,9 +583,9 @@ export default function System() {
                         <Descriptions.Item label="下一 Epoch Period">{formatNumber(powerStore?.next_epoch_period || 0)}</Descriptions.Item>
                         <Descriptions.Item label="下一打点 Period">{formatNumber(stageTargetPeriod)}</Descriptions.Item>
                         <Descriptions.Item label="周期长度">{formatNumber(powerStore?.power_period_in_epochs || 0)} Epoch</Descriptions.Item>
-                        <Descriptions.Item label="Clock 状态">{powerStore?.power_period_clock_initialized ? <Tag color="green">已初始化</Tag> : <Tag color="orange">未初始化</Tag>}</Descriptions.Item>
-                        <Descriptions.Item label="Clock 倒计时">{powerStore?.power_period_clock_initialized ? `${formatNumber(powerStore?.power_period_clock_countdown || 0)} Epoch` : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="距离下个 Period">{powerStore?.power_period_clock_initialized ? `${formatNumber(powerStore?.epochs_until_next_period || 0)} Epoch` : '-'}</Descriptions.Item>
+                        <Descriptions.Item label="Clock 状态">{powerStore?.period_clock_initialized ? <Tag color="green">已初始化</Tag> : <Tag color="orange">未初始化</Tag>}</Descriptions.Item>
+                        <Descriptions.Item label="Clock 倒计时">{powerStore?.period_clock_initialized ? `${formatNumber(powerStore?.period_clock_countdown || 0)} Epoch` : '-'}</Descriptions.Item>
+                        <Descriptions.Item label="距离下个 Period">{powerStore?.period_clock_initialized ? `${formatNumber(powerStore?.epochs_until_next_period || 0)} Epoch` : '-'}</Descriptions.Item>
                         <Descriptions.Item label="保留系数">{formatNumber(powerStore?.retention_bps || 0)} ({formatBps(powerStore?.retention_bps || 0)})</Descriptions.Item>
                         <Descriptions.Item label="每 Period 衰减">{formatNumber(powerStore?.decay_bps || 0)} ({formatBps(powerStore?.decay_bps || 0)})</Descriptions.Item>
                         <Descriptions.Item label="已关注用户">{formatNumber(powerStore?.watched_user_count || 0)}</Descriptions.Item>
@@ -630,16 +629,6 @@ export default function System() {
                               </Space.Compact>
                             </Form.Item>
                           </Col>
-                          {!powerStore?.power_period_clock_initialized ? (
-                            <Col xs={24}>
-                              <Alert
-                                type="warning"
-                                showIcon
-                                message="PowerPeriodClock 未初始化"
-                                action={<Button size="small" loading={submitting} onClick={() => doAction('初始化 PowerPeriodClock', () => initializePowerPeriodClock())}>初始化</Button>}
-                              />
-                            </Col>
-                          ) : null}
                         </Row>
                       </Form>
                     </Card>

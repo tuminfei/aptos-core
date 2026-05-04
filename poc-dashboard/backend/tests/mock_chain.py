@@ -79,9 +79,9 @@ class MockChainClient:
         self._view_responses = v
         self.set_resource(
             "0x1",
-            "0x1::poc_power_store::PowerPeriodClock",
+            "0x1::poc_power_store::PeriodClock",
             {
-                "type": "0x1::poc_power_store::PowerPeriodClock",
+                "type": "0x1::poc_power_store::PeriodClock",
                 "data": {"epochs_until_next_power_period": "2"},
             },
         )

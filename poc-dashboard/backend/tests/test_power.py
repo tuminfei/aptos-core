@@ -12,8 +12,8 @@ async def test_power_overview(client):
     assert data["current_period"] == 23
     assert data["power_period_in_epochs"] == 5
     assert data["retention_bps"] == 9950
-    assert data["power_period_clock_initialized"] is True
-    assert data["power_period_clock_countdown"] == 2
+    assert data["period_clock_initialized"] is True
+    assert data["period_clock_countdown"] == 2
     assert data["epochs_until_next_period"] == 3
 
 
@@ -37,9 +37,9 @@ async def test_power_store_includes_validator_users(client):
 async def test_power_store_next_epoch_period_uses_clock(client, mock_client):
     mock_client.set_resource(
         "0x1",
-        "0x1::poc_power_store::PowerPeriodClock",
+        "0x1::poc_power_store::PeriodClock",
         {
-            "type": "0x1::poc_power_store::PowerPeriodClock",
+            "type": "0x1::poc_power_store::PeriodClock",
             "data": {"epochs_until_next_power_period": "0"},
         },
     )

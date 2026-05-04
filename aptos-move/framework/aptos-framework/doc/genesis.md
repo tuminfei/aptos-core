@@ -277,11 +277,11 @@ goes through the staking_registry's stored mint cap (for rewards only).
 
 
 
-<a id="0x1_genesis_DEFAULT_OCTAS_PER_POWER"></a>
+<a id="0x1_genesis_DEFAULT_OCTAS_PER_MILLION_POWER"></a>
 
 
 
-<pre><code><b>const</b> <a href="genesis.md#0x1_genesis_DEFAULT_OCTAS_PER_POWER">DEFAULT_OCTAS_PER_POWER</a>: u64 = 1;
+<pre><code><b>const</b> <a href="genesis.md#0x1_genesis_DEFAULT_OCTAS_PER_MILLION_POWER">DEFAULT_OCTAS_PER_MILLION_POWER</a>: u64 = 1000000;
 </code></pre>
 
 
@@ -608,7 +608,7 @@ be changed later via <code><a href="poc_power_store.md#0x1_poc_power_store_set_o
         };
     <a href="staking_registry.md#0x1_staking_registry_initialize">staking_registry::initialize</a>(
         aptos_framework,
-        <a href="genesis.md#0x1_genesis_DEFAULT_OCTAS_PER_POWER">DEFAULT_OCTAS_PER_POWER</a>,
+        <a href="genesis.md#0x1_genesis_DEFAULT_OCTAS_PER_MILLION_POWER">DEFAULT_OCTAS_PER_MILLION_POWER</a>,
         <a href="genesis.md#0x1_genesis_DEFAULT_MAX_DELEGATORS_PER_VALIDATOR">DEFAULT_MAX_DELEGATORS_PER_VALIDATOR</a>,
         cooldown_secs,
     );

@@ -15,13 +15,15 @@ Design Boundaries:
 Architecture Overview:
 This module serves as the on-chain power registry for the Proof of Contribution (POC) system.
 Power values represent a user's contribution-based voting weight, computed off-chain from ContributionEvents
-and uploaded periodically by a trusted operator. The two-version sliding window design ensures:
+and uploaded periodically by a trusted operator or framework governance. The two-version sliding window design ensures:
 1. Current epoch reads remain stable even when next-period data is being staged
 2. Smooth transitions at period boundaries without requiring atomic global updates
 3. Automatic decay for inactive users via retention_bps_per_period
 
 Key Concepts:
 - Power Period: A configurable number of on-chain epochs (default 60). Power values are updated once per period.
+Period advancement is driven by an epoch countdown, so changing the configured period length
+only affects future periods and never reinterprets historical epochs.
 - Effective Period: The period from which a power version becomes active. Versions with effective_period > current_period are "staged" for future use.
 - Retention: A decay factor (in basis points) applied per period to power values that haven't been refreshed.
 Default 9950 bps (99.5%) means power decays by 0.5% per period if not updated.
@@ -35,6 +37,7 @@ Lifecycle Example:
 
 
 -  [Resource `PowerStore`](#0x1_poc_power_store_PowerStore)
+-  [Resource `PeriodClock`](#0x1_poc_power_store_PeriodClock)
 -  [Struct `PowerVersion`](#0x1_poc_power_store_PowerVersion)
 -  [Struct `UserPowerInfo`](#0x1_poc_power_store_UserPowerInfo)
 -  [Struct `OperatorChangedEvent`](#0x1_poc_power_store_OperatorChangedEvent)
@@ -66,7 +69,8 @@ Lifecycle Example:
 -  [Function `get_retention_bps_per_period`](#0x1_poc_power_store_get_retention_bps_per_period)
 -  [Function `initialize_power_store_internal`](#0x1_poc_power_store_initialize_power_store_internal)
 -  [Function `assert_store_exists`](#0x1_poc_power_store_assert_store_exists)
--  [Function `assert_operator`](#0x1_poc_power_store_assert_operator)
+-  [Function `assert_clock_exists`](#0x1_poc_power_store_assert_clock_exists)
+-  [Function `assert_power_update_authority`](#0x1_poc_power_store_assert_power_update_authority)
 -  [Function `assert_valid_retention_bps`](#0x1_poc_power_store_assert_valid_retention_bps)
 -  [Function `assert_valid_power_period`](#0x1_poc_power_store_assert_valid_power_period)
 -  [Function `upsert_power_version`](#0x1_poc_power_store_upsert_power_version)
@@ -76,7 +80,6 @@ Lifecycle Example:
 -  [Function `select_effective_version`](#0x1_poc_power_store_select_effective_version)
 -  [Function `has_power_version`](#0x1_poc_power_store_has_power_version)
 -  [Function `apply_retention`](#0x1_poc_power_store_apply_retention)
--  [Function `period_for_epoch`](#0x1_poc_power_store_period_for_epoch)
 -  [Function `empty_power_version`](#0x1_poc_power_store_empty_power_version)
 
 
@@ -95,10 +98,8 @@ Lifecycle Example:
 Global power store, stored under @aptos_framework.
 
 Invariants:
-- Only <code>operator</code> may call <code>stage_batch_update</code>
-- <code>current_period</code> only advances forward, never backward
+- Only <code>operator</code> or @aptos_framework may call <code>stage_batch_update</code>
 - Each user has at most two PowerVersion slots (older + newer)
-- <code>last_epoch</code> is incremented once per on-chain epoch via <code>commit_next_period_if_boundary</code>
 
 
 <pre><code><b>struct</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> <b>has</b> key
@@ -118,10 +119,49 @@ Invariants:
  The single trusted address allowed to upload power updates
 </dd>
 <dt>
+<code>users: <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="poc_power_store.md#0x1_poc_power_store_UserPowerInfo">poc_power_store::UserPowerInfo</a>&gt;</code>
+</dt>
+<dd>
+ Per-user storage: address → two-slot power version window
+</dd>
+<dt>
+<code>retention_bps_per_period: u64</code>
+</dt>
+<dd>
+ Decay factor applied per period to stale power values (in basis points, e.g. 9950 = 99.5%)
+</dd>
+</dl>
+
+
+</details>
+
+<a id="0x1_poc_power_store_PeriodClock"></a>
+
+## Resource `PeriodClock`
+
+Global power-period clock, stored under @aptos_framework.
+
+Invariants:
+- <code>current_period</code> only advances forward, never backward
+- <code>last_epoch</code> is incremented once per on-chain epoch via <code>commit_next_period_if_boundary</code>
+- <code>current_period</code> advances by at most one per committed epoch
+
+
+<pre><code><b>struct</b> <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> <b>has</b> key
+</code></pre>
+
+
+
+<details>
+<summary>Fields</summary>
+
+
+<dl>
+<dt>
 <code>power_period_in_epochs: u64</code>
 </dt>
 <dd>
- Number of on-chain epochs that constitute one power period
+ Number of on-chain epochs used when starting the next power period
 </dd>
 <dt>
 <code>last_epoch: u64</code>
@@ -133,19 +173,13 @@ Invariants:
 <code>current_period: u64</code>
 </dt>
 <dd>
- The current power period index; advances when last_epoch crosses a period boundary
+ The current power period index
 </dd>
 <dt>
-<code>users: <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="poc_power_store.md#0x1_poc_power_store_UserPowerInfo">poc_power_store::UserPowerInfo</a>&gt;</code>
+<code>epochs_until_next_power_period: u64</code>
 </dt>
 <dd>
- Per-user storage: address → two-slot power version window
-</dd>
-<dt>
-<code>retention_bps_per_period: u64</code>
-</dt>
-<dd>
- Decay factor applied per period to stale power values (in basis points, e.g. 9950 = 99.5%)
+ Number of epoch transitions remaining before the next power period starts
 </dd>
 </dl>
 
@@ -612,11 +646,11 @@ PowerStore resource has not been initialized yet
 
 ## Function `set_power_period_in_epochs`
 
-Update the power-period length used to advance <code>current_period</code>.
+Update the power-period length used when the next power period starts.
 
-This is a framework-governed operational parameter. Production deployments can
-keep the default long period, while tests can shorten it to make staged power
-updates become live after fewer epoch transitions.
+The current period's remaining countdown is not recomputed. This prevents a
+parameter change from reinterpreting historical epochs and making
+<code>current_period</code> jump by more than one at the next epoch boundary.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_power_period_in_epochs">set_power_period_in_epochs</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, power_period_in_epochs: u64)
@@ -631,11 +665,12 @@ updates become live after fewer epoch transitions.
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_power_period_in_epochs">set_power_period_in_epochs</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     power_period_in_epochs: u64,
-) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
+) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
     <a href="poc_power_store.md#0x1_poc_power_store_assert_store_exists">assert_store_exists</a>();
+    <a href="poc_power_store.md#0x1_poc_power_store_assert_clock_exists">assert_clock_exists</a>();
     <a href="poc_power_store.md#0x1_poc_power_store_assert_valid_power_period">assert_valid_power_period</a>(power_period_in_epochs);
-    <b>borrow_global_mut</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework).power_period_in_epochs =
+    <b>borrow_global_mut</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework).power_period_in_epochs =
         power_period_in_epochs;
 }
 </code></pre>
@@ -696,7 +731,7 @@ Convention:
 <code>effective_period = current_period + 1</code> (i.e., target_period).
 
 Constraints:
-- Only the designated <code>operator</code> may call this.
+- Only the designated <code>operator</code> or @aptos_framework may call this.
 - <code>target_period</code> must equal <code>current_period + 1</code>; staging further ahead is not allowed
 to prevent the operator from pre-loading multiple future periods at once.
 - <code>users</code> and <code>powers</code> must have the same length.
@@ -719,17 +754,19 @@ This allows the operator to correct a mistake before the period boundary is cros
     target_period: u64,
     users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
     powers: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
+) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
     <a href="poc_power_store.md#0x1_poc_power_store_assert_store_exists">assert_store_exists</a>();
+    <a href="poc_power_store.md#0x1_poc_power_store_assert_clock_exists">assert_clock_exists</a>();
     <b>assert</b>!(
         users.length() == powers.length(),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_power_store.md#0x1_poc_power_store_EINVALID_BATCH_LENGTH">EINVALID_BATCH_LENGTH</a>),
     );
 
+    <b>let</b> clock = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework);
     <b>let</b> store = <b>borrow_global_mut</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework);
-    <a href="poc_power_store.md#0x1_poc_power_store_assert_operator">assert_operator</a>(store, <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(operator));
+    <a href="poc_power_store.md#0x1_poc_power_store_assert_power_update_authority">assert_power_update_authority</a>(store, <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(operator));
     <b>assert</b>!(
-        target_period == store.current_period + 1,
+        target_period == clock.current_period + 1,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_power_store.md#0x1_poc_power_store_EINVALID_TARGET_PERIOD">EINVALID_TARGET_PERIOD</a>),
     );
 
@@ -779,13 +816,15 @@ Used to seed initial validator power values before the first epoch begins.
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     user: <b>address</b>,
     power: u64,
-) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
+) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
     <a href="poc_power_store.md#0x1_poc_power_store_assert_store_exists">assert_store_exists</a>();
+    <a href="poc_power_store.md#0x1_poc_power_store_assert_clock_exists">assert_clock_exists</a>();
 
+    <b>let</b> clock = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework);
     <b>let</b> store = <b>borrow_global_mut</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework);
     <b>assert</b>!(
-        store.last_epoch == 0 && store.current_period == 0,
+        clock.last_epoch == 0 && clock.current_period == 0,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="poc_power_store.md#0x1_poc_power_store_EGENESIS_COMMIT_ONLY">EGENESIS_COMMIT_ONLY</a>),
     );
     <a href="poc_power_store.md#0x1_poc_power_store_upsert_power_version">upsert_power_version</a>(store, user, 0, power);
@@ -807,11 +846,15 @@ Called by <code><a href="stake.md#0x1_stake_on_new_epoch">stake::on_new_epoch</a
 This is the only place where <code>current_period</code> advances, ensuring all reads
 within an epoch see a consistent period value.
 
-Period boundary formula: period = (epoch - 1) / power_period_in_epochs
+Period boundary rule:
+- <code>epochs_until_next_power_period</code> is decremented once per committed epoch.
+- When it reaches zero, the next committed epoch advances <code>current_period</code> by one
+and reloads the countdown from <code>power_period_in_epochs</code>.
+
 Example with power_period_in_epochs = 60:
-epoch 1-60  → period 0
-epoch 61-120 → period 1
-epoch 121-180 → period 2
+first 60 committed epochs   → period 0
+next 60 committed epochs    → period 1
+next 60 committed epochs    → period 2
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_commit_next_period_if_boundary">commit_next_period_if_boundary</a>()
@@ -823,25 +866,25 @@ epoch 121-180 → period 2
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_commit_next_period_if_boundary">commit_next_period_if_boundary</a>() <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework)) {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_commit_next_period_if_boundary">commit_next_period_if_boundary</a>() <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
+    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework)) {
         <b>return</b>
     };
 
-    <b>let</b> store = <b>borrow_global_mut</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework);
-    store.last_epoch += 1;
-    <b>let</b> next_epoch = store.last_epoch;
-    <b>let</b> target_period = <a href="poc_power_store.md#0x1_poc_power_store_period_for_epoch">period_for_epoch</a>(next_epoch, store.power_period_in_epochs);
-    <b>if</b> (target_period &lt;= store.current_period) {
-        <b>return</b>
+    <b>let</b> clock = <b>borrow_global_mut</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework);
+    clock.last_epoch += 1;
+    <b>if</b> (clock.epochs_until_next_power_period == 0) {
+        <b>let</b> previous_period = clock.current_period;
+        <b>let</b> target_period = previous_period + 1;
+        clock.current_period = target_period;
+        clock.epochs_until_next_power_period = clock.power_period_in_epochs;
+        <a href="event.md#0x1_event_emit">event::emit</a>(<a href="poc_power_store.md#0x1_poc_power_store_PowerPeriodCommittedEvent">PowerPeriodCommittedEvent</a> {
+            previous_period,
+            current_period: target_period,
+        });
     };
 
-    <b>let</b> previous_period = store.current_period;
-    store.current_period = target_period;
-    <a href="event.md#0x1_event_emit">event::emit</a>(<a href="poc_power_store.md#0x1_poc_power_store_PowerPeriodCommittedEvent">PowerPeriodCommittedEvent</a> {
-        previous_period,
-        current_period: target_period,
-    });
+    clock.epochs_until_next_power_period -= 1;
 }
 </code></pre>
 
@@ -865,7 +908,7 @@ epoch 121-180 → period 2
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_power">get_user_power</a>(user: <b>address</b>): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
+<pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_power">get_user_power</a>(user: <b>address</b>): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
     <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power">get_user_committed_power</a>(user)
 }
 </code></pre>
@@ -890,12 +933,13 @@ epoch 121-180 → period 2
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power">get_user_committed_power</a>(user: <b>address</b>): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework)) {
+<pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power">get_user_committed_power</a>(user: <b>address</b>): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
+    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework) || !<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework)) {
         <b>return</b> 0
     };
+    <b>let</b> clock = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework);
     <b>let</b> store = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework);
-    <a href="poc_power_store.md#0x1_poc_power_store_get_user_power_for_period_internal">get_user_power_for_period_internal</a>(store, user, store.current_period)
+    <a href="poc_power_store.md#0x1_poc_power_store_get_user_power_for_period_internal">get_user_power_for_period_internal</a>(store, user, clock.current_period)
 }
 </code></pre>
 
@@ -921,14 +965,18 @@ epoch 121-180 → period 2
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power_for_next_epoch">get_user_committed_power_for_next_epoch</a>(
     user: <b>address</b>,
-): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework)) {
+): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
+    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework) || !<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework)) {
         <b>return</b> 0
     };
 
     <b>let</b> store = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework);
-    <b>let</b> target_period =
-        <a href="poc_power_store.md#0x1_poc_power_store_period_for_epoch">period_for_epoch</a>(store.last_epoch + 1, store.power_period_in_epochs);
+    <b>let</b> clock = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework);
+    <b>let</b> target_period = <b>if</b> (clock.epochs_until_next_power_period == 0) {
+            clock.current_period + 1
+        } <b>else</b> {
+            clock.current_period
+        };
     <a href="poc_power_store.md#0x1_poc_power_store_get_user_power_for_period_internal">get_user_power_for_period_internal</a>(store, user, target_period)
 }
 </code></pre>
@@ -987,11 +1035,12 @@ epoch 121-180 → period 2
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_powers">get_user_committed_powers</a>(
     users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
+): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
     <b>let</b> powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework) || !<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework)) {
         <b>return</b> powers
     };
+    <b>let</b> clock = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework);
     <b>let</b> store = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework);
     <b>let</b> len = users.length();
     <b>let</b> i = 0;
@@ -999,7 +1048,7 @@ epoch 121-180 → period 2
         powers.push_back(<a href="poc_power_store.md#0x1_poc_power_store_get_user_power_for_period_internal">get_user_power_for_period_internal</a>(
             store,
             *users.borrow(i),
-            store.current_period,
+            clock.current_period,
         ));
         i += 1;
     };
@@ -1072,12 +1121,13 @@ epoch 121-180 → period 2
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_power_version">get_user_power_version</a>(
     user: <b>address</b>,
-): (u64, u64, u64, u64, u64) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework)) {
+): (u64, u64, u64, u64, u64) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
+    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework) || !<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework)) {
         <b>return</b> (0, 0, 0, 0, 0)
     };
+    <b>let</b> clock = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework);
     <b>let</b> store = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework);
-    <a href="poc_power_store.md#0x1_poc_power_store_build_user_power_version">build_user_power_version</a>(store, user)
+    <a href="poc_power_store.md#0x1_poc_power_store_build_user_power_version">build_user_power_version</a>(store, user, clock.current_period)
 }
 </code></pre>
 
@@ -1110,14 +1160,14 @@ epoch 121-180 → period 2
     <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
+) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
     <b>let</b> returned_users = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> older_effective_periods = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> older_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> newer_effective_periods = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> newer_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> committed_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework) || !<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework)) {
         <b>return</b> (
             returned_users,
             older_effective_periods,
@@ -1127,6 +1177,7 @@ epoch 121-180 → period 2
             committed_powers,
         )
     };
+    <b>let</b> clock = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework);
     <b>let</b> store = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework);
     <b>let</b> len = users.length();
     <b>let</b> i = 0;
@@ -1138,7 +1189,7 @@ epoch 121-180 → period 2
             newer_effective_period,
             newer_power,
             committed_power,
-        ) = <a href="poc_power_store.md#0x1_poc_power_store_build_user_power_version">build_user_power_version</a>(store, user);
+        ) = <a href="poc_power_store.md#0x1_poc_power_store_build_user_power_version">build_user_power_version</a>(store, user, clock.current_period);
         returned_users.push_back(user);
         older_effective_periods.push_back(older_effective_period);
         older_powers.push_back(older_power);
@@ -1178,7 +1229,7 @@ epoch 121-180 → period 2
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_decayed_power">get_user_decayed_power</a>(user: <b>address</b>): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
+<pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_decayed_power">get_user_decayed_power</a>(user: <b>address</b>): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
     <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power">get_user_committed_power</a>(user)
 }
 </code></pre>
@@ -1231,11 +1282,11 @@ epoch 121-180 → period 2
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_current_period">get_current_period</a>(): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework)) {
+<pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_current_period">get_current_period</a>(): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
+    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework)) {
         0
     } <b>else</b> {
-        <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework).current_period
+        <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework).current_period
     }
 }
 </code></pre>
@@ -1260,11 +1311,11 @@ epoch 121-180 → period 2
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_power_period_in_epochs">get_power_period_in_epochs</a>(): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework)) {
+<pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_power_period_in_epochs">get_power_period_in_epochs</a>(): u64 <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
+    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework)) {
         0
     } <b>else</b> {
-        <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework).power_period_in_epochs
+        <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework).power_period_in_epochs
     }
 }
 </code></pre>
@@ -1326,16 +1377,17 @@ epoch 121-180 → period 2
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
     <a href="poc_power_store.md#0x1_poc_power_store_assert_valid_retention_bps">assert_valid_retention_bps</a>(retention_bps_per_period);
     <a href="poc_power_store.md#0x1_poc_power_store_assert_valid_power_period">assert_valid_power_period</a>(power_period_in_epochs);
-    <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@aptos_framework)) {
-        <b>move_to</b>(aptos_framework, <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
-            operator,
-            power_period_in_epochs,
-            last_epoch: 0,
-            current_period: 0,
-            users: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
-            retention_bps_per_period,
-        });
-    };
+    <b>move_to</b>(aptos_framework, <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
+        operator,
+        users: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+        retention_bps_per_period,
+    });
+    <b>move_to</b>(aptos_framework, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
+        power_period_in_epochs,
+        last_epoch: 0,
+        current_period: 0,
+        epochs_until_next_power_period: power_period_in_epochs,
+    });
 }
 </code></pre>
 
@@ -1370,13 +1422,13 @@ epoch 121-180 → period 2
 
 </details>
 
-<a id="0x1_poc_power_store_assert_operator"></a>
+<a id="0x1_poc_power_store_assert_clock_exists"></a>
 
-## Function `assert_operator`
+## Function `assert_clock_exists`
 
 
 
-<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_assert_operator">assert_operator</a>(store: &<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">poc_power_store::PowerStore</a>, caller: <b>address</b>)
+<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_assert_clock_exists">assert_clock_exists</a>()
 </code></pre>
 
 
@@ -1385,9 +1437,36 @@ epoch 121-180 → period 2
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_assert_operator">assert_operator</a>(store: &<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, caller: <b>address</b>) {
+<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_assert_clock_exists">assert_clock_exists</a>() {
     <b>assert</b>!(
-        store.operator == caller,
+        <b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_power_store.md#0x1_poc_power_store_ESTORE_NOT_INITIALIZED">ESTORE_NOT_INITIALIZED</a>),
+    );
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_poc_power_store_assert_power_update_authority"></a>
+
+## Function `assert_power_update_authority`
+
+
+
+<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_assert_power_update_authority">assert_power_update_authority</a>(store: &<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">poc_power_store::PowerStore</a>, caller: <b>address</b>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_assert_power_update_authority">assert_power_update_authority</a>(store: &<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, caller: <b>address</b>) {
+    <b>assert</b>!(
+        store.operator == caller || <a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(caller),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_power_store.md#0x1_poc_power_store_ENOT_OPERATOR">ENOT_OPERATOR</a>),
     );
 }
@@ -1609,7 +1688,7 @@ Returns 0 if the user has no record or no version is effective for target_period
 
 
 
-<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_build_user_power_version">build_user_power_version</a>(store: &<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">poc_power_store::PowerStore</a>, user: <b>address</b>): (u64, u64, u64, u64, u64)
+<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_build_user_power_version">build_user_power_version</a>(store: &<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">poc_power_store::PowerStore</a>, user: <b>address</b>, current_period: u64): (u64, u64, u64, u64, u64)
 </code></pre>
 
 
@@ -1621,6 +1700,7 @@ Returns 0 if the user has no record or no version is effective for target_period
 <pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_build_user_power_version">build_user_power_version</a>(
     store: &<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>,
     user: <b>address</b>,
+    current_period: u64,
 ): (u64, u64, u64, u64, u64) {
     <b>if</b> (!store.users.contains(user)) {
         <b>return</b> (0, 0, 0, 0, 0)
@@ -1634,7 +1714,7 @@ Returns 0 if the user has no record or no version is effective for target_period
         <a href="poc_power_store.md#0x1_poc_power_store_get_user_power_for_period_internal">get_user_power_for_period_internal</a>(
             store,
             user,
-            store.current_period,
+            current_period,
         ),
     )
 }
@@ -1756,44 +1836,6 @@ step 2: 995 * 9950 / 10000 = 990 (truncated)
         i += 1;
     };
     retained_power
-}
-</code></pre>
-
-
-
-</details>
-
-<a id="0x1_poc_power_store_period_for_epoch"></a>
-
-## Function `period_for_epoch`
-
-Map an on-chain epoch number to its power period index.
-
-Epoch 0 is a special pre-genesis state → period 0.
-For epoch >= 1: period = (epoch - 1) / power_period_in_epochs
-
-With power_period_in_epochs = 60:
-epoch 0       → period 0  (pre-genesis)
-epoch 1..60   → period 0
-epoch 61..120 → period 1
-epoch 121..180 → period 2
-
-
-<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_period_for_epoch">period_for_epoch</a>(epoch: u64, power_period_in_epochs: u64): u64
-</code></pre>
-
-
-
-<details>
-<summary>Implementation</summary>
-
-
-<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_period_for_epoch">period_for_epoch</a>(epoch: u64, power_period_in_epochs: u64): u64 {
-    <b>if</b> (epoch == 0) {
-        0
-    } <b>else</b> {
-        (epoch - 1) / power_period_in_epochs
-    }
 }
 </code></pre>
 

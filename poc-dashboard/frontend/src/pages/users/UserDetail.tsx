@@ -397,8 +397,8 @@ export default function UserDetail() {
                 <Descriptions.Item label="当前 Period">{formatNumber(powerStore.current_period || 0)}</Descriptions.Item>
                 <Descriptions.Item label="下一 Epoch Period">{formatNumber(powerStore.next_epoch_period || 0)}</Descriptions.Item>
                 <Descriptions.Item label="算力周期">{formatNumber(powerStore.power_period_in_epochs || 0)} Epoch</Descriptions.Item>
-                <Descriptions.Item label="Clock 状态">{powerStore.power_period_clock_initialized ? <Tag color="green">已初始化</Tag> : <Tag color="orange">未初始化</Tag>}</Descriptions.Item>
-                <Descriptions.Item label="Clock 倒计时">{powerStore.power_period_clock_initialized ? `${formatNumber(powerStore.power_period_clock_countdown || 0)} Epoch` : '-'}</Descriptions.Item>
+                <Descriptions.Item label="Clock 状态">{powerStore.period_clock_initialized ? <Tag color="green">已初始化</Tag> : <Tag color="orange">未初始化</Tag>}</Descriptions.Item>
+                <Descriptions.Item label="Clock 倒计时">{powerStore.period_clock_initialized ? `${formatNumber(powerStore.period_clock_countdown || 0)} Epoch` : '-'}</Descriptions.Item>
                 <Descriptions.Item label="保留系数">{formatNumber(powerStore.retention_bps || 0)} ({formatBps(powerStore.retention_bps || 0)})</Descriptions.Item>
                 <Descriptions.Item label="每 Period 衰减">{formatNumber(powerStore.decay_bps || 0)} ({formatBps(powerStore.decay_bps || 0)})</Descriptions.Item>
               </Descriptions>

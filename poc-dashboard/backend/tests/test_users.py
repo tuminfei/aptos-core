@@ -13,8 +13,8 @@ async def test_user_detail(client):
     assert data["balance"]["topo_octas"] == 100000000000
     assert data["power"]["committed_power"] == 5000
     assert data["power_store"]["retention_bps"] == 9950
-    assert data["power_store"]["power_period_clock_initialized"] is True
-    assert data["power_store"]["power_period_clock_countdown"] == 2
+    assert data["power_store"]["period_clock_initialized"] is True
+    assert data["power_store"]["period_clock_countdown"] == 2
     assert data["power_store"]["next_epoch_period"] == 23
     assert data["power_store"]["versions"]["older"]["effective_period"] == 20
     assert data["power_store"]["versions"]["older"]["raw_power"] == 4000

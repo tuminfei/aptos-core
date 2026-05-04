@@ -40,11 +40,11 @@ async def overview():
         power_period_in_epochs = await view.get_power_period_in_epochs(client)
         retention_bps = await view.get_retention_bps(client)
         power_operator = await view.get_power_operator(client)
-        power_clock = await view.get_power_period_clock(client)
+        power_clock = await view.get_period_clock(client)
     except Exception:
         current_period = power_period_in_epochs = retention_bps = 0
         power_operator = ""
-        power_clock = {"power_period_clock_initialized": False, "power_period_clock_countdown": None}
+        power_clock = {"period_clock_initialized": False, "period_clock_countdown": None}
 
     try:
         total_staked_power = await view.get_total_staked_power(client)

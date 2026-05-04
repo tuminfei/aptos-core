@@ -15,7 +15,8 @@ This module is the economic heart of the Topo chain's Proof-of-Contribution (POC
 It replaces the traditional "stake amount = voting power" model with a hybrid model where a user's
 effective voting power is the MINIMUM of:
 1. Their committed POC power (from <code><a href="poc_power_store.md#0x1_poc_power_store">poc_power_store</a></code>) — contribution-based weight
-2. Their deposit coverage (deposit_octas / octas_per_power) — economic skin-in-the-game
+2. Their deposit coverage (deposit_octas * 1,000,000 / octas_per_million_power) — economic skin-in-the-game
+If <code>octas_per_million_power == 0</code>, no deposit backing is required.
 
 This dual-constraint design ensures that:
 - Pure capital holders without contribution history cannot dominate governance
@@ -30,7 +31,8 @@ This dual-constraint design ensures that:
 
 - ValidatorPool: A pool owned by a validator. Delegators stake behind a pool to lend it their power.
 - UserStakeInfo: Per-user record of deposited TOPO coins, current delegation target, and cooldown state.
-- Effective Power: min(committed_poc_power, deposit_octas / octas_per_power)
+- Effective Power: min(committed_poc_power, deposit_octas * 1,000,000 / octas_per_million_power),
+or committed_poc_power when deposit backing is disabled.
 - Commission: Validators earn a percentage of epoch rewards and transaction fees from their pool.
 - Cooldown: After undelegating, users must wait <code>cooldown_secs</code> before they can re-delegate or withdraw.
 This prevents rapid stake-hopping that could destabilize the validator set.
@@ -76,7 +78,10 @@ Only ACTIVE and PENDING_INACTIVE validators contribute to effective power reads.
 -  [Function `store_topo_coin_mint_cap`](#0x1_staking_registry_store_topo_coin_mint_cap)
 -  [Function `initialize`](#0x1_staking_registry_initialize)
 -  [Function `set_active_power_thresholds`](#0x1_staking_registry_set_active_power_thresholds)
--  [Function `set_octas_per_power`](#0x1_staking_registry_set_octas_per_power)
+-  [Function `set_min_active_power`](#0x1_staking_registry_set_min_active_power)
+-  [Function `set_force_exit_power_bps`](#0x1_staking_registry_set_force_exit_power_bps)
+-  [Function `set_octas_per_million_power`](#0x1_staking_registry_set_octas_per_million_power)
+-  [Function `set_cooldown_secs`](#0x1_staking_registry_set_cooldown_secs)
 -  [Function `ensure_min_cooldown_secs`](#0x1_staking_registry_ensure_min_cooldown_secs)
 -  [Function `calculate_genesis_power_from_stake`](#0x1_staking_registry_calculate_genesis_power_from_stake)
 -  [Function `register_validator`](#0x1_staking_registry_register_validator)
@@ -108,7 +113,9 @@ Only ACTIVE and PENDING_INACTIVE validators contribute to effective power reads.
 -  [Function `get_validator_commission_bps`](#0x1_staking_registry_get_validator_commission_bps)
 -  [Function `set_total_staked_power`](#0x1_staking_registry_set_total_staked_power)
 -  [Function `get_cooldown_secs`](#0x1_staking_registry_get_cooldown_secs)
--  [Function `get_octas_per_power`](#0x1_staking_registry_get_octas_per_power)
+-  [Function `get_octas_per_million_power`](#0x1_staking_registry_get_octas_per_million_power)
+-  [Function `get_min_active_power`](#0x1_staking_registry_get_min_active_power)
+-  [Function `get_force_exit_power_bps`](#0x1_staking_registry_get_force_exit_power_bps)
 -  [Function `set_validator_pending_active`](#0x1_staking_registry_set_validator_pending_active)
 -  [Function `set_validator_active`](#0x1_staking_registry_set_validator_active)
 -  [Function `set_validator_pending_inactive`](#0x1_staking_registry_set_validator_pending_inactive)
@@ -138,6 +145,7 @@ Only ACTIVE and PENDING_INACTIVE validators contribute to effective power reads.
 -  [Function `get_user_effective_power_for_validator_with_extra_deposit`](#0x1_staking_registry_get_user_effective_power_for_validator_with_extra_deposit)
 -  [Function `get_user_effective_power_for_validator_for_next_epoch`](#0x1_staking_registry_get_user_effective_power_for_validator_for_next_epoch)
 -  [Function `get_user_effective_power_for_validator_for_next_epoch_with_extra_deposit`](#0x1_staking_registry_get_user_effective_power_for_validator_for_next_epoch_with_extra_deposit)
+-  [Function `calculate_effective_power_from_deposit`](#0x1_staking_registry_calculate_effective_power_from_deposit)
 -  [Function `copy_addresses`](#0x1_staking_registry_copy_addresses)
 -  [Function `build_validator_view`](#0x1_staking_registry_build_validator_view)
 -  [Function `empty_validator_view`](#0x1_staking_registry_empty_validator_view)
@@ -274,11 +282,12 @@ Tunable parameters for the staking system.
 
 <dl>
 <dt>
-<code>octas_per_power: u64</code>
+<code>octas_per_million_power: u64</code>
 </dt>
 <dd>
- How many octas (smallest TOPO unit) of deposit are required to back one unit of POC power.
- Effective power = min(poc_power, deposit_octas / octas_per_power)
+ How many octas (smallest TOPO unit) of deposit are required to back 1,000,000
+ units of POC power. A value of 0 disables the deposit backing requirement.
+ Effective power = min(poc_power, deposit_octas * 1,000,000 / octas_per_million_power)
 </dd>
 <dt>
 <code>max_delegators_per_validator: u64</code>
@@ -531,7 +540,7 @@ Commission basis points must be in range [0, 10000]
 
 <a id="0x1_staking_registry_EINVALID_CONFIG"></a>
 
-Invalid configuration parameter (e.g. octas_per_power == 0)
+Invalid configuration parameter
 
 
 <pre><code><b>const</b> <a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>: u64 = 13;
@@ -615,6 +624,15 @@ Deposit amount must be greater than zero
 
 
 <pre><code><b>const</b> <a href="staking_registry.md#0x1_staking_registry_EZERO_DEPOSIT">EZERO_DEPOSIT</a>: u64 = 7;
+</code></pre>
+
+
+
+<a id="0x1_staking_registry_POWER_BACKING_SCALE"></a>
+
+
+
+<pre><code><b>const</b> <a href="staking_registry.md#0x1_staking_registry_POWER_BACKING_SCALE">POWER_BACKING_SCALE</a>: u128 = 1000000;
 </code></pre>
 
 
@@ -730,7 +748,7 @@ Idempotent: if the registry already exists, returns immediately without error.
 Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">genesis::ensure_poc_staking_initialized</a></code>.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_power: u64, max_delegators_per_validator: u64, cooldown_secs: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_million_power: u64, max_delegators_per_validator: u64, cooldown_secs: u64)
 </code></pre>
 
 
@@ -741,7 +759,7 @@ Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    octas_per_power: u64,
+    octas_per_million_power: u64,
     max_delegators_per_validator: u64,
     cooldown_secs: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a> {
@@ -750,7 +768,6 @@ Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">
         <b>return</b>
     };
 
-    <b>assert</b>!(octas_per_power &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
     <b>assert</b>!(
         max_delegators_per_validator &gt; 0,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>),
@@ -767,7 +784,7 @@ Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">
         total_staked_power: 0,
         mint_cap,
         config: <a href="staking_registry.md#0x1_staking_registry_StakingRegistryConfig">StakingRegistryConfig</a> {
-            octas_per_power,
+            octas_per_million_power,
             max_delegators_per_validator,
             cooldown_secs,
             genesis_stake_power_multiplier: <a href="staking_registry.md#0x1_staking_registry_DEFAULT_GENESIS_STAKE_POWER_MULTIPLIER">DEFAULT_GENESIS_STAKE_POWER_MULTIPLIER</a>,
@@ -823,19 +840,17 @@ providing a hysteresis band to prevent thrashing at the boundary.
 
 </details>
 
-<a id="0x1_staking_registry_set_octas_per_power"></a>
+<a id="0x1_staking_registry_set_min_active_power"></a>
 
-## Function `set_octas_per_power`
+## Function `set_min_active_power`
 
-Update how much deposited TOPO is required to back one unit of POC power.
+Update only the minimum effective power required to join or remain in a validator pool.
 
-Only the framework account may change this economic parameter. Lowering the value
-increases the amount of committed POC power that can become effective for a fixed
-deposit; raising it can reduce effective power and may cause low-coverage delegators
-to be force-undelegated at the next epoch boundary.
+Keeps the existing force-exit BPS unchanged. Only the framework account may change
+this parameter.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_octas_per_power">set_octas_per_power</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_power: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_min_active_power">set_min_active_power</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_active_power: u64)
 </code></pre>
 
 
@@ -844,16 +859,125 @@ to be force-undelegated at the next epoch boundary.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_octas_per_power">set_octas_per_power</a>(
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_min_active_power">set_min_active_power</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    octas_per_power: u64,
+    min_active_power: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
-    <b>assert</b>!(octas_per_power &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
+    <b>assert</b>!(min_active_power &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
 
-    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.octas_per_power =
-        octas_per_power;
+    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.min_active_power =
+        min_active_power;
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_staking_registry_set_force_exit_power_bps"></a>
+
+## Function `set_force_exit_power_bps`
+
+Update only the force-exit threshold in basis points.
+
+Users whose effective power falls below
+<code>(min_active_power * force_exit_power_bps / 10000)</code> are force-undelegated
+at epoch boundaries. Keeps the existing min_active_power unchanged.
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_force_exit_power_bps">set_force_exit_power_bps</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, force_exit_power_bps: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_force_exit_power_bps">set_force_exit_power_bps</a>(
+    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    force_exit_power_bps: u64,
+) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
+    <b>assert</b>!(
+        force_exit_power_bps &gt; 0 && force_exit_power_bps &lt;= <a href="staking_registry.md#0x1_staking_registry_BPS_DENOMINATOR">BPS_DENOMINATOR</a>,
+        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>),
+    );
+
+    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.force_exit_power_bps =
+        force_exit_power_bps;
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_staking_registry_set_octas_per_million_power"></a>
+
+## Function `set_octas_per_million_power`
+
+Update how much deposited TOPO is required to back 1,000,000 units of POC power.
+
+Only the framework account may change this economic parameter. Setting the value
+to 0 disables the deposit backing requirement. Lowering a non-zero value
+increases the amount of committed POC power that can become effective for a fixed
+deposit; raising it can reduce effective power and may cause low-coverage delegators
+to be force-undelegated at the next epoch boundary.
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_octas_per_million_power">set_octas_per_million_power</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_million_power: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_octas_per_million_power">set_octas_per_million_power</a>(
+    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    octas_per_million_power: u64,
+) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
+
+    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.octas_per_million_power =
+        octas_per_million_power;
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_staking_registry_set_cooldown_secs"></a>
+
+## Function `set_cooldown_secs`
+
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_cooldown_secs">set_cooldown_secs</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, cooldown_secs: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_cooldown_secs">set_cooldown_secs</a>(
+    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    cooldown_secs: u64,
+) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
+
+    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.cooldown_secs =
+        cooldown_secs;
 }
 </code></pre>
 
@@ -1036,7 +1160,9 @@ Deposit TOPO coins into the registry as staking collateral.
 
 Deposited coins are held in escrow by the registry and cannot be withdrawn
 while the user is delegated to a validator. They serve as economic collateral
-that backs the user's POC power: effective_power = min(poc_power, deposit / octas_per_power).
+that backs the user's POC power:
+effective_power = min(poc_power, deposit * 1,000,000 / octas_per_million_power).
+If octas_per_million_power is 0, no deposit backing is required.
 
 Deposits auto-compound: epoch rewards and fee shares are minted directly into
 the user's deposit balance, increasing their deposit coverage over time.
@@ -1188,12 +1314,14 @@ After withdrawal, the user's deposit balance becomes zero and cooldown is cleare
 
 Return the user's current effective power.
 
-Effective power = min(committed_poc_power, deposit_octas / octas_per_power)
+Effective power = min(committed_poc_power, deposit_octas * 1,000,000 / octas_per_million_power),
+or committed_poc_power when deposit backing is disabled.
 
 Returns 0 if:
 - User is not delegated to any validator
 - The validator they are delegated to is not ACTIVE or PENDING_INACTIVE
-- Either dimension (poc_power or deposit coverage) is zero
+- Committed POC power is zero
+- Deposit coverage is zero while deposit backing is enabled
 
 This is the value used for governance voting weight and reward distribution.
 
@@ -1232,7 +1360,7 @@ This is the value used for governance voting weight and reward distribution.
         <b>return</b> 0
     };
 
-    <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info, registry.config.octas_per_power, user)
+    <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info, registry.config.octas_per_million_power, user)
 }
 </code></pre>
 
@@ -2111,14 +2239,14 @@ This is the value used for governance voting weight and reward distribution.
 
 </details>
 
-<a id="0x1_staking_registry_get_octas_per_power"></a>
+<a id="0x1_staking_registry_get_octas_per_million_power"></a>
 
-## Function `get_octas_per_power`
+## Function `get_octas_per_million_power`
 
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_octas_per_power">get_octas_per_power</a>(): u64
+<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_octas_per_million_power">get_octas_per_million_power</a>(): u64
 </code></pre>
 
 
@@ -2127,11 +2255,69 @@ This is the value used for governance voting weight and reward distribution.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_octas_per_power">get_octas_per_power</a>(): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+<pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_octas_per_million_power">get_octas_per_million_power</a>(): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
         0
     } <b>else</b> {
-        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.octas_per_power
+        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.octas_per_million_power
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_staking_registry_get_min_active_power"></a>
+
+## Function `get_min_active_power`
+
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_min_active_power">get_min_active_power</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_min_active_power">get_min_active_power</a>(): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+        0
+    } <b>else</b> {
+        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.min_active_power
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_staking_registry_get_force_exit_power_bps"></a>
+
+## Function `get_force_exit_power_bps`
+
+
+
+<pre><code>#[view]
+<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_force_exit_power_bps">get_force_exit_power_bps</a>(): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_force_exit_power_bps">get_force_exit_power_bps</a>(): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+        0
+    } <b>else</b> {
+        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.force_exit_power_bps
     }
 }
 </code></pre>
@@ -2639,7 +2825,7 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_ECOOLDOWN_ACTIVE">ECOOLDOWN_ACTIVE</a>),
     );
     <b>let</b> effective_power =
-        <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info, registry.config.octas_per_power, user_address);
+        <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info, registry.config.octas_per_million_power, user_address);
     <b>assert</b>!(
         effective_power &gt;= registry.config.min_active_power,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EPOWER_BELOW_MIN_ACTIVE">EPOWER_BELOW_MIN_ACTIVE</a>),
@@ -3100,7 +3286,7 @@ Users with effective_power < 8 are force-undelegated.
         <b>return</b> <b>false</b>
     };
 
-    <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info, registry.config.octas_per_power, user) &lt; maintain_threshold
+    <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info, registry.config.octas_per_million_power, user) &lt; maintain_threshold
 }
 </code></pre>
 
@@ -3147,20 +3333,22 @@ Users with effective_power < 8 are force-undelegated.
 
 Compute a user's effective power from their current stake info.
 
-effective_power = min(committed_poc_power, deposit_octas / octas_per_power)
+effective_power = min(committed_poc_power, deposit_octas * 1,000,000 / octas_per_million_power)
+If octas_per_million_power is 0, deposit backing is disabled and effective power
+equals committed POC power.
 
 The dual-constraint design:
 - <code>committed_poc_power</code> (from poc_power_store) represents contribution-based weight.
 It is computed off-chain from ContributionEvents and uploaded by the operator.
 - <code>deposit_cover</code> represents economic skin-in-the-game: how much power the user's
-deposited TOPO coins can back at the current octas_per_power exchange rate.
+deposited TOPO coins can back at the current octas_per_million_power exchange rate.
 
 Taking the minimum ensures both dimensions must be maintained simultaneously.
 A user who stops contributing loses poc_power (via decay) and their effective power drops.
 A user who withdraws their deposit loses deposit_cover and their effective power drops.
 
 
-<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info: &<a href="staking_registry.md#0x1_staking_registry_UserStakeInfo">staking_registry::UserStakeInfo</a>, octas_per_power: u64, user: <b>address</b>): u64
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info: &<a href="staking_registry.md#0x1_staking_registry_UserStakeInfo">staking_registry::UserStakeInfo</a>, octas_per_million_power: u64, user: <b>address</b>): u64
 </code></pre>
 
 
@@ -3171,16 +3359,16 @@ A user who withdraws their deposit loses deposit_cover and their effective power
 
 <pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(
     info: &<a href="staking_registry.md#0x1_staking_registry_UserStakeInfo">UserStakeInfo</a>,
-    octas_per_power: u64,
+    octas_per_million_power: u64,
     user: <b>address</b>,
 ): u64 {
     <b>let</b> committed_power = <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power">poc_power_store::get_user_committed_power</a>(user);
-    <b>if</b> (committed_power == 0) {
-        <b>return</b> 0
-    };
-    <b>let</b> deposit_octas = <a href="coin.md#0x1_coin_value">coin::value</a>(&info.deposit);
-    <b>let</b> deposit_cover = deposit_octas / octas_per_power;
-    <a href="../../aptos-stdlib/doc/math64.md#0x1_math64_min">math64::min</a>(committed_power, deposit_cover)
+    <b>let</b> deposit_octas = <a href="coin.md#0x1_coin_value">coin::value</a>(&info.deposit) <b>as</b> u128;
+    <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power_from_deposit">calculate_effective_power_from_deposit</a>(
+        committed_power,
+        deposit_octas,
+        octas_per_million_power,
+    )
 }
 </code></pre>
 
@@ -3252,12 +3440,13 @@ A user who withdraws their deposit loses deposit_cover and their effective power
     };
 
     <b>let</b> committed_power = <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power">poc_power_store::get_user_committed_power</a>(user);
-    <b>if</b> (committed_power == 0) {
-        <b>return</b> 0
-    };
-    <b>let</b> deposit_octas = <a href="coin.md#0x1_coin_value">coin::value</a>(&info.deposit) + extra_deposit_octas;
-    <b>let</b> deposit_cover = deposit_octas / registry.config.octas_per_power;
-    <a href="../../aptos-stdlib/doc/math64.md#0x1_math64_min">math64::min</a>(committed_power, deposit_cover)
+    <b>let</b> deposit_octas = (<a href="coin.md#0x1_coin_value">coin::value</a>(&info.deposit) <b>as</b> u128)
+        + (extra_deposit_octas <b>as</b> u128);
+    <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power_from_deposit">calculate_effective_power_from_deposit</a>(
+        committed_power,
+        deposit_octas,
+        registry.config.octas_per_million_power,
+    )
 }
 </code></pre>
 
@@ -3332,16 +3521,58 @@ A user who withdraws their deposit loses deposit_cover and their effective power
     };
 
     <b>let</b> committed_power = <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power_for_next_epoch">poc_power_store::get_user_committed_power_for_next_epoch</a>(user);
-    <b>if</b> (committed_power == 0) {
-        <b>return</b> 0
-    };
-    <b>let</b> deposit_octas = <a href="coin.md#0x1_coin_value">coin::value</a>(&info.deposit) + extra_deposit_octas;
-    <b>let</b> deposit_cover = deposit_octas / registry.config.octas_per_power;
-    <b>let</b> effective_power = <a href="../../aptos-stdlib/doc/math64.md#0x1_math64_min">math64::min</a>(committed_power, deposit_cover);
+    <b>let</b> deposit_octas = (<a href="coin.md#0x1_coin_value">coin::value</a>(&info.deposit) <b>as</b> u128)
+        + (extra_deposit_octas <b>as</b> u128);
+    <b>let</b> effective_power = <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power_from_deposit">calculate_effective_power_from_deposit</a>(
+        committed_power,
+        deposit_octas,
+        registry.config.octas_per_million_power,
+    );
     <b>if</b> (effective_power &lt; maintain_threshold) {
         0
     } <b>else</b> {
         effective_power
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_staking_registry_calculate_effective_power_from_deposit"></a>
+
+## Function `calculate_effective_power_from_deposit`
+
+
+
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power_from_deposit">calculate_effective_power_from_deposit</a>(committed_power: u64, deposit_octas: u128, octas_per_million_power: u64): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power_from_deposit">calculate_effective_power_from_deposit</a>(
+    committed_power: u64,
+    deposit_octas: u128,
+    octas_per_million_power: u64,
+): u64 {
+    <b>if</b> (committed_power == 0) {
+        <b>return</b> 0
+    };
+    <b>if</b> (octas_per_million_power == 0) {
+        <b>return</b> committed_power
+    };
+
+    <b>let</b> deposit_cover =
+        (deposit_octas * <a href="staking_registry.md#0x1_staking_registry_POWER_BACKING_SCALE">POWER_BACKING_SCALE</a>) / (octas_per_million_power <b>as</b> u128);
+    <b>if</b> (deposit_cover &gt;= (committed_power <b>as</b> u128)) {
+        committed_power
+    } <b>else</b> {
+        deposit_cover <b>as</b> u64
     }
 }
 </code></pre>
@@ -3578,7 +3809,7 @@ A user who withdraws their deposit loses deposit_cover and their effective power
         && pool.status != <a href="staking_registry.md#0x1_staking_registry_VALIDATOR_STATUS_PENDING_INACTIVE">VALIDATOR_STATUS_PENDING_INACTIVE</a>) {
         <b>return</b> 0
     };
-    <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info, registry.config.octas_per_power, user)
+    <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info, registry.config.octas_per_million_power, user)
 }
 </code></pre>
 

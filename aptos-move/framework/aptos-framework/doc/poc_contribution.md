@@ -16,18 +16,23 @@ It integrates equity token transfer + registry validation + contribution event e
 single atomic function call.
 
 
-<a id="@Core_Design_Principle:_Non-Interference_with_Application_Business_Logic_1"></a>
+<a id="@Core_Design_Principle:_Non-Interference_by_Default,_Strict_When_Requested_1"></a>
 
-### Core Design Principle: Non-Interference with Application Business Logic
+### Core Design Principle: Non-Interference by Default, Strict When Requested
 
 
-The equity token transfer ALWAYS executes, regardless of POC validation results.
-Validation results only determine whether a <code><a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a></code> is emitted.
-This means:
+The default <code>grant_equity_with_contribution</code> path keeps the legacy non-interference
+behavior: the equity token transfer executes even if POC validation fails, and
+validation results only determine whether a <code><a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a></code> is emitted. This means:
 - A failed validation never blocks the token transfer (the user always receives their tokens)
 - Only the POC power accounting is affected by validation failures
 - Applications can safely call this function without worrying about POC validation
 causing unexpected transaction failures
+
+Applications that promise POC credit should call
+<code>grant_equity_with_contribution_strict</code> instead. The strict path validates POC
+eligibility and custody identity before transfer, so validation failure aborts the
+transaction and no equity tokens move.
 
 
 <a id="@Why_This_Module_Exists_(Trust_Boundary)_2"></a>
@@ -65,10 +70,12 @@ payload's entry module address.
 2. Application completes its own business validation
 3. Application generates <code>app_signer</code> (signer for the contract deployment address)
 and <code>custody_actor</code> (signer for the custody address)
-4. Application calls <code><a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution">grant_equity_with_contribution</a>(app_signer, custody_actor, contributor, equity_amount)</code>
-5. This module executes the equity token transfer (always, regardless of validation)
-6. This module validates app identity, POC eligibility, and custody address from the registry
-7. If all validations pass → emit <code><a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a></code>; otherwise → no event, transfer already done
+4. Application calls either:
+- <code>grant_equity_with_contribution</code> for non-blocking business transfers
+- <code>grant_equity_with_contribution_strict</code> when POC credit is part of the promise
+5. This module resolves app identity, equity token, and custody address from the registry
+6. Non-strict path transfers first and emits only if validation passes
+7. Strict path validates first, aborting before transfer if validation fails
 
 
 <a id="@Behavioral_Guarantees_5"></a>
@@ -79,10 +86,11 @@ and <code>custody_actor</code> (signer for the custody address)
 - Transfer fails → transaction aborts (transfer errors still propagate normally)
 - Transfer succeeds but validation fails → transfer takes effect, no event emitted
 - Transfer succeeds and validation passes → transfer takes effect, <code><a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a></code> emitted
+- Strict validation fails → transaction aborts before transfer
 
 
     -  [Overview](#@Overview_0)
-    -  [Core Design Principle: Non-Interference with Application Business Logic](#@Core_Design_Principle:_Non-Interference_with_Application_Business_Logic_1)
+    -  [Core Design Principle: Non-Interference by Default, Strict When Requested](#@Core_Design_Principle:_Non-Interference_by_Default,_Strict_When_Requested_1)
     -  [Why This Module Exists (Trust Boundary)](#@Why_This_Module_Exists_(Trust_Boundary)_2)
     -  [Call Pattern](#@Call_Pattern_3)
     -  [Typical Call Sequence](#@Typical_Call_Sequence_4)
@@ -90,11 +98,15 @@ and <code>custody_actor</code> (signer for the custody address)
 -  [Struct `ContributionEvent`](#0x1_poc_contribution_ContributionEvent)
 -  [Constants](#@Constants_6)
 -  [Function `grant_equity_with_contribution`](#0x1_poc_contribution_grant_equity_with_contribution)
+-  [Function `grant_equity_with_contribution_strict`](#0x1_poc_contribution_grant_equity_with_contribution_strict)
+-  [Function `resolve_contribution_context`](#0x1_poc_contribution_resolve_contribution_context)
+-  [Function `emit_contribution_event`](#0x1_poc_contribution_emit_contribution_event)
 
 
 <pre><code><b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
 <b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
 <b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
+<b>use</b> <a href="poc_power_store.md#0x1_poc_power_store">0x1::poc_power_store</a>;
 <b>use</b> <a href="poc_registry.md#0x1_poc_registry">0x1::poc_registry</a>;
 <b>use</b> <a href="primary_fungible_store.md#0x1_primary_fungible_store">0x1::primary_fungible_store</a>;
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
@@ -159,6 +171,12 @@ Off-chain indexers use this event to:
 <dd>
  The application's contract deployment address (used for off-chain attribution)
 </dd>
+<dt>
+<code>period: u64</code>
+</dt>
+<dd>
+ The POC power period when this contribution event was emitted
+</dd>
 </dl>
 
 
@@ -167,6 +185,26 @@ Off-chain indexers use this event to:
 <a id="@Constants_6"></a>
 
 ## Constants
+
+
+<a id="0x1_poc_contribution_EAPP_NOT_ELIGIBLE_FOR_POC"></a>
+
+Strict contribution requires the app to be ACTIVE and WHITELISTED
+
+
+<pre><code><b>const</b> <a href="poc_contribution.md#0x1_poc_contribution_EAPP_NOT_ELIGIBLE_FOR_POC">EAPP_NOT_ELIGIBLE_FOR_POC</a>: u64 = 2;
+</code></pre>
+
+
+
+<a id="0x1_poc_contribution_ECUSTODY_ADDRESS_MISMATCH"></a>
+
+Strict contribution requires the custody signer to match the registered custody address
+
+
+<pre><code><b>const</b> <a href="poc_contribution.md#0x1_poc_contribution_ECUSTODY_ADDRESS_MISMATCH">ECUSTODY_ADDRESS_MISMATCH</a>: u64 = 3;
+</code></pre>
+
 
 
 <a id="0x1_poc_contribution_EZERO_AMOUNT"></a>
@@ -252,10 +290,13 @@ the true received amount, inflating POC power calculations.
     // guarantee that the actual received amount equals equity_amount. If the FA
     // <b>has</b> hooks or fees that reduce the received amount, the transaction aborts
     // rather than emitting a <a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a> <b>with</b> an inflated equity_amount.
-    <b>let</b> app_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_signer);
-    <b>let</b> app_admin = <a href="poc_registry.md#0x1_poc_registry_get_app_admin_by_app_address">poc_registry::get_app_admin_by_app_address</a>(app_address);
-    <b>let</b> equity_token_address = <a href="poc_registry.md#0x1_poc_registry_get_equity_token_address">poc_registry::get_equity_token_address</a>(app_admin);
-    <b>let</b> metadata = <a href="object.md#0x1_object_address_to_object">object::address_to_object</a>&lt;Metadata&gt;(equity_token_address);
+    <b>let</b> (
+        app_admin,
+        app_address,
+        registered_custody_address,
+        actual_custody_address,
+        metadata,
+    ) = <a href="poc_contribution.md#0x1_poc_contribution_resolve_contribution_context">resolve_contribution_context</a>(app_signer, custody_actor);
     <a href="primary_fungible_store.md#0x1_primary_fungible_store_transfer_assert_minimum_deposit">primary_fungible_store::transfer_assert_minimum_deposit</a>(
         custody_actor,
         metadata,
@@ -276,17 +317,144 @@ the true received amount, inflating POC power calculations.
     //    custody_address registered in <a href="poc_registry.md#0x1_poc_registry">poc_registry</a>. This prevents a whitelisted app
     //    from using an unregistered custody <a href="account.md#0x1_account">account</a> <b>to</b> emit contribution events.
     <b>if</b> (<a href="poc_registry.md#0x1_poc_registry_is_app_eligible_for_poc">poc_registry::is_app_eligible_for_poc</a>(app_admin)) {
-        <b>let</b> registered_custody_address = <a href="poc_registry.md#0x1_poc_registry_get_custody_address">poc_registry::get_custody_address</a>(app_admin);
-        <b>let</b> actual_custody_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(custody_actor);
         <b>if</b> (actual_custody_address == registered_custody_address) {
-            <a href="event.md#0x1_event_emit">event::emit</a>(<a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a> {
-                contributor,
-                equity_token: metadata,
-                equity_amount,
-                app_address
-            });
+            <a href="poc_contribution.md#0x1_poc_contribution_emit_contribution_event">emit_contribution_event</a>(contributor, metadata, equity_amount, app_address);
         };
     };
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_poc_contribution_grant_equity_with_contribution_strict"></a>
+
+## Function `grant_equity_with_contribution_strict`
+
+Strict contribution distribution — validate first, then transfer and emit.
+
+Use this path when the application promises the recipient that the equity
+transfer will also be POC-counted. If the app is not ACTIVE + WHITELISTED or
+the custody signer is not the registered custody address, this function aborts
+before moving any equity tokens.
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution_strict">grant_equity_with_contribution_strict</a>(app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, contributor: <b>address</b>, equity_amount: u64)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>public</b> <b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution_strict">grant_equity_with_contribution_strict</a>(
+    app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    contributor: <b>address</b>,
+    equity_amount: u64,
+) {
+    <b>assert</b>!(equity_amount &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_contribution.md#0x1_poc_contribution_EZERO_AMOUNT">EZERO_AMOUNT</a>));
+
+    <b>let</b> (
+        app_admin,
+        app_address,
+        registered_custody_address,
+        actual_custody_address,
+        metadata,
+    ) = <a href="poc_contribution.md#0x1_poc_contribution_resolve_contribution_context">resolve_contribution_context</a>(app_signer, custody_actor);
+    <b>assert</b>!(
+        <a href="poc_registry.md#0x1_poc_registry_is_app_eligible_for_poc">poc_registry::is_app_eligible_for_poc</a>(app_admin),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_contribution.md#0x1_poc_contribution_EAPP_NOT_ELIGIBLE_FOR_POC">EAPP_NOT_ELIGIBLE_FOR_POC</a>),
+    );
+    <b>assert</b>!(
+        actual_custody_address == registered_custody_address,
+        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_contribution.md#0x1_poc_contribution_ECUSTODY_ADDRESS_MISMATCH">ECUSTODY_ADDRESS_MISMATCH</a>),
+    );
+
+    <a href="primary_fungible_store.md#0x1_primary_fungible_store_transfer_assert_minimum_deposit">primary_fungible_store::transfer_assert_minimum_deposit</a>(
+        custody_actor,
+        metadata,
+        contributor,
+        equity_amount,
+        equity_amount,
+    );
+    <a href="poc_contribution.md#0x1_poc_contribution_emit_contribution_event">emit_contribution_event</a>(contributor, metadata, equity_amount, app_address);
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_poc_contribution_resolve_contribution_context"></a>
+
+## Function `resolve_contribution_context`
+
+
+
+<pre><code><b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_resolve_contribution_context">resolve_contribution_context</a>(app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<b>address</b>, <b>address</b>, <b>address</b>, <b>address</b>, <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_resolve_contribution_context">resolve_contribution_context</a>(
+    app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+): (<b>address</b>, <b>address</b>, <b>address</b>, <b>address</b>, Object&lt;Metadata&gt;) {
+    <b>let</b> app_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_signer);
+    <b>let</b> app_admin = <a href="poc_registry.md#0x1_poc_registry_get_app_admin_by_app_address">poc_registry::get_app_admin_by_app_address</a>(app_address);
+    <b>let</b> equity_token_address = <a href="poc_registry.md#0x1_poc_registry_get_equity_token_address">poc_registry::get_equity_token_address</a>(app_admin);
+    <b>let</b> metadata = <a href="object.md#0x1_object_address_to_object">object::address_to_object</a>&lt;Metadata&gt;(equity_token_address);
+    <b>let</b> registered_custody_address = <a href="poc_registry.md#0x1_poc_registry_get_custody_address">poc_registry::get_custody_address</a>(app_admin);
+    <b>let</b> actual_custody_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(custody_actor);
+    (
+        app_admin,
+        app_address,
+        registered_custody_address,
+        actual_custody_address,
+        metadata,
+    )
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_poc_contribution_emit_contribution_event"></a>
+
+## Function `emit_contribution_event`
+
+
+
+<pre><code><b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_emit_contribution_event">emit_contribution_event</a>(contributor: <b>address</b>, metadata: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, equity_amount: u64, app_address: <b>address</b>)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_emit_contribution_event">emit_contribution_event</a>(
+    contributor: <b>address</b>,
+    metadata: Object&lt;Metadata&gt;,
+    equity_amount: u64,
+    app_address: <b>address</b>,
+) {
+    <a href="event.md#0x1_event_emit">event::emit</a>(<a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a> {
+        contributor,
+        equity_token: metadata,
+        equity_amount,
+        app_address,
+        period: <a href="poc_power_store.md#0x1_poc_power_store_get_current_period">poc_power_store::get_current_period</a>(),
+    });
 }
 </code></pre>
 

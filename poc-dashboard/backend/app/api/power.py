@@ -70,7 +70,7 @@ async def power_overview():
     period_in_epochs = await view.get_power_period_in_epochs(client)
     retention = await view.get_retention_bps(client)
     operator = await view.get_power_operator(client)
-    clock = await view.get_power_period_clock(client)
+    clock = await view.get_period_clock(client)
 
     ledger = await client.get_ledger_info()
     epoch = int(ledger.get("epoch", 0))
@@ -93,7 +93,7 @@ async def power_store_overview():
     period_in_epochs = await view.get_power_period_in_epochs(client)
     retention = await view.get_retention_bps(client)
     operator = await view.get_power_operator(client)
-    clock = await view.get_power_period_clock(client)
+    clock = await view.get_period_clock(client)
 
     ledger = await client.get_ledger_info()
     epoch = int(ledger.get("epoch", 0))
@@ -132,7 +132,7 @@ async def query_power_store_users(req: UserPowerQueryReq):
     current_period = await view.get_current_period(client)
     period_in_epochs = await view.get_power_period_in_epochs(client)
     retention = await view.get_retention_bps(client)
-    clock = await view.get_power_period_clock(client)
+    clock = await view.get_period_clock(client)
     ledger = await client.get_ledger_info()
     epoch = int(ledger.get("epoch", 0))
     next_epoch_period = view.next_epoch_period_from_clock(current_period, clock)
@@ -217,27 +217,6 @@ async def run_power_writeback_once(req: PowerWritebackRunReq = Body(default_fact
         return await power_writeback_svc.run_once(force=req.force)
     except Exception as e:
         await operation_log.create_log("power_writeback_stage_batch", None, {"force": req.force}, None, "failed", str(e))
-        raise ChainTxError(str(e))
-
-
-@router.post("/power/initialize-clock")
-async def initialize_clock(req: AdminGasReq = Body(default_factory=AdminGasReq)):
-    client = get_chain_client()
-    km = get_key_manager()
-    try:
-        tx = await dapp_svc.run_poc_framework_script(
-            "initialize_power_period_clock.move",
-            core_key=km.core_resources_key,
-            core_address=km.core_resources_address,
-            rest_url=client.base_url,
-            max_gas=req.max_gas,
-            gas_unit_price=req.gas_unit_price,
-        )
-        await operation_log.create_log("initialize_power_period_clock", None, None, tx, "success")
-        await invalidate_many("user:", "validators:", "validator:", "dapps:", "dapp:")
-        return {"tx_hash": tx, "success": True}
-    except Exception as e:
-        await operation_log.create_log("initialize_power_period_clock", None, None, None, "failed", str(e))
         raise ChainTxError(str(e))
 
 

@@ -195,12 +195,12 @@ async def _user_detail_uncached(address: str):
         current_period = await view.get_current_period(client)
         power_period_in_epochs = await view.get_power_period_in_epochs(client)
         retention_bps = await view.get_retention_bps(client)
-        power_clock = await view.get_power_period_clock(client)
+        power_clock = await view.get_period_clock(client)
         ledger = await client.get_ledger_info()
         current_epoch = int(ledger.get("epoch", 0))
         next_epoch_period = view.next_epoch_period_from_clock(current_period, power_clock)
     except Exception:
-        power_clock = {"power_period_clock_initialized": False, "power_period_clock_countdown": None}
+        power_clock = {"period_clock_initialized": False, "period_clock_countdown": None}
         pass
 
     power_versions = {

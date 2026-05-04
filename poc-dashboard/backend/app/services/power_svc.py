@@ -7,7 +7,7 @@ async def get_power_overview(client: ChainClient) -> dict:
     period_in_epochs = await view.get_power_period_in_epochs(client)
     retention = await view.get_retention_bps(client)
     operator = await view.get_power_operator(client)
-    clock = await view.get_power_period_clock(client)
+    clock = await view.get_period_clock(client)
 
     ledger = await client.get_ledger_info()
     epoch = int(ledger.get("epoch", 0))

@@ -74,8 +74,8 @@ export default function Dashboard() {
   const powerPeriodInEpochs = Number(power.power_period_in_epochs || 0);
   const currentPowerPeriod = Number(power.current_period || 0);
   const epochsUntilNextPeriod = Number(power.epochs_until_next_period || 0);
-  const powerPeriodClockInitialized = Boolean(power.power_period_clock_initialized);
-  const powerPeriodClockCountdown = power.power_period_clock_countdown;
+  const periodClockInitialized = Boolean(power.period_clock_initialized);
+  const periodClockCountdown = power.period_clock_countdown;
   const retentionBps = Number(power.retention_bps || 0);
   const decayBps = Math.max(0, 10000 - retentionBps);
   const activeValidators = Number(validators.active || 0);
@@ -363,8 +363,8 @@ export default function Dashboard() {
             <Space direction="vertical" size={2} style={{ marginTop: 8 }}>
               <Text type="secondary">{formatEpochInterval(powerPeriodInEpochs)}，链上倒计时驱动</Text>
               <Text type="secondary">已走 {periodProgressEpochs || 0} / {powerPeriodInEpochs || '-'} 个 Epoch</Text>
-              <Text type="secondary">距离下个 Period 还有 {powerPeriodClockInitialized ? `${epochsUntilNextPeriod}E` : '-'}</Text>
-              <Text type="secondary">clock: {powerPeriodClockInitialized ? String(powerPeriodClockCountdown ?? 0) : '未初始化'}</Text>
+              <Text type="secondary">距离下个 Period 还有 {periodClockInitialized ? `${epochsUntilNextPeriod}E` : '-'}</Text>
+              <Text type="secondary">clock: {periodClockInitialized ? String(periodClockCountdown ?? 0) : '未初始化'}</Text>
               <Text type="secondary">保留 {formatBps(retentionBps)}，衰减 {formatBps(decayBps)}</Text>
             </Space>
           </Card>

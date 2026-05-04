@@ -492,6 +492,7 @@ set_chain_test_params() {
         --script-path "$CHAIN_TEST_PARAMS_SCRIPT" \
         --framework-local-dir "$FRAMEWORK_LOCAL_DIR" \
         --skip-fetch-latest-git-deps \
+        --args "u64:$POWER_PERIOD_IN_EPOCHS" \
         --assume-yes \
         --max-gas 200000 \
         --gas-unit-price 100

@@ -651,13 +651,6 @@ pub enum EntryFunctionCall {
         permissions_storage_addr: AccountAddress,
     },
 
-    /// Initialize the upgrade-compatible power-period countdown for an existing chain.
-    ///
-    /// New deployments create this resource during `initialize_power_store_internal`.
-    /// Existing chains can call this once after publishing the upgraded module, before
-    /// changing `power_period_in_epochs`, to opt into countdown-based period advancement.
-    PocPowerStoreInitializePowerPeriodClock {},
-
     PocPowerStoreInitializePowerStore {
         operator: AccountAddress,
     },
@@ -1536,9 +1529,6 @@ impl EntryFunctionCall {
             PermissionedSignerRevokePermissionStorageAddress {
                 permissions_storage_addr,
             } => permissioned_signer_revoke_permission_storage_address(permissions_storage_addr),
-            PocPowerStoreInitializePowerPeriodClock {} => {
-                poc_power_store_initialize_power_period_clock()
-            },
             PocPowerStoreInitializePowerStore { operator } => {
                 poc_power_store_initialize_power_store(operator)
             },
@@ -3355,26 +3345,6 @@ pub fn permissioned_signer_revoke_permission_storage_address(
         ident_str!("revoke_permission_storage_address").to_owned(),
         vec![],
         vec![bcs::to_bytes(&permissions_storage_addr).unwrap()],
-    ))
-}
-
-/// Initialize the upgrade-compatible power-period countdown for an existing chain.
-///
-/// New deployments create this resource during `initialize_power_store_internal`.
-/// Existing chains can call this once after publishing the upgraded module, before
-/// changing `power_period_in_epochs`, to opt into countdown-based period advancement.
-pub fn poc_power_store_initialize_power_period_clock() -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("poc_power_store").to_owned(),
-        ),
-        ident_str!("initialize_power_period_clock").to_owned(),
-        vec![],
-        vec![],
     ))
 }
 
@@ -5636,16 +5606,6 @@ mod decoder {
         }
     }
 
-    pub fn poc_power_store_initialize_power_period_clock(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::PocPowerStoreInitializePowerPeriodClock {})
-        } else {
-            None
-        }
-    }
-
     pub fn poc_power_store_initialize_power_store(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -6674,10 +6634,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "permissioned_signer_revoke_permission_storage_address".to_string(),
             Box::new(decoder::permissioned_signer_revoke_permission_storage_address),
-        );
-        map.insert(
-            "poc_power_store_initialize_power_period_clock".to_string(),
-            Box::new(decoder::poc_power_store_initialize_power_period_clock),
         );
         map.insert(
             "poc_power_store_initialize_power_store".to_string(),
