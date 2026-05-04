@@ -56,6 +56,10 @@ module aptos_framework::staking_registry {
     use aptos_framework::timestamp;
     use aptos_framework::topo_coin::TopoCoin;
 
+    #[test_only]
+    use aptos_framework::account;
+    #[test_only]
+    use aptos_framework::topo_coin;
     friend aptos_framework::genesis;
     friend aptos_framework::stake;
     friend aptos_framework::topo_governance;
@@ -610,7 +614,7 @@ module aptos_framework::staking_registry {
             powers.push_back(power);
             total_power += (power as u128);
         });
-        (addresses, powers, total_power as u64)
+        (addresses, powers, saturating_u128_to_u64(total_power))
     }
 
     public(friend) fun get_validator_member_powers_with_current_power(
@@ -647,7 +651,7 @@ module aptos_framework::staking_registry {
             powers.push_back(power);
             total_power += (power as u128);
         });
-        (addresses, powers, total_power as u64)
+        (addresses, powers, saturating_u128_to_u64(total_power))
     }
 
     #[view]
@@ -1141,7 +1145,7 @@ module aptos_framework::staking_registry {
         };
 
         let epoch_reward = calculate_rewards_amount(
-            pool_power as u64,
+            saturating_u128_to_u64(pool_power),
             num_successful_proposals,
             num_total_proposals,
             rewards_rate,
@@ -1774,7 +1778,15 @@ module aptos_framework::staking_registry {
                 validator_address,
             ) as u128);
         });
-        total_power as u64
+        saturating_u128_to_u64(total_power)
+    }
+
+    fun saturating_u128_to_u64(value: u128): u64 {
+        if (value > MAX_U64) {
+            MAX_U64 as u64
+        } else {
+            value as u64
+        }
     }
 
     fun copy_address_range(
@@ -1832,5 +1844,69 @@ module aptos_framework::staking_registry {
         } else {
             (rewards_numerator / rewards_denominator) as u64
         }
+    }
+
+    #[test_only]
+    fun setup_overflow_power_pool(
+        aptos_framework: &signer,
+        validator: address,
+        delegator_1: address,
+        delegator_2: address,
+    ) acquires PendingMintCapability, StakingRegistry {
+        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
+        coin::destroy_burn_cap(burn_cap);
+        store_topo_coin_mint_cap(aptos_framework, mint_cap);
+        initialize(aptos_framework, 0, 10, 1);
+
+        poc_power_store::initialize_power_store_with_period(aptos_framework, @aptos_framework, 60);
+        poc_power_store::set_genesis_committed_power(aptos_framework, delegator_1, MAX_U64 as u64);
+        poc_power_store::set_genesis_committed_power(aptos_framework, delegator_2, MAX_U64 as u64);
+
+        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        ensure_user_record(registry, delegator_1);
+        ensure_user_record(registry, delegator_2);
+        registry.validators.add(validator, ValidatorPool {
+            owner_address: validator,
+            delegator_index: smart_table::new(),
+            delegator_list: vector[delegator_1, delegator_2],
+            commission_bps: 0,
+            status: VALIDATOR_STATUS_ACTIVE,
+        });
+        let info_1 = registry.users.borrow_mut(delegator_1);
+        info_1.delegated_to = validator;
+        let info_2 = registry.users.borrow_mut(delegator_2);
+        info_2.delegated_to = validator;
+    }
+
+    #[test(aptos_framework = @aptos_framework)]
+    fun test_saturating_u128_to_u64() {
+        assert!(saturating_u128_to_u64(0) == 0, 0);
+        assert!(saturating_u128_to_u64(MAX_U64) == (MAX_U64 as u64), 1);
+        assert!(saturating_u128_to_u64(MAX_U64 + 1) == (MAX_U64 as u64), 2);
+    }
+
+    #[test(aptos_framework = @aptos_framework)]
+    fun test_validator_total_power_saturates_above_u64_max(
+        aptos_framework: &signer,
+    ) acquires PendingMintCapability, StakingRegistry {
+        let validator = @0x701;
+        let delegator_1 = @0x702;
+        let delegator_2 = @0x703;
+        account::create_account_for_test(validator);
+        account::create_account_for_test(delegator_1);
+        account::create_account_for_test(delegator_2);
+
+        setup_overflow_power_pool(aptos_framework, validator, delegator_1, delegator_2);
+
+        assert!(get_validator_total_power(validator) == (MAX_U64 as u64), 0);
+        let current_extra_deposits = simple_map::create<address, u64>();
+        let (_, powers, current_total_power) =
+            get_validator_member_powers_with_current_power(validator, &current_extra_deposits);
+        assert!(powers.length() == 2, 1);
+        assert!(current_total_power == (MAX_U64 as u64), 2);
+        let next_extra_deposits = simple_map::create<address, u64>();
+        let (_, _, next_total_power) =
+            get_validator_member_powers_for_next_epoch(validator, &next_extra_deposits);
+        assert!(next_total_power == (MAX_U64 as u64), 3);
     }
 }
