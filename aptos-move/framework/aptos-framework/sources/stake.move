@@ -36,7 +36,8 @@
 /// 3. Force-undelegate users below the maintain threshold across all pools
 /// 4. Activate pending_active validators; deactivate pending_inactive validators
 /// 5. Recompute voting power for all active validators; drop those below minimum_stake
-/// 6. Emergency liveness fallback: if the new active set would be empty, retain the previous set
+/// 6. Emergency liveness fallback: if the new active set would be empty, retain the previous
+///    positive-voting-power active snapshot
 /// 7. Reset performance counters; renew lockups; rebuild the PendingTransactionFee aggregator map
 ///
 /// ## Voting Power Model
@@ -303,6 +304,7 @@ module aptos_framework::stake {
         pool_address: address
     }
 
+    // Emitted when the validator election would otherwise produce an empty active set.
     #[event]
     struct ValidatorSetLivenessFallback has drop, store {
         minimum_stake: u64,
@@ -1197,7 +1199,7 @@ module aptos_framework::stake {
     ///
     /// Phase 6 — Emergency liveness fallback:
     ///   If the resulting active set is empty (no validator meets minimum_stake),
-    ///   retain the previous active set to keep the chain alive.
+    ///   retain a positive-voting-power active set to keep the chain alive.
     ///   Emit ValidatorSetLivenessFallback event to signal the critical condition.
     ///
     /// Phase 7 — Housekeeping:
@@ -1365,9 +1367,11 @@ module aptos_framework::stake {
             i += 1;
         };
 
-        // In the extreme case where the next epoch validator election produces an empty set (i.e., no staker satisfies the minimum stake or participation requirements), the system enters an emergency liveness preservation mode.
-        // Instead of transitioning to an empty validator set—which would render the network inoperable—the protocol retains the previous active validator set and recomputes the total voting power from it.
-        // A ValidatorSetLivenessFallback event is emitted to signal this critical governance and economic security failure.
+        // In the extreme case where the next epoch validator election produces an empty set
+        // (i.e. no staker satisfies the minimum stake or participation requirements), retain a
+        // last-known positive-voting-power active set instead of publishing an empty or zero-power
+        // validator set. A ValidatorSetLivenessFallback event signals this critical governance and
+        // economic security failure.
         if (!next_epoch_validators.is_empty()) {
             dropped_validators.for_each_ref(|addr| {
                 staking_registry::set_validator_inactive(*addr);
@@ -1375,12 +1379,6 @@ module aptos_framework::stake {
             validator_set.active_validators = next_epoch_validators;
             validator_set.total_voting_power = total_voting_power;
         } else {
-            // We derive the next validator set from the previous epoch's active and pending-active stakers.
-            // If the resulting set is empty, it indicates that no staker is willing or qualified to participate
-            // in consensus anymore. In this case, the chain is considered effectively dead, and we must retain
-            // the previous active validator set as a last-resort liveness fallback.
-            // Recompute each validator's info from current stake (after update_stake_pool) so that
-            // voting_power and total_voting_power reflect rewards, fees, and merged stake—not stale values.
             let refreshed_validators = vector::empty();
             let emergency_total_voting_power = 0u128;
             let fallback_vlen = validator_set.active_validators.length();
@@ -1406,16 +1404,36 @@ module aptos_framework::stake {
                         max_voting_power_increase,
                         used_voting_power_increase,
                     );
-                used_voting_power_increase += voting_power_increase(
-                    baseline_voting_power,
-                    new_validator_info.voting_power,
-                );
-                refreshed_validators.push_back(new_validator_info);
-                emergency_total_voting_power +=(new_validator_info.voting_power as u128);
+                if (new_validator_info.voting_power > 0) {
+                    used_voting_power_increase += voting_power_increase(
+                        baseline_voting_power,
+                        new_validator_info.voting_power,
+                    );
+                    refreshed_validators.push_back(new_validator_info);
+                    emergency_total_voting_power += (new_validator_info.voting_power as u128);
+                };
                 fallback_i += 1;
             };
-            validator_set.active_validators = refreshed_validators;
-            validator_set.total_voting_power = emergency_total_voting_power;
+            if (emergency_total_voting_power > 0) {
+                sync_registry_statuses_to_active_set(
+                    &validator_set.active_validators,
+                    &refreshed_validators,
+                );
+                validator_set.active_validators = refreshed_validators;
+                validator_set.total_voting_power = emergency_total_voting_power;
+            } else {
+                let (snapshot_validators, snapshot_total_voting_power) =
+                    previous_positive_active_validator_snapshot(
+                        &validator_set.active_validators,
+                        previous_active_count,
+                    );
+                sync_registry_statuses_to_active_set(
+                    &validator_set.active_validators,
+                    &snapshot_validators,
+                );
+                validator_set.active_validators = snapshot_validators;
+                validator_set.total_voting_power = snapshot_total_voting_power;
+            };
             event::emit(
                 ValidatorSetLivenessFallback {
                     minimum_stake,
@@ -1677,8 +1695,19 @@ module aptos_framework::stake {
                     if (in_active) { candidate.voting_power } else { 0 },
                     new_voting_power,
                 );
-                new_active_validators.push_back(new_validator_info);
-                new_total_power +=(new_voting_power as u128);
+                if (new_voting_power > 0) {
+                    new_active_validators.push_back(new_validator_info);
+                    new_total_power += (new_voting_power as u128);
+                };
+            };
+            if (new_total_power == 0) {
+                let (snapshot_validators, snapshot_total_voting_power) =
+                    previous_positive_active_validator_snapshot(
+                        &cur_validator_set.active_validators,
+                        num_cur_actives,
+                    );
+                new_active_validators = snapshot_validators;
+                new_total_power = snapshot_total_voting_power;
             };
         };
 
@@ -1720,6 +1749,56 @@ module aptos_framework::stake {
             new_voting_power,
             ValidatorInfo { addr: candidate.addr, voting_power: new_voting_power, config }
         )
+    }
+
+    fun previous_positive_active_validator_snapshot(
+        candidates: &vector<ValidatorInfo>,
+        previous_active_count: u64,
+    ): (vector<ValidatorInfo>, u128) acquires ValidatorConfig {
+        let snapshot_validators = vector[];
+        let snapshot_total_voting_power = 0u128;
+        let len = candidates.length();
+        let i = 0;
+        while ({
+            spec {
+                invariant i <= len;
+                invariant spec_validators_are_initialized(snapshot_validators);
+            };
+            i < len
+        }) {
+            if (i < previous_active_count) {
+                let candidate = candidates.borrow(i);
+                if (candidate.voting_power > 0) {
+                    let config = *borrow_global<ValidatorConfig>(candidate.addr);
+                    config.validator_index = snapshot_validators.length();
+                    snapshot_validators.push_back(ValidatorInfo {
+                        addr: candidate.addr,
+                        voting_power: candidate.voting_power,
+                        config,
+                    });
+                    snapshot_total_voting_power += (candidate.voting_power as u128);
+                };
+            };
+            i += 1;
+        };
+        (snapshot_validators, snapshot_total_voting_power)
+    }
+
+    fun sync_registry_statuses_to_active_set(
+        candidates: &vector<ValidatorInfo>,
+        active_set: &vector<ValidatorInfo>,
+    ) {
+        let len = candidates.length();
+        let i = 0;
+        while (i < len) {
+            let candidate = candidates.borrow(i);
+            if (find_validator(active_set, candidate.addr).is_some()) {
+                staking_registry::set_validator_active(candidate.addr);
+            } else {
+                staking_registry::set_validator_inactive(candidate.addr);
+            };
+            i += 1;
+        }
     }
 
     fun simulate_epoch_accruals_for_validator(

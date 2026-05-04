@@ -27,6 +27,7 @@ module aptos_framework::poc_consensus_epoch_e2e {
     const EHIGH_POWER_VALIDATOR_MISSING: u64 = 17;
     const EPOWER_SHOULD_BE_CAPPED: u64 = 18;
     const EPOWER_INCREASE_SHOULD_BE_CAPPED: u64 = 19;
+    const EFALLBACK_POWER_SHOULD_NOT_BE_ZERO: u64 = 20;
 
     // Rewards for the current epoch must use the current committed power snapshot, while
     // force-undelegation at the period boundary must use the staged next-period power.
@@ -276,6 +277,44 @@ module aptos_framework::poc_consensus_epoch_e2e {
         poc_test_utils::assert_current_set_size(1, ECURRENT_SET_SIZE_MISMATCH);
         assert!(
             stake::was_validator_set_liveness_fallback_emitted(1000, 1, 100),
+            EFALLBACK_EVENT_MISSING,
+        );
+    }
+
+    // If force-undelegation removes every delegator at a power-period boundary, the
+    // liveness fallback must preserve the last positive voting-power snapshot instead
+    // of emitting a non-empty validator set with total_voting_power == 0.
+    #[test(aptos_framework = @aptos_framework, validator = @0x30c)]
+    fun test_liveness_fallback_preserves_positive_power_when_registry_power_zero(
+        aptos_framework: &signer,
+        validator: &signer,
+    ) {
+        poc_test_utils::setup_poc_env(aptos_framework);
+        let validator_address = signer::address_of(validator);
+
+        poc_test_utils::create_active_validator(aptos_framework, validator, 100);
+        staking_registry::set_active_power_thresholds(aptos_framework, 100, 10000);
+        poc_test_utils::stage_next_period_power(aptos_framework, validator_address, 0);
+
+        // Land on the last epoch before period 1 becomes active. The simulator should
+        // already mirror the next epoch's force-undelegation and fallback result.
+        poc_test_utils::advance_epochs(59);
+        poc_test_utils::assert_next_voting_power(
+            validator_address,
+            100,
+            EFALLBACK_POWER_SHOULD_NOT_BE_ZERO,
+        );
+
+        stake::end_epoch();
+
+        poc_test_utils::assert_current_set_size(1, ECURRENT_SET_SIZE_MISMATCH);
+        poc_test_utils::assert_current_voting_power(
+            validator_address,
+            100,
+            EFALLBACK_POWER_SHOULD_NOT_BE_ZERO,
+        );
+        assert!(
+            stake::was_validator_set_liveness_fallback_emitted(100, 1, 100),
             EFALLBACK_EVENT_MISSING,
         );
     }
