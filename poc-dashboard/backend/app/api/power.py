@@ -1,5 +1,3 @@
-import json
-
 from fastapi import APIRouter, Body
 from pydantic import BaseModel, Field
 from app.chain.client import get_chain_client
@@ -7,7 +5,7 @@ from app.chain import view
 from app.chain.transaction import submit_entry_function
 from app.chain.keys import get_key_manager
 from app.models import operation_log
-from app.services import dapp_svc
+from app.services import dapp_svc, power_writeback_svc
 from app.services.cache_svc import invalidate_many
 from app.api.errors import ChainTxError
 from app.api.users import build_power_calculation, build_version_rows
@@ -46,6 +44,18 @@ class SetOperatorReq(BaseModel):
     operator: str
     max_gas: int = dapp_svc.DEFAULT_MAX_GAS
     gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
+
+
+class PowerWritebackConfigReq(BaseModel):
+    enabled: bool = False
+    interval_secs: int = Field(default=60, ge=5)
+    max_users_per_run: int = Field(default=1000, ge=1)
+    max_gas: int = dapp_svc.DEFAULT_MAX_GAS
+    gas_unit_price: int = dapp_svc.DEFAULT_GAS_UNIT_PRICE
+
+
+class PowerWritebackRunReq(BaseModel):
+    force: bool = False
 
 
 class UserPowerQueryReq(BaseModel):
@@ -166,26 +176,47 @@ async def stage_single(req: StageSingleReq):
 @router.post("/power/stage-batch")
 async def stage_batch(req: StageBatchReq):
     client = get_chain_client()
-    km = get_key_manager()
     addresses = [_normalize_address(u["address"]) for u in req.updates]
     powers = [int(u["power"]) for u in req.updates]
+    updates = [{"address": address, "power": power} for address, power in zip(addresses, powers)]
     try:
-        tx = await dapp_svc.run_poc_framework_script(
-            "stage_power_store_batch.move",
-            core_key=km.core_resources_key,
-            core_address=km.core_resources_address,
-            rest_url=client.base_url,
-            args=[
-                f"u64:{req.target_period}",
-                f"address:{json.dumps(addresses)}",
-                f"u64:{json.dumps(powers)}",
-            ],
+        tx = await power_writeback_svc.stage_power_updates(
+            client,
+            target_period=req.target_period,
+            updates=updates,
+            max_gas=dapp_svc.DEFAULT_MAX_GAS,
+            gas_unit_price=dapp_svc.DEFAULT_GAS_UNIT_PRICE,
         )
         await operation_log.create_log("stage_batch_power", None, {"count": len(addresses)}, tx, "success")
         await invalidate_many("user:", "validators:", "validator:")
         return {"tx_hash": tx, "success": True}
     except Exception as e:
         await operation_log.create_log("stage_batch_power", None, None, None, "failed", str(e))
+        raise ChainTxError(str(e))
+
+
+@router.get("/power/writeback-task")
+async def power_writeback_task_status():
+    return await power_writeback_svc.get_status()
+
+
+@router.post("/power/writeback-task/config")
+async def configure_power_writeback_task(req: PowerWritebackConfigReq):
+    return await power_writeback_svc.configure_task(
+        enabled=req.enabled,
+        interval_secs=req.interval_secs,
+        max_users_per_run=req.max_users_per_run,
+        max_gas=req.max_gas,
+        gas_unit_price=req.gas_unit_price,
+    )
+
+
+@router.post("/power/writeback-task/run-once")
+async def run_power_writeback_once(req: PowerWritebackRunReq = Body(default_factory=PowerWritebackRunReq)):
+    try:
+        return await power_writeback_svc.run_once(force=req.force)
+    except Exception as e:
+        await operation_log.create_log("power_writeback_stage_batch", None, {"force": req.force}, None, "failed", str(e))
         raise ChainTxError(str(e))
 
 

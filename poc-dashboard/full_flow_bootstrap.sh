@@ -3,52 +3,188 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$ROOT_DIR/.." && pwd)"
-CLUSTER_DIR="${CLUSTER_DIR:-$ROOT_DIR/poc-validator-cluster}"
+CONFIG_PATH="${CONFIG_PATH:-$ROOT_DIR/config.yaml}"
+CONFIG_PATH="$(python3 -c 'import os, sys; print(os.path.abspath(sys.argv[1]))' "$CONFIG_PATH")"
+
+_read_bootstrap_config() {
+    python3 - "$CONFIG_PATH" <<'PY'
+import os
+import shlex
+import sys
+
+try:
+    import yaml
+except Exception:
+    yaml = None
+
+path = sys.argv[1]
+raw = {}
+if os.path.exists(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        if yaml is not None:
+            raw = yaml.safe_load(text) or {}
+        else:
+            raw = {}
+            section = ""
+            for raw_line in text.splitlines():
+                line = raw_line.split("#", 1)[0].rstrip()
+                if not line.strip():
+                    continue
+                if not raw_line.startswith(" ") and line.endswith(":"):
+                    section = line[:-1].strip()
+                    raw.setdefault(section, {})
+                    continue
+                if not raw_line.startswith(" ") and ":" in line:
+                    key, value = line.split(":", 1)
+                    value = value.strip().strip('"').strip("'")
+                    raw[key.strip()] = int(value) if value.isdigit() else value
+                    continue
+                if section and raw_line.startswith(" ") and ":" in line:
+                    key, value = line.split(":", 1)
+                    value = value.strip().strip('"').strip("'")
+                    if value.isdigit():
+                        value = int(value)
+                    raw[section][key.strip()] = value
+    except Exception as exc:
+        print(f"无法解析配置文件 {path}: {exc}", file=sys.stderr)
+        sys.exit(2)
+
+def get(keys, default=""):
+    cur = raw
+    for key in keys:
+        if not isinstance(cur, dict) or key not in cur:
+            return default
+        cur = cur[key]
+    return default if cur is None else cur
+
+def resolve_path(value):
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    if os.path.isabs(text):
+        return text
+    return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(path)), text))
+
+cluster = raw.get("test_cluster") if isinstance(raw.get("test_cluster"), dict) else {}
+keys = raw.get("keys") if isinstance(raw.get("keys"), dict) else {}
+core = keys.get("core_resources") if isinstance(keys.get("core_resources"), dict) else {}
+
+values = {
+    "CONFIG_CLUSTER_DIR": resolve_path(get(("cluster_dir",), "")),
+    "CONFIG_CHAIN_REST_URL": get(("chain", "rest_url"), ""),
+    "CONFIG_CHAIN_ID": get(("chain", "chain_id"), 4),
+    "CONFIG_BACKEND_HOST": get(("server", "host"), "0.0.0.0"),
+    "CONFIG_BACKEND_PORT": get(("server", "port"), 38000),
+    "CONFIG_FRONTEND_HOST": get(("frontend", "host"), "0.0.0.0"),
+    "CONFIG_FRONTEND_PORT": get(("frontend", "port"), 35173),
+    "CONFIG_CLUSTER_PORT_START": cluster.get("port_start", 36180),
+    "CONFIG_BASE_NODE_COUNT": cluster.get("base_node_count", 4),
+    "CONFIG_TARGET_VALIDATOR_COUNT": cluster.get("target_validator_count", 7),
+    "CONFIG_USERS_PER_NEW_VALIDATOR": cluster.get("users_per_new_validator", 5),
+    "CONFIG_POWER_PERIOD_IN_EPOCHS": cluster.get("power_period_in_epochs", 5),
+    "CONFIG_EPOCH_DURATION_SECS": cluster.get("epoch_duration_secs", 60),
+    "CONFIG_VALIDATOR_LOCKUP_PERIODS": cluster.get("validator_lockup_periods", 2),
+    "CONFIG_VALIDATOR_LOCKUP_SECS": cluster.get("validator_lockup_secs", cluster.get("validator_exit_cooldown_secs", "")),
+    "CONFIG_GOVERNANCE_VOTING_PERIODS": cluster.get("governance_voting_periods", 1),
+    "CONFIG_GOVERNANCE_VOTING_DURATION_SECS": cluster.get("governance_voting_duration_secs", ""),
+    "CONFIG_MIN_VALIDATOR_STAKE": cluster.get("min_validator_stake", 1000000000),
+    "CONFIG_VALIDATOR_STAKE_MULTIPLIER": cluster.get("validator_stake_multiplier", 10),
+    "CONFIG_USER_STAKE_MULTIPLIER": cluster.get("user_stake_multiplier", 5),
+    "CONFIG_VALIDATOR_POWER": cluster.get("validator_power", ""),
+    "CONFIG_VALIDATOR_MINT_AMOUNT": cluster.get("validator_mint_amount", ""),
+    "CONFIG_VALIDATOR_DEPOSIT_AMOUNT": cluster.get("validator_deposit_amount", ""),
+    "CONFIG_VALIDATOR_COMMISSION_BPS": cluster.get("validator_commission_bps", 0),
+    "CONFIG_VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE": cluster.get("validator_force_epochs_before_delegate", ""),
+    "CONFIG_VALIDATOR_FORCE_EPOCHS_AFTER_JOIN": cluster.get("validator_force_epochs_after_join", 1),
+    "CONFIG_USER_MINT_AMOUNT": cluster.get("user_mint_amount", ""),
+    "CONFIG_USER_POWER": cluster.get("user_power", ""),
+    "CONFIG_USER_DEPOSIT_AMOUNT": cluster.get("user_deposit_amount", ""),
+    "CONFIG_USER_FORCE_EPOCH": cluster.get("user_force_epoch", "true"),
+    "CONFIG_USER_FORCE_EPOCHS": cluster.get("user_force_epochs", ""),
+    "CONFIG_WAIT_TIMEOUT_SECS": cluster.get("wait_timeout_secs", 180),
+    "CONFIG_POLL_INTERVAL_SECS": cluster.get("poll_interval_secs", 2),
+    "CONFIG_CORE_RESOURCES_ADDRESS": core.get("address", "0xa550c18"),
+    "CONFIG_CORE_RESOURCES_PRIVATE_KEY": core.get("private_key", "0xD04470F43AB6AEAA4EB616B72128881EEF77346F2075FFE68E14BA7DEBD8095E"),
+}
+
+for key, value in values.items():
+    print(f"{key}={shlex.quote(str(value))}")
+PY
+}
+
+_client_host() {
+    case "$1" in
+        ""|"0.0.0.0"|"::") printf "127.0.0.1" ;;
+        *) printf "%s" "$1" ;;
+    esac
+}
+
+CONFIG_EXPORTS="$(_read_bootstrap_config)"
+eval "$CONFIG_EXPORTS"
+
+_first_non_empty() {
+    local value
+    for value in "$@"; do
+        if [[ -n "$value" ]]; then
+            printf "%s" "$value"
+            return
+        fi
+    done
+}
+
+CLUSTER_DIR="${CLUSTER_DIR:-${CONFIG_CLUSTER_DIR:-$ROOT_DIR/poc-validator-cluster}}"
 CLUSTER_SCRIPT="${CLUSTER_SCRIPT:-$ROOT_DIR/scripts/poc_prod_like_validator_cluster.py}"
 APTOS_CLI="${APTOS_CLI:-$REPO_ROOT/target/debug/aptos}"
 FRAMEWORK_LOCAL_DIR="${FRAMEWORK_LOCAL_DIR:-$REPO_ROOT/aptos-move/framework/aptos-framework}"
-REST_URL="${REST_URL:-http://127.0.0.1:36183/v1}"
-FRONTEND_URL="${FRONTEND_URL:-http://127.0.0.1:35173}"
-BACKEND_URL="${BACKEND_URL:-http://127.0.0.1:38000}"
-BACKEND_PORT="${BACKEND_PORT:-38000}"
-FRONTEND_PORT="${FRONTEND_PORT:-35173}"
-CLUSTER_PORT_START="${CLUSTER_PORT_START:-36180}"
-CORE_RESOURCES_ADDRESS="${CORE_RESOURCES_ADDRESS:-0xa550c18}"
-CORE_RESOURCES_PRIVATE_KEY="${CORE_RESOURCES_PRIVATE_KEY:-0xD04470F43AB6AEAA4EB616B72128881EEF77346F2075FFE68E14BA7DEBD8095E}"
+BACKEND_HOST="${BACKEND_HOST:-$CONFIG_BACKEND_HOST}"
+FRONTEND_HOST="${FRONTEND_HOST:-$CONFIG_FRONTEND_HOST}"
+BACKEND_PORT="${BACKEND_PORT:-$CONFIG_BACKEND_PORT}"
+FRONTEND_PORT="${FRONTEND_PORT:-$CONFIG_FRONTEND_PORT}"
+CLUSTER_PORT_START="${CLUSTER_PORT_START:-$CONFIG_CLUSTER_PORT_START}"
+REST_URL="${REST_URL:-${CONFIG_CHAIN_REST_URL:-http://127.0.0.1:$((CLUSTER_PORT_START + 3))/v1}}"
+FRONTEND_URL="${FRONTEND_URL:-http://$(_client_host "$FRONTEND_HOST"):$FRONTEND_PORT}"
+BACKEND_URL="${BACKEND_URL:-http://$(_client_host "$BACKEND_HOST"):$BACKEND_PORT}"
+CORE_RESOURCES_ADDRESS="${CORE_RESOURCES_ADDRESS:-$CONFIG_CORE_RESOURCES_ADDRESS}"
+CORE_RESOURCES_PRIVATE_KEY="${CORE_RESOURCES_PRIVATE_KEY:-$CONFIG_CORE_RESOURCES_PRIVATE_KEY}"
 CHAIN_TEST_PARAMS_SCRIPT="${CHAIN_TEST_PARAMS_SCRIPT:-$ROOT_DIR/scripts/set_chain_test_params.move}"
 
-BASE_NODE_COUNT="${BASE_NODE_COUNT:-4}"
-TARGET_VALIDATOR_COUNT="${TARGET_VALIDATOR_COUNT:-7}"
-USERS_PER_NEW_VALIDATOR="${USERS_PER_NEW_VALIDATOR:-5}"
-POWER_PERIOD_IN_EPOCHS="${POWER_PERIOD_IN_EPOCHS:-5}"
-EPOCH_DURATION_SECS="${EPOCH_DURATION_SECS:-60}"
-VALIDATOR_LOCKUP_PERIODS="${VALIDATOR_LOCKUP_PERIODS:-${VALIDATOR_EXIT_COOLDOWN_PERIODS:-2}}"
-VALIDATOR_LOCKUP_SECS="${VALIDATOR_LOCKUP_SECS:-${VALIDATOR_EXIT_COOLDOWN_SECS:-$((EPOCH_DURATION_SECS * POWER_PERIOD_IN_EPOCHS * VALIDATOR_LOCKUP_PERIODS))}}"
-GOVERNANCE_VOTING_PERIODS="${GOVERNANCE_VOTING_PERIODS:-1}"
-GOVERNANCE_VOTING_DURATION_SECS="${GOVERNANCE_VOTING_DURATION_SECS:-$((EPOCH_DURATION_SECS * POWER_PERIOD_IN_EPOCHS * GOVERNANCE_VOTING_PERIODS))}"
+CHAIN_ID="${CHAIN_ID:-$CONFIG_CHAIN_ID}"
+BASE_NODE_COUNT="${BASE_NODE_COUNT:-$CONFIG_BASE_NODE_COUNT}"
+TARGET_VALIDATOR_COUNT="${TARGET_VALIDATOR_COUNT:-$CONFIG_TARGET_VALIDATOR_COUNT}"
+USERS_PER_NEW_VALIDATOR="${USERS_PER_NEW_VALIDATOR:-$CONFIG_USERS_PER_NEW_VALIDATOR}"
+POWER_PERIOD_IN_EPOCHS="${POWER_PERIOD_IN_EPOCHS:-$CONFIG_POWER_PERIOD_IN_EPOCHS}"
+EPOCH_DURATION_SECS="${EPOCH_DURATION_SECS:-$CONFIG_EPOCH_DURATION_SECS}"
+VALIDATOR_LOCKUP_PERIODS="${VALIDATOR_LOCKUP_PERIODS:-${VALIDATOR_EXIT_COOLDOWN_PERIODS:-$CONFIG_VALIDATOR_LOCKUP_PERIODS}}"
+DEFAULT_VALIDATOR_LOCKUP_SECS=$((EPOCH_DURATION_SECS * POWER_PERIOD_IN_EPOCHS * VALIDATOR_LOCKUP_PERIODS))
+VALIDATOR_LOCKUP_SECS="${VALIDATOR_LOCKUP_SECS:-$(_first_non_empty "${VALIDATOR_EXIT_COOLDOWN_SECS:-}" "$CONFIG_VALIDATOR_LOCKUP_SECS" "$DEFAULT_VALIDATOR_LOCKUP_SECS")}"
+GOVERNANCE_VOTING_PERIODS="${GOVERNANCE_VOTING_PERIODS:-$CONFIG_GOVERNANCE_VOTING_PERIODS}"
+DEFAULT_GOVERNANCE_VOTING_DURATION_SECS=$((EPOCH_DURATION_SECS * POWER_PERIOD_IN_EPOCHS * GOVERNANCE_VOTING_PERIODS))
+GOVERNANCE_VOTING_DURATION_SECS="${GOVERNANCE_VOTING_DURATION_SECS:-$(_first_non_empty "$CONFIG_GOVERNANCE_VOTING_DURATION_SECS" "$DEFAULT_GOVERNANCE_VOTING_DURATION_SECS")}"
 EXPECTED_STAKING_COOLDOWN_SECS=$((VALIDATOR_LOCKUP_SECS > GOVERNANCE_VOTING_DURATION_SECS ? VALIDATOR_LOCKUP_SECS : GOVERNANCE_VOTING_DURATION_SECS))
 
-MIN_VALIDATOR_STAKE="${MIN_VALIDATOR_STAKE:-1000000000}"
-VALIDATOR_STAKE_MULTIPLIER="${VALIDATOR_STAKE_MULTIPLIER:-10}"
-USER_STAKE_MULTIPLIER="${USER_STAKE_MULTIPLIER:-5}"
+MIN_VALIDATOR_STAKE="${MIN_VALIDATOR_STAKE:-$CONFIG_MIN_VALIDATOR_STAKE}"
+VALIDATOR_STAKE_MULTIPLIER="${VALIDATOR_STAKE_MULTIPLIER:-$CONFIG_VALIDATOR_STAKE_MULTIPLIER}"
+USER_STAKE_MULTIPLIER="${USER_STAKE_MULTIPLIER:-$CONFIG_USER_STAKE_MULTIPLIER}"
 DEFAULT_VALIDATOR_STAKE=$((MIN_VALIDATOR_STAKE * VALIDATOR_STAKE_MULTIPLIER))
 DEFAULT_USER_STAKE=$((MIN_VALIDATOR_STAKE * USER_STAKE_MULTIPLIER))
 
-VALIDATOR_POWER="${VALIDATOR_POWER:-$DEFAULT_VALIDATOR_STAKE}"
-VALIDATOR_MINT_AMOUNT="${VALIDATOR_MINT_AMOUNT:-$((DEFAULT_VALIDATOR_STAKE + MIN_VALIDATOR_STAKE))}"
-VALIDATOR_DEPOSIT_AMOUNT="${VALIDATOR_DEPOSIT_AMOUNT:-$DEFAULT_VALIDATOR_STAKE}"
-VALIDATOR_COMMISSION_BPS="${VALIDATOR_COMMISSION_BPS:-0}"
-VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE="${VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE:-$POWER_PERIOD_IN_EPOCHS}"
-VALIDATOR_FORCE_EPOCHS_AFTER_JOIN="${VALIDATOR_FORCE_EPOCHS_AFTER_JOIN:-1}"
+VALIDATOR_POWER="${VALIDATOR_POWER:-$(_first_non_empty "$CONFIG_VALIDATOR_POWER" "$DEFAULT_VALIDATOR_STAKE")}"
+VALIDATOR_MINT_AMOUNT="${VALIDATOR_MINT_AMOUNT:-$(_first_non_empty "$CONFIG_VALIDATOR_MINT_AMOUNT" "$((DEFAULT_VALIDATOR_STAKE + MIN_VALIDATOR_STAKE))")}"
+VALIDATOR_DEPOSIT_AMOUNT="${VALIDATOR_DEPOSIT_AMOUNT:-$(_first_non_empty "$CONFIG_VALIDATOR_DEPOSIT_AMOUNT" "$DEFAULT_VALIDATOR_STAKE")}"
+VALIDATOR_COMMISSION_BPS="${VALIDATOR_COMMISSION_BPS:-$CONFIG_VALIDATOR_COMMISSION_BPS}"
+VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE="${VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE:-$(_first_non_empty "$CONFIG_VALIDATOR_FORCE_EPOCHS_BEFORE_DELEGATE" "$POWER_PERIOD_IN_EPOCHS")}"
+VALIDATOR_FORCE_EPOCHS_AFTER_JOIN="${VALIDATOR_FORCE_EPOCHS_AFTER_JOIN:-$CONFIG_VALIDATOR_FORCE_EPOCHS_AFTER_JOIN}"
 
-USER_MINT_AMOUNT="${USER_MINT_AMOUNT:-$((DEFAULT_USER_STAKE + MIN_VALIDATOR_STAKE))}"
-USER_POWER="${USER_POWER:-$DEFAULT_USER_STAKE}"
-USER_DEPOSIT_AMOUNT="${USER_DEPOSIT_AMOUNT:-$DEFAULT_USER_STAKE}"
-USER_FORCE_EPOCH="${USER_FORCE_EPOCH:-true}"
-USER_FORCE_EPOCHS="${USER_FORCE_EPOCHS:-$POWER_PERIOD_IN_EPOCHS}"
+USER_MINT_AMOUNT="${USER_MINT_AMOUNT:-$(_first_non_empty "$CONFIG_USER_MINT_AMOUNT" "$((DEFAULT_USER_STAKE + MIN_VALIDATOR_STAKE))")}"
+USER_POWER="${USER_POWER:-$(_first_non_empty "$CONFIG_USER_POWER" "$DEFAULT_USER_STAKE")}"
+USER_DEPOSIT_AMOUNT="${USER_DEPOSIT_AMOUNT:-$(_first_non_empty "$CONFIG_USER_DEPOSIT_AMOUNT" "$DEFAULT_USER_STAKE")}"
+USER_FORCE_EPOCH="${USER_FORCE_EPOCH:-$CONFIG_USER_FORCE_EPOCH}"
+USER_FORCE_EPOCHS="${USER_FORCE_EPOCHS:-$(_first_non_empty "$CONFIG_USER_FORCE_EPOCHS" "$POWER_PERIOD_IN_EPOCHS")}"
 
-WAIT_TIMEOUT_SECS="${WAIT_TIMEOUT_SECS:-180}"
-POLL_INTERVAL_SECS="${POLL_INTERVAL_SECS:-2}"
+WAIT_TIMEOUT_SECS="${WAIT_TIMEOUT_SECS:-$CONFIG_WAIT_TIMEOUT_SECS}"
+POLL_INTERVAL_SECS="${POLL_INTERVAL_SECS:-$CONFIG_POLL_INTERVAL_SECS}"
 
 RESET=false
 SKIP_DASHBOARD=false
@@ -76,6 +212,7 @@ usage() {
 
 常用环境变量:
   CLUSTER_DIR                    默认 $CLUSTER_DIR
+  CONFIG_PATH                    默认 $CONFIG_PATH
   REST_URL                       默认 $REST_URL
   FRONTEND_URL                   默认 $FRONTEND_URL
   BACKEND_PORT                   默认 $BACKEND_PORT
@@ -302,16 +439,16 @@ start_dashboard_if_needed() {
     fi
 
     log "启动 Dashboard 前后端"
-    BACKEND_PORT="$BACKEND_PORT" FRONTEND_PORT="$FRONTEND_PORT" "$ROOT_DIR/dashboard.sh" start
+    CONFIG_PATH="$CONFIG_PATH" BACKEND_PORT="$BACKEND_PORT" FRONTEND_PORT="$FRONTEND_PORT" "$ROOT_DIR/dashboard.sh" start
     wait_until "Dashboard API 健康" "curl_json GET '$FRONTEND_URL/api/v1/system/health' >/dev/null"
 }
 
 reset_all() {
     log "停止 Dashboard"
-    BACKEND_PORT="$BACKEND_PORT" FRONTEND_PORT="$FRONTEND_PORT" "$ROOT_DIR/dashboard.sh" stop || true
+    CONFIG_PATH="$CONFIG_PATH" BACKEND_PORT="$BACKEND_PORT" FRONTEND_PORT="$FRONTEND_PORT" "$ROOT_DIR/dashboard.sh" stop || true
 
     log "停止旧集群"
-    python3 "$CLUSTER_SCRIPT" stop --repo-root "$REPO_ROOT" --workdir "$CLUSTER_DIR" || true
+    CONFIG_PATH="$CONFIG_PATH" python3 "$CLUSTER_SCRIPT" stop --repo-root "$REPO_ROOT" --workdir "$CLUSTER_DIR" || true
 
     log "删除旧集群目录和 Dashboard 数据库"
     rm -rf "$CLUSTER_DIR"
@@ -321,15 +458,16 @@ reset_all() {
 ensure_base_cluster() {
     if cluster_state_exists; then
         log "检测到已有集群状态，跳过 4 节点创世启动"
-        python3 "$CLUSTER_SCRIPT" status --repo-root "$REPO_ROOT" --workdir "$CLUSTER_DIR"
+        CONFIG_PATH="$CONFIG_PATH" python3 "$CLUSTER_SCRIPT" status --repo-root "$REPO_ROOT" --workdir "$CLUSTER_DIR"
         return
     fi
 
     log "启动 $BASE_NODE_COUNT 节点创世集群: epoch=${EPOCH_DURATION_SECS}s, period=${POWER_PERIOD_IN_EPOCHS} epochs, validator_lockup=${VALIDATOR_LOCKUP_SECS}s, voting_duration=${GOVERNANCE_VOTING_DURATION_SECS}s"
-    python3 "$CLUSTER_SCRIPT" start \
+    CONFIG_PATH="$CONFIG_PATH" python3 "$CLUSTER_SCRIPT" start \
         --repo-root "$REPO_ROOT" \
         --workdir "$CLUSTER_DIR" \
         --nodes "$BASE_NODE_COUNT" \
+        --chain-id "$CHAIN_ID" \
         --port-start "$CLUSTER_PORT_START" \
         --epoch-duration-secs "$EPOCH_DURATION_SECS" \
         --min-stake "$MIN_VALIDATOR_STAKE" \
@@ -368,7 +506,7 @@ ensure_post_genesis_nodes() {
     if (( existing_count < TARGET_VALIDATOR_COUNT )); then
         local add_count=$((TARGET_VALIDATOR_COUNT - existing_count))
         log "生成并启动 $add_count 个 post-genesis 验证者节点"
-        python3 "$CLUSTER_SCRIPT" add-validators \
+        CONFIG_PATH="$CONFIG_PATH" python3 "$CLUSTER_SCRIPT" add-validators \
             --repo-root "$REPO_ROOT" \
             --workdir "$CLUSTER_DIR" \
             --count "$add_count" \
@@ -377,7 +515,7 @@ ensure_post_genesis_nodes() {
         log "验证者节点目录数量已达到 $existing_count，跳过 add-validators"
     fi
 
-    python3 "$CLUSTER_SCRIPT" status --repo-root "$REPO_ROOT" --workdir "$CLUSTER_DIR"
+    CONFIG_PATH="$CONFIG_PATH" python3 "$CLUSTER_SCRIPT" status --repo-root "$REPO_ROOT" --workdir "$CLUSTER_DIR"
 }
 
 current_active_validator_count() {
@@ -473,7 +611,7 @@ create_users_and_proxy_stake() {
 
 final_verify() {
     log "最终校验集群状态"
-    python3 "$CLUSTER_SCRIPT" status --repo-root "$REPO_ROOT" --workdir "$CLUSTER_DIR"
+    CONFIG_PATH="$CONFIG_PATH" python3 "$CLUSTER_SCRIPT" status --repo-root "$REPO_ROOT" --workdir "$CLUSTER_DIR"
 
     local active_count
     active_count="$(current_active_validator_count)"
@@ -513,6 +651,8 @@ main() {
     need_executable "$APTOS_CLI"
     need_file "$FRAMEWORK_LOCAL_DIR/Move.toml"
     need_file "$ROOT_DIR/dashboard.sh"
+    log "使用配置文件: $CONFIG_PATH"
+    log "集群目录: $CLUSTER_DIR, rest=$REST_URL, dashboard=$FRONTEND_URL, chain_id=$CHAIN_ID, port_start=$CLUSTER_PORT_START"
     if (( GOVERNANCE_VOTING_DURATION_SECS >= VALIDATOR_LOCKUP_SECS )); then
         die "创世要求 GOVERNANCE_VOTING_DURATION_SECS($GOVERNANCE_VOTING_DURATION_SECS) 必须小于 VALIDATOR_LOCKUP_SECS($VALIDATOR_LOCKUP_SECS)"
     fi

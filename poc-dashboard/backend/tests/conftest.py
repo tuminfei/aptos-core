@@ -26,6 +26,17 @@ async def setup_db(tmp_path_factory):
     await init_db(db_path)
     settings = load_settings()
     settings.server.history_sampler_enabled = False
+    from app.services import power_writeback_svc
+    power_writeback_svc._uploaded_periods.clear()
+    power_writeback_svc._settings_override = None
+    power_writeback_svc._last_status.update({
+        "running": False,
+        "busy": False,
+        "last_run_at": None,
+        "last_result": None,
+        "last_error": "",
+        "uploaded_periods": {},
+    })
     yield
     await close_db()
 

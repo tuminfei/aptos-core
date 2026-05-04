@@ -47,6 +47,7 @@ export const ACTION_LABELS: Record<string, string> = {
   stage_power: '设置算力',
   stage_batch_power: '批量设置算力',
   set_power_period: '修改算力周期',
+  power_writeback_stage_batch: '自动算力上链',
   force_end_epoch: '强制结束Epoch',
   mint_topo: '铸造TOPO',
   register_validator: '注册验证者',

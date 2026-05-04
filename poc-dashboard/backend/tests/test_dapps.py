@@ -122,6 +122,7 @@ async def test_demo_buy_equity_uses_configured_module(client, mock_client):
     assert events[0]["app_admin"] == "0xddd"
     assert events[0]["app_address"] == "0xabc"
     assert events[0]["equity_amount"] == 7
+    assert events[0]["period"] == 23
 
 
 @pytest.mark.asyncio
@@ -136,6 +137,7 @@ async def test_contributions_filter_matches_padded_address(client):
             "contributor": "0xabc",
             "equity_token": "0xdef",
             "equity_amount": 7,
+            "period": 23,
             "event_type": "0x1::poc_contribution::ContributionEvent",
             "raw_event": {},
         },

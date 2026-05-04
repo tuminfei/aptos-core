@@ -64,6 +64,78 @@ LOCALHOST_IPV4 = "127.0.0.1"
 PUBLIC_BIND_IPV4 = "0.0.0.0"
 
 
+def default_config_path() -> Path:
+    return Path(__file__).resolve().parent.parent / "config.yaml"
+
+
+def _parse_scalar(value: str):
+    text = value.strip().strip('"').strip("'")
+    if text == "":
+        return ""
+    lowered = text.lower()
+    if lowered == "true":
+        return True
+    if lowered == "false":
+        return False
+    try:
+        return int(text)
+    except ValueError:
+        return text
+
+
+def _read_simple_yaml(path: Path) -> dict:
+    raw: dict = {}
+    section = ""
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.split("#", 1)[0].rstrip()
+        if not line.strip():
+            continue
+        if not raw_line.startswith((" ", "\t")) and line.endswith(":"):
+            section = line[:-1].strip()
+            raw.setdefault(section, {})
+            continue
+        if not raw_line.startswith((" ", "\t")) and ":" in line:
+            key, value = line.split(":", 1)
+            raw[key.strip()] = _parse_scalar(value)
+            continue
+        if section and raw_line.startswith((" ", "\t")) and ":" in line:
+            key, value = line.split(":", 1)
+            raw.setdefault(section, {})[key.strip()] = _parse_scalar(value)
+    return raw
+
+
+def read_dashboard_config(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        import yaml  # type: ignore
+
+        with path.open(encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except ImportError:
+        return _read_simple_yaml(path)
+
+
+def config_section(config: dict, name: str) -> dict:
+    value = config.get(name)
+    return value if isinstance(value, dict) else {}
+
+
+def resolve_config_path(value: object, config_path: Path) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    path = Path(text)
+    if path.is_absolute():
+        return str(path)
+    return str((config_path.parent / path).resolve())
+
+
+def int_config(section: dict, key: str, default: int) -> int:
+    value = section.get(key, default)
+    return int(value) if value not in ("", None) else default
+
+
 @dataclass(frozen=True)
 class PortLayout:
     validator_port: int
@@ -192,6 +264,7 @@ def set_poc_power_period(
     aptos_cli: Sequence[str],
     repo_root: Path,
     rest_url: str,
+    root_address: str,
     root_key: str,
     power_period_in_epochs: int,
 ) -> None:
@@ -213,7 +286,7 @@ def set_poc_power_period(
             "--gas-unit-price",
             str(DEFAULT_GAS_UNIT_PRICE),
             "--sender-account",
-            DEFAULT_CORE_RESOURCES_ADDRESS,
+            normalize_hex(root_address),
             "--args",
             f"u64:{power_period_in_epochs}",
         ]
@@ -1159,6 +1232,7 @@ def start_command(args: argparse.Namespace) -> int:
                 aptos_cli=aptos_cli,
                 repo_root=repo_root,
                 rest_url=nodes[0].rest_url,
+                root_address=args.root_address,
                 root_key=args.root_private_key,
                 power_period_in_epochs=args.poc_power_period_in_epochs,
             )
@@ -1438,14 +1512,72 @@ def add_common_path_args(parser: argparse.ArgumentParser, repo_root: Path) -> No
 
 def build_parser() -> argparse.ArgumentParser:
     repo_root = repo_root_from_script()
+    config_path = Path(os.environ.get("CONFIG_PATH", str(default_config_path()))).resolve()
+    config = read_dashboard_config(config_path)
+    test_cluster = config_section(config, "test_cluster")
+    chain = config_section(config, "chain")
+    keys = config_section(config, "keys")
+    core_resources = config_section(keys, "core_resources")
+
+    cluster_dir = resolve_config_path(config.get("cluster_dir", ""), config_path) or str(default_workdir(repo_root))
+    node_count = int_config(test_cluster, "base_node_count", DEFAULT_NODE_COUNT)
+    port_start = int_config(test_cluster, "port_start", DEFAULT_PORT_START)
+    min_stake = int_config(test_cluster, "min_validator_stake", DEFAULT_MIN_STAKE)
+    validator_stake_multiplier = int_config(test_cluster, "validator_stake_multiplier", 10)
+    base_stake = int_config(test_cluster, "validator_power", min_stake * validator_stake_multiplier)
+    chain_id = int_config(chain, "chain_id", DEFAULT_CHAIN_ID)
+    epoch_duration_secs = int_config(test_cluster, "epoch_duration_secs", DEFAULT_EPOCH_DURATION_SECS)
+    power_period_in_epochs = int_config(
+        test_cluster,
+        "power_period_in_epochs",
+        DEFAULT_POC_POWER_PERIOD_IN_EPOCHS,
+    )
+    validator_lockup_periods = int_config(
+        test_cluster,
+        "validator_lockup_periods",
+        DEFAULT_VALIDATOR_LOCKUP_PERIODS,
+    )
+    governance_voting_periods = int_config(
+        test_cluster,
+        "governance_voting_periods",
+        DEFAULT_GOVERNANCE_VOTING_PERIODS,
+    )
+    recurring_lockup_duration_secs = test_cluster.get("validator_lockup_secs")
+    if recurring_lockup_duration_secs in ("", None):
+        recurring_lockup_duration_secs = test_cluster.get("validator_exit_cooldown_secs")
+    if recurring_lockup_duration_secs not in ("", None):
+        recurring_lockup_duration_secs = int(recurring_lockup_duration_secs)
+    voting_duration_secs = test_cluster.get("governance_voting_duration_secs")
+    if voting_duration_secs not in ("", None):
+        voting_duration_secs = int(voting_duration_secs)
+    startup_timeout_secs = int_config(test_cluster, "startup_timeout_secs", DEFAULT_STARTUP_TIMEOUT_SECS)
+    poll_interval_secs = float(test_cluster.get("poll_interval_secs", DEFAULT_POLL_INTERVAL_SECS) or DEFAULT_POLL_INTERVAL_SECS)
+    root_private_key = str(
+        core_resources.get("private_key")
+        or test_cluster.get("root_private_key")
+        or DEFAULT_ROOT_PRIVATE_KEY
+    )
+    root_address = str(
+        core_resources.get("address")
+        or test_cluster.get("root_address")
+        or DEFAULT_CORE_RESOURCES_ADDRESS
+    )
+    root_public_key = test_cluster.get("root_public_key") or None
+
     parser = argparse.ArgumentParser(
         description="Create and scale a local validator cluster using a production-like genesis ceremony."
+    )
+    parser.add_argument(
+        "--config-path",
+        default=str(config_path),
+        help=f"dashboard config file used for defaults; default: {config_path}",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     start_parser = subparsers.add_parser("start", help="build genesis artifacts and start nodes")
+    start_parser.add_argument("--config-path", default=str(config_path), help=argparse.SUPPRESS)
     add_common_path_args(start_parser, repo_root)
-    start_parser.add_argument("--nodes", type=int, default=DEFAULT_NODE_COUNT)
+    start_parser.add_argument("--nodes", type=int, default=node_count)
     start_parser.add_argument("--aptos-cli", help="path to aptos CLI binary")
     start_parser.add_argument("--aptos-node-bin", help="path to aptos-node binary")
     start_parser.add_argument("--framework-bundle", help="path to framework.mrb / head.mrb")
@@ -1455,13 +1587,13 @@ def build_parser() -> argparse.ArgumentParser:
         default="auto",
         help="refresh cached framework packages before generating genesis",
     )
-    start_parser.add_argument("--base-stake", type=int, default=DEFAULT_BASE_STAKE)
-    start_parser.add_argument("--chain-id", type=int, default=DEFAULT_CHAIN_ID)
+    start_parser.add_argument("--base-stake", type=int, default=base_stake)
+    start_parser.add_argument("--chain-id", type=int, default=chain_id)
     start_parser.add_argument(
         "--port-start",
         type=int,
-        default=DEFAULT_PORT_START,
-        help=f"base port used for node allocation; default: {DEFAULT_PORT_START}",
+        default=port_start,
+        help=f"base port used for node allocation; default: {port_start}",
     )
     start_parser.add_argument(
         "--allow-new-validators",
@@ -1471,34 +1603,39 @@ def build_parser() -> argparse.ArgumentParser:
     )
     start_parser.add_argument(
         "--root-private-key",
-        default=DEFAULT_ROOT_PRIVATE_KEY,
+        default=root_private_key,
         help="hex root private key used to sign core resources transactions",
     )
     start_parser.add_argument(
+        "--root-address",
+        default=root_address,
+        help="core resources account address used to sign root transactions",
+    )
+    start_parser.add_argument(
         "--root-public-key",
-        default=None,
+        default=root_public_key,
         help="hex root public key for layout.yaml; derived from --root-private-key if omitted",
     )
-    start_parser.add_argument("--epoch-duration-secs", type=int, default=DEFAULT_EPOCH_DURATION_SECS)
+    start_parser.add_argument("--epoch-duration-secs", type=int, default=epoch_duration_secs)
     start_parser.add_argument(
         "--poc-power-period-in-epochs",
         type=int,
-        default=DEFAULT_POC_POWER_PERIOD_IN_EPOCHS,
+        default=power_period_in_epochs,
         help=(
             "set on-chain POC power_period_in_epochs after startup; "
-            f"default: {DEFAULT_POC_POWER_PERIOD_IN_EPOCHS}; use 0 to skip"
+            f"default: {power_period_in_epochs}; use 0 to skip"
         ),
     )
-    start_parser.add_argument("--min-stake", type=int, default=DEFAULT_MIN_STAKE)
-    start_parser.add_argument("--min-voting-threshold", type=int, default=DEFAULT_MIN_STAKE)
+    start_parser.add_argument("--min-stake", type=int, default=min_stake)
+    start_parser.add_argument("--min-voting-threshold", type=int, default=min_stake)
     start_parser.add_argument("--max-stake", type=int, default=100000000000000000)
     start_parser.add_argument(
         "--recurring-lockup-duration-secs",
         type=int,
-        default=None,
+        default=recurring_lockup_duration_secs,
         help=(
             "validator recurring lockup / exit cooldown in seconds; "
-            f"default derives from {DEFAULT_VALIDATOR_LOCKUP_PERIODS} POC periods"
+            f"default derives from {validator_lockup_periods} POC periods"
         ),
     )
     start_parser.add_argument("--required-proposer-stake", type=int, default=1000000)
@@ -1506,22 +1643,23 @@ def build_parser() -> argparse.ArgumentParser:
     start_parser.add_argument(
         "--voting-duration-secs",
         type=int,
-        default=None,
+        default=voting_duration_secs,
         help=(
             "governance voting duration in seconds; "
-            f"default derives from {DEFAULT_GOVERNANCE_VOTING_PERIODS} POC period "
+            f"default derives from {governance_voting_periods} POC period "
             "for local testing"
         ),
     )
     start_parser.add_argument("--voting-power-increase-limit", type=int, default=50)
-    start_parser.add_argument("--startup-timeout-secs", type=int, default=DEFAULT_STARTUP_TIMEOUT_SECS)
-    start_parser.add_argument("--poll-interval-secs", type=float, default=DEFAULT_POLL_INTERVAL_SECS)
+    start_parser.add_argument("--startup-timeout-secs", type=int, default=startup_timeout_secs)
+    start_parser.add_argument("--poll-interval-secs", type=float, default=poll_interval_secs)
     start_parser.set_defaults(func=start_command)
 
     add_parser = subparsers.add_parser(
         "add-validators",
         help="generate and start additional post-genesis validator nodes",
     )
+    add_parser.add_argument("--config-path", default=str(config_path), help=argparse.SUPPRESS)
     add_common_path_args(add_parser, repo_root)
     add_parser.add_argument("--count", type=int, default=1, help="number of new validators to append")
     add_parser.add_argument("--aptos-cli", help="path to aptos CLI binary")
@@ -1531,15 +1669,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         help="stake amount recorded for new validators; defaults to existing owner stake or layout.min_stake",
     )
-    add_parser.add_argument("--startup-timeout-secs", type=int, default=DEFAULT_STARTUP_TIMEOUT_SECS)
-    add_parser.add_argument("--poll-interval-secs", type=float, default=DEFAULT_POLL_INTERVAL_SECS)
+    add_parser.add_argument("--startup-timeout-secs", type=int, default=startup_timeout_secs)
+    add_parser.add_argument("--poll-interval-secs", type=float, default=poll_interval_secs)
     add_parser.set_defaults(func=add_validators_command)
 
     status_parser = subparsers.add_parser("status", help="show node status")
+    status_parser.add_argument("--config-path", default=str(config_path), help=argparse.SUPPRESS)
     add_common_path_args(status_parser, repo_root)
     status_parser.set_defaults(func=status_command)
 
     stop_parser = subparsers.add_parser("stop", help="stop all node processes")
+    stop_parser.add_argument("--config-path", default=str(config_path), help=argparse.SUPPRESS)
     add_common_path_args(stop_parser, repo_root)
     stop_parser.set_defaults(func=stop_command)
 
@@ -1547,16 +1687,35 @@ def build_parser() -> argparse.ArgumentParser:
         "restart",
         help="restart existing node processes without rebuilding genesis or deleting chain data",
     )
+    restart_parser.add_argument("--config-path", default=str(config_path), help=argparse.SUPPRESS)
     add_common_path_args(restart_parser, repo_root)
     restart_parser.add_argument("--aptos-node-bin", help="path to aptos-node binary")
-    restart_parser.add_argument("--startup-timeout-secs", type=int, default=DEFAULT_STARTUP_TIMEOUT_SECS)
-    restart_parser.add_argument("--poll-interval-secs", type=float, default=DEFAULT_POLL_INTERVAL_SECS)
+    restart_parser.add_argument("--startup-timeout-secs", type=int, default=startup_timeout_secs)
+    restart_parser.add_argument("--poll-interval-secs", type=float, default=poll_interval_secs)
     restart_parser.set_defaults(func=restart_command)
+
+    for subparser in (start_parser, add_parser, status_parser, stop_parser, restart_parser):
+        subparser.set_defaults(config_path=str(config_path))
+        for action in subparser._actions:
+            if action.dest == "workdir":
+                action.default = cluster_dir
+                action.help = f"cluster workspace root; default: {cluster_dir}"
+                break
 
     return parser
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
+    for index, token in enumerate(argv):
+        if token == "--config-path" and index + 1 < len(argv):
+            os.environ["CONFIG_PATH"] = argv[index + 1]
+            break
+        if token.startswith("--config-path="):
+            os.environ["CONFIG_PATH"] = token.split("=", 1)[1]
+            break
+
     parser = build_parser()
     args = parser.parse_args(argv)
     if getattr(args, "nodes", DEFAULT_NODE_COUNT) <= 0:

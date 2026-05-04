@@ -33,6 +33,39 @@ class ServerConfig(BaseModel):
     history_sampler_interval_secs: int = 60
 
 
+class PowerWritebackConfig(BaseModel):
+    enabled: bool = False
+    interval_secs: int = 60
+    max_users_per_run: int = 1000
+    max_gas: int = 400_000
+    gas_unit_price: int = 100
+
+
+class FrontendConfig(BaseModel):
+    host: str = "0.0.0.0"
+    port: int = 35173
+    backend_url: str = ""
+
+
+class TestClusterConfig(BaseModel):
+    port_start: int = 36180
+    base_node_count: int = 4
+    target_validator_count: int = 7
+    users_per_new_validator: int = 5
+    power_period_in_epochs: int = 5
+    epoch_duration_secs: int = 60
+    validator_lockup_periods: int = 2
+    governance_voting_periods: int = 1
+    min_validator_stake: int = 1000000000
+    validator_stake_multiplier: int = 10
+    user_stake_multiplier: int = 5
+    validator_commission_bps: int = 0
+    validator_force_epochs_after_join: int = 1
+    user_force_epoch: bool = True
+    wait_timeout_secs: int = 180
+    poll_interval_secs: int = 2
+
+
 class DatabaseConfig(BaseModel):
     path: str = "./poc_dashboard.db"
 
@@ -41,6 +74,9 @@ class Settings(BaseModel):
     chain: ChainConfig = ChainConfig()
     keys: KeysConfig = KeysConfig(core_resources=KeyEntry(private_key="0x0", address="0x0"))
     server: ServerConfig = ServerConfig()
+    power_writeback: PowerWritebackConfig = PowerWritebackConfig()
+    frontend: FrontendConfig = FrontendConfig()
+    test_cluster: TestClusterConfig = TestClusterConfig()
     database: DatabaseConfig = DatabaseConfig()
     cluster_dir: str = ""
 
@@ -328,6 +364,7 @@ def load_settings(config_path: Optional[str] = None) -> Settings:
     chain_raw = raw.get("chain", {})
     chain_config = ChainConfig(**chain_raw)
     explicit_rest_url = bool(str(chain_raw.get("rest_url", "")).strip())
+    test_cluster_config = TestClusterConfig(**raw.get("test_cluster", {}))
 
     cluster_dir = raw.get("cluster_dir", "")
     if cluster_dir and not os.path.isabs(cluster_dir):
@@ -357,6 +394,10 @@ def load_settings(config_path: Optional[str] = None) -> Settings:
                     chain_config.chain_id = api_info.chain_id
                     print(f"[config] 从链上 ledger info 读取 chain_id: {api_info.chain_id}")
 
+    if not explicit_rest_url and not str(chain_config.rest_url).strip():
+        chain_config.rest_url = f"http://127.0.0.1:{test_cluster_config.port_start + 3}/v1"
+        print(f"[config] 从 test_cluster.port_start 派生 API 地址: {chain_config.rest_url}")
+
     if keys_config is None:
         keys_raw = raw.get("keys", {})
         cr = keys_raw.get("core_resources", {})
@@ -378,6 +419,9 @@ def load_settings(config_path: Optional[str] = None) -> Settings:
         chain=chain_config,
         keys=keys_config,
         server=ServerConfig(**raw.get("server", {})),
+        power_writeback=PowerWritebackConfig(**raw.get("power_writeback", {})),
+        frontend=FrontendConfig(**raw.get("frontend", {})),
+        test_cluster=test_cluster_config,
         database=DatabaseConfig(**raw.get("database", {})),
         cluster_dir=cluster_dir,
     )

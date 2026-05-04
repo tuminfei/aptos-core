@@ -152,6 +152,7 @@ class MockChainClient:
                     "equity_token": "0xasset",
                     "equity_amount": args[1] if len(args) > 1 else "0",
                     "app_address": tx.get("payload", {}).get("function", "").split("::")[0],
+                    "period": "23",
                 },
             }]
         return {

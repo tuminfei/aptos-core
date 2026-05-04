@@ -27,6 +27,27 @@ export async function stageBatch(params: { target_period: number; updates: { add
   return data;
 }
 
+export async function getPowerWritebackTask() {
+  const { data } = await api.get('/power/writeback-task');
+  return data;
+}
+
+export async function configurePowerWritebackTask(params: {
+  enabled: boolean;
+  interval_secs: number;
+  max_users_per_run: number;
+  max_gas?: number;
+  gas_unit_price?: number;
+}) {
+  const { data } = await api.post('/power/writeback-task/config', params);
+  return data;
+}
+
+export async function runPowerWritebackOnce(params: { force?: boolean } = {}) {
+  const { data } = await api.post('/power/writeback-task/run-once', params, { timeout: POWER_ADMIN_TIMEOUT_MS });
+  return data;
+}
+
 export async function setPeriod(params: { power_period_in_epochs: number }) {
   const { data } = await api.post('/power/set-period', params);
   return data;

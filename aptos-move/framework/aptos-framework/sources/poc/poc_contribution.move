@@ -66,6 +66,7 @@ module aptos_framework::poc_contribution {
     use aptos_framework::fungible_asset::Metadata;
     use aptos_framework::object;
     use aptos_framework::object::Object;
+    use aptos_framework::poc_power_store;
     use aptos_framework::poc_registry;
     use aptos_framework::primary_fungible_store;
 
@@ -105,6 +106,8 @@ module aptos_framework::poc_contribution {
         equity_amount: u64,
         /// The application's contract deployment address (used for off-chain attribution)
         app_address: address,
+        /// The POC power period when this contribution event was emitted
+        period: u64,
     }
 
     // ========== Core Function ==========
@@ -269,7 +272,8 @@ module aptos_framework::poc_contribution {
             contributor,
             equity_token: metadata,
             equity_amount,
-            app_address
+            app_address,
+            period: poc_power_store::get_current_period(),
         });
     }
 
@@ -349,6 +353,7 @@ module aptos_framework::poc_contribution {
                 equity_token: metadata,
                 equity_amount: 20,
                 app_address: app_admin_address,
+                period: 0,
             }),
             2,
         );

@@ -101,6 +101,7 @@ CREATE TABLE IF NOT EXISTS contribution_events (
     contributor     TEXT NOT NULL,
     equity_token    TEXT,
     equity_amount   INTEGER NOT NULL DEFAULT 0,
+    period          INTEGER NOT NULL DEFAULT 0,
     event_type      TEXT NOT NULL,
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     raw_event       TEXT,
@@ -250,6 +251,7 @@ async def init_db(db_path: str = "./poc_dashboard.db"):
     _db.row_factory = aiosqlite.Row
     await _db.executescript(SCHEMA_SQL)
     await _ensure_chain_snapshot_columns()
+    await _ensure_contribution_event_columns()
     await _db.commit()
 
 
@@ -261,6 +263,17 @@ async def _ensure_chain_snapshot_columns():
     if "octas_per_million_power" not in columns:
         await _db.execute(
             "ALTER TABLE chain_snapshots ADD COLUMN octas_per_million_power INTEGER NOT NULL DEFAULT 0"
+        )
+
+
+async def _ensure_contribution_event_columns():
+    assert _db is not None
+    cursor = await _db.execute("PRAGMA table_info(contribution_events)")
+    rows = await cursor.fetchall()
+    columns = {row["name"] for row in rows}
+    if "period" not in columns:
+        await _db.execute(
+            "ALTER TABLE contribution_events ADD COLUMN period INTEGER NOT NULL DEFAULT 0"
         )
 
 

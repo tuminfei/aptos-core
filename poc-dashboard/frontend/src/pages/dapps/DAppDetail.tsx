@@ -344,6 +344,7 @@ export default function DAppDetail() {
           scroll={{ x: 900 }}
           columns={[
             { title: '时间', dataIndex: 'created_at', width: 170, render: (v: string) => formatTimestamp(v) },
+            { title: 'Period', dataIndex: 'period', width: 100, render: (v: number) => formatNumber(v || 0) },
             { title: '用户', dataIndex: 'contributor', width: 180, render: (v: string) => <AddressTag address={v} /> },
             { title: '贡献 Equity', dataIndex: 'equity_amount', width: 130, render: (v: number) => formatNumber(v || 0) },
             { title: 'App 合约', dataIndex: 'app_address', width: 180, render: (v: string) => <AddressTag address={v} /> },

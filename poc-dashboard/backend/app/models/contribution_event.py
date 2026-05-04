@@ -17,8 +17,8 @@ async def insert_events(events: list[dict[str, Any]]) -> int:
         """
         INSERT OR IGNORE INTO contribution_events (
             tx_hash, event_index, version, app_admin, app_address, contributor,
-            equity_token, equity_amount, event_type, raw_event
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            equity_token, equity_amount, period, event_type, raw_event
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
             (
@@ -30,6 +30,7 @@ async def insert_events(events: list[dict[str, Any]]) -> int:
                 event.get("contributor", ""),
                 event.get("equity_token", ""),
                 event.get("equity_amount", 0),
+                event.get("period", 0),
                 event.get("event_type", ""),
                 json.dumps(event.get("raw_event") or {}, ensure_ascii=False),
             )
@@ -105,3 +106,28 @@ async def sum_equity_amount(*, contributor: str | None = None, app_admin: str | 
     cursor = await db.execute(f"SELECT COALESCE(SUM(equity_amount), 0) AS total FROM contribution_events {where}", params)
     row = await cursor.fetchone()
     return int(row["total"] or 0)
+
+
+async def aggregate_by_contributor_for_period(period: int) -> list[dict]:
+    db = await get_db()
+    rows = await db.execute_fetchall(
+        """
+        SELECT
+            contributor,
+            app_admin,
+            COALESCE(SUM(equity_amount), 0) AS equity_amount
+        FROM contribution_events
+        WHERE period = ?
+        GROUP BY lower(contributor), lower(app_admin)
+        ORDER BY lower(contributor), lower(app_admin)
+        """,
+        (period,),
+    )
+    return [
+        {
+            "contributor": row["contributor"],
+            "app_admin": row["app_admin"] or "",
+            "equity_amount": int(row["equity_amount"] or 0),
+        }
+        for row in rows
+    ]

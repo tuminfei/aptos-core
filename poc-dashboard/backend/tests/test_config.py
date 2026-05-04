@@ -102,3 +102,59 @@ def test_explicit_rest_url_is_not_overridden_by_cluster_detection(tmp_path, monk
     settings = load_settings(str(config_path))
 
     assert settings.chain.rest_url == "http://127.0.0.1:39091/v1"
+
+
+def test_load_settings_reads_dashboard_frontend_config(tmp_path):
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        yaml.safe_dump({
+            "server": {"host": "127.0.0.1", "port": 48000},
+            "power_writeback": {
+                "enabled": True,
+                "interval_secs": 30,
+                "max_users_per_run": 25,
+            },
+            "frontend": {
+                "host": "127.0.0.1",
+                "port": 45173,
+                "backend_url": "http://127.0.0.1:48000",
+            },
+            "test_cluster": {
+                "port_start": 46180,
+                "base_node_count": 5,
+                "target_validator_count": 8,
+                "power_period_in_epochs": 6,
+            },
+        }),
+        encoding="utf-8",
+    )
+
+    settings = load_settings(str(config_path))
+
+    assert settings.server.host == "127.0.0.1"
+    assert settings.server.port == 48000
+    assert settings.power_writeback.enabled is True
+    assert settings.power_writeback.interval_secs == 30
+    assert settings.power_writeback.max_users_per_run == 25
+    assert settings.frontend.host == "127.0.0.1"
+    assert settings.frontend.port == 45173
+    assert settings.frontend.backend_url == "http://127.0.0.1:48000"
+    assert settings.test_cluster.port_start == 46180
+    assert settings.test_cluster.base_node_count == 5
+    assert settings.test_cluster.target_validator_count == 8
+    assert settings.test_cluster.power_period_in_epochs == 6
+
+
+def test_empty_rest_url_derives_from_test_cluster_port_start(tmp_path):
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        yaml.safe_dump({
+            "chain": {"rest_url": ""},
+            "test_cluster": {"port_start": 47180},
+        }),
+        encoding="utf-8",
+    )
+
+    settings = load_settings(str(config_path))
+
+    assert settings.chain.rest_url == "http://127.0.0.1:47183/v1"

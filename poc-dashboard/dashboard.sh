@@ -7,11 +7,95 @@ FRONTEND_DIR="$ROOT_DIR/frontend"
 PID_DIR="$ROOT_DIR/.pids"
 LOG_DIR="$ROOT_DIR/.logs"
 BACKEND_VENV_DIR="${BACKEND_VENV_DIR:-$BACKEND_DIR/.venv}"
+CONFIG_PATH="${CONFIG_PATH:-$ROOT_DIR/config.yaml}"
+CONFIG_PATH="$(python3 -c 'import os, sys; print(os.path.abspath(sys.argv[1]))' "$CONFIG_PATH")"
 
-BACKEND_HOST="${BACKEND_HOST:-0.0.0.0}"
-FRONTEND_HOST="${FRONTEND_HOST:-0.0.0.0}"
-BACKEND_PORT="${BACKEND_PORT:-38000}"
-FRONTEND_PORT="${FRONTEND_PORT:-35173}"
+_read_dashboard_config() {
+    python3 - "$CONFIG_PATH" <<'PY'
+import os
+import shlex
+import sys
+
+try:
+    import yaml
+except Exception:
+    yaml = None
+
+path = sys.argv[1]
+raw = {}
+if os.path.exists(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            text = f.read()
+        if yaml is not None:
+            raw = yaml.safe_load(text) or {}
+        else:
+            # Bootstrap fallback for environments before backend requirements are installed.
+            raw = {}
+            section = ""
+            for raw_line in text.splitlines():
+                line = raw_line.split("#", 1)[0].rstrip()
+                if not line.strip():
+                    continue
+                if not raw_line.startswith(" ") and line.endswith(":"):
+                    section = line[:-1].strip()
+                    raw.setdefault(section, {})
+                    continue
+                if section and raw_line.startswith(" ") and ":" in line:
+                    key, value = line.split(":", 1)
+                    value = value.strip().strip('"').strip("'")
+                    if value.isdigit():
+                        value = int(value)
+                    raw[section][key.strip()] = value
+    except Exception as exc:
+        print(f"无法解析配置文件 {path}: {exc}", file=sys.stderr)
+        sys.exit(2)
+
+def get(keys, default=""):
+    cur = raw
+    for key in keys:
+        if not isinstance(cur, dict) or key not in cur:
+            return default
+        cur = cur[key]
+    return default if cur is None else cur
+
+values = {
+    "CONFIG_BACKEND_HOST": get(("server", "host"), "0.0.0.0"),
+    "CONFIG_BACKEND_PORT": get(("server", "port"), 38000),
+    "CONFIG_FRONTEND_HOST": get(("frontend", "host"), "0.0.0.0"),
+    "CONFIG_FRONTEND_PORT": get(("frontend", "port"), 35173),
+    "CONFIG_FRONTEND_BACKEND_URL": get(("frontend", "backend_url"), ""),
+}
+
+for key, value in values.items():
+    print(f"{key}={shlex.quote(str(value))}")
+PY
+}
+
+_client_host() {
+    case "$1" in
+        ""|"0.0.0.0"|"::") printf "127.0.0.1" ;;
+        *) printf "%s" "$1" ;;
+    esac
+}
+
+_ws_url_from_http_url() {
+    case "$1" in
+        http://*)  printf "ws://%s" "${1#http://}" ;;
+        https://*) printf "wss://%s" "${1#https://}" ;;
+        *)         printf "%s" "$1" ;;
+    esac
+}
+
+CONFIG_EXPORTS="$(_read_dashboard_config)"
+eval "$CONFIG_EXPORTS"
+
+BACKEND_HOST="${BACKEND_HOST:-$CONFIG_BACKEND_HOST}"
+FRONTEND_HOST="${FRONTEND_HOST:-$CONFIG_FRONTEND_HOST}"
+BACKEND_PORT="${BACKEND_PORT:-$CONFIG_BACKEND_PORT}"
+FRONTEND_PORT="${FRONTEND_PORT:-$CONFIG_FRONTEND_PORT}"
+FRONTEND_BACKEND_URL="${FRONTEND_BACKEND_URL:-${CONFIG_FRONTEND_BACKEND_URL:-http://$(_client_host "$BACKEND_HOST"):$BACKEND_PORT}}"
+FRONTEND_WS_BACKEND_URL="${FRONTEND_WS_BACKEND_URL:-$(_ws_url_from_http_url "$FRONTEND_BACKEND_URL")}"
 
 mkdir -p "$PID_DIR" "$LOG_DIR"
 
@@ -92,7 +176,7 @@ start_backend() {
     fi
 
     cd "$BACKEND_DIR"
-    setsid "$python_bin" -m uvicorn main:app \
+    CONFIG_PATH="$CONFIG_PATH" setsid "$python_bin" -m uvicorn main:app \
         --host "$BACKEND_HOST" \
         --port "$BACKEND_PORT" \
         > "$LOG_DIR/backend.log" 2>&1 &
@@ -118,6 +202,13 @@ start_frontend() {
     fi
 
     cd "$FRONTEND_DIR"
+    CONFIG_PATH="$CONFIG_PATH" \
+    BACKEND_HOST="$BACKEND_HOST" \
+    BACKEND_PORT="$BACKEND_PORT" \
+    FRONTEND_HOST="$FRONTEND_HOST" \
+    FRONTEND_PORT="$FRONTEND_PORT" \
+    FRONTEND_BACKEND_URL="$FRONTEND_BACKEND_URL" \
+    FRONTEND_WS_BACKEND_URL="$FRONTEND_WS_BACKEND_URL" \
     setsid npm exec vite -- --host "$FRONTEND_HOST" --port "$FRONTEND_PORT" --strictPort \
         > "$LOG_DIR/frontend.log" 2>&1 &
     echo $! > "$PID_DIR/frontend.pid"
@@ -137,6 +228,7 @@ start_all() {
     green "全部启动完成"
     echo "  后端: http://$BACKEND_HOST:$BACKEND_PORT"
     echo "  前端: http://$FRONTEND_HOST:$FRONTEND_PORT"
+    echo "  配置: $CONFIG_PATH"
     echo "  日志: $LOG_DIR/"
 }
 
@@ -191,11 +283,19 @@ usage() {
   logs [target]    查看日志 (backend/frontend/all, 默认 all)
 
 环境变量:
+  CONFIG_PATH      配置文件路径 (默认 $ROOT_DIR/config.yaml)
   BACKEND_HOST     后端监听地址 (默认 0.0.0.0)
-  BACKEND_PORT     后端端口 (默认 38000)
+  BACKEND_PORT     后端端口 (默认读取 config.yaml server.port)
   BACKEND_VENV_DIR 后端虚拟环境目录 (默认 backend/.venv)
   FRONTEND_HOST    前端监听地址 (默认 0.0.0.0)
-  FRONTEND_PORT    前端端口 (默认 35173)
+  FRONTEND_PORT    前端端口 (默认读取 config.yaml frontend.port)
+  FRONTEND_BACKEND_URL 前端代理的后端地址 (默认由 server.host/server.port 派生)
+
+配置文件:
+  cluster_dir      验证者集群目录，后端从这里读取 API、chain_id 和密钥
+  chain.rest_url   显式链 REST 地址；留空时后端从 cluster_dir 自动探测
+  server           后端监听配置
+  frontend         前端监听与代理配置
 EOF
 }
 

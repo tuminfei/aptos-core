@@ -36,8 +36,11 @@ import {
 } from '../services/governance';
 import {
   getPowerStore,
+  getPowerWritebackTask,
   initializePowerPeriodClock,
+  configurePowerWritebackTask,
   queryPowerStoreUsers,
+  runPowerWritebackOnce,
   setOperator,
   setPeriod,
   setRetention,
@@ -72,9 +75,21 @@ export default function System() {
   const fetchChain = useCallback(() => getChainInfo(), []);
   const fetchConfig = useCallback(() => getGovernanceConfig(), []);
   const fetchPowerStore = useCallback(() => getPowerStore(), []);
+  const fetchWritebackTask = useCallback(() => getPowerWritebackTask(), []);
   const { data: chain, refresh: refreshChain } = usePolling(fetchChain, 10000);
   const { data: config, refresh: refreshConfig } = usePolling(fetchConfig, 30000);
   const { data: powerStore, refresh: refreshPowerStore } = usePolling(fetchPowerStore, 0);
+  const { data: writebackTask, refresh: refreshWritebackTask } = usePolling(fetchWritebackTask, 10000);
+
+  const refreshAll = useCallback(() => {
+    refreshChain();
+    refreshConfig();
+    refreshPowerStore();
+    refreshWritebackTask();
+  }, [refreshChain, refreshConfig, refreshPowerStore, refreshWritebackTask]);
+
+  useWebSocketEvent('power_writeback_task', refreshWritebackTask);
+  useWebSocketEvent('power_writeback_submitted', refreshAll);
 
   const [mintAddr, setMintAddr] = useState('');
   const [mintAmount, setMintAmount] = useState<number>(0);
@@ -97,13 +112,12 @@ export default function System() {
   const [batchPeriod, setBatchPeriod] = useState<number>(0);
   const [batchText, setBatchText] = useState('');
   const [batchPreview, setBatchPreview] = useState<{ address: string; power: number }[]>([]);
+  const [writebackEnabled, setWritebackEnabled] = useState<boolean | null>(null);
+  const [writebackInterval, setWritebackInterval] = useState<number | null>(null);
+  const [writebackMaxUsers, setWritebackMaxUsers] = useState<number | null>(null);
+  const [writebackMaxGas, setWritebackMaxGas] = useState<number | null>(null);
+  const [writebackGasUnitPrice, setWritebackGasUnitPrice] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
-
-  const refreshAll = () => {
-    refreshChain();
-    refreshConfig();
-    refreshPowerStore();
-  };
 
   const doAction = async (name: string, fn: () => Promise<any>) => {
     setSubmitting(true);
@@ -191,6 +205,13 @@ export default function System() {
   const effectiveRequiredProposerStake = requiredProposerStakeVal ?? Number(gov.required_proposer_stake || 0);
   const effectiveVotingDuration = votingDurationVal ?? Number(gov.voting_duration_secs || 0);
   const effectiveCooldownSecs = cooldownSecsVal ?? Number(stk.cooldown_secs || 0);
+  const writebackSettings = writebackTask?.settings || {};
+  const effectiveWritebackEnabled = writebackEnabled ?? Boolean(writebackSettings.enabled);
+  const effectiveWritebackInterval = writebackInterval ?? Number(writebackSettings.interval_secs || 60);
+  const effectiveWritebackMaxUsers = writebackMaxUsers ?? Number(writebackSettings.max_users_per_run || 1000);
+  const effectiveWritebackMaxGas = writebackMaxGas ?? Number(writebackSettings.max_gas || 400000);
+  const effectiveWritebackGasUnitPrice = writebackGasUnitPrice ?? Number(writebackSettings.gas_unit_price || 100);
+  const writebackLastResult = writebackTask?.last_result || {};
 
   const handleSetOctasPerMillionPower = () => {
     if (effectiveOctasPerMillionPower < 0) {
@@ -222,6 +243,32 @@ export default function System() {
       return;
     }
     doAction('修改 cooldown_secs', () => setCooldownSecs({ cooldown_secs: effectiveCooldownSecs }));
+  };
+
+  const handleConfigureWritebackTask = () => {
+    if (effectiveWritebackInterval < 5) {
+      message.warning('任务间隔至少 5 秒');
+      return;
+    }
+    if (effectiveWritebackMaxUsers <= 0) {
+      message.warning('单次最大用户数必须大于 0');
+      return;
+    }
+    doAction('保存算力上链任务', () => configurePowerWritebackTask({
+      enabled: effectiveWritebackEnabled,
+      interval_secs: effectiveWritebackInterval,
+      max_users_per_run: effectiveWritebackMaxUsers,
+      max_gas: effectiveWritebackMaxGas,
+      gas_unit_price: effectiveWritebackGasUnitPrice,
+    }));
+  };
+
+  const handleRunWritebackOnce = (force = false) => {
+    Modal.confirm({
+      title: force ? '确认强制执行算力上链?' : '确认立即执行算力上链?',
+      content: force ? '强制执行会忽略本进程内的已上链 period 缓存。' : '任务会读取当前 period，并聚合上一 period 的 ContributionEvent。',
+      onOk: () => doAction(force ? '强制算力上链' : '算力上链', () => runPowerWritebackOnce({ force })),
+    });
   };
 
   const handleSetEpochInterval = () => {
@@ -598,6 +645,107 @@ export default function System() {
                     </Card>
                   </Col>
                 </Row>
+
+                <Card title="算力上链任务" size="small" style={{ marginBottom: 16 }}>
+                  <Row gutter={[16, 16]}>
+                    <Col xs={24} xl={9}>
+                      <Descriptions bordered size="small" column={1}>
+                        <Descriptions.Item label="运行状态">
+                          <Space>
+                            <Tag color={writebackTask?.running ? 'green' : 'default'}>{writebackTask?.running ? '运行中' : '未运行'}</Tag>
+                            {writebackTask?.busy ? <Tag color="blue">执行中</Tag> : null}
+                          </Space>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="任务启用">{writebackSettings.enabled ? <Tag color="green">已启用</Tag> : <Tag>未启用</Tag>}</Descriptions.Item>
+                        <Descriptions.Item label="当前 Source Period">P{formatNumber(Math.max(0, Number(powerStore?.current_period || 0) - 1))}</Descriptions.Item>
+                        <Descriptions.Item label="当前 Target Period">P{formatNumber(stageTargetPeriod)}</Descriptions.Item>
+                        <Descriptions.Item label="最近结果">{writebackLastResult.status ? `${writebackLastResult.status}${writebackLastResult.reason ? ` / ${writebackLastResult.reason}` : ''}` : '-'}</Descriptions.Item>
+                        <Descriptions.Item label="最近 TX">{writebackLastResult.tx_hash ? <AddressTag address={writebackLastResult.tx_hash} /> : '-'}</Descriptions.Item>
+                        <Descriptions.Item label="最近错误">{writebackTask?.last_error || '-'}</Descriptions.Item>
+                      </Descriptions>
+                    </Col>
+                    <Col xs={24} xl={15}>
+                      <Form layout="vertical">
+                        <Row gutter={12}>
+                          <Col xs={24} md={8}>
+                            <Form.Item label="启用任务">
+                              <Space.Compact style={{ width: '100%' }}>
+                                <Button
+                                  block
+                                  type={effectiveWritebackEnabled ? 'primary' : 'default'}
+                                  onClick={() => setWritebackEnabled(true)}
+                                >
+                                  启用
+                                </Button>
+                                <Button
+                                  block
+                                  type={!effectiveWritebackEnabled ? 'primary' : 'default'}
+                                  onClick={() => setWritebackEnabled(false)}
+                                >
+                                  停用
+                                </Button>
+                              </Space.Compact>
+                            </Form.Item>
+                          </Col>
+                          <Col xs={12} md={8}>
+                            <Form.Item label="检查间隔">
+                              <InputNumber
+                                value={effectiveWritebackInterval}
+                                onChange={(value) => setWritebackInterval(value ?? null)}
+                                min={5}
+                                precision={0}
+                                addonAfter="秒"
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={12} md={8}>
+                            <Form.Item label="单次最大用户">
+                              <InputNumber
+                                value={effectiveWritebackMaxUsers}
+                                onChange={(value) => setWritebackMaxUsers(value ?? null)}
+                                min={1}
+                                precision={0}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={12} md={8}>
+                            <Form.Item label="max_gas">
+                              <InputNumber
+                                value={effectiveWritebackMaxGas}
+                                onChange={(value) => setWritebackMaxGas(value ?? null)}
+                                min={1}
+                                precision={0}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={12} md={8}>
+                            <Form.Item label="gas_unit_price">
+                              <InputNumber
+                                value={effectiveWritebackGasUnitPrice}
+                                onChange={(value) => setWritebackGasUnitPrice(value ?? null)}
+                                min={1}
+                                precision={0}
+                                style={{ width: '100%' }}
+                              />
+                            </Form.Item>
+                          </Col>
+                          <Col xs={24} md={12}>
+                            <Form.Item label="操作">
+                              <Space wrap>
+                                <Button loading={submitting} onClick={handleConfigureWritebackTask}>保存设置</Button>
+                                <Button loading={submitting} onClick={() => handleRunWritebackOnce(false)}>立即执行</Button>
+                                <Button danger loading={submitting} onClick={() => handleRunWritebackOnce(true)}>强制执行</Button>
+                              </Space>
+                            </Form.Item>
+                          </Col>
+                        </Row>
+                      </Form>
+                    </Col>
+                  </Row>
+                </Card>
 
                 <Card title="批量打点" size="small">
                   <Form layout="vertical">

@@ -5,7 +5,7 @@ import { usePolling } from '../hooks/usePolling';
 import AddressTag from '../components/AddressTag';
 import { ACTION_LABELS } from '../utils/constants';
 
-const ACTIONS = ['', 'stage_power', 'mint_topo', 'deposit', 'delegate', 'undelegate', 'withdraw', 'force_end_epoch', 'join_validator_set', 'leave_validator_set', 'whitelist_app', 'suspend_app', 'set_app_weight', 'register_validator', 'set_power_period', 'stage_batch_power'];
+const ACTIONS = ['', 'stage_power', 'mint_topo', 'deposit', 'delegate', 'undelegate', 'withdraw', 'force_end_epoch', 'join_validator_set', 'leave_validator_set', 'whitelist_app', 'suspend_app', 'set_app_weight', 'register_validator', 'set_power_period', 'stage_batch_power', 'power_writeback_stage_batch'];
 
 export default function Logs() {
   const [action, setAction] = useState('');

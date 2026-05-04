@@ -105,6 +105,7 @@ def _extract_contribution_events(txn: dict, *, app_admin: str = "") -> list[dict
             "contributor": _event_address(data.get("contributor")),
             "equity_token": _event_address(data.get("equity_token")),
             "equity_amount": int(data.get("equity_amount") or 0),
+            "period": int(data.get("period") or 0),
             "event_type": event_type,
             "raw_event": event,
         })

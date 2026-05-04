@@ -1,5 +1,7 @@
 import pytest
+from app.models import contribution_event
 from app.models.watchlist import add_address
+from app.services import power_writeback_svc
 
 
 @pytest.mark.asyncio
@@ -88,3 +90,92 @@ async def test_mint_topo_success(client, mock_client):
     assert resp.status_code == 200
     assert resp.json()["success"] is True
     assert mock_client.submitted_txns[-1]["payload"]["function"] == "0x1::topo_coin::mint"
+
+
+@pytest.mark.asyncio
+async def test_power_writeback_builds_previous_period_updates(client, mock_client):
+    await contribution_event.insert_events([
+        {
+            "tx_hash": "0x" + "1" * 64,
+            "event_index": 0,
+            "version": 1,
+            "app_admin": "0xddd",
+            "app_address": "0xabc",
+            "contributor": "0xaaa",
+            "equity_token": "0xdef",
+            "equity_amount": 100,
+            "period": 22,
+            "event_type": "0x1::poc_contribution::ContributionEvent",
+            "raw_event": {},
+        },
+    ])
+    mock_client.set_view_response("0x1::poc_power_store::get_user_powers_for_period", [[4500]])
+    mock_client.set_view_response("0x1::poc_registry::get_effective_weight_pbs", [5000])
+
+    result = await power_writeback_svc.build_power_updates(
+        mock_client,
+        source_period=22,
+        target_period=24,
+        limit=100,
+    )
+
+    assert result["source_event_groups"] == 1
+    assert result["total_delta_power"] == 50
+    assert result["updates"] == [{"address": "0xaaa", "power": 4550, "base_power": 4500, "delta_power": 50}]
+
+
+@pytest.mark.asyncio
+async def test_power_writeback_run_once_skips_duplicate_period(client, monkeypatch):
+    await contribution_event.insert_events([
+        {
+            "tx_hash": "0x" + "2" * 64,
+            "event_index": 0,
+            "version": 1,
+            "app_admin": "0xddd",
+            "app_address": "0xabc",
+            "contributor": "0xaaa",
+            "equity_token": "0xdef",
+            "equity_amount": 100,
+            "period": 22,
+            "event_type": "0x1::poc_contribution::ContributionEvent",
+            "raw_event": {},
+        },
+    ])
+
+    calls = []
+
+    async def fake_stage_updates(client, *, target_period, updates, max_gas, gas_unit_price):
+        calls.append({"target_period": target_period, "updates": updates})
+        return "cli:stage-batch"
+
+    monkeypatch.setattr(power_writeback_svc, "stage_power_updates", fake_stage_updates)
+
+    first = await power_writeback_svc.run_once(force=True)
+    second = await power_writeback_svc.run_once(force=False)
+
+    assert first["status"] == "success"
+    assert first["source_period"] == 22
+    assert first["target_period"] == 24
+    assert len(calls) == 1
+    assert second["status"] == "skipped"
+    assert second["reason"] == "already_uploaded"
+
+
+@pytest.mark.asyncio
+async def test_power_writeback_task_config_api(client):
+    resp = await client.post(
+        "/api/v1/power/writeback-task/config",
+        json={
+            "enabled": False,
+            "interval_secs": 15,
+            "max_users_per_run": 10,
+            "max_gas": 500000,
+            "gas_unit_price": 101,
+        },
+    )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["settings"]["enabled"] is False
+    assert data["settings"]["interval_secs"] == 15
+    assert data["settings"]["max_users_per_run"] == 10
