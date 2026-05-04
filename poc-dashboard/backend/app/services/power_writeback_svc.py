@@ -8,6 +8,7 @@ from app.api.ws import broadcast
 from app.chain import view
 from app.chain.client import ChainClient, get_chain_client
 from app.chain.keys import get_key_manager
+from app.chain.transaction import submit_entry_function
 from app.config import get_settings
 from app.models import contribution_event, operation_log
 from app.services import dapp_svc
@@ -336,20 +337,73 @@ async def stage_power_updates(
     km = get_key_manager()
     addresses = [item["address"] for item in updates]
     powers = [int(item["power"]) for item in updates]
-    return await dapp_svc.run_poc_framework_script(
-        "stage_power_store_batch.move",
-        core_key=km.core_resources_key,
-        core_address=km.core_resources_address,
-        rest_url=client.base_url,
-        args=[
-            f"u64:{target_period}",
-            f"address:{_vector_arg(addresses)}",
-            f"u64:{_vector_arg(powers)}",
-        ],
-        max_gas=max_gas,
-        gas_unit_price=gas_unit_price,
-    )
+    if not addresses:
+        return "batch:0"
+
+    operator_error: Exception | None = None
+    try:
+        operator = await view.get_power_operator(client)
+        operator_key = km.get_operator_key_by_address(operator)
+        if operator_key:
+            return await submit_entry_function(
+                client,
+                operator_key,
+                operator,
+                "0x1::poc_power_store::stage_batch_update",
+                args=[str(target_period), addresses, [str(power) for power in powers]],
+                max_gas=max_gas,
+                gas_unit_price=gas_unit_price,
+            )
+    except Exception as exc:
+        operator_error = exc
+
+    try:
+        return await _stage_power_updates_one_by_one(
+            client,
+            target_period=target_period,
+            addresses=addresses,
+            powers=powers,
+            max_gas=max_gas,
+            gas_unit_price=gas_unit_price,
+        )
+    except Exception as exc:
+        if operator_error:
+            raise RuntimeError(f"batch entry failed: {operator_error}; single-update fallback failed: {exc}") from exc
+        raise
 
 
-def _vector_arg(values: list[Any]) -> str:
-    return "[" + ",".join(str(value) for value in values) + "]"
+async def _stage_power_updates_one_by_one(
+    client: ChainClient,
+    *,
+    target_period: int,
+    addresses: list[str],
+    powers: list[int],
+    max_gas: int,
+    gas_unit_price: int,
+) -> str:
+    current_period = await view.get_current_period(client)
+    expected_target = current_period + 1
+    if target_period != expected_target:
+        raise RuntimeError(f"target_period {target_period} must equal current_period + 1 ({expected_target})")
+
+    km = get_key_manager()
+    tx_hashes = []
+    for address, power in zip(addresses, powers):
+        tx_hashes.append(await submit_entry_function(
+            client,
+            km.core_resources_key,
+            km.core_resources_address,
+            "0x1::topo_governance::stage_power_update_test_only",
+            args=[address, str(power)],
+            max_gas=max_gas,
+            gas_unit_price=gas_unit_price,
+        ))
+    return _summarize_batch_tx_hashes(tx_hashes)
+
+
+def _summarize_batch_tx_hashes(tx_hashes: list[str]) -> str:
+    if not tx_hashes:
+        return "batch:0"
+    if len(tx_hashes) == 1:
+        return tx_hashes[0]
+    return f"batch:{len(tx_hashes)}:{tx_hashes[-1]}"

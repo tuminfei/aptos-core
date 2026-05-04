@@ -162,6 +162,52 @@ async def test_power_writeback_run_once_skips_duplicate_period(client, monkeypat
 
 
 @pytest.mark.asyncio
+async def test_stage_power_updates_uses_operator_batch_entry(mock_client):
+    mock_client.set_view_response("0x1::poc_power_store::get_operator", ["0x1a2b"])
+
+    tx = await power_writeback_svc.stage_power_updates(
+        mock_client,
+        target_period=24,
+        updates=[
+            {"address": "0xaaa", "power": 100},
+            {"address": "0xbbb", "power": 200},
+        ],
+        max_gas=400000,
+        gas_unit_price=100,
+    )
+
+    assert tx == mock_client.submitted_txns[-1]["hash"]
+    submitted = mock_client.submitted_txns[-1]
+    assert submitted["sender"] == "0x1a2b"
+    assert submitted["payload"]["function"] == "0x1::poc_power_store::stage_batch_update"
+    assert submitted["payload"]["arguments"] == ["24", ["0xaaa", "0xbbb"], ["100", "200"]]
+
+
+@pytest.mark.asyncio
+async def test_stage_power_updates_falls_back_to_single_updates(mock_client):
+    tx = await power_writeback_svc.stage_power_updates(
+        mock_client,
+        target_period=24,
+        updates=[
+            {"address": "0xaaa", "power": 100},
+            {"address": "0xbbb", "power": 200},
+        ],
+        max_gas=400000,
+        gas_unit_price=100,
+    )
+
+    assert tx.startswith("batch:2:")
+    assert [item["payload"]["function"] for item in mock_client.submitted_txns[-2:]] == [
+        "0x1::topo_governance::stage_power_update_test_only",
+        "0x1::topo_governance::stage_power_update_test_only",
+    ]
+    assert [item["payload"]["arguments"] for item in mock_client.submitted_txns[-2:]] == [
+        ["0xaaa", "100"],
+        ["0xbbb", "200"],
+    ]
+
+
+@pytest.mark.asyncio
 async def test_power_writeback_task_config_api(client):
     resp = await client.post(
         "/api/v1/power/writeback-task/config",

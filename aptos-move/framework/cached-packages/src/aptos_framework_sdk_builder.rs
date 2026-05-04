@@ -651,6 +651,13 @@ pub enum EntryFunctionCall {
         permissions_storage_addr: AccountAddress,
     },
 
+    /// Initialize the upgrade-compatible power-period countdown for an existing chain.
+    ///
+    /// New deployments create this resource during `initialize_power_store_internal`.
+    /// Existing chains can call this once after publishing the upgraded module, before
+    /// changing `power_period_in_epochs`, to opt into countdown-based period advancement.
+    PocPowerStoreInitializePowerPeriodClock {},
+
     PocPowerStoreInitializePowerStore {
         operator: AccountAddress,
     },
@@ -674,11 +681,11 @@ pub enum EntryFunctionCall {
         new_operator: AccountAddress,
     },
 
-    /// Update the power-period length used to advance `current_period`.
+    /// Update the power-period length used when the next power period starts.
     ///
-    /// This is a framework-governed operational parameter. Production deployments can
-    /// keep the default long period, while tests can shorten it to make staged power
-    /// updates become live after fewer epoch transitions.
+    /// The current period's remaining countdown is not recomputed. This prevents a
+    /// parameter change from reinterpreting historical epochs and making
+    /// `current_period` jump by more than one at the next epoch boundary.
     PocPowerStoreSetPowerPeriodInEpochs {
         power_period_in_epochs: u64,
     },
@@ -695,7 +702,7 @@ pub enum EntryFunctionCall {
     ///   `effective_period = current_period + 1` (i.e., target_period).
     ///
     /// Constraints:
-    /// - Only the designated `operator` may call this.
+    /// - Only the designated `operator` or @aptos_framework may call this.
     /// - `target_period` must equal `current_period + 1`; staging further ahead is not allowed
     ///   to prevent the operator from pre-loading multiple future periods at once.
     /// - `users` and `powers` must have the same length.
@@ -968,6 +975,27 @@ pub enum EntryFunctionCall {
     StakingRegistrySetActivePowerThresholds {
         min_active_power: u64,
         force_exit_power_bps: u64,
+    },
+
+    StakingRegistrySetCooldownSecs {
+        cooldown_secs: u64,
+    },
+
+    /// Update only the force-exit threshold in basis points.
+    ///
+    /// Users whose effective power falls below
+    /// `(min_active_power * force_exit_power_bps / 10000)` are force-undelegated
+    /// at epoch boundaries. Keeps the existing min_active_power unchanged.
+    StakingRegistrySetForceExitPowerBps {
+        force_exit_power_bps: u64,
+    },
+
+    /// Update only the minimum effective power required to join or remain in a validator pool.
+    ///
+    /// Keeps the existing force-exit BPS unchanged. Only the framework account may change
+    /// this parameter.
+    StakingRegistrySetMinActivePower {
+        min_active_power: u64,
     },
 
     /// Update how much deposited TOPO is required to back 1,000,000 units of POC power.
@@ -1508,6 +1536,9 @@ impl EntryFunctionCall {
             PermissionedSignerRevokePermissionStorageAddress {
                 permissions_storage_addr,
             } => permissioned_signer_revoke_permission_storage_address(permissions_storage_addr),
+            PocPowerStoreInitializePowerPeriodClock {} => {
+                poc_power_store_initialize_power_period_clock()
+            },
             PocPowerStoreInitializePowerStore { operator } => {
                 poc_power_store_initialize_power_store(operator)
             },
@@ -1644,11 +1675,18 @@ impl EntryFunctionCall {
             } => {
                 staking_registry_set_active_power_thresholds(min_active_power, force_exit_power_bps)
             },
+            StakingRegistrySetCooldownSecs { cooldown_secs } => {
+                staking_registry_set_cooldown_secs(cooldown_secs)
+            },
+            StakingRegistrySetForceExitPowerBps {
+                force_exit_power_bps,
+            } => staking_registry_set_force_exit_power_bps(force_exit_power_bps),
+            StakingRegistrySetMinActivePower { min_active_power } => {
+                staking_registry_set_min_active_power(min_active_power)
+            },
             StakingRegistrySetOctasPerMillionPower {
                 octas_per_million_power,
-            } => {
-                staking_registry_set_octas_per_million_power(octas_per_million_power)
-            },
+            } => staking_registry_set_octas_per_million_power(octas_per_million_power),
             StakingRegistryUndelegate {} => staking_registry_undelegate(),
             StakingRegistryWithdrawDeposit {} => staking_registry_withdraw_deposit(),
             TopoAccountBatchTransfer {
@@ -3320,6 +3358,26 @@ pub fn permissioned_signer_revoke_permission_storage_address(
     ))
 }
 
+/// Initialize the upgrade-compatible power-period countdown for an existing chain.
+///
+/// New deployments create this resource during `initialize_power_store_internal`.
+/// Existing chains can call this once after publishing the upgraded module, before
+/// changing `power_period_in_epochs`, to opt into countdown-based period advancement.
+pub fn poc_power_store_initialize_power_period_clock() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("initialize_power_period_clock").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 pub fn poc_power_store_initialize_power_store(operator: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -3397,11 +3455,11 @@ pub fn poc_power_store_set_operator(new_operator: AccountAddress) -> Transaction
     ))
 }
 
-/// Update the power-period length used to advance `current_period`.
+/// Update the power-period length used when the next power period starts.
 ///
-/// This is a framework-governed operational parameter. Production deployments can
-/// keep the default long period, while tests can shorten it to make staged power
-/// updates become live after fewer epoch transitions.
+/// The current period's remaining countdown is not recomputed. This prevents a
+/// parameter change from reinterpreting historical epochs and making
+/// `current_period` jump by more than one at the next epoch boundary.
 pub fn poc_power_store_set_power_period_in_epochs(
     power_period_in_epochs: u64,
 ) -> TransactionPayload {
@@ -3444,7 +3502,7 @@ pub fn poc_power_store_set_retention_bps_per_period(
 ///   `effective_period = current_period + 1` (i.e., target_period).
 ///
 /// Constraints:
-/// - Only the designated `operator` may call this.
+/// - Only the designated `operator` or @aptos_framework may call this.
 /// - `target_period` must equal `current_period + 1`; staging further ahead is not allowed
 ///   to prevent the operator from pre-loading multiple future periods at once.
 /// - `users` and `powers` must have the same length.
@@ -4129,6 +4187,60 @@ pub fn staking_registry_set_active_power_thresholds(
             bcs::to_bytes(&min_active_power).unwrap(),
             bcs::to_bytes(&force_exit_power_bps).unwrap(),
         ],
+    ))
+}
+
+pub fn staking_registry_set_cooldown_secs(cooldown_secs: u64) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("staking_registry").to_owned(),
+        ),
+        ident_str!("set_cooldown_secs").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&cooldown_secs).unwrap()],
+    ))
+}
+
+/// Update only the force-exit threshold in basis points.
+///
+/// Users whose effective power falls below
+/// `(min_active_power * force_exit_power_bps / 10000)` are force-undelegated
+/// at epoch boundaries. Keeps the existing min_active_power unchanged.
+pub fn staking_registry_set_force_exit_power_bps(force_exit_power_bps: u64) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("staking_registry").to_owned(),
+        ),
+        ident_str!("set_force_exit_power_bps").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&force_exit_power_bps).unwrap()],
+    ))
+}
+
+/// Update only the minimum effective power required to join or remain in a validator pool.
+///
+/// Keeps the existing force-exit BPS unchanged. Only the framework account may change
+/// this parameter.
+pub fn staking_registry_set_min_active_power(min_active_power: u64) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("staking_registry").to_owned(),
+        ),
+        ident_str!("set_min_active_power").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&min_active_power).unwrap()],
     ))
 }
 
@@ -5524,6 +5636,16 @@ mod decoder {
         }
     }
 
+    pub fn poc_power_store_initialize_power_period_clock(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreInitializePowerPeriodClock {})
+        } else {
+            None
+        }
+    }
+
     pub fn poc_power_store_initialize_power_store(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -5939,6 +6061,42 @@ mod decoder {
             Some(EntryFunctionCall::StakingRegistrySetActivePowerThresholds {
                 min_active_power: bcs::from_bytes(script.args().get(0)?).ok()?,
                 force_exit_power_bps: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn staking_registry_set_cooldown_secs(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::StakingRegistrySetCooldownSecs {
+                cooldown_secs: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn staking_registry_set_force_exit_power_bps(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::StakingRegistrySetForceExitPowerBps {
+                force_exit_power_bps: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn staking_registry_set_min_active_power(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::StakingRegistrySetMinActivePower {
+                min_active_power: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -6518,6 +6676,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::permissioned_signer_revoke_permission_storage_address),
         );
         map.insert(
+            "poc_power_store_initialize_power_period_clock".to_string(),
+            Box::new(decoder::poc_power_store_initialize_power_period_clock),
+        );
+        map.insert(
             "poc_power_store_initialize_power_store".to_string(),
             Box::new(decoder::poc_power_store_initialize_power_store),
         );
@@ -6660,6 +6822,18 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "staking_registry_set_active_power_thresholds".to_string(),
             Box::new(decoder::staking_registry_set_active_power_thresholds),
+        );
+        map.insert(
+            "staking_registry_set_cooldown_secs".to_string(),
+            Box::new(decoder::staking_registry_set_cooldown_secs),
+        );
+        map.insert(
+            "staking_registry_set_force_exit_power_bps".to_string(),
+            Box::new(decoder::staking_registry_set_force_exit_power_bps),
+        );
+        map.insert(
+            "staking_registry_set_min_active_power".to_string(),
+            Box::new(decoder::staking_registry_set_min_active_power),
         );
         map.insert(
             "staking_registry_set_octas_per_million_power".to_string(),
