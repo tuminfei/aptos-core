@@ -113,7 +113,7 @@ export default function ProxyStake() {
                   <AddressSelect kind="user" value={form.getFieldValue('target_user')} onChange={(v) => form.setFieldValue('target_user', v)} />
                 </Form.Item>
                 <Form.Item name="mint_amount" label="铸造数量"><InputNumber min={0} style={{ width: '100%' }} addonAfter="TOPO" /></Form.Item>
-                <Form.Item name="set_power" label="设置算力"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
+                <Form.Item name="set_power" label="算力写入"><InputNumber min={0} style={{ width: '100%' }} /></Form.Item>
                 <Form.Item name="deposit_amount" label="保证金数量"><InputNumber min={0} style={{ width: '100%' }} addonAfter="TOPO" /></Form.Item>
                 <Form.Item name="delegate_to" label="委托验证者" rules={[{ required: true }]}>
                   <AddressSelect kind="validator" value={form.getFieldValue('delegate_to')} onChange={(v) => form.setFieldValue('delegate_to', v)} />

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   Alert,
   Button,
@@ -54,8 +55,18 @@ import { useWebSocketEvent } from '../hooks/useWebSocket';
 import AddressSelect from '../components/AddressSelect';
 import AddressTag from '../components/AddressTag';
 import { formatDuration, formatNumber, formatRewardRate, formatTimestamp, topoToOctas } from '../utils/format';
+import './System.css';
 
 const { Text } = Typography;
+
+function parameterName(label: string, raw?: string): ReactNode {
+  return (
+    <Space direction="vertical" size={0}>
+      <Text>{label}</Text>
+      {raw ? <Text type="secondary" className="parameter-table-raw-name">{raw}</Text> : null}
+    </Space>
+  );
+}
 
 function formatBps(bps: number): string {
   return `${(Number(bps || 0) / 100).toFixed(2)}%`;
@@ -70,6 +81,45 @@ function formatFixedPointPercent(rate: { percent?: number; raw?: string } | unde
 }
 
 const DEFAULT_REWARD_RATE_DENOMINATOR = 1_000_000_000;
+
+interface ParameterRow {
+  key: string;
+  parameter: ReactNode;
+  current: ReactNode;
+  editor: ReactNode;
+  action?: ReactNode;
+  actionRowSpan?: number;
+}
+
+function ParameterTable({ title, rows, scrollX = 860 }: { title?: string; rows: ParameterRow[]; scrollX?: number }) {
+  return (
+    <div className="parameter-table-section">
+      {title ? <div className="parameter-table-title">{title}</div> : null}
+      <Table<ParameterRow>
+        size="small"
+        rowKey="key"
+        pagination={false}
+        tableLayout="fixed"
+        scroll={{ x: scrollX }}
+        dataSource={rows}
+        columns={[
+          { title: '参数', dataIndex: 'parameter', width: 260 },
+          { title: '当前值', dataIndex: 'current', width: 270 },
+          { title: '修改值', dataIndex: 'editor', width: 300 },
+          {
+            title: '操作',
+            dataIndex: 'action',
+            width: 190,
+            render: (value, row) => ({
+              children: value || <Text type="secondary">-</Text>,
+              props: { rowSpan: row.actionRowSpan ?? 1 },
+            }),
+          },
+        ]}
+      />
+    </div>
+  );
+}
 
 function percentToFraction(percent: number, denominator = DEFAULT_REWARD_RATE_DENOMINATOR): { numerator: number; denominator: number } {
   const safePercent = Number.isFinite(percent) ? Math.max(0, percent) : 0;
@@ -184,21 +234,21 @@ export default function System() {
     const rows = parseBatchUpdates(batchText);
     setBatchPreview(rows);
     if (!rows.length) {
-      message.warning('没有解析到有效的批量打点记录');
+      message.warning('没有解析到有效的批量算力写入记录');
     }
   };
 
   const handleBatchStage = async () => {
     const updates = batchPreview.length ? batchPreview : parseBatchUpdates(batchText);
     if (!updates.length) {
-      message.warning('没有有效的批量打点记录');
+      message.warning('没有有效的批量算力写入记录');
       return;
     }
     const target = batchPeriod || Number(powerStore?.current_period || 0) + 1;
     Modal.confirm({
-      title: `确认批量打点到 Period ${target}?`,
+      title: `确认批量写入算力到 Period ${target}?`,
       content: `共 ${updates.length} 条用户算力更新`,
-      onOk: () => doAction('批量打点', () => stageBatch({ target_period: target, updates })),
+      onOk: () => doAction('批量写入算力', () => stageBatch({ target_period: target, updates })),
     });
   };
 
@@ -391,6 +441,569 @@ export default function System() {
     }));
   };
 
+  const validatorAccessRows: ParameterRow[] = [
+    {
+      key: 'minimum_stake',
+      parameter: parameterName('加入验证者最低质押', 'minimum_stake'),
+      current: formatNumber(stakingConfig.minimum_stake || 0),
+      editor: (
+        <InputNumber
+          value={stakingMinimumStakeVal ?? undefined}
+          onChange={(value) => setStakingMinimumStakeVal(value ?? null)}
+          min={0}
+          precision={0}
+          placeholder={`当前 ${formatNumber(stakingConfig.minimum_stake || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      action: <Button loading={submitting} onClick={handleSetStakingConfig}>保存质押配置</Button>,
+    },
+    {
+      key: 'min_active_power',
+      parameter: parameterName('有效算力门槛', 'min_active_power'),
+      current: formatNumber(stk.min_active_power || 0),
+      editor: (
+        <InputNumber
+          value={minActivePowerVal ?? undefined}
+          onChange={(value) => setMinActivePowerVal(value ?? null)}
+          min={1}
+          precision={0}
+          placeholder={`当前 ${formatNumber(stk.min_active_power || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      action: <Button loading={submitting} onClick={handleSetMinActivePower}>保存门槛</Button>,
+    },
+    {
+      key: 'force_exit_power_bps',
+      parameter: parameterName('强制退出阈值', 'force_exit_power_bps'),
+      current: `${formatNumber(stk.force_exit_power_bps || 0)} (${formatBps(stk.force_exit_power_bps || 0)})`,
+      editor: (
+        <InputNumber
+          value={forceExitPowerBpsVal ?? undefined}
+          onChange={(value) => setForceExitPowerBpsVal(value ?? null)}
+          min={1}
+          max={10000}
+          precision={0}
+          addonAfter="bps"
+          placeholder={`当前 ${formatNumber(stk.force_exit_power_bps || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      action: <Button loading={submitting} onClick={handleSetForceExitPowerBps}>保存阈值</Button>,
+    },
+    {
+      key: 'octas_per_million_power',
+      parameter: parameterName('质押到算力换算', 'octas_per_million_power'),
+      current: formatNumber(stk.octas_per_million_power || 0),
+      editor: (
+        <InputNumber
+          value={octasPerMillionPowerVal ?? undefined}
+          onChange={(value) => setOctasPerMillionPowerVal(value ?? null)}
+          min={0}
+          precision={0}
+          placeholder={`当前 ${formatNumber(stk.octas_per_million_power || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      action: <Button loading={submitting} onClick={handleSetOctasPerMillionPower}>保存换算</Button>,
+    },
+    {
+      key: 'maximum_stake',
+      parameter: parameterName('最大质押', 'maximum_stake'),
+      current: formatNumber(stakingConfig.maximum_stake || 0),
+      editor: (
+        <InputNumber
+          value={stakingMaximumStakeVal ?? undefined}
+          onChange={(value) => setStakingMaximumStakeVal(value ?? null)}
+          min={1}
+          precision={0}
+          placeholder={`当前 ${formatNumber(stakingConfig.maximum_stake || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      action: <Button loading={submitting} onClick={handleSetStakingConfig}>保存质押配置</Button>,
+    },
+    {
+      key: 'cooldown_secs',
+      parameter: parameterName('退出冷却时间', 'cooldown_secs'),
+      current: `${formatNumber(stk.cooldown_secs || 0)} 秒`,
+      editor: (
+        <InputNumber
+          value={cooldownSecsVal ?? undefined}
+          onChange={(value) => setCooldownSecsVal(value ?? null)}
+          min={0}
+          precision={0}
+          addonAfter="秒"
+          placeholder={`当前 ${formatNumber(stk.cooldown_secs || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      action: <Button loading={submitting} onClick={handleSetCooldownSecs}>保存冷却</Button>,
+    },
+    {
+      key: 'recurring_lockup_duration_secs',
+      parameter: parameterName('锁仓周期', 'recurring_lockup_duration_secs'),
+      current: `${formatNumber(stakingConfig.recurring_lockup_duration_secs || 0)} (${formatDuration(stakingConfig.recurring_lockup_duration_secs || 0)})`,
+      editor: (
+        <InputNumber
+          value={stakingLockupSecsVal ?? undefined}
+          onChange={(value) => setStakingLockupSecsVal(value ?? null)}
+          min={1}
+          precision={0}
+          addonAfter="秒"
+          placeholder={`当前 ${formatNumber(stakingConfig.recurring_lockup_duration_secs || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      action: <Button loading={submitting} onClick={handleSetStakingConfig}>保存质押配置</Button>,
+    },
+    {
+      key: 'allow_validator_set_change',
+      parameter: parameterName('允许验证者集合变化', 'allow_validator_set_change'),
+      current: stakingConfig.allow_validator_set_change ? <Tag color="green">允许</Tag> : <Tag>不允许</Tag>,
+      editor: <Text type="secondary">链上只读</Text>,
+      action: null,
+    },
+  ];
+
+  const cadenceRows: ParameterRow[] = [
+    {
+      key: 'epoch_interval_secs',
+      parameter: parameterName('Epoch 间隔', 'epoch_interval_secs'),
+      current: `${formatNumber(chainCfg.epoch_interval_secs || 0)} 秒`,
+      editor: (
+        <InputNumber
+          value={epochIntervalSecsVal ?? undefined}
+          onChange={(value) => setEpochIntervalSecsVal(value ?? null)}
+          min={1}
+          precision={0}
+          addonAfter="秒"
+          placeholder={`当前 ${formatNumber(chainCfg.epoch_interval_secs || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      action: <Button loading={submitting} onClick={handleSetEpochInterval}>保存间隔</Button>,
+    },
+    {
+      key: 'voting_duration_secs',
+      parameter: parameterName('治理投票时长', 'voting_duration_secs'),
+      current: `${formatNumber(gov.voting_duration_secs || 0)} 秒`,
+      editor: (
+        <InputNumber
+          value={votingDurationVal ?? undefined}
+          onChange={(value) => setVotingDurationVal(value ?? null)}
+          min={1}
+          precision={0}
+          addonAfter="秒"
+          placeholder={`当前 ${formatNumber(gov.voting_duration_secs || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      action: <Button loading={submitting} onClick={handleUpdateGovernanceConfig}>保存治理参数</Button>,
+      actionRowSpan: 3,
+    },
+    {
+      key: 'min_voting_threshold',
+      parameter: parameterName('最小投票阈值', 'min_voting_threshold'),
+      current: formatNumber(gov.min_voting_threshold || 0),
+      editor: (
+        <InputNumber
+          value={minVotingThresholdVal ?? undefined}
+          onChange={(value) => setMinVotingThresholdVal(value ?? null)}
+          min={0}
+          precision={0}
+          placeholder={`当前 ${formatNumber(gov.min_voting_threshold || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      actionRowSpan: 0,
+    },
+    {
+      key: 'required_proposer_stake',
+      parameter: parameterName('提案人最低质押', 'required_proposer_stake'),
+      current: formatNumber(gov.required_proposer_stake || 0),
+      editor: (
+        <InputNumber
+          value={requiredProposerStakeVal ?? undefined}
+          onChange={(value) => setRequiredProposerStakeVal(value ?? null)}
+          min={0}
+          precision={0}
+          placeholder={`当前 ${formatNumber(gov.required_proposer_stake || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      actionRowSpan: 0,
+    },
+    {
+      key: 'voting_power_increase_limit',
+      parameter: parameterName('投票权增长限制', 'voting_power_increase_limit'),
+      current: `${formatNumber(stakingConfig.voting_power_increase_limit || 0)}%`,
+      editor: (
+        <InputNumber
+          value={stakingVotingPowerIncreaseLimitVal ?? undefined}
+          onChange={(value) => setStakingVotingPowerIncreaseLimitVal(value ?? null)}
+          min={1}
+          max={50}
+          precision={0}
+          addonAfter="%"
+          placeholder={`当前 ${formatNumber(stakingConfig.voting_power_increase_limit || 0)}`}
+          style={{ width: '100%' }}
+        />
+      ),
+      action: <Button loading={submitting} onClick={handleSetStakingConfig}>保存质押配置</Button>,
+    },
+  ];
+
+  const rewardRows: ParameterRow[] = [
+    {
+      key: 'effective_reward_rate',
+      parameter: parameterName('当前生效奖励率', 'effective reward_rate'),
+      current: formatRewardRate(rewardRate),
+      editor: <Text type="secondary">由当前奖励模式计算</Text>,
+      action: null,
+    },
+    {
+      key: 'periodical_reward_decrease',
+      parameter: parameterName('周期性奖励递减', 'periodical reward decrease'),
+      current: rewardsRateDecreaseEnabled ? <Tag color="green">启用</Tag> : <Tag>未启用</Tag>,
+      editor: <Text type="secondary">链上 feature 控制</Text>,
+      action: null,
+    },
+    {
+      key: 'legacy_rewards_rate',
+      parameter: parameterName('Legacy 奖励分子', 'rewards_rate'),
+      current: formatNumber(stakingConfig.rewards_rate || 0),
+      editor: (
+        <InputNumber
+          value={legacyRewardsRateVal ?? undefined}
+          onChange={(value) => setLegacyRewardsRateVal(value ?? null)}
+          min={0}
+          precision={0}
+          placeholder={`当前 ${formatNumber(stakingConfig.rewards_rate || 0)}`}
+          style={{ width: '100%' }}
+          disabled={rewardsRateDecreaseEnabled}
+        />
+      ),
+      action: (
+        <Button loading={submitting} disabled={rewardsRateDecreaseEnabled} onClick={handleSetLegacyRewardRate}>
+          保存 legacy
+        </Button>
+      ),
+      actionRowSpan: 2,
+    },
+    {
+      key: 'legacy_rewards_rate_denominator',
+      parameter: parameterName('Legacy 奖励分母', 'rewards_rate_denominator'),
+      current: formatNumber(stakingConfig.rewards_rate_denominator || 0),
+      editor: (
+        <InputNumber
+          value={legacyRewardsRateDenominatorVal ?? undefined}
+          onChange={(value) => setLegacyRewardsRateDenominatorVal(value ?? null)}
+          min={1}
+          precision={0}
+          placeholder={`当前 ${formatNumber(stakingConfig.rewards_rate_denominator || 0)}`}
+          style={{ width: '100%' }}
+          disabled={rewardsRateDecreaseEnabled}
+        />
+      ),
+      actionRowSpan: 0,
+    },
+    {
+      key: 'staking_rewards_rate',
+      parameter: parameterName('Staking 奖励率', 'StakingRewardsConfig.rewards_rate'),
+      current: formatFixedPointPercent(stakingRewardsConfig.rewards_rate),
+      editor: (
+        <InputNumber
+          value={rewardsRatePercentVal ?? undefined}
+          onChange={(value) => setRewardsRatePercentVal(value ?? null)}
+          min={0}
+          max={100}
+          precision={8}
+          addonAfter="%"
+          placeholder={`当前 ${formatFixedPointPercent(stakingRewardsConfig.rewards_rate)}`}
+          style={{ width: '100%' }}
+          disabled={!rewardsRateDecreaseEnabled}
+        />
+      ),
+      action: (
+        <Button loading={submitting} disabled={!rewardsRateDecreaseEnabled} onClick={handleSetStakingRewardsConfig}>
+          保存 StakingRewards
+        </Button>
+      ),
+      actionRowSpan: 3,
+    },
+    {
+      key: 'staking_min_rewards_rate',
+      parameter: parameterName('Staking 最低奖励率', 'min_rewards_rate'),
+      current: formatFixedPointPercent(stakingRewardsConfig.min_rewards_rate),
+      editor: (
+        <InputNumber
+          value={minRewardsRatePercentVal ?? undefined}
+          onChange={(value) => setMinRewardsRatePercentVal(value ?? null)}
+          min={0}
+          max={100}
+          precision={8}
+          addonAfter="%"
+          placeholder={`当前 ${formatFixedPointPercent(stakingRewardsConfig.min_rewards_rate)}`}
+          style={{ width: '100%' }}
+          disabled={!rewardsRateDecreaseEnabled}
+        />
+      ),
+      actionRowSpan: 0,
+    },
+    {
+      key: 'staking_rewards_rate_decrease_rate',
+      parameter: parameterName('Staking 递减率', 'decrease_rate'),
+      current: formatFixedPointPercent(stakingRewardsConfig.rewards_rate_decrease_rate),
+      editor: (
+        <InputNumber
+          value={rewardsRateDecreasePercentVal ?? undefined}
+          onChange={(value) => setRewardsRateDecreasePercentVal(value ?? null)}
+          min={0}
+          max={100}
+          precision={8}
+          addonAfter="%"
+          placeholder={`当前 ${formatFixedPointPercent(stakingRewardsConfig.rewards_rate_decrease_rate)}`}
+          style={{ width: '100%' }}
+          disabled={!rewardsRateDecreaseEnabled}
+        />
+      ),
+      actionRowSpan: 0,
+    },
+    {
+      key: 'staking_rewards_rate_period',
+      parameter: parameterName('奖励递减周期', 'reward period'),
+      current: `${formatNumber(stakingRewardsConfig.rewards_rate_period_in_secs || 0)} 秒`,
+      editor: <Text type="secondary">链上只读</Text>,
+      action: null,
+    },
+  ];
+
+  const powerCycleRows: ParameterRow[] = [
+    {
+      key: 'operator',
+      parameter: parameterName('Operator', 'operator'),
+      current: powerStore?.operator ? <AddressTag address={powerStore.operator} /> : '-',
+      editor: <AddressSelect kind="user" value={operatorAddr || undefined} onChange={setOperatorAddr} placeholder="选择新的 operator" style={{ width: '100%' }} />,
+      action: <Button loading={submitting} onClick={handleSetOperator}>保存</Button>,
+    },
+    {
+      key: 'power_period_in_epochs',
+      parameter: parameterName('算力周期长度', 'power_period_in_epochs'),
+      current: `${formatNumber(powerStore?.power_period_in_epochs || 0)} Epoch`,
+      editor: <InputNumber value={periodVal} onChange={(value) => setPeriodVal(value || 1)} min={1} addonAfter="Epochs" style={{ width: '100%' }} />,
+      action: <Button loading={submitting} onClick={() => doAction('修改周期', () => setPeriod({ power_period_in_epochs: periodVal }))}>保存周期</Button>,
+    },
+    {
+      key: 'retention_bps',
+      parameter: parameterName('跨周期保留系数', 'retention_bps'),
+      current: `${formatNumber(powerStore?.retention_bps || 0)} (${formatBps(powerStore?.retention_bps || 0)})`,
+      editor: <InputNumber value={retentionVal} onChange={(value) => setRetentionVal(value || 1)} min={1} max={10000} addonAfter="bps" style={{ width: '100%' }} />,
+      action: <Button loading={submitting} onClick={() => doAction('修改保留系数', () => setRetention({ retention_bps_per_period: retentionVal }))}>保存保留</Button>,
+    },
+    {
+      key: 'decay_bps',
+      parameter: parameterName('每 Period 衰减', 'decay_bps'),
+      current: `${formatNumber(powerStore?.decay_bps || 0)} (${formatBps(powerStore?.decay_bps || 0)})`,
+      editor: <Text type="secondary">由保留系数计算</Text>,
+      action: null,
+    },
+    {
+      key: 'current_epoch',
+      parameter: parameterName('当前 Epoch', 'current_epoch'),
+      current: formatNumber(powerStore?.current_epoch || 0),
+      editor: <Text type="secondary">链上只读</Text>,
+      action: null,
+    },
+    {
+      key: 'current_period',
+      parameter: parameterName('当前 Period', 'current_period'),
+      current: formatNumber(powerStore?.current_period || 0),
+      editor: <Text type="secondary">链上只读</Text>,
+      action: null,
+    },
+    {
+      key: 'period_clock',
+      parameter: parameterName('Period Clock', 'period_clock'),
+      current: (
+        <Space wrap>
+          {powerStore?.period_clock_initialized ? <Tag color="green">已初始化</Tag> : <Tag color="orange">未初始化</Tag>}
+          {powerStore?.period_clock_initialized ? <Text>倒计时 {formatNumber(powerStore?.period_clock_countdown || 0)} Epoch</Text> : null}
+        </Space>
+      ),
+      editor: <Text type="secondary">链上只读</Text>,
+      action: null,
+    },
+    {
+      key: 'epochs_until_next_period',
+      parameter: parameterName('距离下个 Period', 'epochs_until_next_period'),
+      current: powerStore?.period_clock_initialized ? `${formatNumber(powerStore?.epochs_until_next_period || 0)} Epoch` : '-',
+      editor: <Text type="secondary">链上只读</Text>,
+      action: null,
+    },
+    {
+      key: 'watched_user_count',
+      parameter: parameterName('已关注用户', 'watched_user_count'),
+      current: formatNumber(powerStore?.watched_user_count || 0),
+      editor: <Text type="secondary">本地索引</Text>,
+      action: null,
+    },
+    {
+      key: 'single_stage',
+      parameter: parameterName(`单用户算力写入 P${formatNumber(stageTargetPeriod)}`, 'stage_single'),
+      current: `目标 Period ${formatNumber(stageTargetPeriod)}`,
+      editor: (
+        <Space.Compact style={{ width: '100%' }}>
+          <AddressSelect kind="user" value={stageAddr || undefined} onChange={setStageAddr} placeholder="选择用户" style={{ width: '100%' }} />
+          <InputNumber value={stagePower} onChange={(value) => setStagePower(value || 0)} min={0} precision={0} placeholder="power" style={{ width: 130 }} />
+        </Space.Compact>
+      ),
+      action: <Button loading={submitting} onClick={() => doAction('单用户算力写入', () => stageSingle({ user_address: stageAddr, power: stagePower }))}>写入</Button>,
+    },
+  ];
+
+  const writebackRows: ParameterRow[] = [
+    {
+      key: 'running',
+      parameter: parameterName('运行状态', 'task status'),
+      current: (
+        <Space>
+          <Tag color={writebackTask?.running ? 'green' : 'default'}>{writebackTask?.running ? '运行中' : '未运行'}</Tag>
+          {writebackTask?.busy ? <Tag color="blue">执行中</Tag> : null}
+        </Space>
+      ),
+      editor: <Text type="secondary">进程状态</Text>,
+      action: (
+        <Space wrap>
+          <Button loading={submitting} onClick={() => handleRunWritebackOnce(false)}>立即执行</Button>
+          <Button danger loading={submitting} onClick={() => handleRunWritebackOnce(true)}>强制执行</Button>
+        </Space>
+      ),
+    },
+    {
+      key: 'enabled',
+      parameter: parameterName('任务启用', 'enabled'),
+      current: writebackSettings.enabled ? <Tag color="green">已启用</Tag> : <Tag>未启用</Tag>,
+      editor: (
+        <Space.Compact style={{ width: '100%' }}>
+          <Button
+            block
+            type={effectiveWritebackEnabled ? 'primary' : 'default'}
+            onClick={() => setWritebackEnabled(true)}
+          >
+            启用
+          </Button>
+          <Button
+            block
+            type={!effectiveWritebackEnabled ? 'primary' : 'default'}
+            onClick={() => setWritebackEnabled(false)}
+          >
+            停用
+          </Button>
+        </Space.Compact>
+      ),
+      action: <Button loading={submitting} onClick={handleConfigureWritebackTask}>保存任务配置</Button>,
+      actionRowSpan: 5,
+    },
+    {
+      key: 'interval_secs',
+      parameter: parameterName('检查间隔', 'interval_secs'),
+      current: `${formatNumber(writebackSettings.interval_secs || 0)} 秒`,
+      editor: (
+        <InputNumber
+          value={effectiveWritebackInterval}
+          onChange={(value) => setWritebackInterval(value ?? null)}
+          min={5}
+          precision={0}
+          addonAfter="秒"
+          style={{ width: '100%' }}
+        />
+      ),
+      actionRowSpan: 0,
+    },
+    {
+      key: 'max_users_per_run',
+      parameter: parameterName('单次最大用户', 'max_users_per_run'),
+      current: formatNumber(writebackSettings.max_users_per_run || 0),
+      editor: (
+        <InputNumber
+          value={effectiveWritebackMaxUsers}
+          onChange={(value) => setWritebackMaxUsers(value ?? null)}
+          min={1}
+          precision={0}
+          style={{ width: '100%' }}
+        />
+      ),
+      actionRowSpan: 0,
+    },
+    {
+      key: 'max_gas',
+      parameter: parameterName('最大 Gas', 'max_gas'),
+      current: formatNumber(writebackSettings.max_gas || 0),
+      editor: (
+        <InputNumber
+          value={effectiveWritebackMaxGas}
+          onChange={(value) => setWritebackMaxGas(value ?? null)}
+          min={1}
+          precision={0}
+          style={{ width: '100%' }}
+        />
+      ),
+      actionRowSpan: 0,
+    },
+    {
+      key: 'gas_unit_price',
+      parameter: parameterName('Gas 单价', 'gas_unit_price'),
+      current: formatNumber(writebackSettings.gas_unit_price || 0),
+      editor: (
+        <InputNumber
+          value={effectiveWritebackGasUnitPrice}
+          onChange={(value) => setWritebackGasUnitPrice(value ?? null)}
+          min={1}
+          precision={0}
+          style={{ width: '100%' }}
+        />
+      ),
+      actionRowSpan: 0,
+    },
+    {
+      key: 'source_period',
+      parameter: parameterName('Source Period', 'source_period'),
+      current: `P${formatNumber(Math.max(0, Number(powerStore?.current_period || 0) - 1))}`,
+      editor: <Text type="secondary">自动计算</Text>,
+      action: null,
+    },
+    {
+      key: 'target_period',
+      parameter: parameterName('Target Period', 'target_period'),
+      current: `P${formatNumber(stageTargetPeriod)}`,
+      editor: <Text type="secondary">自动计算</Text>,
+      action: null,
+    },
+    {
+      key: 'last_result',
+      parameter: parameterName('最近结果', 'last_result'),
+      current: writebackLastResult.status ? `${writebackLastResult.status}${writebackLastResult.reason ? ` / ${writebackLastResult.reason}` : ''}` : '-',
+      editor: <Text type="secondary">任务输出</Text>,
+      action: null,
+    },
+    {
+      key: 'last_tx',
+      parameter: parameterName('最近 TX', 'last_tx'),
+      current: writebackLastResult.tx_hash ? <AddressTag address={writebackLastResult.tx_hash} /> : '-',
+      editor: <Text type="secondary">任务输出</Text>,
+      action: null,
+    },
+    {
+      key: 'last_error',
+      parameter: parameterName('最近错误', 'last_error'),
+      current: writebackTask?.last_error || '-',
+      editor: <Text type="secondary">任务输出</Text>,
+      action: null,
+    },
+  ];
+
   const userColumns = useMemo(() => [
     {
       title: '用户',
@@ -450,7 +1063,7 @@ export default function System() {
               <Col xs={12} md={4}><Statistic title="Chain ID" value={chain?.chain_id || 0} /></Col>
               <Col xs={12} md={4}><Statistic title="Epoch" value={chain?.epoch || 0} /></Col>
               <Col xs={12} md={4}><Statistic title="当前 Period" value={formatNumber(powerStore?.current_period || 0)} /></Col>
-              <Col xs={12} md={4}><Statistic title="下一打点" value={`P${formatNumber(stageTargetPeriod)}`} /></Col>
+              <Col xs={12} md={4}><Statistic title="下一写入" value={`P${formatNumber(stageTargetPeriod)}`} /></Col>
               <Col xs={12} md={4}><Statistic title="区块高度" value={formatNumber(chain?.block_height || 0)} /></Col>
               <Col xs={12} md={4}><Statistic title="版本" value={formatNumber(chain?.ledger_version || 0)} /></Col>
             </Row>
@@ -502,22 +1115,6 @@ export default function System() {
                         </Button>
                         <Text type="secondary">当前 Epoch {formatNumber(chain?.epoch || 0)}</Text>
                       </Space>
-                      <Form layout="vertical" style={{ marginTop: 16 }}>
-                        <Form.Item label="Epoch 间隔秒数">
-                          <Space.Compact style={{ width: '100%' }}>
-                            <InputNumber
-                              value={epochIntervalSecsVal ?? undefined}
-                              onChange={(value) => setEpochIntervalSecsVal(value ?? null)}
-                              min={1}
-                              precision={0}
-                              addonAfter="秒"
-                              placeholder={`当前 ${formatNumber(chainCfg.epoch_interval_secs || 0)}`}
-                              style={{ width: '100%' }}
-                            />
-                            <Button loading={submitting} onClick={handleSetEpochInterval}>修改</Button>
-                          </Space.Compact>
-                        </Form.Item>
-                      </Form>
                     </Card>
                   </Col>
                   <Col xs={24} xl={14}>
@@ -546,333 +1143,35 @@ export default function System() {
                 </Row>
 
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} xl={9}>
-                    <Card title="当前参数" size="small">
-                      <Descriptions bordered column={1} size="small">
-                        <Descriptions.Item label="epoch_interval_secs">{formatNumber(chainCfg.epoch_interval_secs || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="octas_per_million_power">{formatNumber(stk.octas_per_million_power || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="min_active_power">{formatNumber(stk.min_active_power || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="force_exit_power_bps">{formatNumber(stk.force_exit_power_bps || 0)} ({formatBps(stk.force_exit_power_bps || 0)})</Descriptions.Item>
-                        <Descriptions.Item label="cooldown_secs">{formatNumber(stk.cooldown_secs || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="minimum_stake">{formatNumber(stakingConfig.minimum_stake || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="maximum_stake">{formatNumber(stakingConfig.maximum_stake || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="recurring_lockup_duration_secs">
-                          {formatNumber(stakingConfig.recurring_lockup_duration_secs || 0)} ({formatDuration(stakingConfig.recurring_lockup_duration_secs || 0)})
-                        </Descriptions.Item>
-                        <Descriptions.Item label="allow_validator_set_change">
-                          {stakingConfig.allow_validator_set_change ? <Tag color="green">允许</Tag> : <Tag>不允许</Tag>}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="voting_power_increase_limit">
-                          {formatNumber(stakingConfig.voting_power_increase_limit || 0)}%
-                        </Descriptions.Item>
-                        <Descriptions.Item label="legacy rewards_rate">
-                          {formatNumber(stakingConfig.rewards_rate || 0)} / {formatNumber(stakingConfig.rewards_rate_denominator || 0)}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="effective reward_rate">{formatRewardRate(rewardRate)}</Descriptions.Item>
-                        <Descriptions.Item label="periodical_rewards">
-                          {rewardsRateDecreaseEnabled ? <Tag color="green">启用</Tag> : <Tag>未启用</Tag>}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="StakingRewardsConfig.rewards_rate">{formatFixedPointPercent(stakingRewardsConfig.rewards_rate)}</Descriptions.Item>
-                        <Descriptions.Item label="StakingRewardsConfig.min_rewards_rate">{formatFixedPointPercent(stakingRewardsConfig.min_rewards_rate)}</Descriptions.Item>
-                        <Descriptions.Item label="StakingRewardsConfig.decrease_rate">{formatFixedPointPercent(stakingRewardsConfig.rewards_rate_decrease_rate)}</Descriptions.Item>
-                        <Descriptions.Item label="rewards_rate_period_in_secs">
-                          {formatNumber(stakingRewardsConfig.rewards_rate_period_in_secs || 0)} ({formatDuration(stakingRewardsConfig.rewards_rate_period_in_secs || 0)})
-                        </Descriptions.Item>
-                        <Descriptions.Item label="last_rewards_period_start">
-                          {formatTimestamp(stakingRewardsConfig.last_rewards_rate_period_start_in_secs || 0)}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="min_voting_threshold">{formatNumber(gov.min_voting_threshold || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="required_proposer_stake">{formatNumber(gov.required_proposer_stake || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="voting_duration_secs">{formatNumber(gov.voting_duration_secs || 0)}</Descriptions.Item>
-                      </Descriptions>
-                    </Card>
-                  </Col>
-                  <Col xs={24} xl={15}>
-                    <Card title="参数修改" size="small">
-                      <Form layout="vertical">
-                        <Row gutter={12}>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="经济参数 / octas_per_million_power">
-                              <Space.Compact style={{ width: '100%' }}>
-                                <InputNumber
-                                  value={octasPerMillionPowerVal ?? undefined}
-                                  onChange={(value) => setOctasPerMillionPowerVal(value ?? null)}
-                                  min={0}
-                                  precision={0}
-                                  placeholder={`当前 ${formatNumber(stk.octas_per_million_power || 0)}`}
-                                  style={{ width: '100%' }}
-                                />
-                                <Button loading={submitting} onClick={handleSetOctasPerMillionPower}>修改</Button>
-                              </Space.Compact>
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="经济参数 / min_active_power">
-                              <Space.Compact style={{ width: '100%' }}>
-                                <InputNumber
-                                  value={minActivePowerVal ?? undefined}
-                                  onChange={(value) => setMinActivePowerVal(value ?? null)}
-                                  min={1}
-                                  precision={0}
-                                  placeholder={`当前 ${formatNumber(stk.min_active_power || 0)}`}
-                                  style={{ width: '100%' }}
-                                />
-                                <Button loading={submitting} onClick={handleSetMinActivePower}>修改</Button>
-                              </Space.Compact>
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="经济参数 / force_exit_power_bps">
-                              <Space.Compact style={{ width: '100%' }}>
-                                <InputNumber
-                                  value={forceExitPowerBpsVal ?? undefined}
-                                  onChange={(value) => setForceExitPowerBpsVal(value ?? null)}
-                                  min={1}
-                                  max={10000}
-                                  precision={0}
-                                  addonAfter="bps"
-                                  placeholder={`当前 ${formatNumber(stk.force_exit_power_bps || 0)}`}
-                                  style={{ width: '100%' }}
-                                />
-                                <Button loading={submitting} onClick={handleSetForceExitPowerBps}>修改</Button>
-                              </Space.Compact>
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="经济参数 / cooldown_secs">
-                              <Space.Compact style={{ width: '100%' }}>
-                                <InputNumber
-                                  value={cooldownSecsVal ?? undefined}
-                                  onChange={(value) => setCooldownSecsVal(value ?? null)}
-                                  min={0}
-                                  precision={0}
-                                  placeholder={`当前 ${formatNumber(stk.cooldown_secs || 0)}`}
-                                  style={{ width: '100%' }}
-                                />
-                                <Button loading={submitting} onClick={handleSetCooldownSecs}>修改</Button>
-                              </Space.Compact>
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={8}>
-                            <Form.Item label="治理参数 / min_voting_threshold">
-                              <InputNumber
-                                value={minVotingThresholdVal ?? undefined}
-                                onChange={(value) => setMinVotingThresholdVal(value ?? null)}
-                                min={0}
-                                precision={0}
-                                placeholder={`当前 ${formatNumber(gov.min_voting_threshold || 0)}`}
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={8}>
-                            <Form.Item label="治理参数 / required_proposer_stake">
-                              <InputNumber
-                                value={requiredProposerStakeVal ?? undefined}
-                                onChange={(value) => setRequiredProposerStakeVal(value ?? null)}
-                                min={0}
-                                precision={0}
-                                placeholder={`当前 ${formatNumber(gov.required_proposer_stake || 0)}`}
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={8}>
-                            <Form.Item label="治理参数 / voting_duration_secs">
-                              <InputNumber
-                                value={votingDurationVal ?? undefined}
-                                onChange={(value) => setVotingDurationVal(value ?? null)}
-                                min={1}
-                                precision={0}
-                                placeholder={`当前 ${formatNumber(gov.voting_duration_secs || 0)}`}
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                        <Button loading={submitting} onClick={handleUpdateGovernanceConfig}>修改治理参数</Button>
-                      </Form>
+                  <Col span={24}>
+                    <Card
+                      title="验证者门槛与质押约束"
+                      size="small"
+                      extra={<Text type="secondary">聚焦验证者加入、退出和有效算力判定</Text>}
+                    >
+                      <ParameterTable rows={validatorAccessRows} scrollX={980} />
                     </Card>
                   </Col>
                 </Row>
 
                 <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-                  <Col xs={24} xl={9}>
-                    <Card title="StakingConfig / StakingRewardsConfig" size="small">
-                      <Descriptions bordered column={1} size="small">
-                        <Descriptions.Item label="minimum_stake">{formatNumber(stakingConfig.minimum_stake || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="maximum_stake">{formatNumber(stakingConfig.maximum_stake || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="recurring_lockup_duration_secs">
-                          {formatNumber(stakingConfig.recurring_lockup_duration_secs || 0)} ({formatDuration(stakingConfig.recurring_lockup_duration_secs || 0)})
-                        </Descriptions.Item>
-                        <Descriptions.Item label="allow_validator_set_change">
-                          {stakingConfig.allow_validator_set_change ? <Tag color="green">允许</Tag> : <Tag>不允许</Tag>}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="voting_power_increase_limit">{formatNumber(stakingConfig.voting_power_increase_limit || 0)}%</Descriptions.Item>
-                        <Descriptions.Item label="legacy rewards_rate">
-                          {formatNumber(stakingConfig.rewards_rate || 0)} / {formatNumber(stakingConfig.rewards_rate_denominator || 0)}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="effective reward_rate">{formatRewardRate(rewardRate)}</Descriptions.Item>
-                        <Descriptions.Item label="periodical reward decrease">
-                          {rewardsRateDecreaseEnabled ? <Tag color="green">启用</Tag> : <Tag>未启用</Tag>}
-                        </Descriptions.Item>
-                        <Descriptions.Item label="rewards_rate">{formatFixedPointPercent(stakingRewardsConfig.rewards_rate)}</Descriptions.Item>
-                        <Descriptions.Item label="min_rewards_rate">{formatFixedPointPercent(stakingRewardsConfig.min_rewards_rate)}</Descriptions.Item>
-                        <Descriptions.Item label="decrease_rate">{formatFixedPointPercent(stakingRewardsConfig.rewards_rate_decrease_rate)}</Descriptions.Item>
-                        <Descriptions.Item label="reward period">
-                          {formatNumber(stakingRewardsConfig.rewards_rate_period_in_secs || 0)} 秒
-                        </Descriptions.Item>
-                      </Descriptions>
+                  <Col span={24}>
+                    <Card title="出块 / 治理节奏" size="small" extra={<Text type="secondary">控制时间节奏和治理窗口</Text>}>
+                      <ParameterTable rows={cadenceRows} scrollX={980} />
                     </Card>
                   </Col>
-                  <Col xs={24} xl={15}>
-                    <Card title="Staking 参数修改" size="small">
-                      <Form layout="vertical">
-                        <Row gutter={12}>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="StakingConfig / minimum_stake">
-                              <InputNumber
-                                value={stakingMinimumStakeVal ?? undefined}
-                                onChange={(value) => setStakingMinimumStakeVal(value ?? null)}
-                                min={0}
-                                precision={0}
-                                placeholder={`当前 ${formatNumber(stakingConfig.minimum_stake || 0)}`}
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="StakingConfig / maximum_stake">
-                              <InputNumber
-                                value={stakingMaximumStakeVal ?? undefined}
-                                onChange={(value) => setStakingMaximumStakeVal(value ?? null)}
-                                min={1}
-                                precision={0}
-                                placeholder={`当前 ${formatNumber(stakingConfig.maximum_stake || 0)}`}
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="StakingConfig / recurring_lockup_duration_secs">
-                              <InputNumber
-                                value={stakingLockupSecsVal ?? undefined}
-                                onChange={(value) => setStakingLockupSecsVal(value ?? null)}
-                                min={1}
-                                precision={0}
-                                addonAfter="秒"
-                                placeholder={`当前 ${formatNumber(stakingConfig.recurring_lockup_duration_secs || 0)}`}
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="StakingConfig / voting_power_increase_limit">
-                              <InputNumber
-                                value={stakingVotingPowerIncreaseLimitVal ?? undefined}
-                                onChange={(value) => setStakingVotingPowerIncreaseLimitVal(value ?? null)}
-                                min={1}
-                                max={50}
-                                precision={0}
-                                addonAfter="%"
-                                placeholder={`当前 ${formatNumber(stakingConfig.voting_power_increase_limit || 0)}`}
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                        <Button loading={submitting} onClick={handleSetStakingConfig}>修改 StakingConfig</Button>
+                </Row>
 
-                        <Alert
-                          type="info"
-                          showIcon
-                          style={{ marginTop: 16, marginBottom: 16 }}
-                          message={rewardsRateDecreaseEnabled ? '当前链使用 StakingRewardsConfig 计算奖励率' : '当前链使用 legacy rewards_rate 计算奖励率'}
-                        />
-
-                        <Row gutter={12}>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="Legacy / rewards_rate">
-                              <InputNumber
-                                value={legacyRewardsRateVal ?? undefined}
-                                onChange={(value) => setLegacyRewardsRateVal(value ?? null)}
-                                min={0}
-                                precision={0}
-                                placeholder={`当前 ${formatNumber(stakingConfig.rewards_rate || 0)}`}
-                                style={{ width: '100%' }}
-                                disabled={rewardsRateDecreaseEnabled}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="Legacy / rewards_rate_denominator">
-                              <InputNumber
-                                value={legacyRewardsRateDenominatorVal ?? undefined}
-                                onChange={(value) => setLegacyRewardsRateDenominatorVal(value ?? null)}
-                                min={1}
-                                precision={0}
-                                placeholder={`当前 ${formatNumber(stakingConfig.rewards_rate_denominator || 0)}`}
-                                style={{ width: '100%' }}
-                                disabled={rewardsRateDecreaseEnabled}
-                              />
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                        <Button loading={submitting} disabled={rewardsRateDecreaseEnabled} onClick={handleSetLegacyRewardRate}>
-                          修改 legacy rewards_rate
-                        </Button>
-
-                        <Row gutter={12} style={{ marginTop: 16 }}>
-                          <Col xs={24} md={8}>
-                            <Form.Item label="StakingRewardsConfig / rewards_rate">
-                              <InputNumber
-                                value={rewardsRatePercentVal ?? undefined}
-                                onChange={(value) => setRewardsRatePercentVal(value ?? null)}
-                                min={0}
-                                max={100}
-                                precision={8}
-                                addonAfter="%"
-                                placeholder={`当前 ${formatFixedPointPercent(stakingRewardsConfig.rewards_rate)}`}
-                                style={{ width: '100%' }}
-                                disabled={!rewardsRateDecreaseEnabled}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={8}>
-                            <Form.Item label="StakingRewardsConfig / min_rewards_rate">
-                              <InputNumber
-                                value={minRewardsRatePercentVal ?? undefined}
-                                onChange={(value) => setMinRewardsRatePercentVal(value ?? null)}
-                                min={0}
-                                max={100}
-                                precision={8}
-                                addonAfter="%"
-                                placeholder={`当前 ${formatFixedPointPercent(stakingRewardsConfig.min_rewards_rate)}`}
-                                style={{ width: '100%' }}
-                                disabled={!rewardsRateDecreaseEnabled}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={8}>
-                            <Form.Item label="StakingRewardsConfig / decrease_rate">
-                              <InputNumber
-                                value={rewardsRateDecreasePercentVal ?? undefined}
-                                onChange={(value) => setRewardsRateDecreasePercentVal(value ?? null)}
-                                min={0}
-                                max={100}
-                                precision={8}
-                                addonAfter="%"
-                                placeholder={`当前 ${formatFixedPointPercent(stakingRewardsConfig.rewards_rate_decrease_rate)}`}
-                                style={{ width: '100%' }}
-                                disabled={!rewardsRateDecreaseEnabled}
-                              />
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                        <Button loading={submitting} disabled={!rewardsRateDecreaseEnabled} onClick={handleSetStakingRewardsConfig}>
-                          修改 StakingRewardsConfig
-                        </Button>
-                      </Form>
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                  <Col span={24}>
+                    <Card title="奖励参数" size="small" extra={<Text type="secondary">包含 legacy 与新奖励模式</Text>}>
+                      <Alert
+                        type="info"
+                        showIcon
+                        style={{ marginBottom: 12 }}
+                        message={rewardsRateDecreaseEnabled ? '当前链使用 StakingRewardsConfig 计算奖励率' : '当前链使用 legacy rewards_rate 计算奖励率'}
+                      />
+                      <ParameterTable rows={rewardRows} scrollX={980} />
                     </Card>
                   </Col>
                 </Row>
@@ -881,177 +1180,29 @@ export default function System() {
           },
           {
             key: 'power',
-            label: 'PowerStore 管理',
+            label: 'POC 参数设置',
             children: (
               <>
                 <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                  <Col xs={24} xl={8}>
-                    <Card title="PowerStore 总览" size="small">
-                      <Descriptions bordered size="small" column={1}>
-                        <Descriptions.Item label="Operator">{powerStore?.operator ? <AddressTag address={powerStore.operator} /> : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="当前 Epoch">{formatNumber(powerStore?.current_epoch || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="当前 Period">{formatNumber(powerStore?.current_period || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="下一 Epoch Period">{formatNumber(powerStore?.next_epoch_period || 0)}</Descriptions.Item>
-                        <Descriptions.Item label="下一打点 Period">{formatNumber(stageTargetPeriod)}</Descriptions.Item>
-                        <Descriptions.Item label="周期长度">{formatNumber(powerStore?.power_period_in_epochs || 0)} Epoch</Descriptions.Item>
-                        <Descriptions.Item label="Clock 状态">{powerStore?.period_clock_initialized ? <Tag color="green">已初始化</Tag> : <Tag color="orange">未初始化</Tag>}</Descriptions.Item>
-                        <Descriptions.Item label="Clock 倒计时">{powerStore?.period_clock_initialized ? `${formatNumber(powerStore?.period_clock_countdown || 0)} Epoch` : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="距离下个 Period">{powerStore?.period_clock_initialized ? `${formatNumber(powerStore?.epochs_until_next_period || 0)} Epoch` : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="保留系数">{formatNumber(powerStore?.retention_bps || 0)} ({formatBps(powerStore?.retention_bps || 0)})</Descriptions.Item>
-                        <Descriptions.Item label="每 Period 衰减">{formatNumber(powerStore?.decay_bps || 0)} ({formatBps(powerStore?.decay_bps || 0)})</Descriptions.Item>
-                        <Descriptions.Item label="已关注用户">{formatNumber(powerStore?.watched_user_count || 0)}</Descriptions.Item>
-                      </Descriptions>
-                    </Card>
-                  </Col>
-                  <Col xs={24} xl={16}>
-                    <Card title="PowerStore 操作" size="small">
-                      <Form layout="vertical">
-                        <Row gutter={12}>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="周期长度">
-                              <Space.Compact style={{ width: '100%' }}>
-                                <InputNumber value={periodVal} onChange={(value) => setPeriodVal(value || 1)} min={1} addonAfter="Epochs" style={{ width: '100%' }} />
-                                <Button loading={submitting} onClick={() => doAction('修改周期', () => setPeriod({ power_period_in_epochs: periodVal }))}>修改</Button>
-                              </Space.Compact>
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="保留系数">
-                              <Space.Compact style={{ width: '100%' }}>
-                                <InputNumber value={retentionVal} onChange={(value) => setRetentionVal(value || 1)} min={1} max={10000} addonAfter="bps" style={{ width: '100%' }} />
-                                <Button loading={submitting} onClick={() => doAction('修改保留系数', () => setRetention({ retention_bps_per_period: retentionVal }))}>修改</Button>
-                              </Space.Compact>
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="Operator">
-                              <Space.Compact style={{ width: '100%' }}>
-                                <AddressSelect kind="user" value={operatorAddr || undefined} onChange={setOperatorAddr} placeholder="选择新的 operator" style={{ width: '100%' }} />
-                                <Button loading={submitting} onClick={handleSetOperator}>设置</Button>
-                              </Space.Compact>
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label={`单用户打点 (P${formatNumber(stageTargetPeriod)})`}>
-                              <Space.Compact style={{ width: '100%' }}>
-                                <AddressSelect kind="user" value={stageAddr || undefined} onChange={setStageAddr} placeholder="选择用户" style={{ width: '100%' }} />
-                                <InputNumber value={stagePower} onChange={(value) => setStagePower(value || 0)} min={0} precision={0} placeholder="power" style={{ width: 130 }} />
-                                <Button loading={submitting} onClick={() => doAction('单用户打点', () => stageSingle({ user_address: stageAddr, power: stagePower }))}>打点</Button>
-                              </Space.Compact>
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                      </Form>
+                  <Col span={24}>
+                    <Card title="PowerStore 周期与写入" size="small" extra={<Text type="secondary">周期配置、状态和单用户写入放在一起</Text>}>
+                      <ParameterTable
+                        rows={powerCycleRows}
+                        scrollX={980}
+                      />
                     </Card>
                   </Col>
                 </Row>
 
                 <Card title="算力上链任务" size="small" style={{ marginBottom: 16 }}>
-                  <Row gutter={[16, 16]}>
-                    <Col xs={24} xl={9}>
-                      <Descriptions bordered size="small" column={1}>
-                        <Descriptions.Item label="运行状态">
-                          <Space>
-                            <Tag color={writebackTask?.running ? 'green' : 'default'}>{writebackTask?.running ? '运行中' : '未运行'}</Tag>
-                            {writebackTask?.busy ? <Tag color="blue">执行中</Tag> : null}
-                          </Space>
-                        </Descriptions.Item>
-                        <Descriptions.Item label="任务启用">{writebackSettings.enabled ? <Tag color="green">已启用</Tag> : <Tag>未启用</Tag>}</Descriptions.Item>
-                        <Descriptions.Item label="当前 Source Period">P{formatNumber(Math.max(0, Number(powerStore?.current_period || 0) - 1))}</Descriptions.Item>
-                        <Descriptions.Item label="当前 Target Period">P{formatNumber(stageTargetPeriod)}</Descriptions.Item>
-                        <Descriptions.Item label="最近结果">{writebackLastResult.status ? `${writebackLastResult.status}${writebackLastResult.reason ? ` / ${writebackLastResult.reason}` : ''}` : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="最近 TX">{writebackLastResult.tx_hash ? <AddressTag address={writebackLastResult.tx_hash} /> : '-'}</Descriptions.Item>
-                        <Descriptions.Item label="最近错误">{writebackTask?.last_error || '-'}</Descriptions.Item>
-                      </Descriptions>
-                    </Col>
-                    <Col xs={24} xl={15}>
-                      <Form layout="vertical">
-                        <Row gutter={12}>
-                          <Col xs={24} md={8}>
-                            <Form.Item label="启用任务">
-                              <Space.Compact style={{ width: '100%' }}>
-                                <Button
-                                  block
-                                  type={effectiveWritebackEnabled ? 'primary' : 'default'}
-                                  onClick={() => setWritebackEnabled(true)}
-                                >
-                                  启用
-                                </Button>
-                                <Button
-                                  block
-                                  type={!effectiveWritebackEnabled ? 'primary' : 'default'}
-                                  onClick={() => setWritebackEnabled(false)}
-                                >
-                                  停用
-                                </Button>
-                              </Space.Compact>
-                            </Form.Item>
-                          </Col>
-                          <Col xs={12} md={8}>
-                            <Form.Item label="检查间隔">
-                              <InputNumber
-                                value={effectiveWritebackInterval}
-                                onChange={(value) => setWritebackInterval(value ?? null)}
-                                min={5}
-                                precision={0}
-                                addonAfter="秒"
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={12} md={8}>
-                            <Form.Item label="单次最大用户">
-                              <InputNumber
-                                value={effectiveWritebackMaxUsers}
-                                onChange={(value) => setWritebackMaxUsers(value ?? null)}
-                                min={1}
-                                precision={0}
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={12} md={8}>
-                            <Form.Item label="max_gas">
-                              <InputNumber
-                                value={effectiveWritebackMaxGas}
-                                onChange={(value) => setWritebackMaxGas(value ?? null)}
-                                min={1}
-                                precision={0}
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={12} md={8}>
-                            <Form.Item label="gas_unit_price">
-                              <InputNumber
-                                value={effectiveWritebackGasUnitPrice}
-                                onChange={(value) => setWritebackGasUnitPrice(value ?? null)}
-                                min={1}
-                                precision={0}
-                                style={{ width: '100%' }}
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={12}>
-                            <Form.Item label="操作">
-                              <Space wrap>
-                                <Button loading={submitting} onClick={handleConfigureWritebackTask}>保存设置</Button>
-                                <Button loading={submitting} onClick={() => handleRunWritebackOnce(false)}>立即执行</Button>
-                                <Button danger loading={submitting} onClick={() => handleRunWritebackOnce(true)}>强制执行</Button>
-                              </Space>
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                      </Form>
-                    </Col>
-                  </Row>
+                  <ParameterTable rows={writebackRows} scrollX={980} />
                 </Card>
 
-                <Card title="批量打点" size="small">
+                <Card title="批量算力写入" size="small">
                   <Form layout="vertical">
                     <Row gutter={[16, 16]}>
                       <Col xs={24} xl={16}>
-                        <Form.Item label="打点记录">
+                        <Form.Item label="算力写入记录">
                           <Input.TextArea
                             value={batchText}
                             onChange={(event) => setBatchText(event.target.value)}
@@ -1073,7 +1224,7 @@ export default function System() {
                         </Form.Item>
                         <Space wrap>
                           <Button onClick={previewBatch}>预览</Button>
-                          <Button type="primary" loading={submitting} onClick={handleBatchStage}>提交批量打点</Button>
+                          <Button type="primary" loading={submitting} onClick={handleBatchStage}>提交批量写入</Button>
                           <Text type="secondary">目标应为当前 Period + 1</Text>
                         </Space>
                       </Col>

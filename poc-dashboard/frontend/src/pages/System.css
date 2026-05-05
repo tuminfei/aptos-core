@@ -1,0 +1,26 @@
+.parameter-table-section {
+  margin-bottom: 0;
+}
+
+.parameter-table-section:last-child {
+  margin-bottom: 0;
+}
+
+.parameter-table-title {
+  margin-bottom: 6px;
+  color: #3f4f63;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.parameter-table-section .ant-table-thead > tr > th {
+  background: #eef3f8;
+}
+
+.parameter-table-section .ant-table-tbody > tr > td {
+  vertical-align: middle;
+}
+
+.parameter-table-raw-name {
+  font-size: 12px;
+}

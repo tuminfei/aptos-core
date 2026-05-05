@@ -44,8 +44,8 @@ export const POC_STATUS_COLOR: Record<number, string> = {
 };
 
 export const ACTION_LABELS: Record<string, string> = {
-  stage_power: '设置算力',
-  stage_batch_power: '批量设置算力',
+  stage_power: '算力写入',
+  stage_batch_power: '批量算力写入',
   set_power_period: '修改算力周期',
   power_writeback_stage_batch: '自动算力上链',
   force_end_epoch: '强制结束Epoch',

@@ -565,10 +565,10 @@ export default function UserDetail() {
             </Card>
           </Col>
           <Col xs={24} lg={12}>
-            <Card size="small" title="设置算力">
+            <Card size="small" title="算力写入">
               <div style={{ display: 'flex', gap: 8, width: '100%', alignItems: 'center' }}>
                 <InputNumber value={powerVal} onChange={(v) => setPowerVal(v || 0)} min={0} style={{ flex: 1, minWidth: 0 }} />
-                <Button loading={submitting} onClick={() => doAction('设置算力', () => stageSingle({ user_address: address!, power: powerVal }))}>设置</Button>
+                <Button loading={submitting} onClick={() => doAction('算力写入', () => stageSingle({ user_address: address!, power: powerVal }))}>写入</Button>
               </div>
             </Card>
           </Col>
