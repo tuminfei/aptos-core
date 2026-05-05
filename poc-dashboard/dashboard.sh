@@ -8,6 +8,9 @@ PID_DIR="$ROOT_DIR/.pids"
 LOG_DIR="$ROOT_DIR/.logs"
 BACKEND_VENV_DIR="${BACKEND_VENV_DIR:-$BACKEND_DIR/.venv}"
 CONFIG_PATH="${CONFIG_PATH:-$ROOT_DIR/config.yaml}"
+COMPOSE_FILE="${COMPOSE_FILE:-$ROOT_DIR/docker-compose.yml}"
+DOCKER_BACKEND_PORT="${DOCKER_BACKEND_PORT:-38000}"
+DOCKER_FRONTEND_PORT="${DOCKER_FRONTEND_PORT:-35173}"
 CONFIG_PATH="$(python3 -c 'import os, sys; print(os.path.abspath(sys.argv[1]))' "$CONFIG_PATH")"
 
 _read_dashboard_config() {
@@ -102,6 +105,30 @@ mkdir -p "$PID_DIR" "$LOG_DIR"
 red()   { printf "\033[31m%s\033[0m\n" "$*"; }
 green() { printf "\033[32m%s\033[0m\n" "$*"; }
 yellow(){ printf "\033[33m%s\033[0m\n" "$*"; }
+
+_compose() {
+    if docker compose version >/dev/null 2>&1; then
+        (cd "$ROOT_DIR" && docker compose -f "$COMPOSE_FILE" "$@")
+        return
+    fi
+    if command -v docker-compose >/dev/null 2>&1; then
+        (cd "$ROOT_DIR" && docker-compose -f "$COMPOSE_FILE" "$@")
+        return
+    fi
+    red "未找到 Docker Compose。请安装 docker compose 插件或 docker-compose。"
+    exit 1
+}
+
+_require_docker_files() {
+    if [[ ! -f "$COMPOSE_FILE" ]]; then
+        red "未找到 Compose 文件: $COMPOSE_FILE"
+        exit 1
+    fi
+    if [[ ! -f "$ROOT_DIR/config.docker.yaml" ]]; then
+        red "未找到 Docker 配置文件: $ROOT_DIR/config.docker.yaml"
+        exit 1
+    fi
+}
 
 _is_running() {
     local pidfile="$PID_DIR/$1.pid"
@@ -244,6 +271,52 @@ restart_all() {
     start_all
 }
 
+docker_build() {
+    _require_docker_files
+    mkdir -p "$ROOT_DIR/data"
+    _compose build
+}
+
+docker_start() {
+    _require_docker_files
+    mkdir -p "$ROOT_DIR/data"
+    if _is_running backend || _is_running frontend; then
+        yellow "检测到本地开发服务正在运行，先停止以避免端口冲突..."
+        stop_all
+    fi
+    _compose up -d --build
+    green "Docker 服务已启动"
+    echo "  后端: http://0.0.0.0:$DOCKER_BACKEND_PORT"
+    echo "  前端: http://0.0.0.0:$DOCKER_FRONTEND_PORT"
+    echo "  配置: $ROOT_DIR/config.docker.yaml"
+}
+
+docker_stop() {
+    _require_docker_files
+    _compose down
+    green "Docker 服务已停止"
+}
+
+docker_restart() {
+    docker_stop
+    docker_start
+}
+
+docker_status() {
+    _require_docker_files
+    _compose ps
+}
+
+docker_logs() {
+    _require_docker_files
+    local target="${1:-all}"
+    case "$target" in
+        backend|frontend) _compose logs -f "$target" ;;
+        all)              _compose logs -f ;;
+        *)                red "未知日志目标: $target (可选 backend/frontend/all)"; exit 1 ;;
+    esac
+}
+
 show_status() {
     echo "=== POC Dashboard 状态 ==="
     if _is_running backend; then
@@ -282,14 +355,25 @@ usage() {
   status           查看运行状态
   logs [target]    查看日志 (backend/frontend/all, 默认 all)
 
+Docker 命令:
+  docker-build           构建 Docker 镜像
+  docker-start           构建并启动 Docker 前后端服务
+  docker-stop            停止 Docker 前后端服务
+  docker-restart         重启 Docker 前后端服务
+  docker-status          查看 Docker 服务状态
+  docker-logs [target]   查看 Docker 日志 (backend/frontend/all, 默认 all)
+
 环境变量:
   CONFIG_PATH      配置文件路径 (默认 $ROOT_DIR/config.yaml)
+  COMPOSE_FILE     Docker Compose 文件路径 (默认 $ROOT_DIR/docker-compose.yml)
   BACKEND_HOST     后端监听地址 (默认 0.0.0.0)
   BACKEND_PORT     后端端口 (默认读取 config.yaml server.port)
   BACKEND_VENV_DIR 后端虚拟环境目录 (默认 backend/.venv)
   FRONTEND_HOST    前端监听地址 (默认 0.0.0.0)
   FRONTEND_PORT    前端端口 (默认读取 config.yaml frontend.port)
   FRONTEND_BACKEND_URL 前端代理的后端地址 (默认由 server.host/server.port 派生)
+  DOCKER_BACKEND_PORT Docker 后端端口提示值 (默认 38000)
+  DOCKER_FRONTEND_PORT Docker 前端端口提示值 (默认 35173)
 
 配置文件:
   cluster_dir      验证者集群目录，后端从这里读取 API、chain_id 和密钥
@@ -309,5 +393,11 @@ case "${1:-}" in
     stop-frontend)  stop_frontend ;;
     status)         show_status ;;
     logs)           show_logs "${2:-all}" ;;
+    docker-build)   docker_build ;;
+    docker-start)   docker_start ;;
+    docker-stop)    docker_stop ;;
+    docker-restart) docker_restart ;;
+    docker-status)  docker_status ;;
+    docker-logs)    docker_logs "${2:-all}" ;;
     *)              usage ;;
 esac

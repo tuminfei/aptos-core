@@ -1,0 +1,45 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: poc-dashboard-backend:local
+    container_name: poc-dashboard-backend
+    restart: unless-stopped
+    cpus: "2.0"
+    mem_limit: 2g
+    environment:
+      CONFIG_PATH: /app/config.yaml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./config.docker.yaml:/app/config.yaml:ro
+      - ./data:/app/data
+      - ./poc-validator-cluster:/app/poc-validator-cluster:ro
+    ports:
+      - "38000:38000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:38000/api/v1/system/health', timeout=5).read()\""
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: poc-dashboard-frontend:local
+    container_name: poc-dashboard-frontend
+    restart: unless-stopped
+    cpus: "2.0"
+    mem_limit: 2g
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "35173:35173"

@@ -1,0 +1,53 @@
+# Docker deployment config. This file is mounted to /app/config.yaml by docker-compose.yml.
+
+cluster_dir: "/app/poc-validator-cluster"
+
+chain:
+  # If the chain node runs on the Docker host, keep this value.
+  # For a remote chain node, replace host.docker.internal with the server IP or domain.
+  rest_url: "http://host.docker.internal:36183/v1"
+  chain_id: 4
+
+keys:
+  core_resources:
+    address: "0xa550c18"
+    # Local test cluster default root key. Replace this in production or shared environments.
+    private_key: "0xD04470F43AB6AEAA4EB616B72128881EEF77346F2075FFE68E14BA7DEBD8095E"
+
+server:
+  host: "0.0.0.0"
+  port: 38000
+  poll_interval_secs: 5
+
+power_writeback:
+  enabled: false
+  interval_secs: 20
+  max_users_per_run: 1000
+  max_gas: 400000
+  gas_unit_price: 100
+
+frontend:
+  host: "0.0.0.0"
+  port: 35173
+  backend_url: ""
+
+database:
+  path: "/app/data/poc_dashboard.db"
+
+test_cluster:
+  port_start: 36180
+  base_node_count: 4
+  target_validator_count: 4
+  users_per_new_validator: 1
+  power_period_in_epochs: 3
+  epoch_duration_secs: 20
+  validator_lockup_periods: 2
+  governance_voting_periods: 1
+  min_validator_stake: 100000000
+  validator_stake_multiplier: 100
+  user_stake_multiplier: 50
+  validator_commission_bps: 10
+  validator_force_epochs_after_join: 1
+  user_force_epoch: true
+  wait_timeout_secs: 180
+  poll_interval_secs: 2
