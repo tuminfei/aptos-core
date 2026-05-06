@@ -1099,7 +1099,7 @@ module aptos_framework::staking_registry {
     /// Called by `stake::on_new_epoch` for each active and pending_inactive validator.
     ///
     /// Reward formula:
-    ///   epoch_reward = pool_power * rewards_rate * num_successful_proposals
+    ///   epoch_reward = min(pool_power, maximum_stake) * rewards_rate * num_successful_proposals
     ///                  / (rewards_rate_denominator * num_total_proposals)
     ///
     /// Distribution:
@@ -1107,6 +1107,9 @@ module aptos_framework::staking_registry {
     ///   distributable = epoch_reward - commission
     ///   each delegator gets: distributable * member_power / pool_power
     ///   rounding dust (distributable - sum_distributed) goes to the owner
+    ///
+    /// The configured maximum_stake caps the total reward budget for a pool. The capped
+    /// reward is still distributed pro-rata by each member's raw pool share.
     ///
     /// All rewards are minted as new TopoCoin and deposited directly into each user's
     /// registry deposit balance (auto-compounding — no separate claim step needed).
@@ -1144,8 +1147,9 @@ module aptos_framework::staking_registry {
             return
         };
 
+        let reward_power = cap_pool_power_by_maximum_stake(pool_power);
         let epoch_reward = calculate_rewards_amount(
-            saturating_u128_to_u64(pool_power),
+            reward_power,
             num_successful_proposals,
             num_total_proposals,
             rewards_rate,
@@ -1786,6 +1790,15 @@ module aptos_framework::staking_registry {
             MAX_U64 as u64
         } else {
             value as u64
+        }
+    }
+
+    fun cap_pool_power_by_maximum_stake(pool_power: u128): u64 {
+        let (_, maximum_stake) = staking_config::get_required_stake(&staking_config::get());
+        if (pool_power > (maximum_stake as u128)) {
+            maximum_stake
+        } else {
+            pool_power as u64
         }
     }
 

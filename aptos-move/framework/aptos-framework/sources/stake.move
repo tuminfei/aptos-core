@@ -1846,8 +1846,9 @@ module aptos_framework::stake {
             return
         };
 
+        let (_, maximum_stake) = staking_config::get_required_stake(&staking_config::get());
         let epoch_reward = calculate_rewards_amount(
-            current_pool_power,
+            min_u64(current_pool_power, maximum_stake),
             num_successful_proposals,
             num_total_proposals,
             rewards_rate,

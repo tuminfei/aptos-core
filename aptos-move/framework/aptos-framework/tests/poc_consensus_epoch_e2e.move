@@ -28,6 +28,7 @@ module aptos_framework::poc_consensus_epoch_e2e {
     const EPOWER_SHOULD_BE_CAPPED: u64 = 18;
     const EPOWER_INCREASE_SHOULD_BE_CAPPED: u64 = 19;
     const EFALLBACK_POWER_SHOULD_NOT_BE_ZERO: u64 = 20;
+    const EREWARD_SHOULD_BE_CAPPED: u64 = 21;
 
     // Rewards for the current epoch must use the current committed power snapshot, while
     // force-undelegation at the period boundary must use the staged next-period power.
@@ -221,6 +222,35 @@ module aptos_framework::poc_consensus_epoch_e2e {
             validator_address,
             10_000,
             EPOWER_SHOULD_BE_CAPPED,
+        );
+    }
+
+    #[test(aptos_framework = @aptos_framework, validator = @0x30d)]
+    fun test_epoch_rewards_are_capped_at_maximum_stake(
+        aptos_framework: &signer,
+        validator: &signer,
+    ) {
+        poc_test_utils::setup_poc_env(aptos_framework);
+        staking_config::update_voting_power_increase_limit(aptos_framework, 50);
+        let validator_address = signer::address_of(validator);
+
+        poc_test_utils::create_validator(aptos_framework, validator, 10_000);
+        poc_test_utils::seed_genesis_power(aptos_framework, validator_address, 20_000);
+        stake::join_validator_set(validator, validator_address);
+        stake::end_epoch();
+
+        staking_config::update_rewards_rate(aptos_framework, 1, 1);
+        stake::set_validator_performance_for_test(0, 1, 0);
+        let (deposit_before_epoch, _, _) =
+            staking_registry::get_user_stake_info(validator_address);
+
+        stake::end_epoch();
+
+        let (deposit_after_epoch, _, _) =
+            staking_registry::get_user_stake_info(validator_address);
+        assert!(
+            deposit_after_epoch == deposit_before_epoch + 10_000,
+            EREWARD_SHOULD_BE_CAPPED,
         );
     }
 
