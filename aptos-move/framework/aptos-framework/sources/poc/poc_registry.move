@@ -226,7 +226,7 @@ module aptos_framework::poc_registry {
 
     /// Called by the genesis module to initialize the registry at chain genesis.
     /// Only callable by friend modules (genesis).
-    public(friend) fun initialize(aptos_framework: &signer) {
+    friend fun initialize(aptos_framework: &signer) {
         initialize_registry(aptos_framework);
     }
 

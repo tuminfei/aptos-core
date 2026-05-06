@@ -4,10 +4,13 @@
 ///
 /// This module is the economic heart of the Topo chain's Proof-of-Contribution (POC) staking system.
 /// It replaces the traditional "stake amount = voting power" model with a hybrid model where a user's
-/// effective voting power is the MINIMUM of:
+/// raw effective voting power is the MINIMUM of:
 ///   1. Their committed POC power (from `poc_power_store`) — contribution-based weight
 ///   2. Their deposit coverage (deposit_octas * 1,000,000 / octas_per_million_power) — economic skin-in-the-game
 ///      If `octas_per_million_power == 0`, no deposit backing is required.
+///
+/// For users already delegated to a validator with a positive registry deposit, final effective voting
+/// power is floored to 1 so participating stake cannot decay or round down to zero.
 ///
 /// This dual-constraint design ensures that:
 /// - Pure capital holders without contribution history cannot dominate governance
@@ -18,8 +21,8 @@
 ///
 /// - ValidatorPool: A pool owned by a validator. Delegators stake behind a pool to lend it their power.
 /// - UserStakeInfo: Per-user record of deposited TOPO coins, current delegation target, and cooldown state.
-/// - Effective Power: min(committed_poc_power, deposit_octas * 1,000,000 / octas_per_million_power),
-///   or committed_poc_power when deposit backing is disabled.
+/// - Effective Power: max(1, raw_effective_power) for a delegated user with a positive registry deposit;
+///   otherwise 0 when inactive/unbound, or raw_effective_power for non-zero raw power.
 /// - Commission: Validators earn a percentage of epoch rewards and transaction fees from their pool.
 /// - Cooldown: After undelegating, users must wait `cooldown_secs` before they can re-delegate or withdraw.
 ///   This prevents rapid stake-hopping that could destabilize the validator set.
@@ -108,6 +111,9 @@ module aptos_framework::staking_registry {
     const MAX_U64: u128 = 18446744073709551615;
     const BPS_DENOMINATOR: u64 = 10000;
     const POWER_BACKING_SCALE: u128 = 1000000;
+    /// Any currently delegated user with a positive registry deposit contributes at least
+    /// this much final effective power.
+    const MIN_PARTICIPATING_EFFECTIVE_POWER: u64 = 1;
 
     // Validator lifecycle status constants (mirrors stake.move)
     const VALIDATOR_STATUS_PENDING_ACTIVE: u64 = 1;
@@ -202,7 +208,7 @@ module aptos_framework::staking_registry {
     /// The cap is stored in a temporary `PendingMintCapability` resource and consumed by `initialize`.
     /// This two-step approach avoids a circular dependency: the registry needs the mint cap,
     /// but the mint cap is created before the registry config parameters are known.
-    public(friend) fun store_topo_coin_mint_cap(
+    friend fun store_topo_coin_mint_cap(
         aptos_framework: &signer,
         mint_cap: MintCapability<TopoCoin>,
     ) {
@@ -220,7 +226,7 @@ module aptos_framework::staking_registry {
     /// Consumes the `PendingMintCapability` parked by `store_topo_coin_mint_cap`.
     /// Idempotent: if the registry already exists, returns immediately without error.
     /// Called by `genesis::ensure_poc_staking_initialized`.
-    public(friend) fun initialize(
+    friend fun initialize(
         aptos_framework: &signer,
         octas_per_million_power: u64,
         max_delegators_per_validator: u64,
@@ -348,7 +354,7 @@ module aptos_framework::staking_registry {
     /// Called during governance config updates to keep cooldown >= governance voting duration.
     /// This prevents a user from undelegating, voting, and re-delegating within a single
     /// governance proposal window — which would allow double-influence attacks.
-    public(friend) fun ensure_min_cooldown_secs(
+    friend fun ensure_min_cooldown_secs(
         aptos_framework: &signer,
         min_cooldown_secs: u64,
     ) acquires StakingRegistry {
@@ -369,7 +375,7 @@ module aptos_framework::staking_registry {
     /// Default multiplier is 1, so 1 octa of stake = 1 unit of genesis power.
     /// This is used in `genesis::create_initialize_validator` to seed the power store
     /// before the first epoch begins.
-    public(friend) fun calculate_genesis_power_from_stake(
+    friend fun calculate_genesis_power_from_stake(
         stake_amount: u64,
     ): u64 acquires StakingRegistry {
         assert_registry_exists();
@@ -392,7 +398,7 @@ module aptos_framework::staking_registry {
         );
     }
 
-    public(friend) fun register_validator_for_genesis(
+    friend fun register_validator_for_genesis(
         owner_address: address,
         validator_address: address,
         commission_bps: u64,
@@ -401,7 +407,7 @@ module aptos_framework::staking_registry {
         register_validator_internal(owner_address, validator_address, commission_bps);
     }
 
-    public(friend) fun register_validator_for_owner(
+    friend fun register_validator_for_owner(
         owner_address: address,
         validator_address: address,
         commission_bps: u64,
@@ -495,10 +501,11 @@ module aptos_framework::staking_registry {
     /// Returns 0 if:
     /// - User is not delegated to any validator
     /// - The validator they are delegated to is not ACTIVE or PENDING_INACTIVE
-    /// - Committed POC power is zero
-    /// - Deposit coverage is zero while deposit backing is enabled
+    /// - The user has no positive registry deposit
     ///
     /// This is the value used for governance voting weight and reward distribution.
+    /// Currently delegated users with a positive registry deposit have their final
+    /// effective power floored to 1 so active stake cannot decay to zero.
     public fun get_effective_power(user: address): u64 acquires StakingRegistry {
         if (!exists<StakingRegistry>(@aptos_framework)) {
             return 0
@@ -564,7 +571,7 @@ module aptos_framework::staking_registry {
         calculate_validator_total_power(registry, pool, validator_address)
     }
 
-    public(friend) fun get_validator_total_power_for_next_epoch(
+    friend fun get_validator_total_power_for_next_epoch(
         validator_address: address,
     ): u64 acquires StakingRegistry {
         let extra_deposit_octas_by_user = simple_map::create<address, u64>();
@@ -575,7 +582,7 @@ module aptos_framework::staking_registry {
         total_power
     }
 
-    public(friend) fun get_validator_member_powers_for_next_epoch(
+    friend fun get_validator_member_powers_for_next_epoch(
         validator_address: address,
         extra_deposit_octas_by_user: &SimpleMap<address, u64>,
     ): (vector<address>, vector<u64>, u64) acquires StakingRegistry {
@@ -617,7 +624,7 @@ module aptos_framework::staking_registry {
         (addresses, powers, saturating_u128_to_u64(total_power))
     }
 
-    public(friend) fun get_validator_member_powers_with_current_power(
+    friend fun get_validator_member_powers_with_current_power(
         validator_address: address,
         extra_deposit_octas_by_user: &SimpleMap<address, u64>,
     ): (vector<address>, vector<u64>, u64) acquires StakingRegistry {
@@ -961,7 +968,7 @@ module aptos_framework::staking_registry {
         registry.validators.borrow(validator_address).commission_bps
     }
 
-    public(friend) fun set_total_staked_power(total_staked_power: u64) acquires StakingRegistry {
+    friend fun set_total_staked_power(total_staked_power: u64) acquires StakingRegistry {
         if (!exists<StakingRegistry>(@aptos_framework)) {
             return
         };
@@ -1004,25 +1011,25 @@ module aptos_framework::staking_registry {
         }
     }
 
-    public(friend) fun set_validator_pending_active(
+    friend fun set_validator_pending_active(
         validator_address: address,
     ) acquires StakingRegistry {
         set_validator_status(validator_address, VALIDATOR_STATUS_PENDING_ACTIVE);
     }
 
-    public(friend) fun set_validator_active(
+    friend fun set_validator_active(
         validator_address: address,
     ) acquires StakingRegistry {
         set_validator_status(validator_address, VALIDATOR_STATUS_ACTIVE);
     }
 
-    public(friend) fun set_validator_pending_inactive(
+    friend fun set_validator_pending_inactive(
         validator_address: address,
     ) acquires StakingRegistry {
         set_validator_status(validator_address, VALIDATOR_STATUS_PENDING_INACTIVE);
     }
 
-    public(friend) fun set_validator_inactive(
+    friend fun set_validator_inactive(
         validator_address: address,
     ) acquires StakingRegistry {
         set_validator_status(validator_address, VALIDATOR_STATUS_INACTIVE);
@@ -1041,7 +1048,7 @@ module aptos_framework::staking_registry {
     ///   The ceiling ensures the threshold is at least 1 when min_active_power > 0.
     ///
     /// Force-undelegated users receive the same cooldown as voluntary undelegation.
-    public(friend) fun force_undelegate_below_threshold(
+    friend fun force_undelegate_below_threshold(
         validator_address: address,
     ) acquires StakingRegistry {
         if (!exists<StakingRegistry>(@aptos_framework)) {
@@ -1078,7 +1085,7 @@ module aptos_framework::staking_registry {
         };
     }
 
-    public(friend) fun update_validator_commission(
+    friend fun update_validator_commission(
         validator_address: address,
         commission_bps: u64,
     ) acquires StakingRegistry {
@@ -1115,7 +1122,7 @@ module aptos_framework::staking_registry {
     /// registry deposit balance (auto-compounding — no separate claim step needed).
     ///
     /// If pool_power == 0 or epoch_reward == 0, this is a no-op.
-    public(friend) fun distribute_epoch_rewards(
+    friend fun distribute_epoch_rewards(
         validator_address: address,
         num_successful_proposals: u64,
         num_total_proposals: u64,
@@ -1200,7 +1207,7 @@ module aptos_framework::staking_registry {
     ///
     /// Fees are minted as new TopoCoin (the fee was already burned at the protocol level;
     /// this re-mints the validator's share as a reward).
-    public(friend) fun distribute_transaction_fees(
+    friend fun distribute_transaction_fees(
         validator_address: address,
         fee_amount_octa: u64,
     ) acquires StakingRegistry {
@@ -1312,8 +1319,11 @@ module aptos_framework::staking_registry {
             info.cooldown_until_secs == 0 || now_seconds >= info.cooldown_until_secs,
             error::invalid_state(ECOOLDOWN_ACTIVE),
         );
-        let effective_power =
-            calculate_effective_power(info, registry.config.octas_per_million_power, user_address);
+        let effective_power = calculate_raw_effective_power(
+            info,
+            registry.config.octas_per_million_power,
+            user_address,
+        );
         assert!(
             effective_power >= registry.config.min_active_power,
             error::invalid_argument(EPOWER_BELOW_MIN_ACTIVE),
@@ -1558,9 +1568,23 @@ module aptos_framework::staking_registry {
         octas_per_million_power: u64,
         user: address,
     ): u64 {
+        let deposit_octas = coin::value(&info.deposit) as u128;
+        let raw_effective_power = calculate_raw_effective_power_from_deposit(
+            poc_power_store::get_user_committed_power(user),
+            deposit_octas,
+            octas_per_million_power,
+        );
+        apply_participating_effective_power_floor(raw_effective_power, deposit_octas)
+    }
+
+    fun calculate_raw_effective_power(
+        info: &UserStakeInfo,
+        octas_per_million_power: u64,
+        user: address,
+    ): u64 {
         let committed_power = poc_power_store::get_user_committed_power(user);
         let deposit_octas = coin::value(&info.deposit) as u128;
-        calculate_effective_power_from_deposit(
+        calculate_raw_effective_power_from_deposit(
             committed_power,
             deposit_octas,
             octas_per_million_power,
@@ -1598,11 +1622,12 @@ module aptos_framework::staking_registry {
         let committed_power = poc_power_store::get_user_committed_power(user);
         let deposit_octas = (coin::value(&info.deposit) as u128)
             + (extra_deposit_octas as u128);
-        calculate_effective_power_from_deposit(
+        let raw_effective_power = calculate_raw_effective_power_from_deposit(
             committed_power,
             deposit_octas,
             registry.config.octas_per_million_power,
-        )
+        );
+        apply_participating_effective_power_floor(raw_effective_power, deposit_octas)
     }
 
     fun get_user_effective_power_for_validator_for_next_epoch(
@@ -1639,11 +1664,13 @@ module aptos_framework::staking_registry {
         let committed_power = poc_power_store::get_user_committed_power_for_next_epoch(user);
         let deposit_octas = (coin::value(&info.deposit) as u128)
             + (extra_deposit_octas as u128);
-        let effective_power = calculate_effective_power_from_deposit(
+        let raw_effective_power = calculate_raw_effective_power_from_deposit(
             committed_power,
             deposit_octas,
             registry.config.octas_per_million_power,
         );
+        let effective_power =
+            apply_participating_effective_power_floor(raw_effective_power, deposit_octas);
         if (effective_power < maintain_threshold) {
             0
         } else {
@@ -1651,7 +1678,7 @@ module aptos_framework::staking_registry {
         }
     }
 
-    fun calculate_effective_power_from_deposit(
+    fun calculate_raw_effective_power_from_deposit(
         committed_power: u64,
         deposit_octas: u128,
         octas_per_million_power: u64,
@@ -1669,6 +1696,17 @@ module aptos_framework::staking_registry {
             committed_power
         } else {
             deposit_cover as u64
+        }
+    }
+
+    fun apply_participating_effective_power_floor(
+        effective_power: u64,
+        deposit_octas: u128,
+    ): u64 {
+        if (effective_power == 0 && deposit_octas > 0) {
+            MIN_PARTICIPATING_EFFECTIVE_POWER
+        } else {
+            effective_power
         }
     }
 

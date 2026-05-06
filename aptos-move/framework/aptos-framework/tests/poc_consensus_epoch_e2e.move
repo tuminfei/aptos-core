@@ -29,6 +29,7 @@ module aptos_framework::poc_consensus_epoch_e2e {
     const EPOWER_INCREASE_SHOULD_BE_CAPPED: u64 = 19;
     const EFALLBACK_POWER_SHOULD_NOT_BE_ZERO: u64 = 20;
     const EREWARD_SHOULD_BE_CAPPED: u64 = 21;
+    const EPOWER_SHOULD_FLOOR_TO_ONE: u64 = 22;
 
     // Rewards for the current epoch must use the current committed power snapshot, while
     // force-undelegation at the period boundary must use the staged next-period power.
@@ -154,6 +155,39 @@ module aptos_framework::poc_consensus_epoch_e2e {
             validator_address,
             120,
             EPOWER_SHOULD_INCLUDE_REWARDS,
+        );
+    }
+
+    #[test(aptos_framework = @aptos_framework, validator = @0x31a)]
+    fun test_participating_staker_effective_power_floors_to_one(
+        aptos_framework: &signer,
+        validator: &signer,
+    ) {
+        poc_test_utils::setup_poc_env(aptos_framework);
+        let validator_address = signer::address_of(validator);
+
+        poc_test_utils::create_validator(aptos_framework, validator, 100);
+        stake::join_validator_set(validator, validator_address);
+        stake::end_epoch();
+
+        poc_test_utils::stage_next_period_power(aptos_framework, validator_address, 0);
+        poc_test_utils::advance_epochs(59);
+        poc_test_utils::assert_next_voting_power(
+            validator_address,
+            1,
+            EPOWER_SHOULD_FLOOR_TO_ONE,
+        );
+
+        stake::end_epoch();
+
+        assert!(
+            staking_registry::get_effective_power(validator_address) == 1,
+            EPOWER_SHOULD_FLOOR_TO_ONE,
+        );
+        poc_test_utils::assert_current_voting_power(
+            validator_address,
+            1,
+            EPOWER_SHOULD_FLOOR_TO_ONE,
         );
     }
 

@@ -152,7 +152,7 @@ module aptos_framework::poc_power_store {
 
     // ========== Initialization ==========
 
-    public(friend) fun initialize(aptos_framework: &signer, operator: address) {
+    friend fun initialize(aptos_framework: &signer, operator: address) {
         initialize_power_store_internal(
             aptos_framework,
             operator,
@@ -161,7 +161,7 @@ module aptos_framework::poc_power_store {
         );
     }
 
-    public(friend) fun initialize_with_power_period(
+    friend fun initialize_with_power_period(
         aptos_framework: &signer,
         operator: address,
         power_period_in_epochs: u64,
@@ -342,7 +342,7 @@ module aptos_framework::poc_power_store {
     ///   first 60 committed epochs   → period 0
     ///   next 60 committed epochs    → period 1
     ///   next 60 committed epochs    → period 2
-    public(friend) fun commit_next_period_if_boundary() acquires PeriodClock {
+    friend fun commit_next_period_if_boundary() acquires PeriodClock {
         if (!exists<PeriodClock>(@aptos_framework)) {
             return
         };
