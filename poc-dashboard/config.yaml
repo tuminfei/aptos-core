@@ -1,17 +1,17 @@
 # 集群目录路径（相对于本文件或绝对路径）
 # 启动时自动从此目录读取: API地址、chain_id、core_resources 密钥、validator/operator 密钥
-cluster_dir: "./poc-validator-cluster"
+cluster_dir: "/home/appuser/chain-data"
 
 chain:
-  # 留空时后端从 cluster_dir/node.yaml 自动探测；full_flow_bootstrap.sh 从 test_cluster.port_start 派生。
+  # 留空时后端从 cluster_dir 下的 node.yaml 自动探测可用 REST 地址。
   rest_url: ""
-  chain_id: 4
+  chain_id: 164
 
 keys:
   core_resources:
     address: "0xa550c18"
-    # 本地测试集群默认 root key；生产或共享环境请改为安全注入。
-    private_key: "0xD04470F43AB6AEAA4EB616B72128881EEF77346F2075FFE68E14BA7DEBD8095E"
+    # 后端优先从 cluster_dir/root_key 读取；此处作为兜底配置。
+    private_key: "0xE582E0EE80FFE8CD9BB3BA0F44CC951AEB48EE46BB526031C664E5750892F169"
 
 server:
   host: "0.0.0.0"

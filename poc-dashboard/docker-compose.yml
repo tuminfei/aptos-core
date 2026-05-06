@@ -10,12 +10,15 @@ services:
     mem_limit: 2g
     environment:
       CONFIG_PATH: /app/config.yaml
+      TOPO_CHAIN_ROOT: /home/appuser/topo-chain
+      APTOS_CLI: /home/appuser/topo-chain/target/debug/aptos
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./config.docker.yaml:/app/config.yaml:ro
       - ./data:/app/data
-      - ./poc-validator-cluster:/app/poc-validator-cluster:ro
+      - /home/appuser/chain-data:/home/appuser/chain-data:ro
+      - /home/appuser/topo-chain:/home/appuser/topo-chain:ro
     ports:
       - "38000:38000"
     healthcheck:

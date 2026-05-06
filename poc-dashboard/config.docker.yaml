@@ -1,18 +1,18 @@
 # Docker deployment config. This file is mounted to /app/config.yaml by docker-compose.yml.
 
-cluster_dir: "/app/poc-validator-cluster"
+cluster_dir: "/home/appuser/chain-data"
 
 chain:
-  # If the chain node runs on the Docker host, keep this value.
+  # The chain node runs on the Docker host.
   # For a remote chain node, replace host.docker.internal with the server IP or domain.
-  rest_url: "http://host.docker.internal:36183/v1"
-  chain_id: 4
+  rest_url: "http://host.docker.internal:39090/v1"
+  chain_id: 164
 
 keys:
   core_resources:
     address: "0xa550c18"
-    # Local test cluster default root key. Replace this in production or shared environments.
-    private_key: "0xD04470F43AB6AEAA4EB616B72128881EEF77346F2075FFE68E14BA7DEBD8095E"
+    # The backend prefers cluster_dir/root_key when the cluster data directory is mounted.
+    private_key: "0xE582E0EE80FFE8CD9BB3BA0F44CC951AEB48EE46BB526031C664E5750892F169"
 
 server:
   host: "0.0.0.0"

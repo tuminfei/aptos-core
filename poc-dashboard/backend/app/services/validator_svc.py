@@ -405,10 +405,27 @@ async def initialize_validator_with_cli(
 
 
 def _repo_root() -> Path:
-    return Path(__file__).resolve().parents[3]
+    configured = os.environ.get("TOPO_CHAIN_ROOT") or os.environ.get("REPO_ROOT")
+    if configured:
+        return Path(configured).expanduser().resolve()
+
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / "poc-dashboard").is_dir() and (parent / "aptos-move").is_dir():
+            return parent
+        if (parent / "scripts").is_dir() and (parent / "app").is_dir():
+            return parent
+
+    raise RuntimeError(
+        "无法定位 topo-chain 仓库根目录，请设置 TOPO_CHAIN_ROOT 环境变量"
+    )
 
 
 def _aptos_cli(repo_root: Path) -> list[str]:
+    configured = os.environ.get("APTOS_CLI")
+    if configured:
+        return [configured]
+
     for candidate in (
         repo_root / "target" / "release" / "aptos",
         repo_root / "target" / "debug" / "aptos",
