@@ -210,8 +210,8 @@ async def get_staking_config(client: ChainClient) -> dict:
         return {}
     data = resource.get("data") or {}
     return {
-        "minimum_stake": _int_value(data.get("minimum_stake")),
-        "maximum_stake": _int_value(data.get("maximum_stake")),
+        "minimum_stake": str(_int_value(data.get("minimum_stake"))),
+        "maximum_stake": str(_int_value(data.get("maximum_stake"))),
         "recurring_lockup_duration_secs": _int_value(data.get("recurring_lockup_duration_secs")),
         "allow_validator_set_change": bool(data.get("allow_validator_set_change")),
         "rewards_rate": _int_value(data.get("rewards_rate")),

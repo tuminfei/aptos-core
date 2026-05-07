@@ -14,8 +14,8 @@ async def test_governance_config(client):
     assert data["staking"]["cooldown_secs"] == 3600
     assert data["staking"]["min_active_power"] == 1
     assert data["staking"]["force_exit_power_bps"] == 8000
-    assert data["staking_config"]["minimum_stake"] == 1000
-    assert data["staking_config"]["maximum_stake"] == 1000000
+    assert data["staking_config"]["minimum_stake"] == "1000"
+    assert data["staking_config"]["maximum_stake"] == "1000000"
     assert data["staking_config"]["recurring_lockup_duration_secs"] == 604800
     assert data["staking_config"]["voting_power_increase_limit"] == 20
     assert data["staking_rewards_config"]["rewards_rate_period_in_secs"] == 31536000
@@ -64,6 +64,22 @@ async def test_set_staking_config_rejects_invalid_range(client):
 
     assert resp.status_code == 400
     assert "minimum_stake" in resp.json()["message"]
+
+
+@pytest.mark.asyncio
+async def test_set_staking_config_rejects_u64_overflow(client):
+    resp = await client.post(
+        "/api/v1/governance/set-staking-config",
+        json={
+            "minimum_stake": 1,
+            "maximum_stake": 18446744073709551616,
+            "recurring_lockup_duration_secs": 3600,
+            "voting_power_increase_limit": 10,
+        },
+    )
+
+    assert resp.status_code == 400
+    assert "u64" in resp.json()["message"]
 
 
 @pytest.mark.asyncio

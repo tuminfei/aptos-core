@@ -49,9 +49,9 @@ export async function setEpochInterval(params: { epoch_interval_secs: number; ma
 }
 
 export async function setStakingConfig(params: {
-  minimum_stake: number;
-  maximum_stake: number;
-  recurring_lockup_duration_secs: number;
+  minimum_stake: number | string;
+  maximum_stake: number | string;
+  recurring_lockup_duration_secs: number | string;
   voting_power_increase_limit: number;
   max_gas?: number;
   gas_unit_price?: number;

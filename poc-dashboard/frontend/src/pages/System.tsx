@@ -81,6 +81,7 @@ function formatFixedPointPercent(rate: { percent?: number; raw?: string } | unde
 }
 
 const DEFAULT_REWARD_RATE_DENOMINATOR = 1_000_000_000;
+const U64_MAX = '18446744073709551615';
 
 interface ParameterRow {
   key: string;
@@ -129,6 +130,18 @@ function percentToFraction(percent: number, denominator = DEFAULT_REWARD_RATE_DE
   };
 }
 
+function isUnsignedInteger(value: string): boolean {
+  return /^\d+$/.test(String(value || '').trim());
+}
+
+function compareUnsignedIntegers(a: string, b: string): number {
+  const left = String(a || '').replace(/^0+/, '') || '0';
+  const right = String(b || '').replace(/^0+/, '') || '0';
+  if (left.length !== right.length) return left.length > right.length ? 1 : -1;
+  if (left === right) return 0;
+  return left > right ? 1 : -1;
+}
+
 function parseBatchUpdates(input: string): { address: string; power: number }[] {
   return input
     .split(/\n|,/)
@@ -173,8 +186,8 @@ export default function System() {
   const [requiredProposerStakeVal, setRequiredProposerStakeVal] = useState<number | null>(null);
   const [votingDurationVal, setVotingDurationVal] = useState<number | null>(null);
   const [cooldownSecsVal, setCooldownSecsVal] = useState<number | null>(null);
-  const [stakingMinimumStakeVal, setStakingMinimumStakeVal] = useState<number | null>(null);
-  const [stakingMaximumStakeVal, setStakingMaximumStakeVal] = useState<number | null>(null);
+  const [stakingMinimumStakeVal, setStakingMinimumStakeVal] = useState<string | null>(null);
+  const [stakingMaximumStakeVal, setStakingMaximumStakeVal] = useState<string | null>(null);
   const [stakingLockupSecsVal, setStakingLockupSecsVal] = useState<number | null>(null);
   const [stakingVotingPowerIncreaseLimitVal, setStakingVotingPowerIncreaseLimitVal] = useState<number | null>(null);
   const [legacyRewardsRateVal, setLegacyRewardsRateVal] = useState<number | null>(null);
@@ -288,8 +301,8 @@ export default function System() {
   const effectiveRequiredProposerStake = requiredProposerStakeVal ?? Number(gov.required_proposer_stake || 0);
   const effectiveVotingDuration = votingDurationVal ?? Number(gov.voting_duration_secs || 0);
   const effectiveCooldownSecs = cooldownSecsVal ?? Number(stk.cooldown_secs || 0);
-  const effectiveStakingMinimumStake = stakingMinimumStakeVal ?? Number(stakingConfig.minimum_stake || 0);
-  const effectiveStakingMaximumStake = stakingMaximumStakeVal ?? Number(stakingConfig.maximum_stake || 0);
+  const effectiveStakingMinimumStake = stakingMinimumStakeVal ?? String(stakingConfig.minimum_stake || 0);
+  const effectiveStakingMaximumStake = stakingMaximumStakeVal ?? String(stakingConfig.maximum_stake || 0);
   const effectiveStakingLockupSecs = stakingLockupSecsVal ?? Number(stakingConfig.recurring_lockup_duration_secs || 0);
   const effectiveStakingVotingPowerIncreaseLimit = stakingVotingPowerIncreaseLimitVal ?? Number(stakingConfig.voting_power_increase_limit || 0);
   const effectiveLegacyRewardsRate = legacyRewardsRateVal ?? Number(stakingConfig.rewards_rate || rewardRate.numerator || 0);
@@ -384,8 +397,16 @@ export default function System() {
   };
 
   const handleSetStakingConfig = () => {
-    if (effectiveStakingMinimumStake > effectiveStakingMaximumStake || effectiveStakingMaximumStake <= 0) {
+    if (!isUnsignedInteger(effectiveStakingMinimumStake) || !isUnsignedInteger(effectiveStakingMaximumStake)) {
+      message.warning('minimum_stake 和 maximum_stake 必须是非负整数');
+      return;
+    }
+    if (compareUnsignedIntegers(effectiveStakingMinimumStake, effectiveStakingMaximumStake) > 0 || compareUnsignedIntegers(effectiveStakingMaximumStake, '0') <= 0) {
       message.warning('minimum_stake 不能大于 maximum_stake，且 maximum_stake 必须大于 0');
+      return;
+    }
+    if (compareUnsignedIntegers(effectiveStakingMinimumStake, U64_MAX) > 0 || compareUnsignedIntegers(effectiveStakingMaximumStake, U64_MAX) > 0) {
+      message.warning(`minimum_stake 和 maximum_stake 不能超过 u64 最大值 ${U64_MAX}`);
       return;
     }
     if (effectiveStakingLockupSecs <= 0) {
@@ -449,8 +470,9 @@ export default function System() {
       editor: (
         <InputNumber
           value={stakingMinimumStakeVal ?? undefined}
-          onChange={(value) => setStakingMinimumStakeVal(value ?? null)}
-          min={0}
+          onChange={(value) => setStakingMinimumStakeVal(value == null ? null : String(value))}
+          stringMode
+          min="0"
           precision={0}
           placeholder={`当前 ${formatNumber(stakingConfig.minimum_stake || 0)}`}
           style={{ width: '100%' }}
@@ -515,8 +537,9 @@ export default function System() {
       editor: (
         <InputNumber
           value={stakingMaximumStakeVal ?? undefined}
-          onChange={(value) => setStakingMaximumStakeVal(value ?? null)}
-          min={1}
+          onChange={(value) => setStakingMaximumStakeVal(value == null ? null : String(value))}
+          stringMode
+          min="1"
           precision={0}
           placeholder={`当前 ${formatNumber(stakingConfig.maximum_stake || 0)}`}
           style={{ width: '100%' }}

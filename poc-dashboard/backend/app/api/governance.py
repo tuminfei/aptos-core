@@ -12,6 +12,7 @@ from app.services.cache_svc import invalidate_many
 from app.api.errors import ChainTxError, ParamError
 
 router = APIRouter(tags=["governance"])
+U64_MAX = (1 << 64) - 1
 
 
 class UpdateGovernanceConfigReq(BaseModel):
@@ -87,6 +88,11 @@ class UpgradeFrameworkReq(BaseModel):
 class CleanupStagingReq(BaseModel):
     max_gas: int = 200_000
     gas_unit_price: int = 100
+
+
+def _validate_u64(value: int, name: str) -> None:
+    if value < 0 or value > U64_MAX:
+        raise ParamError(f"{name} 必须在 0 到 {U64_MAX} 之间")
 
 
 @router.post("/governance/force-end-epoch")
@@ -198,6 +204,10 @@ async def governance_config():
 
 @router.post("/governance/set-staking-config")
 async def set_staking_config(req: UpdateStakingConfigReq):
+    _validate_u64(req.minimum_stake, "minimum_stake")
+    _validate_u64(req.maximum_stake, "maximum_stake")
+    _validate_u64(req.recurring_lockup_duration_secs, "recurring_lockup_duration_secs")
+    _validate_u64(req.voting_power_increase_limit, "voting_power_increase_limit")
     if req.minimum_stake > req.maximum_stake:
         raise ParamError("minimum_stake 不能大于 maximum_stake")
     client = get_chain_client()

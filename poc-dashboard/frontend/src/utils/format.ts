@@ -21,6 +21,12 @@ export function topoToOctas(topo: number | string): number {
 }
 
 export function formatNumber(n: number | string): string {
+  const text = String(n ?? '').trim();
+  if (/^-?\d+$/.test(text)) {
+    const sign = text.startsWith('-') ? '-' : '';
+    const digits = sign ? text.slice(1) : text;
+    return `${sign}${digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+  }
   return Number(n).toLocaleString();
 }
 
