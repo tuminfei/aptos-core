@@ -1,4 +1,6 @@
 import asyncio
+import errno
+from pathlib import Path
 
 import pytest
 
@@ -28,6 +30,24 @@ async def test_list_dapps_includes_registry_and_demo_config(client):
     assert app["app_admin"] == "0xddd"
     assert app["demo"]["module_address"] == "0xabc"
     assert app["poc_listing_status_code"] == 2
+
+
+def test_demo_package_dir_falls_back_when_dashboard_generated_is_read_only(tmp_path, monkeypatch):
+    repo_root = tmp_path / "topo-chain"
+    dashboard_generated = repo_root / "poc-dashboard" / ".generated"
+
+    real_mkdir = Path.mkdir
+
+    def fake_mkdir(self, *args, **kwargs):
+        if self == dashboard_generated:
+            raise OSError(errno.EROFS, "Read-only file system", str(self))
+        return real_mkdir(self, *args, **kwargs)
+
+    monkeypatch.delenv(dapp_svc.DEMO_GENERATED_ENV, raising=False)
+    monkeypatch.setattr(Path, "mkdir", fake_mkdir)
+    monkeypatch.setattr(dapp_svc.tempfile, "gettempdir", lambda: str(tmp_path / "tmp"))
+
+    assert dapp_svc._demo_package_dir(repo_root) == tmp_path / "tmp" / "poc-dashboard-generated" / "poc_demo_formal"
 
 
 @pytest.mark.asyncio

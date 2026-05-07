@@ -12,11 +12,13 @@ services:
       CONFIG_PATH: /app/config.yaml
       TOPO_CHAIN_ROOT: /home/appuser/topo-chain
       APTOS_CLI: /home/appuser/topo-chain/target/debug/aptos
+      POC_DASHBOARD_GENERATED_DIR: /app/generated
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - ./config.docker.yaml:/app/config.yaml:ro
       - ./data:/app/data
+      - ./generated:/app/generated
       - /home/appuser/chain-data:/home/appuser/chain-data:ro
       - /home/appuser/topo-chain:/home/appuser/topo-chain:ro
     ports:

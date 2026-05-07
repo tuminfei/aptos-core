@@ -12,7 +12,7 @@ keys:
   core_resources:
     address: "0xa550c18"
     # The backend prefers cluster_dir/root_key when the cluster data directory is mounted.
-    private_key: "0xE582E0EE80FFE8CD9BB3BA0F44CC951AEB48EE46BB526031C664E5750892F169"
+    private_key: "0x4E7417A1E2C78E965BE13F0B1F52DEAC3B7743CABAD391093288E6322B3FB05B"
 
 server:
   host: "0.0.0.0"

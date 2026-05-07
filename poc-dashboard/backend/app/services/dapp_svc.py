@@ -4,6 +4,7 @@ import os
 import random
 import re
 import subprocess
+import tempfile
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -23,6 +24,7 @@ DEFAULT_DEMO_MODULE = "poc_demo"
 DEFAULT_BUYER_MINT_OCTAS = 100_000_000
 DEFAULT_AUTO_TRADE_CUSTODY_TOP_UP_TICKS = 10
 POC_FRAMEWORK_ADDRESS = "0x1"
+DEMO_GENERATED_ENV = "POC_DASHBOARD_GENERATED_DIR"
 
 
 async def get_dapp_list(client: ChainClient) -> list[dict]:
@@ -157,7 +159,7 @@ def _ensure_demo_package(repo_root: Path) -> Path:
     if not framework_dir.exists():
         raise RuntimeError(f"找不到正式 AptosFramework: {framework_dir}")
 
-    target_dir = repo_root / "poc-dashboard" / ".generated" / "poc_demo_formal"
+    target_dir = _demo_package_dir(repo_root)
     sources_dir = target_dir / "sources"
     sources_dir.mkdir(parents=True, exist_ok=True)
 
@@ -181,6 +183,29 @@ AptosFramework = {{ local = "{framework_dir}" }}
 """
     (target_dir / "Move.toml").write_text(move_toml)
     return target_dir
+
+
+def _demo_package_dir(repo_root: Path) -> Path:
+    configured = os.environ.get(DEMO_GENERATED_ENV)
+    if configured:
+        return Path(configured).expanduser().resolve() / "poc_demo_formal"
+
+    dashboard_generated = repo_root / "poc-dashboard" / ".generated"
+    if _can_write_dir(dashboard_generated):
+        return dashboard_generated / "poc_demo_formal"
+
+    return Path(tempfile.gettempdir()) / "poc-dashboard-generated" / "poc_demo_formal"
+
+
+def _can_write_dir(path: Path) -> bool:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        probe = path / ".write-test"
+        probe.write_text("ok")
+        probe.unlink()
+        return True
+    except OSError:
+        return False
 
 
 async def deploy_demo_package(

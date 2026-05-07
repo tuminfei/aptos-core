@@ -86,7 +86,7 @@ _settings: Optional[Settings] = None
 
 # The cluster script uses this hardcoded default private key for core_resources.
 # layout.yaml only stores the public key, so we need the private key separately.
-DEFAULT_ROOT_PRIVATE_KEY = "0xD04470F43AB6AEAA4EB616B72128881EEF77346F2075FFE68E14BA7DEBD8095E"
+DEFAULT_ROOT_PRIVATE_KEY = "0x4E7417A1E2C78E965BE13F0B1F52DEAC3B7743CABAD391093288E6322B3FB05B"
 CORE_RESOURCES_ADDRESS = "0xa550c18"
 
 
