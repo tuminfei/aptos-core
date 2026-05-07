@@ -13,6 +13,7 @@ services:
       TOPO_CHAIN_ROOT: /home/appuser/topo-chain
       APTOS_CLI: /home/appuser/topo-chain/target/debug/aptos
       POC_DASHBOARD_GENERATED_DIR: /app/generated
+      POC_DASHBOARD_METRICS_HOST: host.docker.internal
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

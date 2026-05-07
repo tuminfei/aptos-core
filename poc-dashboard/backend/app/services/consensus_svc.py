@@ -17,6 +17,7 @@ from app.models import history
 logger = logging.getLogger(__name__)
 
 JSON_VALIDATOR_POWER_PREFIX = "aptos_all_validators_voting_power."
+METRICS_HOST_ENV = "POC_DASHBOARD_METRICS_HOST"
 PROM_VALUE_RE = re.compile(
     r"^([a-zA-Z_:][a-zA-Z0-9_:]*)(?:\{([^}]*)\})?\s+([-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)"
 )
@@ -129,6 +130,9 @@ def _local_http_url(address: str, port: int | str) -> str:
     host = address.strip()
     if host.startswith("http://") or host.startswith("https://"):
         return host.rstrip("/")
+    metrics_host = os.environ.get(METRICS_HOST_ENV, "").strip()
+    if metrics_host and host in {"127.0.0.1", "localhost", "0.0.0.0", "::", "::1", ""}:
+        host = metrics_host
     if host in {"0.0.0.0", "::", ""}:
         host = "127.0.0.1"
     return f"http://{host}:{port}"
