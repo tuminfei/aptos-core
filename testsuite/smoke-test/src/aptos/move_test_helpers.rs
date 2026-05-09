@@ -5,7 +5,7 @@
 
 use anyhow::Result;
 use aptos_forge::AptosPublicInfo;
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_sdk::transaction_builder::TransactionFactory;
 use std::path::PathBuf;
 

@@ -8,7 +8,7 @@
 //! pack functions are automatically generated for all public structs/enums.
 
 use crate::{assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_types::{account_address::AccountAddress, on_chain_config::FeatureFlag};
 use move_core_types::{
     value::{MoveStruct, MoveValue},

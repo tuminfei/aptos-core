@@ -182,7 +182,7 @@ fn test_resource_groups(resource_group_charge_as_sum_enabled: bool) {
     let user_addr = AccountAddress::from_hex_literal("0x0123").unwrap();
     let user_account = h.new_account_at(user_addr);
 
-    let mut build_options = aptos_framework::BuildOptions::default();
+    let mut build_options = topo_framework::BuildOptions::default();
     build_options
         .named_addresses
         .insert("resource_groups_primary".to_string(), primary_addr);
@@ -388,7 +388,7 @@ fn test_resource_groups_container_not_enabled() {
     let primary_addr = AccountAddress::from_hex_literal("0xcafe").unwrap();
     let primary_account = h.new_account_at(primary_addr);
 
-    let mut build_options = aptos_framework::BuildOptions::default();
+    let mut build_options = topo_framework::BuildOptions::default();
     build_options
         .named_addresses
         .insert("resource_groups_primary".to_string(), primary_addr);

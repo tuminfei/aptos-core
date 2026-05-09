@@ -16,7 +16,7 @@ use aptos_block_executor::{
     txn_provider::default::DefaultTxnProvider,
 };
 use aptos_crypto::HashValue;
-use aptos_framework::ReleaseBundle;
+use topo_framework::ReleaseBundle;
 use aptos_gas_algebra::DynamicExpression;
 use aptos_gas_meter::{AptosGasMeter, GasAlgebra, StandardGasAlgebra, StandardGasMeter};
 use aptos_gas_profiling::{GasProfiler, TransactionGasLog};

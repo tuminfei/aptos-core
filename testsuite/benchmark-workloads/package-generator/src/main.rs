@@ -24,7 +24,7 @@ struct Args {
     /// Root directory where the Rust file to access prebuilt packages will be saved.
     #[clap(long)]
     prebuilt_packages_rust_dir: PathBuf,
-    /// If true, uses local aptos-framework from aptos-core.
+    /// If true, uses local topo-framework from aptos-core.
     #[clap(long)]
     use_local_std: bool,
     /// Experiments for compiler optimization.

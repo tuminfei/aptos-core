@@ -463,7 +463,7 @@ fn generate_genesis_transaction(
         .join("..")
         .join("aptos-move")
         .join("framework")
-        .join("aptos-framework");
+        .join("topo-framework");
 
     // Create a temporary file to hold the genesis blob
     let genesis_blob_path = TempPath::new();

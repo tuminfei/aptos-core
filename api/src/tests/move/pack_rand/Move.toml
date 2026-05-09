@@ -3,7 +3,7 @@ name = "pack_rand"
 version = "0.0.0"
 
 [dependencies]
-AptosFramework = { local = "../../../../../aptos-move/framework/aptos-framework" }
+TopoFramework = { local = "../../../../../aptos-move/framework/topo-framework" }
 
 [addresses]
 addr = "_"

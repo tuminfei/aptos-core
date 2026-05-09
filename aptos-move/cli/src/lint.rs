@@ -4,7 +4,7 @@
 use crate::{move_types::MovePackageOptions, IncludedArtifacts, MoveEnv};
 use anyhow::bail;
 use aptos_cli_common::{AccountAddressWrapper, CliCommand, CliTypedResult};
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use async_trait::async_trait;
 use clap::Parser;
 use move_compiler_v2::Experiment;

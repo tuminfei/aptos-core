@@ -89,8 +89,8 @@
 /// ## Accounts on Aptos
 ///
 ///
-/// At creation, an [Aptos account](https://github.com/aptos-labs/aptos-core/blob/88c9aab3982c246f8aa75eb2caf8c8ab1dcab491/aptos-move/framework/aptos-framework/sources/account.move#L23) contains:
-/// * A [resource containing Aptos Coin](https://github.com/aptos-labs/aptos-core/blob/60751b5ed44984178c7163933da3d1b18ad80388/aptos-move/framework/aptos-framework/sources/coin.move#L50) and deposit and withdrawal of coins from that resource.
+/// At creation, an [Aptos account](https://github.com/aptos-labs/aptos-core/blob/88c9aab3982c246f8aa75eb2caf8c8ab1dcab491/aptos-move/framework/topo-framework/sources/account.move#L23) contains:
+/// * A [resource containing Aptos Coin](https://github.com/aptos-labs/aptos-core/blob/60751b5ed44984178c7163933da3d1b18ad80388/aptos-move/framework/topo-framework/sources/coin.move#L50) and deposit and withdrawal of coins from that resource.
 /// * An authentication key associated with their current public, private key(s).
 /// * A strictly increasing [sequence number](../concepts/accounts.md#account-sequence-number) that represents the account's next transaction's sequence number to prevent replay attacks.
 /// * A strictly increasing number that represents the next distinct GUID creation number.
@@ -169,13 +169,13 @@
 ///
 /// ## Exchanging and tracking coins
 ///
-/// Aptos has a standard [Coin type](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-framework/sources/coin.move). Different types of coins can be represented in this type through the use of distinct structs that represent the type parameter or generic for `Coin<T>`.
+/// Aptos has a standard [Coin type](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/topo-framework/sources/coin.move). Different types of coins can be represented in this type through the use of distinct structs that represent the type parameter or generic for `Coin<T>`.
 ///
 /// Coins are stored within an account under the resource `CoinStore<T>`. At account creation, each user has the resource `CoinStore<0x1::topo_coin::TopoCoin>` or `CoinStore<TopoCoin>`, for short. Within this resource is the Aptos coin: `Coin<TopoCoin>`.
 ///
 /// ### Transferring coins between users
 ///
-/// Coins can be transferred between users via the [`coin::transfer`](https://github.com/aptos-labs/aptos-core/blob/36a7c00b29a457469264187d8e44070b2d5391fe/aptos-move/framework/aptos-framework/sources/coin.move#L307) function for all coins and [`topo_account::transfer`](https://github.com/aptos-labs/aptos-core/blob/88c9aab3982c246f8aa75eb2caf8c8ab1dcab491/aptos-move/framework/aptos-framework/sources/topo_account.move#L18) for Aptos coins. The advantage of the latter function is that it creates the destination account if it does not exist.
+/// Coins can be transferred between users via the [`coin::transfer`](https://github.com/aptos-labs/aptos-core/blob/36a7c00b29a457469264187d8e44070b2d5391fe/aptos-move/framework/topo-framework/sources/coin.move#L307) function for all coins and [`topo_account::transfer`](https://github.com/aptos-labs/aptos-core/blob/88c9aab3982c246f8aa75eb2caf8c8ab1dcab491/aptos-move/framework/topo-framework/sources/topo_account.move#L18) for Aptos coins. The advantage of the latter function is that it creates the destination account if it does not exist.
 ///
 /// :::caution
 /// It is important to note that if an account has not registered a `CoinStore<T>` for a given `T`, then any transfer of type `T` to that account will fail.

@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use aptos_cached_packages::aptos_stdlib;
-use aptos_framework::{natives::code::PackageMetadata, BuildOptions, BuiltPackage};
+use topo_framework::{natives::code::PackageMetadata, BuildOptions, BuiltPackage};
 use aptos_gas_profiling::TransactionGasLog;
 use aptos_gas_schedule::{AptosGasParameters, FromOnChainGasSchedule, ToOnChainGasSchedule};
 use aptos_language_e2e_tests::{
@@ -1376,7 +1376,7 @@ pub(crate) struct AptosPackageHooks {}
 
 impl move_package::package_hooks::PackageHooks for AptosPackageHooks {
     fn custom_package_info_fields(&self) -> Vec<String> {
-        vec![aptos_framework::UPGRADE_POLICY_CUSTOM_FIELD.to_string()]
+        vec![topo_framework::UPGRADE_POLICY_CUSTOM_FIELD.to_string()]
     }
 
     fn custom_dependency_key(&self) -> Option<String> {

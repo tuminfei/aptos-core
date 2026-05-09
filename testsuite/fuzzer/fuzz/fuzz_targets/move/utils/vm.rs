@@ -6,7 +6,7 @@
 use crate::tdbg;
 use aptos_cached_packages::aptos_stdlib::code_publish_package_txn;
 use aptos_crypto::HashValue;
-use aptos_framework::natives::code::{ModuleMetadata, PackageDep, PackageMetadata, UpgradePolicy};
+use topo_framework::natives::code::{ModuleMetadata, PackageDep, PackageMetadata, UpgradePolicy};
 use aptos_language_e2e_tests::{account::Account, executor::FakeExecutor};
 use aptos_types::{
     block_executor::transaction_slice_metadata::TransactionSliceMetadata,

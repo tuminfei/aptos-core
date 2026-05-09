@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::executor::{ExecutorMode, FakeExecutor};
 use aptos_types::{
     account_address::AccountAddress,

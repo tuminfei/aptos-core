@@ -22,7 +22,7 @@ set -x
 # Rebuild cached packages (head.mrb and SDK builder files).
 # Its important to run optimized build otherwise compilation
 # very slow. We use --profile=ci which is optimized with debug info
-cargo run --profile=ci -p aptos-framework -- update-cached-packages
+cargo run --profile=ci -p topo-framework -- update-cached-packages
 if [ -n "$CHECK_ARG" ]; then
     if [ -n "$(git status --porcelain -uno aptos-move)" ]; then
       git diff

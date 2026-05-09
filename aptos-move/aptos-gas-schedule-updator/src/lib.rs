@@ -98,7 +98,7 @@ fn generate_script(gas_schedule: &GasScheduleV2) -> Result<String> {
 fn aptos_framework_path() -> PathBuf {
     Path::join(
         Path::new(env!("CARGO_MANIFEST_DIR")),
-        "../framework/aptos-framework",
+        "../framework/topo-framework",
     )
 }
 
@@ -133,7 +133,7 @@ pub fn generate_update_proposal(args: &GenArgs) -> Result<()> {
         &generate_script(&current_gas_schedule(feature_version))?,
     );
     // TODO: use relative path here
-    pack.add_local_dep("AptosFramework", &aptos_framework_path().to_string_lossy());
+    pack.add_local_dep("TopoFramework", &aptos_framework_path().to_string_lossy());
 
     pack.write_to_disk(args.output.as_deref().unwrap_or("./proposal"))?;
 

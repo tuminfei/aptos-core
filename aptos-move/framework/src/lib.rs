@@ -9,7 +9,7 @@ pub use aptos::*;
 use std::io::Write;
 
 mod built_package;
-pub use aptos_framework_natives as natives;
+pub use topo_framework_natives as natives;
 pub use built_package::*;
 mod release_builder;
 pub use release_builder::*;
@@ -19,7 +19,7 @@ pub mod extended_checks;
 pub mod prover;
 mod release_bundle;
 
-pub use aptos_framework_natives::{unzip_metadata, unzip_metadata_str};
+pub use topo_framework_natives::{unzip_metadata, unzip_metadata_str};
 pub use aptos_release_bundle::*;
 use flate2::{write::GzEncoder, Compression};
 pub use release_bundle::*;

@@ -20,7 +20,7 @@ pub fn topo_coin_transfer(to: AccountAddress, amount: u64) -> TransactionPayload
 
 #[cfg(feature = "testing")]
 pub fn publish_module_source(module_name: &str, module_src: &str) -> TransactionPayload {
-    use aptos_framework::{BuildOptions, BuiltPackage};
+    use topo_framework::{BuildOptions, BuiltPackage};
     use aptos_package_builder::PackageBuilder;
 
     let mut builder = PackageBuilder::new("tmp");

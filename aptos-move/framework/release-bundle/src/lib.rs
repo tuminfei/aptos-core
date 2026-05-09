@@ -3,8 +3,8 @@
 
 use anyhow::Context;
 use aptos_crypto::HashValue;
-pub use aptos_framework_natives as natives;
-use aptos_framework_natives::code::PackageMetadata;
+pub use topo_framework_natives as natives;
+use topo_framework_natives::code::PackageMetadata;
 use aptos_types::account_address::AccountAddress;
 use move_binary_format::{access::ModuleAccess, errors::PartialVMError, CompiledModule};
 use move_core_types::language_storage::ModuleId;

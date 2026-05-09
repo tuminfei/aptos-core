@@ -7,7 +7,7 @@ use crate::{
     DataManager, IndexReader, PackageInfo, TxnIndex, APTOS_COMMONS,
 };
 use anyhow::Result;
-use aptos_framework::APTOS_PACKAGES;
+use topo_framework::APTOS_PACKAGES;
 use aptos_language_e2e_tests::executor::FakeExecutor;
 use aptos_replay_benchmark::diff::{Diff, TransactionDiffBuilder};
 use aptos_transaction_simulation::{InMemoryStateStore, SimulationStateStore};

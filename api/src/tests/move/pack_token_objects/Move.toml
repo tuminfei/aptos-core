@@ -3,7 +3,7 @@ name = "pack_token_objects"
 version = "0.0.0"
 
 [dependencies]
-AptosFramework = { local = "../../../../../aptos-move/framework/aptos-framework" }
+TopoFramework = { local = "../../../../../aptos-move/framework/topo-framework" }
 AptosTokenObjects = { local = "../../../../../aptos-move/framework/topo-token-objects" }
 
 [addresses]

@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::{extended_checks, prover::ProverOptions};
+use topo_framework::{extended_checks, prover::ProverOptions};
 use move_binary_format::file_format_common::VERSION_DEFAULT;
 use move_model::metadata::{CompilerVersion, LanguageVersion};
 use std::{collections::BTreeMap, path::PathBuf};
@@ -79,7 +79,7 @@ pub fn run_prover_for_pkg(
 
 #[test]
 fn move_framework_prover_tests() {
-    run_prover_for_pkg("aptos-framework", 1, None);
+    run_prover_for_pkg("topo-framework", 1, None);
 }
 
 #[test]

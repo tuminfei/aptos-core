@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::BuiltPackage;
+use topo_framework::BuiltPackage;
 use std::{collections::BTreeMap, path::PathBuf};
 
 pub fn test_dir_path(s: &str) -> PathBuf {
@@ -23,7 +23,7 @@ pub fn build_scripts(package_folder: &str, package_names: Vec<&str>) -> BTreeMap
     for package_name in package_names {
         let script = BuiltPackage::build(
             test_dir_path(format!("{}/{}", package_folder, package_name).as_str()),
-            aptos_framework::BuildOptions::default(),
+            topo_framework::BuildOptions::default(),
         )
         .expect("building packages with scripts must succeed")
         .extract_script_code()[0]

@@ -10,4 +10,4 @@ dispatching = "_"
 #dispatching = "0xd119"
 
 [dependencies]
-AptosFramework = { local = "../../framework/aptos-framework" }
+TopoFramework = { local = "../../framework/topo-framework" }

@@ -8,7 +8,7 @@ use aptos_config::config::{
     DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD, NO_OP_STORAGE_PRUNER_CONFIG,
 };
 use aptos_db::AptosDB;
-use aptos_framework::natives::code::PackageMetadata;
+use topo_framework::natives::code::PackageMetadata;
 use aptos_storage_interface::DbReader;
 use aptos_types::{
     account_address::AccountAddress,

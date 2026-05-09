@@ -1,5 +1,5 @@
 [package]
-name = "AptosFramework"
+name = "TopoFramework"
 version = "1.0.0"
 
 [addresses]

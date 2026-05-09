@@ -9,7 +9,7 @@ use crate::{
     CliCommand,
 };
 use aptos_config::config::Token;
-use aptos_framework::ReleaseBundle;
+use topo_framework::ReleaseBundle;
 use aptos_genesis::config::Layout;
 use aptos_github_client::Client as GithubClient;
 use async_trait::async_trait;

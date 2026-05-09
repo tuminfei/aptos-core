@@ -3,7 +3,7 @@ name = 'complex'
 version = '1.0.0'
 
 [dependencies]
-AptosFramework = { local = "../../../../aptos-move/framework/aptos-framework" }
+TopoFramework = { local = "../../../../aptos-move/framework/topo-framework" }
 
 [addresses]
 publisher_address = "0xABCD"

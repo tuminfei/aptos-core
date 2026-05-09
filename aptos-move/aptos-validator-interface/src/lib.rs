@@ -6,7 +6,7 @@ mod storage_interface;
 
 pub use crate::{rest_interface::RestDebuggerInterface, storage_interface::DBDebuggerInterface};
 use anyhow::Result;
-use aptos_framework::natives::code::PackageMetadata;
+use topo_framework::natives::code::PackageMetadata;
 use aptos_types::{
     account_address::AccountAddress,
     state_store::{

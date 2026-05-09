@@ -9,7 +9,7 @@ pub mod cli {
         Authenticator, ExecVariant, FundAmount, RunnableState, RunnableStateWithOperations,
         UserAccount,
     };
-    use aptos_framework::{BuildOptions, BuiltPackage};
+    use topo_framework::{BuildOptions, BuiltPackage};
     use aptos_types::{
         account_address::AccountAddress,
         transaction::{EntryFunction, Script, TransactionPayload},

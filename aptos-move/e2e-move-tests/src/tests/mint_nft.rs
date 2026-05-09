@@ -6,7 +6,7 @@ use aptos_crypto::{
     ed25519::{Ed25519PrivateKey, Ed25519Signature},
     SigningKey, ValidCryptoMaterialStringExt,
 };
-use aptos_framework::BuiltPackage;
+use topo_framework::BuiltPackage;
 use aptos_types::{
     account_address::{create_resource_address, AccountAddress},
     event::EventHandle,
@@ -56,7 +56,7 @@ fn mint_nft_e2e() {
     let resource_address = create_resource_address(*acc.address(), &[]);
 
     // give a named address to the `mint_nft` module publisher
-    let mut build_options = aptos_framework::BuildOptions::default();
+    let mut build_options = topo_framework::BuildOptions::default();
     build_options
         .named_addresses
         .insert("mint_nft".to_string(), resource_address);

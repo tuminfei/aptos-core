@@ -11,4 +11,4 @@ aptos_trading = "0x5"
 [dependencies]
 MoveStdlib = { local = "../move-stdlib" }
 AptosStdlib = { local = "../aptos-stdlib" }
-AptosFramework = { local = "../aptos-framework" }
+TopoFramework = { local = "../topo-framework" }

@@ -3,7 +3,7 @@
 
 use anyhow::{bail, Context};
 use aptos_crypto::{ed25519::Ed25519PrivateKey, ValidCryptoMaterialStringExt};
-use aptos_framework::natives::code::PackageRegistry;
+use topo_framework::natives::code::PackageRegistry;
 use aptos_gas_schedule::LATEST_GAS_FEATURE_VERSION;
 use aptos_release_builder::{
     components::fetch_config,

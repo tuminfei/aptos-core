@@ -5,7 +5,7 @@ use crate::{
     aggregator_v2::AggV2TestHarness,
     tests::{aggregator_v2::AggregatorMode, common},
 };
-use aptos_framework::BuildOptions;
+use topo_framework::BuildOptions;
 use aptos_language_e2e_tests::executor::ExecutorMode;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::transaction::SignedTransaction;
@@ -80,7 +80,7 @@ fn test_aggregators_in_enums() {
 fn make_harness(num_txns: usize) -> AggV2TestHarness {
     let source = r"
     module 0x1::enums_with_aggregators {
-      use aptos_framework::aggregator_v2::{Self, Aggregator};
+      use topo_framework::aggregator_v2::{Self, Aggregator};
 
       struct Integer has store, drop {
         value: u128,
@@ -141,8 +141,8 @@ fn make_harness(num_txns: usize) -> AggV2TestHarness {
     let mut builder = PackageBuilder::new("enums_with_aggregators");
     builder.add_source("enums_with_aggregators.move", source);
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     let path = builder.write_to_temp().unwrap();
 

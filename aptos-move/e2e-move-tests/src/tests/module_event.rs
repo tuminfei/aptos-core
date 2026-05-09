@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
     account_address::AccountAddress, move_utils::MemberId, on_chain_config::FeatureFlag,
@@ -32,7 +32,7 @@ fn test_module_event_enabled() {
     let addr = AccountAddress::from_hex_literal("0xcafe").unwrap();
     let account = h.new_account_at(addr);
 
-    let mut build_options = aptos_framework::BuildOptions::default();
+    let mut build_options = topo_framework::BuildOptions::default();
     build_options
         .named_addresses
         .insert("event".to_string(), addr);
@@ -171,8 +171,8 @@ fn test_event_emission_not_allowed_in_scripts() {
     "#;
     builder.add_source("test.move", source);
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
 
     let p1_path = builder.write_to_temp().unwrap();
@@ -217,8 +217,8 @@ fn test_event_emission_not_allowed_in_scripts() {
     }
     builder.add_local_dep("P1", p1_path.path().to_str().unwrap());
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
 
     let p2_path = builder.write_to_temp().unwrap();
@@ -359,8 +359,8 @@ fn test_event_emission_in_modules() {
         builder.add_source(&format!("test{idx}.move"), source);
         builder.add_local_dep("P1", p1_path.path().to_str().unwrap());
         builder.add_local_dep(
-            "AptosFramework",
-            &common::framework_dir_path("aptos-framework").to_string_lossy(),
+            "TopoFramework",
+            &common::framework_dir_path("topo-framework").to_string_lossy(),
         );
         let path = builder.write_to_temp().unwrap();
         let status = h.publish_package_with_options(&acc, path.path(), build_options.clone());

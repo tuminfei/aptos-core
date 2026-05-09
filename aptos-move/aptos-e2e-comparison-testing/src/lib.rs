@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::{
+use topo_framework::{
     natives::code::PackageMetadata, unzip_metadata_str, BuiltPackage, APTOS_PACKAGES,
 };
 use aptos_transaction_simulation::InMemoryStateStore;
@@ -43,7 +43,7 @@ use move_package::{
 pub use online_execution::*;
 
 const APTOS_PACKAGES_DIR_NAMES: [&str; 7] = [
-    "aptos-framework",
+    "topo-framework",
     "move-stdlib",
     "aptos-stdlib",
     "aptos-token",
@@ -473,7 +473,7 @@ fn compile_package(
     experiments: &[String],
     version: &str,
 ) -> anyhow::Result<CompiledPackage> {
-    let mut build_options = aptos_framework::BuildOptions {
+    let mut build_options = topo_framework::BuildOptions {
         language_version: Some(LanguageVersion::latest()),
         experiments: experiments.to_vec(),
         ..Default::default()

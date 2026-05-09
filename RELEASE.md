@@ -7,8 +7,8 @@
                            \                                  \                         \
                             \___aptos-node-v1.2.0 tag          \                         \
                              \                                  \                         \
-                              \      aptos-framework-v1.3.0 tag__\                     devnet branch
-   aptos-framework-v1.2.0 tag__\                                  \                     
+                              \      topo-framework-v1.3.0 tag__\                     devnet branch
+   topo-framework-v1.2.0 tag__\                                  \                     
                                 \___aptos-node-v1.2.4 tag          \___aptos-node-v1.3.0 tag
                                  \                                  \
                                   \                                  \
@@ -29,7 +29,7 @@ the `main` branch every 1-2 months.
 ### aptos-node-v*X.Y.Z* release tag
 The aptos node release tags are created for validator/fullnode deployment of the given release branch. The minor number *Z* will increment when a new hot-fix release is required on the release branch. Aptos team will publish the matching tag docker images on [Aptos Docker Hub](https://hub.docker.com/r/aptoslabs/validator/tags) when it's available.
 
-### aptos-framework-v*X.Y.Z* release tag
+### topo-framework-v*X.Y.Z* release tag
 The aptos framework release tags are created to facilitate the on-chain framework upgrade of the given release branch. The minor number *Z* will increment when a new hot-fix release or a new  framework update is required on this release branch.
 
 ### aptos-cli-v*X.Y.Z* release tag

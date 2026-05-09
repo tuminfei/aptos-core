@@ -3,7 +3,7 @@
 
 use crate::smoke_test_environment::SwarmBuilder;
 use aptos::test::CliTestFramework;
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_logger::info;
 use aptos_types::move_utils::MemberId;
 use move_core_types::account_address::AccountAddress;
@@ -19,7 +19,7 @@ fn aptos_framework_dir() -> PathBuf {
         .join("..")
         .join("aptos-move")
         .join("framework")
-        .join("aptos-framework")
+        .join("topo-framework")
 }
 
 #[tokio::test]
@@ -67,7 +67,7 @@ async fn test_move_compile_flow() {
     assert_eq!(manifest.dependencies.len(), 1);
 
     let dependency = manifest.dependencies.iter().next().unwrap();
-    assert_eq!("AptosFramework", dependency.0.to_string());
+    assert_eq!("TopoFramework", dependency.0.to_string());
 
     // Now try to compile real code
     cli.add_move_files();

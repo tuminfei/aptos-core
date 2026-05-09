@@ -4,7 +4,7 @@
 //! Tests for upgrade compatibility of public/package structs/enums
 
 use crate::{assert_abort, assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
+use topo_framework::BuildOptions;
 use aptos_language_e2e_tests::account::Account;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{account_address::AccountAddress, transaction::TransactionStatus};

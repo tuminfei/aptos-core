@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use anyhow::bail;
-use aptos_framework::{
+use topo_framework::{
     natives::code::{ModuleMetadata, PackageMetadata, PackageRegistry, UpgradePolicy},
     unzip_metadata_str,
 };

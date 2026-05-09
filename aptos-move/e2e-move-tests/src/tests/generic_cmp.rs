@@ -5,7 +5,7 @@
 //! introduced in Move language version 2.2 and onwards.
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::account::TransactionBuilder;
 use aptos_types::{account_address::AccountAddress, transaction::Script};
 

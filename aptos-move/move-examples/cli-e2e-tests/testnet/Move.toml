@@ -8,10 +8,10 @@ addr = "_"
 [dev-addresses]
 addr = "0x12345"
 
-[dependencies.AptosFramework]
+[dependencies.TopoFramework]
 git = "https://github.com/aptos-labs/aptos-framework.git"
 rev = "testnet"
-subdir = "aptos-framework"
+subdir = "topo-framework"
 
 [dependencies.AptosTokenObjects]
 git = "https://github.com/aptos-labs/aptos-framework.git"

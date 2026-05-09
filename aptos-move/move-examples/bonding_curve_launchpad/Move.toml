@@ -15,10 +15,10 @@ deployer = "0xaaa"
 swap = "0xcafe"
 
 
-[dependencies.AptosFramework]
+[dependencies.TopoFramework]
 git = "https://github.com/aptos-labs/aptos-framework.git"
 rev = "bbf569abd260d94bc30fe96da297d2aecb193644"
-subdir = "aptos-framework"
+subdir = "topo-framework"
 
 [dependencies.swap]
 git = "https://github.com/aptos-labs/aptos-framework.git"

@@ -97,7 +97,7 @@ fn test_basic_token() {
 }
 
 pub fn publish_object_token_example(h: &mut MoveHarness, addr: AccountAddress, account: &Account) {
-    let mut build_options = aptos_framework::BuildOptions::default();
+    let mut build_options = topo_framework::BuildOptions::default();
     build_options
         .named_addresses
         .insert("hero".to_string(), addr);

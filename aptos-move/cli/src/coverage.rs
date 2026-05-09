@@ -3,7 +3,7 @@
 
 use crate::{fix_bytecode_version, move_types::MovePackageOptions, MoveEnv, WithMoveEnv};
 use aptos_cli_common::{CliCommand, CliError, CliResult, CliTypedResult};
-use aptos_framework::extended_checks;
+use topo_framework::extended_checks;
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};
 use legacy_move_compiler::compiled_unit::{CompiledUnit, NamedCompiledModule};

@@ -6,5 +6,5 @@ version = "1.0.0"
 aptos_experimental = "0x7"
 
 [dependencies]
-AptosFramework = { local = "../aptos-framework" }
+TopoFramework = { local = "../topo-framework" }
 AptosTrading = { local = "../aptos-trading" }

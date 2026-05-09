@@ -5,7 +5,7 @@ use super::IncludedArtifactsArgs;
 use crate::{move_types::MovePackageOptions, MoveEnv, WithMoveEnv};
 use anyhow::Context;
 use aptos_cli_common::{CliCommand, CliError, CliResult, CliTypedResult};
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_types::transaction::EntryABI;
 use async_trait::async_trait;
 use clap::{Parser, Subcommand};

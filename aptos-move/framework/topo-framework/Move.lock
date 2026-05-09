@@ -4,7 +4,7 @@
 [move]
 version = 4
 
-[pinned.testnet.AptosFramework]
+[pinned.testnet.TopoFramework]
 source = { root = true }
 use_environment = "testnet"
 manifest_digest = "C924A1DD72F654232DD8FEBC0AE13E18A1F36490C87823757CA499A11BA46ADB"

@@ -79,7 +79,7 @@ impl PackageData {
             .iter()
             .map(|(name, addr)| (name.clone(), addr.into_inner()))
             .collect();
-        let env = aptos_framework::build_model(
+        let env = topo_framework::build_model(
             args.dev_mode,
             // test_mode off: test code is handled separately by run_move_unit_tests.
             // verify_mode on: #[verify_only] specs are needed by the prover.
@@ -92,7 +92,7 @@ impl PackageData {
             None,
             args.language_version,
             false,
-            aptos_framework::extended_checks::get_all_attribute_names().clone(),
+            topo_framework::extended_checks::get_all_attribute_names().clone(),
             args.experiments.clone(),
             false, // no bytecode needed for initial build
         )?;
@@ -134,7 +134,7 @@ impl PackageData {
             .iter()
             .map(|(name, addr)| (name.clone(), addr.into_inner()))
             .collect();
-        self.env = aptos_framework::build_model(
+        self.env = topo_framework::build_model(
             self.args.dev_mode,
             false, // test_mode
             true,  // verify_mode
@@ -145,7 +145,7 @@ impl PackageData {
             None,
             self.args.language_version,
             false,
-            aptos_framework::extended_checks::get_all_attribute_names().clone(),
+            topo_framework::extended_checks::get_all_attribute_names().clone(),
             self.args.experiments.clone(),
             true, // with bytecode for prover
         )?;

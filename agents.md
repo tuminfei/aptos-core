@@ -155,7 +155,7 @@ cargo sort --grouped --workspace --check
 cargo test -p aptos-vm -p aptos-types -p aptos-crypto
 
 # Framework
-cargo test -p aptos-framework -p aptos-stdlib
+cargo test -p topo-framework -p aptos-stdlib
 
 # Smoke tests (slower but comprehensive)
 cargo test -p smoke-test
@@ -283,7 +283,7 @@ When modifying one component, verify these integration points:
 | Component | Affects | Verify With |
 |-----------|---------|-------------|
 | VM | Execution, Gas | `cargo test -p aptos-vm -p aptos-block-executor` |
-| Framework | VM, API | `cargo test -p aptos-framework && cargo build -p aptos-cached-packages` |
+| Framework | VM, API | `cargo test -p topo-framework && cargo build -p aptos-cached-packages` |
 | Storage | Everything | `cargo test -p aptos-db -p aptos-executor` |
 | API | Clients | `cargo test -p aptos-api` + check OpenAPI spec |
 | Types | Everything | `cargo test -p aptos-types` |

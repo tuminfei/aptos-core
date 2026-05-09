@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuiltPackage;
+use topo_framework::BuiltPackage;
 use aptos_language_e2e_tests::account::TransactionBuilder;
 use aptos_types::{
     account_address::AccountAddress,
@@ -19,7 +19,7 @@ fn test_script_with_object_parameter() {
     let bob = h.new_account_at(AccountAddress::from_hex_literal("0xface").unwrap());
     let root = h.aptos_framework_account();
 
-    let mut build_options = aptos_framework::BuildOptions::default();
+    let mut build_options = topo_framework::BuildOptions::default();
     build_options
         .named_addresses
         .insert("example_addr".to_string(), *alice.address());
@@ -130,7 +130,7 @@ fn test_script_with_type_parameter() {
 
     let package = BuiltPackage::build(
         common::test_dir_path("script_with_ty_param.data/pack"),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     )
     .expect("building package must succeed");
 
@@ -159,7 +159,7 @@ fn test_script_with_signer_parameter() {
 
     let package = BuiltPackage::build(
         common::test_dir_path("script_with_signer.data/pack"),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     )
     .expect("building package must succeed");
 
@@ -208,12 +208,12 @@ fn test_two_to_two_transfer() {
     let amount_carol = 50;
     let amount_david = amount_alice + amount_bob - amount_carol;
 
-    let build_options = aptos_framework::BuildOptions {
+    let build_options = topo_framework::BuildOptions {
         with_srcs: false,
         with_abis: false,
         with_source_maps: false,
         with_error_map: false,
-        ..aptos_framework::BuildOptions::default()
+        ..topo_framework::BuildOptions::default()
     };
 
     let package = BuiltPackage::build(

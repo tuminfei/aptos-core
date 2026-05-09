@@ -11,7 +11,7 @@ use aptos_cli_common::{
     dir_default_to_current, load_account_arg, parse_json_file, parse_map, AccountAddressWrapper,
     CliError, CliTypedResult, TransactionOptions,
 };
-use aptos_framework::chunked_publish::{
+use topo_framework::chunked_publish::{
     default_large_packages_module_address, CHUNK_SIZE_IN_BYTES,
 };
 use aptos_rest_client::aptos_api_types::{EntryFunctionId, MoveType, ViewRequest};

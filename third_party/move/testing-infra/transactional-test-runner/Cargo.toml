@@ -11,7 +11,7 @@ edition = { workspace = true }
 
 [dependencies]
 anyhow = { workspace = true }
-aptos-framework = { workspace = true, optional = true }
+topo-framework = { workspace = true, optional = true }
 clap = { workspace = true, features = ["derive"] }
 either = { workspace = true }
 legacy-move-compiler = { workspace = true }
@@ -50,4 +50,4 @@ harness = false
 
 [features]
 failpoints = ['move-vm-runtime/failpoints']
-fuzzing = ["arbitrary", "dearbitrary", "aptos-framework", "bcs"]
+fuzzing = ["arbitrary", "dearbitrary", "topo-framework", "bcs"]

@@ -43,7 +43,7 @@ fn test_basic_fungible_token() {
     let bob = h.new_account_at(AccountAddress::from_hex_literal("0xface").unwrap());
     let root = h.aptos_framework_account();
 
-    let mut build_options = aptos_framework::BuildOptions::default();
+    let mut build_options = topo_framework::BuildOptions::default();
     build_options
         .named_addresses
         .insert("example_addr".to_string(), *root.address());

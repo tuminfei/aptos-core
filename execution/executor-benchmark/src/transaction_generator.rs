@@ -80,7 +80,7 @@ fn get_genesis_validator_address(db: &DbReaderWriter) -> AccountAddress {
 
     let state_view = db.reader.latest_state_checkpoint_view().unwrap();
 
-    // Try to get the ValidatorSet resource from @aptos_framework
+    // Try to get the ValidatorSet resource from @topo_framework
     if let Ok(Some(validator_set_bytes)) =
         state_view.get_state_value(&StateKey::on_chain_config::<ValidatorSet>().unwrap())
     {

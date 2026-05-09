@@ -17,7 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = { workspace = true }
-aptos-framework = { workspace = true }
+topo-framework = { workspace = true }
 aptos-gas-schedule = { workspace = true }
 aptos-types = { workspace = true }
 aptos-vm = { workspace = true, features = ["testing"] }

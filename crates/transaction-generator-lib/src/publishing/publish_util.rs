@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use super::entry_point_trait::PreBuiltPackages;
-use aptos_framework::{
+use topo_framework::{
     chunked_publish::{
         chunk_package_and_create_payloads, default_large_packages_module_address, PublishType,
         CHUNK_SIZE_IN_BYTES,

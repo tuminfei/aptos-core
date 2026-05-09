@@ -27,5 +27,5 @@ double-spending at compile time.
 ## Reference
 
 - [The Move Book](https://aptos.dev/move/book/SUMMARY)
-- [Aptos Framework Reference](https://aptos.dev/reference/move/?branch=mainnet&page=aptos-framework/doc/overview.md)
+- [Aptos Framework Reference](https://aptos.dev/reference/move/?branch=mainnet&page=topo-framework/doc/overview.md)
 {% endif %}

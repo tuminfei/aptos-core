@@ -3,7 +3,7 @@
 
 use crate::{tests::common, MoveHarness};
 use aptos_crypto::HashValue;
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_gas_algebra::Gas;
 use aptos_language_e2e_tests::account::{Account, TransactionBuilder};
 use aptos_types::{

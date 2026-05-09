@@ -13,7 +13,7 @@ repository = { workspace = true }
 rust-version = { workspace = true }
 
 [dependencies]
-aptos-framework = { workspace = true }
+topo-framework = { workspace = true }
 aptos-sdk = { workspace = true }
 aptos-transaction-generator-lib = { workspace = true }
 async-trait = { workspace = true }

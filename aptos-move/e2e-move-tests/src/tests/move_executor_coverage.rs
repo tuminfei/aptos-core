@@ -8,7 +8,7 @@
 // to test for multiple feature combinations.
 
 use crate::{assert_success, MoveHarness};
-use aptos_framework::BuildOptions;
+use topo_framework::BuildOptions;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::account_address::AccountAddress;
 use move_core_types::{ident_str, identifier::Identifier};

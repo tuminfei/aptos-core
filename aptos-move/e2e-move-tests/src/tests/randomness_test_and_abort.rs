@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_abort, assert_success, tests::common, MoveHarness};
-use aptos_framework::BuiltPackage;
+use topo_framework::BuiltPackage;
 use aptos_language_e2e_tests::account::{Account, TransactionBuilder};
 use aptos_types::{
     account_address::AccountAddress,
@@ -144,7 +144,7 @@ fn deploy_code(
 
     let package = BuiltPackage::build(
         common::test_dir_path(code_path),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     )?;
 
     let txn = harness.create_publish_built_package(&account, &package, |_| {});

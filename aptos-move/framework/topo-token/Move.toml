@@ -9,4 +9,4 @@ topo_token = "0x3"
 
 [dependencies]
 MoveStdlib = { local = "../move-stdlib" }
-AptosFramework = { local = "../aptos-framework"}
+TopoFramework = { local = "../topo-framework"}

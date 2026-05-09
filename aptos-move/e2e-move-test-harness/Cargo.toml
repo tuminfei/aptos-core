@@ -15,7 +15,7 @@ rust-version = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 aptos-cached-packages = { workspace = true }
-aptos-framework = { workspace = true }
+topo-framework = { workspace = true }
 aptos-gas-profiling = { workspace = true }
 aptos-gas-schedule = { workspace = true }
 aptos-language-e2e-tests = { workspace = true }

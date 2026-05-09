@@ -23,7 +23,7 @@ fn test_runner(path: &Path) -> datatest_stable::Result<()> {
         named_address_mapping: vec![
             "std=0x1".to_string(),
             "aptos_std=0x1".to_string(),
-            "aptos_framework=0x1".to_string(),
+            "topo_framework=0x1".to_string(),
         ],
         language_version: Some(LanguageVersion::latest()),
         compiler_version: Some(CompilerVersion::latest_stable()),

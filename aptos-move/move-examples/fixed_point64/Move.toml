@@ -8,9 +8,9 @@ fixed_point64 = "0xdeadbeef"
 
 [dev-addresses]
 
-[dependencies.AptosFramework]
+[dependencies.TopoFramework]
 git = "https://github.com/aptos-labs/aptos-framework.git"
 rev = "mainnet"
-subdir = "aptos-framework"
+subdir = "topo-framework"
 
 [dev-dependencies]

@@ -6,6 +6,6 @@ version = "0.0.0"
 account = "_"
 
 [dependencies]
-AptosFramework = { local = "../../../../../aptos-move/framework/aptos-framework" }
+TopoFramework = { local = "../../../../../aptos-move/framework/topo-framework" }
 AptosStdlib = { local = "../../../../../aptos-move/framework/aptos-stdlib" }
 MoveStdlib = { local = "../../../../../aptos-move/framework/move-stdlib" }

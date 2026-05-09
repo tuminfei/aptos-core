@@ -10,7 +10,7 @@
 //!   4. changing modules (bytecode, metadata, etc.) and package information.
 
 use anyhow::bail;
-use aptos_framework::{natives::code::PackageRegistry, BuildOptions, BuiltPackage};
+use topo_framework::{natives::code::PackageRegistry, BuildOptions, BuiltPackage};
 use aptos_gas_schedule::LATEST_GAS_FEATURE_VERSION;
 use aptos_logger::{error, warn};
 use aptos_types::{

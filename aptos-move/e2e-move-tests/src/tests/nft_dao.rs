@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuiltPackage;
+use topo_framework::BuiltPackage;
 use aptos_types::account_address::create_resource_address;
 use move_core_types::account_address::AccountAddress;
 
@@ -13,7 +13,7 @@ fn test_nft_dao_txn_arguments() {
 
     let acc = h.new_account_at(AccountAddress::from_hex_literal("0xcafe").unwrap());
 
-    let mut build_options = aptos_framework::BuildOptions::default();
+    let mut build_options = topo_framework::BuildOptions::default();
     build_options
         .named_addresses
         .insert("dao_platform".to_string(), *acc.address());

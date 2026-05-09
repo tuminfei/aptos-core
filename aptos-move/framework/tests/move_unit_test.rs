@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::{extended_checks, path_in_crate, BuildOptions};
+use topo_framework::{extended_checks, path_in_crate, BuildOptions};
 use aptos_gas_schedule::{MiscGasParameters, NativeGasParameters, LATEST_GAS_FEATURE_VERSION};
 use aptos_types::on_chain_config::{
     aptos_test_feature_flags_genesis, Features, TimedFeaturesBuilder,
@@ -92,7 +92,7 @@ pub fn aptos_test_natives() -> NativeFunctionTable {
 
 #[test]
 fn move_framework_unit_tests() {
-    run_tests_for_pkg("aptos-framework", false);
+    run_tests_for_pkg("topo-framework", false);
 }
 
 #[test]

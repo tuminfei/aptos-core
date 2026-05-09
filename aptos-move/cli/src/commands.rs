@@ -28,7 +28,7 @@ use aptos_cli_common::{
     PromptOptions, RestOptions, SaveFile, TransactionOptions, TransactionSummary, GIT_IGNORE,
 };
 use aptos_crypto::HashValue;
-use aptos_framework::{
+use topo_framework::{
     chunked_publish::{
         chunk_package_and_create_payloads, large_packages_cleanup_staging_area, PublishType,
     },
@@ -207,9 +207,9 @@ impl FrameworkPackageArgs {
         addresses: BTreeMap<String, ManifestNamedAddress>,
         prompt_options: PromptOptions,
     ) -> CliTypedResult<()> {
-        const APTOS_FRAMEWORK: &str = "AptosFramework";
+        const APTOS_FRAMEWORK: &str = "TopoFramework";
         const APTOS_GIT_PATH: &str = "https://github.com/tuminfei/topo_framework.git";
-        const SUBDIR_PATH: &str = "aptos-framework";
+        const SUBDIR_PATH: &str = "topo-framework";
         const DEFAULT_BRANCH: &str = "mainnet";
 
         let move_toml = package_dir.join(SourcePackageLayout::Manifest.path());

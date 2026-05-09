@@ -7,10 +7,10 @@ authors = ["Aptos Labs"]
 # The address gets replaced by the test setup script
 telemetry_deployer = "_"
 
-[dependencies.AptosFramework]
+[dependencies.TopoFramework]
 git = "https://github.com/aptos-labs/aptos-framework.git"
 rev = "devnet"
-subdir = "aptos-framework"
+subdir = "topo-framework"
 
 [dev-dependencies]
 

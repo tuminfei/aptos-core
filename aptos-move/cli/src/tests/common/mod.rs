@@ -155,7 +155,7 @@ pub fn check_baseline(test_file: &str, output: &CliOutput) {
 ///
 /// No framework dependency is added by default — the test sources should be
 /// self-contained. Use [`make_package_with_framework`] when the Move code
-/// imports from `AptosFramework` / `AptosStdlib` / `MoveStdlib`.
+/// imports from `TopoFramework` / `AptosStdlib` / `MoveStdlib`.
 pub fn make_package(name: &str, sources: &[(&str, &str)]) -> TempDir {
     let mut builder = PackageBuilder::new(name);
     builder.add_alias(name, "0xCAFE");
@@ -167,11 +167,11 @@ pub fn make_package(name: &str, sources: &[(&str, &str)]) -> TempDir {
         .expect("failed to create temp package")
 }
 
-/// Like [`make_package`] but adds a local `AptosFramework` dependency.
+/// Like [`make_package`] but adds a local `TopoFramework` dependency.
 #[allow(dead_code)]
 pub fn make_package_with_framework(name: &str, sources: &[(&str, &str)]) -> TempDir {
     let mut builder = PackageBuilder::new(name);
-    builder.add_local_dep("AptosFramework", &aptos_framework_path());
+    builder.add_local_dep("TopoFramework", &aptos_framework_path());
     builder.add_alias(name, "0xCAFE");
     for (file_name, source) in sources {
         builder.add_source(file_name, source);
@@ -207,13 +207,13 @@ pub fn env_with_mock(
     )
 }
 
-/// Return the local path to the `aptos-framework` package, derived from
+/// Return the local path to the `topo-framework` package, derived from
 /// `CARGO_MANIFEST_DIR` (i.e. `aptos-move/cli/`).
 pub fn aptos_framework_path() -> String {
     Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../aptos-move/framework/aptos-framework")
+        .join("../../aptos-move/framework/topo-framework")
         .canonicalize()
-        .expect("aptos-framework dir must exist")
+        .expect("topo-framework dir must exist")
         .display()
         .to_string()
 }

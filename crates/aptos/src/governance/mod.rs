@@ -20,7 +20,7 @@ use crate::{
 use aptos_api_types::ViewFunction;
 use aptos_cached_packages::aptos_stdlib;
 use aptos_crypto::HashValue;
-use aptos_framework::{new_release_package, BuiltPackage};
+use topo_framework::{new_release_package, BuiltPackage};
 use aptos_logger::warn;
 pub use aptos_move_cli::CompileScriptFunction;
 use aptos_move_cli::{FrameworkPackageArgs, IncludedArtifacts, MovePackageOptions};
@@ -713,7 +713,7 @@ impl CliCommand<Vec<TransactionSummary>> for SubmitVote {
 }
 
 /// Submit a transaction to approve a proposal's script hash to bypass the transaction size limit.
-/// This is needed for upgrading large packages such as aptos-framework.
+/// This is needed for upgrading large packages such as topo-framework.
 #[derive(Parser)]
 pub struct ApproveExecutionHash {
     /// Id of the proposal to vote on
@@ -896,7 +896,7 @@ impl GenerateExecutionHash {
                 path.pop();
                 path.join("aptos-move")
                     .join("framework")
-                    .join("aptos-framework")
+                    .join("topo-framework")
                     .canonicalize()
                     .map_err(|err| {
                         CliError::IO(

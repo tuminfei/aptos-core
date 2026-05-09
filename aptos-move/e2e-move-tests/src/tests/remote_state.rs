@@ -27,7 +27,7 @@
 //! If the tests fail due to the version being pruned, update [`TESTNET_TXN_VERSION`] accordingly.
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
+use topo_framework::BuildOptions;
 use aptos_rest_client::AptosBaseUrl;
 use aptos_types::{account_address::AccountAddress, on_chain_config::FeatureFlag};
 use move_core_types::{language_storage::TypeTag, value::MoveValue};
@@ -305,7 +305,7 @@ async fn test_option() {
         .executor
         .rotate_account_authentication_key(existing_account_addr);
 
-    let build_options = aptos_framework::BuildOptions {
+    let build_options = topo_framework::BuildOptions {
         bytecode_version: Some(8),
         language_version: Some(LanguageVersion::V2_2),
         ..Default::default()

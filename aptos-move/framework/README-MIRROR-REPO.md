@@ -10,11 +10,11 @@ To use the packages in this repository as dependencies in your Move project, you
 To add a dependency from this repository, include the following in your `move.toml` file:
 ```
 [dependencies]
-<package_name> = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "<path_to_directory_containing_Move.toml>", rev = "<commit_hash_or_branch_name>" }
+<package_name> = { git = "https://github.com/aptos-labs/topo-framework.git", subdir = "<path_to_directory_containing_Move.toml>", rev = "<commit_hash_or_branch_name>" }
 ```
 For example, to add `AptosFramework` from the `mainnet` branch, you would use:
 ```
-AptosFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "aptos-framework", rev = "mainnet" }
+AptosFramework = { git = "https://github.com/aptos-labs/topo-framework.git", subdir = "topo-framework", rev = "mainnet" }
 ```
 Make sure to replace `subdir` with the appropriate path if you are referencing a different package within the framework.
 

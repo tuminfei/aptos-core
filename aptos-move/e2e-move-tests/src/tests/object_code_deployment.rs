@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_abort, assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::{
+use topo_framework::{
     natives::{
         code::{PackageRegistry, UpgradePolicy},
         object_code_deployment::ManagingRefs,
@@ -20,7 +20,7 @@ use move_core_types::{parser::parse_struct_tag, vm_status::StatusCode};
 use rstest::rstest;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-/// This tests the `object_code_deployment.move` module under the `aptos-framework` package.
+/// This tests the `object_code_deployment.move` module under the `topo-framework` package.
 /// The feature `OBJECT_CODE_DEPLOYMENT` is on by default for tests.
 
 /// Mimics `object::test::State`

@@ -52,6 +52,6 @@ pub(crate) fn aptos_core_path() -> PathBuf {
 
 pub(crate) fn aptos_framework_path() -> PathBuf {
     let mut path = aptos_core_path();
-    path.push("aptos-move/framework/aptos-framework");
+    path.push("aptos-move/framework/topo-framework");
     path
 }

@@ -28,8 +28,8 @@ fun test_single(account: &signer) { }
 fun test_multi(admin: &signer, user: &signer) { }
 
 // Framework signer for timestamp, account creation, etc.
-#[test(aptos_framework = @aptos_framework)]
-fun test_framework(aptos_framework: &signer) { }
+#[test(topo_framework = @topo_framework)]
+fun test_framework(topo_framework: &signer) { }
 ```
 
 ### Expected Failure
@@ -107,7 +107,7 @@ assert!(exists<MyResource>(addr), E_NOT_FOUND);
 
 // Initialize timestamp (required before time functions)
 use aptos_framework::timestamp;
-timestamp::set_time_has_started_for_testing(aptos_framework);
+timestamp::set_time_has_started_for_testing(topo_framework);
 
 // Advance time
 timestamp::update_global_time_for_test(1000000); // microseconds

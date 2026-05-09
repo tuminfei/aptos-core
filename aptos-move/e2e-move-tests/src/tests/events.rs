@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::natives::event::ECANNOT_CREATE_EVENT;
+use topo_framework::natives::event::ECANNOT_CREATE_EVENT;
 use aptos_types::{move_utils::MemberId, transaction::ExecutionStatus};
 use claims::assert_ok;
 use move_core_types::account_address::AccountAddress;

@@ -15,14 +15,14 @@ pub enum StdLib {
     TopoTokenObjects,
     TopoToken,
     AptosTrading,
-    AptosFramework,
+    TopoFramework,
     AptosStdlib,
     MoveStdlib,
 }
 
 impl StdLib {
     /// The well-known git URL for the standard library.
-    const STD_GIT_URL: &'static str = "https://github.com/aptos-labs/aptos-framework.git";
+    const STD_GIT_URL: &'static str = "https://github.com/aptos-labs/topo-framework.git";
 
     /// Returns the dependency for the standard library with the given version.
     pub fn dependency(&self, version: &StdVersion) -> Dependency {
@@ -60,7 +60,7 @@ impl StdLib {
             StdLib::AptosTrading => "AptosTrading",
             StdLib::TopoToken => "TopoToken",
             StdLib::TopoTokenObjects => "TopoTokenObjects",
-            StdLib::AptosFramework => "AptosFramework",
+            StdLib::TopoFramework => "TopoFramework",
             StdLib::AptosStdlib => "AptosStdlib",
             StdLib::MoveStdlib => "MoveStdlib",
         }
@@ -71,7 +71,7 @@ impl StdLib {
         match package_name.as_str() {
             "TopoToken" => Some(StdLib::TopoToken),
             "TopoTokenObjects" => Some(StdLib::TopoTokenObjects),
-            "AptosFramework" => Some(StdLib::AptosFramework),
+            "TopoFramework" => Some(StdLib::TopoFramework),
             "AptosStdlib" => Some(StdLib::AptosStdlib),
             "MoveStdlib" => Some(StdLib::MoveStdlib),
             _ => None,
@@ -84,7 +84,7 @@ impl StdLib {
             StdLib::AptosTrading => "aptos-trading",
             StdLib::TopoToken => "topo-token",
             StdLib::TopoTokenObjects => "topo-token-objects",
-            StdLib::AptosFramework => "aptos-framework",
+            StdLib::TopoFramework => "topo-framework",
             StdLib::AptosStdlib => "aptos-stdlib",
             StdLib::MoveStdlib => "move-stdlib",
         }

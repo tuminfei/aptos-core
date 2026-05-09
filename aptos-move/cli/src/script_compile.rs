@@ -6,7 +6,7 @@
 use crate::FrameworkPackageArgs;
 use aptos_cli_common::{CliError, CliTypedResult, PromptOptions};
 use aptos_crypto::HashValue;
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use clap::Parser;
 use move_core_types::diag_writer::DiagWriter;
 use move_model::metadata::{

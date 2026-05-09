@@ -19,7 +19,7 @@ files. See the [Layout](#layout) section for a more detailed overview of the str
 Each of the main components of the Aptos Framework and contributing guidelines are documented separately. See them by version below:
 
 * *Aptos tokens* - [main](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-token/doc/overview.md), [testnet](https://github.com/aptos-labs/aptos-core/blob/testnet/aptos-move/framework/aptos-token/doc/overview.md), [devnet](https://github.com/aptos-labs/aptos-core/blob/devnet/aptos-move/framework/aptos-token/doc/overview.md)
-* *Aptos framework* - [main](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-framework/doc/overview.md), [testnet](https://github.com/aptos-labs/aptos-core/blob/testnet/aptos-move/framework/aptos-framework/doc/overview.md), [devnet](https://github.com/aptos-labs/aptos-core/blob/devnet/aptos-move/framework/aptos-framework/doc/overview.md)
+* *Aptos framework* - [main](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/topo-framework/doc/overview.md), [testnet](https://github.com/aptos-labs/aptos-core/blob/testnet/aptos-move/framework/topo-framework/doc/overview.md), [devnet](https://github.com/aptos-labs/aptos-core/blob/devnet/aptos-move/framework/topo-framework/doc/overview.md)
 * *Aptos stdlib* - [main](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-stdlib/doc/overview.md), [testnet](https://github.com/aptos-labs/aptos-core/blob/testnet/aptos-move/framework/aptos-stdlib/doc/overview.md), [devnet](https://github.com/aptos-labs/aptos-core/blob/devnet/aptos-move/framework/aptos-stdlib/doc/overview.md)
 * *Move stdlib* - [main](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/move-stdlib/doc/overview.md), [testnet](https://github.com/aptos-labs/aptos-core/blob/testnet/aptos-move/framework/move-stdlib/doc/overview.md), [devnet](https://github.com/aptos-labs/aptos-core/blob/devnet/aptos-move/framework/move-stdlib/doc/overview.md)
 
@@ -42,7 +42,7 @@ To test our Move code while developing the Aptos Framework, run `cargo test` ins
 cargo test
 ```
 
-(Alternatively, run `cargo test -p aptos-framework` from anywhere.)
+(Alternatively, run `cargo test -p topo-framework` from anywhere.)
 
 To skip the Move prover tests, run:
 
@@ -56,7 +56,7 @@ To filter and run **all** the tests in specific packages (e.g., `aptos_stdlib`),
 cargo test -- aptos_stdlib --skip prover
 ```
 
-(See tests in `tests/move_unit_test.rs` to determine which filter to use; e.g., to run the tests in `aptos_framework` you must filter by `move_framework`.)
+(See tests in `tests/move_unit_test.rs` to determine which filter to use; e.g., to run the tests in `topo_framework` you must filter by `move_framework`.)
 
 To **filter by test name or module name** in a specific package (e.g., run the `test_empty_range_proof` in `aptos_stdlib::ristretto255_bulletproofs`), run:
 
@@ -92,7 +92,7 @@ cargo test --release -- --skip prover
 The overall structure of the Aptos Framework is as follows:
 
 ```
-├── aptos-framework                                 # Sources, testing and generated documentation for Aptos framework component
+├── topo-framework                                 # Sources, testing and generated documentation for Aptos framework component
 ├── aptos-token                                 # Sources, testing and generated documentation for Aptos token component
 ├── aptos-stdlib                                 # Sources, testing and generated documentation for Aptos stdlib component
 ├── move-stdlib                                 # Sources, testing and generated documentation for Move stdlib component

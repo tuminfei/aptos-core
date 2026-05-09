@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{tests::common, MoveHarness};
-use aptos_framework::{new_release_package, BuildOptions, BuiltPackage};
+use topo_framework::{new_release_package, BuildOptions, BuiltPackage};
 use aptos_package_builder::PackageBuilder;
 use aptos_types::account_address::AccountAddress;
 use move_package::compilation::package_layout::CompiledPackageLayout;
@@ -31,8 +31,8 @@ module 0x{}::test {{
 
     let mut proposal = PackageBuilder::new("Proposal");
     proposal.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     let proposal_dir = proposal.write_to_temp().unwrap();
 

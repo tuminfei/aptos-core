@@ -62,7 +62,7 @@ impl ReleaseTarget {
             ("move-stdlib", None, false),
             ("aptos-stdlib", None, false),
             (
-                "aptos-framework",
+                "topo-framework",
                 Some("cached-packages/src/aptos_framework_sdk_builder.rs"),
                 false,
             ),
@@ -201,7 +201,7 @@ static NAMED_ADDRESSES: Lazy<BTreeMap<String, NumericalAddress>> = Lazy::new(|| 
     let resources = NumericalAddress::parse_str("0xA550C18").unwrap();
     result.insert("std".to_owned(), one);
     result.insert("aptos_std".to_owned(), one);
-    result.insert("aptos_framework".to_owned(), one);
+    result.insert("topo_framework".to_owned(), one);
     result.insert("topo_token".to_owned(), three);
     result.insert("topo_token_objects".to_owned(), four);
     result.insert("aptos_trading".to_owned(), five);

@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use aptos_crypto::HashValue;
-use aptos_framework::generate_next_execution_hash_blob;
+use topo_framework::generate_next_execution_hash_blob;
 use move_core_types::account_address::AccountAddress;
 use move_model::{code_writer::CodeWriter, emitln};
 

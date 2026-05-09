@@ -19,7 +19,7 @@ cargo build --profile performance  # Optimized build with LTO
 ```bash
 cargo test -p <package>                    # Test a single package
 cargo test -p <package> -- <test_name>     # Run a specific test
-cargo test -p aptos-framework              # Framework tests
+cargo test -p topo-framework              # Framework tests
 cargo test -p smoke-test                   # E2E smoke tests
 cargo test -p e2e-move-tests               # Move e2e tests
 ```
@@ -59,7 +59,7 @@ cargo build -p aptos-cached-packages   # REQUIRED: rebuild cached packages
 ### Move Framework Stack
 - `aptos-move/framework/move-stdlib/` - Core Move stdlib
 - `aptos-move/framework/aptos-stdlib/` - Aptos-specific stdlib
-- `aptos-move/framework/aptos-framework/` - Core chain modules (coin, account, staking)
+- `aptos-move/framework/topo-framework/` - Core chain modules (coin, account, staking)
 - `aptos-move/framework/aptos-token-objects/` - NFT standards
 
 ### Key Crates

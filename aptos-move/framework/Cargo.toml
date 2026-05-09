@@ -1,5 +1,5 @@
 [package]
-name = "aptos-framework"
+name = "topo-framework"
 description = "Aptos stdlib"
 version = "0.1.0"
 
@@ -15,7 +15,7 @@ rust-version = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 aptos-crypto = { workspace = true }
-aptos-framework-natives = { workspace = true }
+topo-framework-natives = { workspace = true }
 aptos-gas-schedule = { workspace = true }
 aptos-move-stdlib = { workspace = true }
 aptos-release-bundle = { workspace = true }
@@ -59,8 +59,8 @@ move-vm-types = { workspace = true, features = ["testing"] }
 
 [features]
 default = []
-fuzzing = ["aptos-framework-natives/fuzzing", "aptos-types/fuzzing"]
-testing = ["aptos-framework-natives/testing", "aptos-move-stdlib/testing", "aptos-crypto/fuzzing"]
+fuzzing = ["topo-framework-natives/fuzzing", "aptos-types/fuzzing"]
+testing = ["topo-framework-natives/testing", "aptos-move-stdlib/testing", "aptos-crypto/fuzzing"]
 
 [lib]
 doctest = false

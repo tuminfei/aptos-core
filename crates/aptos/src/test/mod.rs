@@ -46,7 +46,7 @@ use aptos_crypto::{
     ed25519::{Ed25519PrivateKey, Ed25519PublicKey},
     x25519, PrivateKey,
 };
-use aptos_framework::chunked_publish::CHUNK_SIZE_IN_BYTES;
+use topo_framework::chunked_publish::CHUNK_SIZE_IN_BYTES;
 use aptos_genesis::config::HostAndPort;
 use aptos_keygen::KeyGen;
 use aptos_logger::warn;
@@ -88,7 +88,7 @@ pub const INVALID_ACCOUNT: &str = "0xDEADBEEFCAFEBABE";
 pub const FIRST_MOVE_FILE: &str = "
 module NamedAddress0::store {
     use std::string;
-    use aptos_framework::coin::{Self};
+    use topo_framework::coin::{Self};
 
     struct CoolCoin has key {}
 
@@ -1094,7 +1094,7 @@ impl CliTestFramework {
         .await
     }
 
-    /// Runs the given script contents using the local aptos_framework directory.
+    /// Runs the given script contents using the local topo_framework directory.
     pub async fn run_script(
         &self,
         index: usize,
@@ -1131,7 +1131,7 @@ impl CliTestFramework {
         .await
     }
 
-    /// Runs the given script contents using the aptos_framework from aptos-core git repository.
+    /// Runs the given script contents using the topo_framework from aptos-core git repository.
     pub async fn run_script_with_default_framework(
         &self,
         index: usize,
@@ -1239,7 +1239,7 @@ impl CliTestFramework {
             .join("..")
             .join("aptos-move")
             .join("framework")
-            .join("aptos-framework")
+            .join("topo-framework")
     }
 
     pub fn move_options(&self, account_strs: BTreeMap<&str, &str>) -> MovePackageOptions {

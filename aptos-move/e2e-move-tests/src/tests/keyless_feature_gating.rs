@@ -4,7 +4,7 @@
 use crate::{assert_success, tests::common, MoveHarness};
 use aptos_cached_packages::aptos_stdlib;
 use aptos_crypto::SigningKey;
-use aptos_framework::BuiltPackage;
+use topo_framework::BuiltPackage;
 use aptos_language_e2e_tests::account::{Account, AccountPublicKey, TransactionBuilder};
 use aptos_types::{
     account_config::CORE_CODE_ADDRESS,
@@ -470,7 +470,7 @@ fn run_jwk_and_config_script(h: &mut MoveHarness) -> Account {
 
     let package = BuiltPackage::build(
         common::test_dir_path("keyless_setup.data/pack"),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     )
     .expect("building package must succeed");
 
@@ -528,7 +528,7 @@ fn install_federated_jwks_and_set_keyless_config(
 fn federated_keyless_init_config(h: &mut MoveHarness, core_resources: Account) {
     let package = BuiltPackage::build(
         common::test_dir_path("federated_keyless_init_config.data/pack"),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     )
     .expect("building package must succeed");
 
@@ -591,7 +591,7 @@ fn federated_keyless_install_jwk(
 fn run_upgrade_vk_script(h: &mut MoveHarness, core_resources: Account, vk: Groth16VerificationKey) {
     let package = BuiltPackage::build(
         common::test_dir_path("keyless_new_vk.data/pack"),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     )
     .expect("building package must succeed");
 

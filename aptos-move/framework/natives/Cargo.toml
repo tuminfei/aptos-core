@@ -1,5 +1,5 @@
 [package]
-name = "aptos-framework-natives"
+name = "topo-framework-natives"
 description = "Native function implementations for the Aptos Framework"
 version = "0.1.0"
 

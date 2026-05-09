@@ -6,7 +6,7 @@ upgrade_policy = "compatible"
 [addresses]
 test_account = "_"
 
-[dependencies.AptosFramework]
+[dependencies.TopoFramework]
 git = "https://github.com/aptos-labs/aptos-framework.git"
-subdir = "aptos-framework"
+subdir = "topo-framework"
 rev = "mainnet"

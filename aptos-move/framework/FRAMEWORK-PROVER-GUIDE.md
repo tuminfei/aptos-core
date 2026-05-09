@@ -32,7 +32,7 @@ After making these changes, please submit a Github issue for the prover team to 
 ## Suppressing prover tests
 
 Prover tests are land-blockers for PRs which change the Move code and/or specifications in the `framework` directory. To disable them locally for efficiency,
-you could use the command `cargo test --release -p aptos-framework -- --skip prover`.
+you could use the command `cargo test --release -p topo-framework -- --skip prover`.
 
 
 ## Specification guide

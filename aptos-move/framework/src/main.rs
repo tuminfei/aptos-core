@@ -3,12 +3,12 @@
 
 #![forbid(unsafe_code)]
 
-use aptos_framework::{ReleaseOptions, ReleaseTarget};
+use topo_framework::{ReleaseOptions, ReleaseTarget};
 use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[clap(name = "aptos-framework", author, version, propagate_version = true)]
+#[clap(name = "topo-framework", author, version, propagate_version = true)]
 enum Commands {
     /// Creates an Aptos framework release for the specified target.
     Release(StandardRelease),

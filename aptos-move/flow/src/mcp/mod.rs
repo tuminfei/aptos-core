@@ -8,7 +8,7 @@ pub(crate) mod tools;
 
 use crate::GlobalOpts;
 use anyhow::Result;
-use aptos_framework::UPGRADE_POLICY_CUSTOM_FIELD;
+use topo_framework::UPGRADE_POLICY_CUSTOM_FIELD;
 use clap::Parser;
 use legacy_move_compiler::shared::{parse_named_address, NumericalAddress};
 use move_model::metadata::LanguageVersion;

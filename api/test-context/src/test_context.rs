@@ -20,7 +20,7 @@ use aptos_crypto::{ed25519::Ed25519PrivateKey, hash::HashValue, SigningKey};
 use aptos_db::AptosDB;
 use aptos_executor::{block_executor::BlockExecutor, db_bootstrapper};
 use aptos_executor_types::BlockExecutorTrait;
-use aptos_framework::{BuildOptions, BuiltPackage};
+use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_indexer_grpc_table_info::internal_indexer_db_service::MockInternalIndexerDBService;
 use aptos_mempool::mocks::MockSharedMempool;
 use aptos_mempool_notifications::MempoolNotificationSender;
@@ -398,10 +398,10 @@ impl TestContext {
         // This function executes the following script as the root account:
         // script {
         //   fun main(root: &signer, feature: u64) {
-        //     let aptos_framework = aptos_framework::topo_governance::get_signer_testnet_only(root, @0x1);
-        //     std::features::change_feature_flags_for_next_epoch(&aptos_framework, vector[feature], vector[]);
-        //     aptos_framework::topo_governance::reconfigure(&aptos_framework);
-        //     std::features::on_new_epoch(&aptos_framework);
+        //     let topo_framework = topo_framework::topo_governance::get_signer_testnet_only(root, @0x1);
+        //     std::features::change_feature_flags_for_next_epoch(&topo_framework, vector[feature], vector[]);
+        //     topo_framework::topo_governance::reconfigure(&topo_framework);
+        //     std::features::on_new_epoch(&topo_framework);
         //   }
         // }
         let mut root = self.root_account().await;
@@ -418,10 +418,10 @@ impl TestContext {
         // This function executes the following script as the root account:
         // script {
         //   fun main(root: &signer, feature: u64) {
-        //     let aptos_framework = aptos_framework::topo_governance::get_signer_testnet_only(root, @0x1);
-        //     std::features::change_feature_flags_for_next_epoch(&aptos_framework, vector[], vector[feature]);
-        //     aptos_framework::topo_governance::reconfigure(&aptos_framework);
-        //     std::features::on_new_epoch(&aptos_framework);
+        //     let topo_framework = topo_framework::topo_governance::get_signer_testnet_only(root, @0x1);
+        //     std::features::change_feature_flags_for_next_epoch(&topo_framework, vector[], vector[feature]);
+        //     topo_framework::topo_governance::reconfigure(&topo_framework);
+        //     std::features::on_new_epoch(&topo_framework);
         //   }
         // }
         let mut root = self.root_account().await;

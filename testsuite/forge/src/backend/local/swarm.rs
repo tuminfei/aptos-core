@@ -11,7 +11,7 @@ use aptos_config::{
     keys::ConfigKey,
     network_id::NetworkId,
 };
-use aptos_framework::ReleaseBundle;
+use topo_framework::ReleaseBundle;
 use aptos_genesis::builder::{
     FullnodeNodeConfig, InitConfigFn, InitGenesisConfigFn, InitGenesisStakeFn,
 };

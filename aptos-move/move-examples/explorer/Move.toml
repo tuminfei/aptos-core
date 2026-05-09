@@ -11,5 +11,5 @@ explorer = "0x7f1bb834cc9495a6fccd689478ed22b5c46ff2a0eb2ddda842f4f31f83778191"
 explorer = "0x123"
 
 [dependencies]
-AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", rev = "mainnet", subdir = "aptos-move/framework/aptos-framework" }
+TopoFramework = { git = "https://github.com/aptos-labs/aptos-core.git", rev = "mainnet", subdir = "aptos-move/framework/topo-framework" }
 AptosStdlib = { git = "https://github.com/aptos-labs/aptos-core.git", rev = "mainnet", subdir = "aptos-move/framework/aptos-stdlib" }

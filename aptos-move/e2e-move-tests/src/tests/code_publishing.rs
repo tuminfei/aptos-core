@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_abort, assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::{
+use topo_framework::{
     natives::code::{PackageRegistry, UpgradePolicy},
     BuiltPackage,
 };
@@ -296,7 +296,7 @@ fn code_publishing_using_resource_account() {
     let pack_dir = pack.write_to_temp().unwrap();
     let package = BuiltPackage::build(
         pack_dir.path().to_owned(),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     )
     .expect("building package must succeed");
 
@@ -504,7 +504,7 @@ fn publish_module_txn(source: String, module_name: &str) -> TransactionPayload {
     let pack_dir = assert_ok!(builder.write_to_temp());
     let package = assert_ok!(BuiltPackage::build(
         pack_dir.path().to_owned(),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     ));
 
     let code = package.extract_code();

@@ -13,7 +13,7 @@ repository = { workspace = true }
 rust-version = { workspace = true }
 
 [dependencies]
-aptos-framework = { workspace = true, optional = true }
+topo-framework = { workspace = true, optional = true }
 aptos-package-builder = { workspace = true, optional = true }
 aptos-release-bundle = { workspace = true }
 aptos-types = { workspace = true }
@@ -26,7 +26,7 @@ proptest-derive = { workspace = true, optional = true }
 [features]
 default = []
 fuzzing = ["proptest", "proptest-derive"]
-testing = ["aptos-framework", "aptos-package-builder"]
+testing = ["topo-framework", "aptos-package-builder"]
 
 [package.metadata.cargo-machete]
 ignored = ["proptest"]

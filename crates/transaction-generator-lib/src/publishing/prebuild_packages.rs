@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use anyhow::{anyhow, bail};
-use aptos_framework::{natives::code::PackageMetadata, BuildOptions, BuiltPackage};
+use topo_framework::{natives::code::PackageMetadata, BuildOptions, BuiltPackage};
 use aptos_sdk::bcs;
 use move_package::source_package::std_lib::StdVersion;
 use serde::{Deserialize, Serialize};

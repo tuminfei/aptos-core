@@ -3,7 +3,7 @@
 
 use super::publish_util::Package;
 use crate::publishing::prebuild_packages::PrebuiltPackagesBundle;
-use aptos_framework::natives::code::PackageMetadata;
+use topo_framework::natives::code::PackageMetadata;
 use aptos_sdk::{
     move_types::{
         account_address::AccountAddress, identifier::Identifier, language_storage::ModuleId,
