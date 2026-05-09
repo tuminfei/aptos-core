@@ -119,9 +119,9 @@ sophisticated order matching, cancellation, and reinsertion capabilities.
     -  [Aborts:](#@Aborts:_25)
 
 
-<pre><code><b>use</b> <a href="../../aptos-framework/doc/big_ordered_map.md#0x1_big_ordered_map">0x1::big_ordered_map</a>;
-<b>use</b> <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
-<b>use</b> <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<pre><code><b>use</b> <a href="../../aptos-trading/../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map">0x1::big_ordered_map</a>;
+<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 <b>use</b> <a href="">0x5::bulk_order_types</a>;
 <b>use</b> <a href="">0x5::order_book_types</a>;
 <b>use</b> <a href="">0x5::order_match_types</a>;
@@ -166,13 +166,13 @@ Main bulk order book container that manages all orders and their matching.
 
 <dl>
 <dt>
-<code>orders: <a href="../../aptos-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;<b>address</b>, <a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;&gt;</code>
+<code>orders: <a href="../../aptos-trading/../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;<b>address</b>, <a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>order_id_to_address: <a href="../../aptos-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;<a href="_OrderId">order_book_types::OrderId</a>, <b>address</b>&gt;</code>
+<code>order_id_to_address: <a href="../../aptos-trading/../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;<a href="_OrderId">order_book_types::OrderId</a>, <b>address</b>&gt;</code>
 </dt>
 <dd>
 
@@ -637,8 +637,8 @@ effectively allowing them to "reuse" matched liquidity.
         reinsert_order.validate_bulk_order_reinsertion_request(original_order),
         <a href="bulk_order_book.md#0x7_bulk_order_book_E_REINSERT_ORDER_MISMATCH">E_REINSERT_ORDER_MISMATCH</a>
     );
-    <b>let</b> <a href="../../aptos-framework/doc/account.md#0x1_account">account</a> = reinsert_order.get_account_from_match_details();
-    <b>let</b> order_option = self.orders.remove_or_none(&<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>);
+    <b>let</b> <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a> = reinsert_order.get_account_from_match_details();
+    <b>let</b> order_option = self.orders.remove_or_none(&<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>);
     <b>assert</b>!(order_option.is_some(), <a href="bulk_order_book.md#0x7_bulk_order_book_EORDER_NOT_FOUND">EORDER_NOT_FOUND</a>);
     <b>let</b> order = order_option.destroy_some();
     <a href="bulk_order_book.md#0x7_bulk_order_book_cancel_active_orders">cancel_active_orders</a>(price_time_idx, &order);
@@ -646,7 +646,7 @@ effectively allowing them to "reuse" matched liquidity.
     <a href="bulk_order_book.md#0x7_bulk_order_book_activate_first_price_levels">activate_first_price_levels</a>(
         price_time_idx, &order, reinsert_order.get_order_id_from_match_details()
     );
-    self.orders.add(<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>, order);
+    self.orders.add(<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>, order);
 }
 </code></pre>
 
@@ -671,7 +671,7 @@ with the same order ID in the future.
 
 - <code>self</code>: Mutable reference to the bulk order book
 - <code>price_time_idx</code>: Mutable reference to the price time index
-- <code><a href="../../aptos-framework/doc/account.md#0x1_account">account</a></code>: The account whose order should be cancelled
+- <code><a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a></code>: The account whose order should be cancelled
 
 
 <a id="@Aborts:_20"></a>
@@ -681,7 +681,7 @@ with the same order ID in the future.
 - If no order exists for the specified account
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_cancel_bulk_order">cancel_bulk_order</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, price_time_idx: &<b>mut</b> <a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>): <a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_cancel_bulk_order">cancel_bulk_order</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, price_time_idx: &<b>mut</b> <a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>): <a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;
 </code></pre>
 
 
@@ -693,17 +693,17 @@ with the same order ID in the future.
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_cancel_bulk_order">cancel_bulk_order</a>&lt;M: store + <b>copy</b> + drop&gt;(
     self: &<b>mut</b> <a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">BulkOrderBook</a>&lt;M&gt;,
     price_time_idx: &<b>mut</b> aptos_experimental::price_time_index::PriceTimeIndex,
-    <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>
+    <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>
 ): BulkOrder&lt;M&gt; {
     // For cancellation, instead of removing the order, we will just cancel the active orders and set the sizes <b>to</b> 0.
-    // This allows us <b>to</b> reuse the order id for the same <a href="../../aptos-framework/doc/account.md#0x1_account">account</a> in the future without creating a new order.
-    <b>let</b> order_opt = self.orders.remove_or_none(&<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>);
+    // This allows us <b>to</b> reuse the order id for the same <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a> in the future without creating a new order.
+    <b>let</b> order_opt = self.orders.remove_or_none(&<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>);
     <b>assert</b>!(order_opt.is_some(), <a href="bulk_order_book.md#0x7_bulk_order_book_EORDER_NOT_FOUND">EORDER_NOT_FOUND</a>);
     <b>let</b> order = order_opt.destroy_some();
     <b>let</b> order_copy = order;
     <a href="bulk_order_book.md#0x7_bulk_order_book_cancel_active_orders">cancel_active_orders</a>(price_time_idx, &order);
     order.set_empty();
-    self.orders.add(<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>, order);
+    self.orders.add(<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>, order);
     order_copy
 }
 </code></pre>
@@ -730,7 +730,7 @@ will be activated.
 
 - <code>self</code>: Mutable reference to the bulk order book
 - <code>price_time_idx</code>: Mutable reference to the price time index
-- <code><a href="../../aptos-framework/doc/account.md#0x1_account">account</a></code>: The account whose order contains the price level to cancel
+- <code><a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a></code>: The account whose order contains the price level to cancel
 - <code>price</code>: The price level to cancel
 - <code>is_bid</code>: True to cancel from bid side, false for ask side
 
@@ -751,7 +751,7 @@ A tuple containing:
 - If no order exists for the specified account
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_cancel_bulk_order_at_price">cancel_bulk_order_at_price</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, price_time_idx: &<b>mut</b> <a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, price: u64, is_bid: bool): (u64, <a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_cancel_bulk_order_at_price">cancel_bulk_order_at_price</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, price_time_idx: &<b>mut</b> <a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, price: u64, is_bid: bool): (u64, <a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;)
 </code></pre>
 
 
@@ -763,11 +763,11 @@ A tuple containing:
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_cancel_bulk_order_at_price">cancel_bulk_order_at_price</a>&lt;M: store + <b>copy</b> + drop&gt;(
     self: &<b>mut</b> <a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">BulkOrderBook</a>&lt;M&gt;,
     price_time_idx: &<b>mut</b> aptos_experimental::price_time_index::PriceTimeIndex,
-    <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
+    <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
     price: u64,
     is_bid: bool
 ): (u64, BulkOrder&lt;M&gt;) {
-    <b>let</b> order_opt = self.orders.remove_or_none(&<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>);
+    <b>let</b> order_opt = self.orders.remove_or_none(&<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>);
     <b>assert</b>!(order_opt.is_some(), <a href="bulk_order_book.md#0x7_bulk_order_book_EORDER_NOT_FOUND">EORDER_NOT_FOUND</a>);
     <b>let</b> order = order_opt.destroy_some();
 
@@ -791,7 +791,7 @@ A tuple containing:
     };
 
     <b>let</b> order_copy = order;
-    self.orders.add(<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>, order);
+    self.orders.add(<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>, order);
     (cancelled_size, order_copy)
 }
 </code></pre>
@@ -806,7 +806,7 @@ A tuple containing:
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_bulk_order">get_bulk_order</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>): <a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_bulk_order">get_bulk_order</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>): <a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;
 </code></pre>
 
 
@@ -816,9 +816,9 @@ A tuple containing:
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_bulk_order">get_bulk_order</a>&lt;M: store + <b>copy</b> + drop&gt;(
-    self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>
+    self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>
 ): BulkOrder&lt;M&gt; {
-    <b>let</b> result = self.orders.get(&<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>);
+    <b>let</b> result = self.orders.get(&<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>);
     <b>assert</b>!(result.is_some(), <a href="bulk_order_book.md#0x7_bulk_order_book_EORDER_NOT_FOUND">EORDER_NOT_FOUND</a>);
     result.destroy_some()
 }
@@ -834,7 +834,7 @@ A tuple containing:
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_remaining_size">get_remaining_size</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool): u64
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_remaining_size">get_remaining_size</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool): u64
 </code></pre>
 
 
@@ -844,11 +844,11 @@ A tuple containing:
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_remaining_size">get_remaining_size</a>&lt;M: store + <b>copy</b> + drop&gt;(
-    self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool
+    self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool
 ): u64 {
     <b>let</b> result_option =
         self.orders.get_and_map(
-            &<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>,
+            &<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>,
             |order| order.get_order_request().get_total_remaining_size(is_bid)
         );
     <b>assert</b>!(result_option.is_some(), <a href="bulk_order_book.md#0x7_bulk_order_book_EORDER_NOT_FOUND">EORDER_NOT_FOUND</a>);
@@ -866,7 +866,7 @@ A tuple containing:
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_prices">get_prices</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool): <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_prices">get_prices</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -876,11 +876,11 @@ A tuple containing:
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_prices">get_prices</a>&lt;M: store + <b>copy</b> + drop&gt;(
-    self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool
-): <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; {
+    self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool
+): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; {
     <b>let</b> result_option =
         self.orders.get_and_map(
-            &<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>,
+            &<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>,
             |order| order.get_order_request().get_all_prices(is_bid)
         );
     <b>assert</b>!(result_option.is_some(), <a href="bulk_order_book.md#0x7_bulk_order_book_EORDER_NOT_FOUND">EORDER_NOT_FOUND</a>);
@@ -898,7 +898,7 @@ A tuple containing:
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_sizes">get_sizes</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool): <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_sizes">get_sizes</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">bulk_order_book::BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -908,11 +908,11 @@ A tuple containing:
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book.md#0x7_bulk_order_book_get_sizes">get_sizes</a>&lt;M: store + <b>copy</b> + drop&gt;(
-    self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool
-): <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; {
+    self: &<a href="bulk_order_book.md#0x7_bulk_order_book_BulkOrderBook">BulkOrderBook</a>&lt;M&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, is_bid: bool
+): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; {
     <b>let</b> result_option =
         self.orders.get_and_map(
-            &<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>,
+            &<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>,
             |order| order.get_order_request().get_all_sizes(is_bid)
         );
     <b>assert</b>!(result_option.is_some(), <a href="bulk_order_book.md#0x7_bulk_order_book_EORDER_NOT_FOUND">EORDER_NOT_FOUND</a>);
@@ -964,9 +964,9 @@ The first price levels of both bid and ask sides will be activated in the active
     price_time_idx: &<b>mut</b> aptos_experimental::price_time_index::PriceTimeIndex,
     order_req: BulkOrderRequest&lt;M&gt;
 ): BulkOrderPlaceResponse&lt;M&gt; {
-    <b>let</b> <a href="../../aptos-framework/doc/account.md#0x1_account">account</a> = order_req.get_account();
+    <b>let</b> <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a> = order_req.get_account();
     <b>let</b> new_sequence_number = order_req.get_sequence_number();
-    <b>let</b> order_option = self.orders.remove_or_none(&<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>);
+    <b>let</b> order_option = self.orders.remove_or_none(&<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>);
     <b>let</b> (order_id, previous_seq_num) =
         <b>if</b> (order_option.is_some()) {
             <b>let</b> old_order = order_option.destroy_some();
@@ -975,9 +975,9 @@ The first price levels of both bid and ask sides will be activated in the active
             // Return rejection response instead of aborting
             <b>if</b> (new_sequence_number &lt;= existing_sequence_number) {
                 // Put the <b>old</b> order back
-                self.orders.add(<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>, old_order);
+                self.orders.add(<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>, old_order);
                 <b>return</b> new_bulk_order_place_response_rejection(
-                    <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>,
+                    <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>,
                     new_sequence_number,
                     existing_sequence_number
                 )
@@ -986,7 +986,7 @@ The first price levels of both bid and ask sides will be activated in the active
             (old_order.get_order_id(), std::option::some(existing_sequence_number))
         } <b>else</b> {
             <b>let</b> order_id = next_order_id();
-            self.order_id_to_address.add(order_id, <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>);
+            self.order_id_to_address.add(order_id, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>);
             (order_id, std::option::none())
         };
     <b>let</b> (
@@ -1003,7 +1003,7 @@ The first price levels of both bid and ask sides will be activated in the active
             price_time_idx.best_bid_price(),
             price_time_idx.best_ask_price()
         );
-    self.orders.add(<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>, bulk_order);
+    self.orders.add(<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>, bulk_order);
     // Activate the first price levels in the active order book
     <a href="bulk_order_book.md#0x7_bulk_order_book_activate_first_price_levels">activate_first_price_levels</a>(price_time_idx, &bulk_order, order_id);
     new_bulk_order_place_response_success(

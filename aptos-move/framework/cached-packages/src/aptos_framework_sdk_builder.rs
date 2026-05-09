@@ -695,7 +695,7 @@ pub enum EntryFunctionCall {
     ///   `effective_period = current_period + 1` (i.e., target_period).
     ///
     /// Constraints:
-    /// - Only the designated `operator` or @topo_framework may call this.
+    /// - Only the designated `operator` or @aptos_framework may call this.
     /// - `target_period` must equal `current_period + 1`; staging further ahead is not allowed
     ///   to prevent the operator from pre-loading multiple future periods at once.
     /// - `users` and `powers` must have the same length.
@@ -709,7 +709,7 @@ pub enum EntryFunctionCall {
     },
 
     /// Initialize the Registry resource.
-    /// Only callable by @topo_framework. Idempotent — skips if already initialized.
+    /// Only callable by @aptos_framework. Idempotent — skips if already initialized.
     PocRegistryInitializeRegistry {},
 
     /// Pause the application. The admin voluntarily suspends operations (e.g., emergency response).
@@ -754,7 +754,7 @@ pub enum EntryFunctionCall {
 
     /// Set the effective weight for an application (in per-basis-points, 0–10000).
     ///
-    /// Only callable by @topo_framework (DAO governance).
+    /// Only callable by @aptos_framework (DAO governance).
     /// 10000 means 100% weight (full contribution counted); 5000 means 50%, etc.
     /// Idempotent: if the new value equals the current value, returns without emitting an event.
     PocRegistrySetEffectiveWeightPbs {
@@ -764,7 +764,7 @@ pub enum EntryFunctionCall {
 
     /// Set the POC inclusion status for an application.
     ///
-    /// Only callable by @topo_framework (currently centralized governance; can be migrated to DAO later).
+    /// Only callable by @aptos_framework (currently centralized governance; can be migrated to DAO later).
     /// Valid values: REGISTERED / WHITELISTED / SUSPENDED.
     ///
     /// This is the master setter; `whitelist_app_for_poc` and `suspend_poc_listing` are
@@ -784,7 +784,7 @@ pub enum EntryFunctionCall {
     ///
     /// While suspended, the application's contribution events are NOT counted toward POC power.
     /// The suspension can be lifted by calling `whitelist_app_for_poc` after investigation.
-    /// Only callable by @topo_framework.
+    /// Only callable by @aptos_framework.
     PocRegistrySuspendPocListing {
         app_admin: AccountAddress,
     },
@@ -833,7 +833,7 @@ pub enum EntryFunctionCall {
     ///
     /// After whitelisting, contribution events emitted by this application are scanned
     /// by off-chain indexers and counted toward POC power, which can participate in governance voting.
-    /// Only callable by @topo_framework.
+    /// Only callable by @aptos_framework.
     PocRegistryWhitelistAppForPoc {
         app_admin: AccountAddress,
     },
@@ -3472,7 +3472,7 @@ pub fn poc_power_store_set_retention_bps_per_period(
 ///   `effective_period = current_period + 1` (i.e., target_period).
 ///
 /// Constraints:
-/// - Only the designated `operator` or @topo_framework may call this.
+/// - Only the designated `operator` or @aptos_framework may call this.
 /// - `target_period` must equal `current_period + 1`; staging further ahead is not allowed
 ///   to prevent the operator from pre-loading multiple future periods at once.
 /// - `users` and `powers` must have the same length.
@@ -3503,7 +3503,7 @@ pub fn poc_power_store_stage_batch_update(
 }
 
 /// Initialize the Registry resource.
-/// Only callable by @topo_framework. Idempotent — skips if already initialized.
+/// Only callable by @aptos_framework. Idempotent — skips if already initialized.
 pub fn poc_registry_initialize_registry() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -3605,7 +3605,7 @@ pub fn poc_registry_resume_app() -> TransactionPayload {
 
 /// Set the effective weight for an application (in per-basis-points, 0–10000).
 ///
-/// Only callable by @topo_framework (DAO governance).
+/// Only callable by @aptos_framework (DAO governance).
 /// 10000 means 100% weight (full contribution counted); 5000 means 50%, etc.
 /// Idempotent: if the new value equals the current value, returns without emitting an event.
 pub fn poc_registry_set_effective_weight_pbs(
@@ -3631,7 +3631,7 @@ pub fn poc_registry_set_effective_weight_pbs(
 
 /// Set the POC inclusion status for an application.
 ///
-/// Only callable by @topo_framework (currently centralized governance; can be migrated to DAO later).
+/// Only callable by @aptos_framework (currently centralized governance; can be migrated to DAO later).
 /// Valid values: REGISTERED / WHITELISTED / SUSPENDED.
 ///
 /// This is the master setter; `whitelist_app_for_poc` and `suspend_poc_listing` are
@@ -3680,7 +3680,7 @@ pub fn poc_registry_stop_app() -> TransactionPayload {
 ///
 /// While suspended, the application's contribution events are NOT counted toward POC power.
 /// The suspension can be lifted by calling `whitelist_app_for_poc` after investigation.
-/// Only callable by @topo_framework.
+/// Only callable by @aptos_framework.
 pub fn poc_registry_suspend_poc_listing(app_admin: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -3777,7 +3777,7 @@ pub fn poc_registry_update_equity_token_address(
 ///
 /// After whitelisting, contribution events emitted by this application are scanned
 /// by off-chain indexers and counted toward POC power, which can participate in governance voting.
-/// Only callable by @topo_framework.
+/// Only callable by @aptos_framework.
 pub fn poc_registry_whitelist_app_for_poc(app_admin: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(

@@ -53,7 +53,8 @@ c. Distribute epoch rewards (staking_registry::distribute_epoch_rewards)
 3. Force-undelegate users below the maintain threshold across all pools
 4. Activate pending_active validators; deactivate pending_inactive validators
 5. Recompute voting power for all active validators; drop those below minimum_stake
-6. Emergency liveness fallback: if the new active set would be empty, retain the previous set
+6. Emergency liveness fallback: if the new active set would be empty, retain the previous
+positive-voting-power active snapshot
 7. Reset performance counters; renew lockups; rebuild the PendingTransactionFee aggregator map
 
 
@@ -151,6 +152,8 @@ A validator's voting_power in ValidatorSet = staking_registry::get_validator_tot
 -  [Function `next_validator_consensus_infos`](#0x1_stake_next_validator_consensus_infos)
 -  [Function `simulate_next_epoch_validator_set`](#0x1_stake_simulate_next_epoch_validator_set)
 -  [Function `compute_simulated_validator_info`](#0x1_stake_compute_simulated_validator_info)
+-  [Function `previous_positive_active_validator_snapshot`](#0x1_stake_previous_positive_active_validator_snapshot)
+-  [Function `sync_registry_statuses_to_active_set`](#0x1_stake_sync_registry_statuses_to_active_set)
 -  [Function `simulate_epoch_accruals_for_validator`](#0x1_stake_simulate_epoch_accruals_for_validator)
 -  [Function `simulate_reward_distribution_for_validator`](#0x1_stake_simulate_reward_distribution_for_validator)
 -  [Function `simulate_fee_distribution_for_validator`](#0x1_stake_simulate_fee_distribution_for_validator)
@@ -169,6 +172,11 @@ A validator's voting_power in ValidatorSet = staking_registry::get_validator_tot
 -  [Function `get_validator_addresses`](#0x1_stake_get_validator_addresses)
 -  [Function `range_end`](#0x1_stake_range_end)
 -  [Function `generate_validator_info`](#0x1_stake_generate_validator_info)
+-  [Function `cap_validator_info_voting_power_for_epoch`](#0x1_stake_cap_validator_info_voting_power_for_epoch)
+-  [Function `cap_voting_power_for_epoch`](#0x1_stake_cap_voting_power_for_epoch)
+-  [Function `calculate_max_voting_power_increase`](#0x1_stake_calculate_max_voting_power_increase)
+-  [Function `voting_power_increase`](#0x1_stake_voting_power_increase)
+-  [Function `min_u64`](#0x1_stake_min_u64)
 -  [Function `update_voting_power_increase`](#0x1_stake_update_voting_power_increase)
 -  [Function `assert_stake_pool_exists`](#0x1_stake_assert_stake_pool_exists)
 -  [Function `configure_allowed_validators`](#0x1_stake_configure_allowed_validators)
@@ -1152,6 +1160,16 @@ Account is already registered as a validator candidate.
 
 
 
+<a id="0x1_stake_MAX_REWARDS_RATE"></a>
+
+Limit the maximum value of <code>rewards_rate</code> in order to avoid any arithmetic overflow.
+
+
+<pre><code><b>const</b> <a href="stake.md#0x1_stake_MAX_REWARDS_RATE">MAX_REWARDS_RATE</a>: u64 = 1000000;
+</code></pre>
+
+
+
 <a id="0x1_stake_ENOT_OPERATOR"></a>
 
 Account does not have the right operator capability.
@@ -1205,16 +1223,6 @@ Validator status enum. We can switch to proper enum later once Move supports it.
 
 
 <pre><code><b>const</b> <a href="stake.md#0x1_stake_VALIDATOR_STATUS_PENDING_INACTIVE">VALIDATOR_STATUS_PENDING_INACTIVE</a>: u64 = 3;
-</code></pre>
-
-
-
-<a id="0x1_stake_MAX_REWARDS_RATE"></a>
-
-Limit the maximum value of <code>rewards_rate</code> in order to avoid any arithmetic overflow.
-
-
-<pre><code><b>const</b> <a href="stake.md#0x1_stake_MAX_REWARDS_RATE">MAX_REWARDS_RATE</a>: u64 = 1000000;
 </code></pre>
 
 
@@ -1632,7 +1640,9 @@ This is the validator's total effective power in staking_registry.
     // Both active and pending inactive validators can still vote in the current epoch.
     <b>if</b> (validator_state == <a href="stake.md#0x1_stake_VALIDATOR_STATUS_ACTIVE">VALIDATOR_STATUS_ACTIVE</a>
         || validator_state == <a href="stake.md#0x1_stake_VALIDATOR_STATUS_PENDING_INACTIVE">VALIDATOR_STATUS_PENDING_INACTIVE</a>) {
-        <a href="staking_registry.md#0x1_staking_registry_get_validator_total_power">staking_registry::get_validator_total_power</a>(pool_address)
+        <b>let</b> (_, maximum_stake) =
+            <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>());
+        <a href="stake.md#0x1_stake_min_u64">min_u64</a>(<a href="staking_registry.md#0x1_staking_registry_get_validator_total_power">staking_registry::get_validator_total_power</a>(pool_address), maximum_stake)
     } <b>else</b> { 0 }
 }
 </code></pre>
@@ -3289,7 +3299,7 @@ For each candidate in active_validators:
 
 Phase 6 — Emergency liveness fallback:
 If the resulting active set is empty (no validator meets minimum_stake),
-retain the previous active set to keep the chain alive.
+retain a positive-voting-power active set to keep the chain alive.
 Emit ValidatorSetLivenessFallback event to signal the critical condition.
 
 Phase 7 — Housekeeping:
@@ -3398,6 +3408,8 @@ Phase 7 — Housekeeping:
         <a href="staking_registry.md#0x1_staking_registry_set_validator_inactive">staking_registry::set_validator_inactive</a>(validator.addr);
     });
 
+    <b>let</b> previous_active_count = validator_set.active_validators.length();
+
     // Activate currently pending_active validators.
     <a href="stake.md#0x1_stake_append">append</a>(&<b>mut</b> validator_set.active_validators, &<b>mut</b> validator_set.pending_active);
 
@@ -3408,7 +3420,15 @@ Phase 7 — Housekeeping:
     // Moreover, recalculate the total <a href="voting.md#0x1_voting">voting</a> power, and deactivate the validator whose
     // <a href="voting.md#0x1_voting">voting</a> power is less than the minimum required <a href="stake.md#0x1_stake">stake</a>.
     <b>let</b> next_epoch_validators = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
-    <b>let</b> (minimum_stake, _) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&config);
+    <b>let</b> (minimum_stake, maximum_stake) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&config);
+    <b>let</b> voting_power_increase_limit =
+        <a href="staking_config.md#0x1_staking_config_get_voting_power_increase_limit">staking_config::get_voting_power_increase_limit</a>(&config);
+    <b>let</b> max_voting_power_increase =
+        <a href="stake.md#0x1_stake_calculate_max_voting_power_increase">calculate_max_voting_power_increase</a>(
+            validator_set.total_voting_power,
+            voting_power_increase_limit,
+        );
+    <b>let</b> used_voting_power_increase = 0u128;
     <b>let</b> vlen = validator_set.active_validators.length();
     <b>let</b> total_voting_power = 0;
     <b>let</b> dropped_validators = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
@@ -3423,11 +3443,29 @@ Phase 7 — Housekeeping:
         <b>let</b> old_validator_info = validator_set.active_validators.borrow_mut(i);
         <b>let</b> pool_address = old_validator_info.addr;
         <b>let</b> validator_config = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorConfig">ValidatorConfig</a>&gt;(pool_address);
-        <b>let</b> new_validator_info =
+        <b>let</b> raw_validator_info =
             <a href="stake.md#0x1_stake_generate_validator_info">generate_validator_info</a>(pool_address, *validator_config);
+        <b>let</b> baseline_voting_power =
+            <b>if</b> (i &lt; previous_active_count) {
+                old_validator_info.voting_power
+            } <b>else</b> {
+                0
+            };
+        <b>let</b> new_validator_info =
+            <a href="stake.md#0x1_stake_cap_validator_info_voting_power_for_epoch">cap_validator_info_voting_power_for_epoch</a>(
+                raw_validator_info,
+                maximum_stake,
+                baseline_voting_power,
+                max_voting_power_increase,
+                used_voting_power_increase,
+            );
 
         // A validator needs at least the <b>min</b> <a href="stake.md#0x1_stake">stake</a> required <b>to</b> join the validator set.
         <b>if</b> (new_validator_info.voting_power &gt;= minimum_stake) {
+            used_voting_power_increase += <a href="stake.md#0x1_stake_voting_power_increase">voting_power_increase</a>(
+                baseline_voting_power,
+                new_validator_info.voting_power,
+            );
             <b>spec</b> {
                 <b>assume</b> total_voting_power + new_validator_info.voting_power
                     &lt;= MAX_U128;
@@ -3440,9 +3478,11 @@ Phase 7 — Housekeeping:
         i += 1;
     };
 
-    // In the extreme case <b>where</b> the next epoch validator election produces an empty set (i.e., no staker satisfies the minimum <a href="stake.md#0x1_stake">stake</a> or participation requirements), the system enters an emergency liveness preservation mode.
-    // Instead of transitioning <b>to</b> an empty validator set—which would render the network inoperable—the protocol retains the previous active validator set and recomputes the total <a href="voting.md#0x1_voting">voting</a> power from it.
-    // A <a href="stake.md#0x1_stake_ValidatorSetLivenessFallback">ValidatorSetLivenessFallback</a> <a href="event.md#0x1_event">event</a> is emitted <b>to</b> signal this critical governance and economic security failure.
+    // In the extreme case <b>where</b> the next epoch validator election produces an empty set
+    // (i.e. no staker satisfies the minimum <a href="stake.md#0x1_stake">stake</a> or participation requirements), retain a
+    // last-known positive-<a href="voting.md#0x1_voting">voting</a>-power active set instead of publishing an empty or zero-power
+    // validator set. A <a href="stake.md#0x1_stake_ValidatorSetLivenessFallback">ValidatorSetLivenessFallback</a> <a href="event.md#0x1_event">event</a> signals this critical governance and
+    // economic security failure.
     <b>if</b> (!next_epoch_validators.is_empty()) {
         dropped_validators.for_each_ref(|addr| {
             <a href="staking_registry.md#0x1_staking_registry_set_validator_inactive">staking_registry::set_validator_inactive</a>(*addr);
@@ -3450,12 +3490,6 @@ Phase 7 — Housekeeping:
         validator_set.active_validators = next_epoch_validators;
         validator_set.total_voting_power = total_voting_power;
     } <b>else</b> {
-        // We derive the next validator set from the previous epoch's active and pending-active stakers.
-        // If the resulting set is empty, it indicates that no staker is willing or qualified <b>to</b> participate
-        // in consensus anymore. In this case, the chain is considered effectively dead, and we must retain
-        // the previous active validator set <b>as</b> a last-resort liveness fallback.
-        // Recompute each validator's info from current <a href="stake.md#0x1_stake">stake</a> (after update_stake_pool) so that
-        // voting_power and total_voting_power <a href="../../aptos-stdlib/../move-stdlib/doc/reflect.md#0x1_reflect">reflect</a> rewards, fees, and merged <a href="stake.md#0x1_stake">stake</a>—not stale values.
         <b>let</b> refreshed_validators = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
         <b>let</b> emergency_total_voting_power = 0u128;
         <b>let</b> fallback_vlen = validator_set.active_validators.length();
@@ -3465,14 +3499,52 @@ Phase 7 — Housekeeping:
                 validator_set.active_validators.borrow(fallback_i);
             <b>let</b> pool_address = old_validator_info.addr;
             <b>let</b> validator_config = &<a href="stake.md#0x1_stake_ValidatorConfig">ValidatorConfig</a>[pool_address];
-            <b>let</b> new_validator_info =
+            <b>let</b> raw_validator_info =
                 <a href="stake.md#0x1_stake_generate_validator_info">generate_validator_info</a>(pool_address, *validator_config);
-            refreshed_validators.push_back(new_validator_info);
-            emergency_total_voting_power +=(new_validator_info.voting_power <b>as</b> u128);
+            <b>let</b> baseline_voting_power =
+                <b>if</b> (fallback_i &lt; previous_active_count) {
+                    old_validator_info.voting_power
+                } <b>else</b> {
+                    0
+                };
+            <b>let</b> new_validator_info =
+                <a href="stake.md#0x1_stake_cap_validator_info_voting_power_for_epoch">cap_validator_info_voting_power_for_epoch</a>(
+                    raw_validator_info,
+                    maximum_stake,
+                    baseline_voting_power,
+                    max_voting_power_increase,
+                    used_voting_power_increase,
+                );
+            <b>if</b> (new_validator_info.voting_power &gt; 0) {
+                used_voting_power_increase += <a href="stake.md#0x1_stake_voting_power_increase">voting_power_increase</a>(
+                    baseline_voting_power,
+                    new_validator_info.voting_power,
+                );
+                refreshed_validators.push_back(new_validator_info);
+                emergency_total_voting_power += (new_validator_info.voting_power <b>as</b> u128);
+            };
             fallback_i += 1;
         };
-        validator_set.active_validators = refreshed_validators;
-        validator_set.total_voting_power = emergency_total_voting_power;
+        <b>if</b> (emergency_total_voting_power &gt; 0) {
+            <a href="stake.md#0x1_stake_sync_registry_statuses_to_active_set">sync_registry_statuses_to_active_set</a>(
+                &validator_set.active_validators,
+                &refreshed_validators,
+            );
+            validator_set.active_validators = refreshed_validators;
+            validator_set.total_voting_power = emergency_total_voting_power;
+        } <b>else</b> {
+            <b>let</b> (snapshot_validators, snapshot_total_voting_power) =
+                <a href="stake.md#0x1_stake_previous_positive_active_validator_snapshot">previous_positive_active_validator_snapshot</a>(
+                    &validator_set.active_validators,
+                    previous_active_count,
+                );
+            <a href="stake.md#0x1_stake_sync_registry_statuses_to_active_set">sync_registry_statuses_to_active_set</a>(
+                &validator_set.active_validators,
+                &snapshot_validators,
+            );
+            validator_set.active_validators = snapshot_validators;
+            validator_set.total_voting_power = snapshot_total_voting_power;
+        };
         <a href="event.md#0x1_event_emit">event::emit</a>(
             <a href="stake.md#0x1_stake_ValidatorSetLivenessFallback">ValidatorSetLivenessFallback</a> {
                 minimum_stake,
@@ -3618,14 +3690,21 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
     };
 
     <b>let</b> cur_validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> (_, maximum_stake) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>());
     <b>let</b> total_power = 0u128;
     cur_validator_set.active_validators.for_each_ref(|validator| {
         <b>let</b> validator: &<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a> = validator;
-        total_power += (<a href="staking_registry.md#0x1_staking_registry_get_validator_total_power">staking_registry::get_validator_total_power</a>(validator.addr) <b>as</b> u128);
+        total_power += (
+            <a href="stake.md#0x1_stake_min_u64">min_u64</a>(<a href="staking_registry.md#0x1_staking_registry_get_validator_total_power">staking_registry::get_validator_total_power</a>(validator.addr), maximum_stake)
+                <b>as</b> u128
+        );
     });
     cur_validator_set.pending_inactive.for_each_ref(|validator| {
         <b>let</b> validator: &<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a> = validator;
-        total_power += (<a href="staking_registry.md#0x1_staking_registry_get_validator_total_power">staking_registry::get_validator_total_power</a>(validator.addr) <b>as</b> u128);
+        total_power += (
+            <a href="stake.md#0x1_stake_min_u64">min_u64</a>(<a href="staking_registry.md#0x1_staking_registry_get_validator_total_power">staking_registry::get_validator_total_power</a>(validator.addr), maximum_stake)
+                <b>as</b> u128
+        );
     });
     <b>if</b> (total_power &gt; <a href="stake.md#0x1_stake_MAX_U64">MAX_U64</a>) {
         <a href="stake.md#0x1_stake_MAX_U64">MAX_U64</a> <b>as</b> u64
@@ -3684,7 +3763,15 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
     <b>let</b> config = <a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>();
     <b>let</b> validator_perf = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@aptos_framework);
     <b>let</b> simulated_deposit_deltas = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_create">simple_map::create</a>&lt;<b>address</b>, u64&gt;();
-    <b>let</b> (minimum_stake, _) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&config);
+    <b>let</b> (minimum_stake, maximum_stake) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&config);
+    <b>let</b> voting_power_increase_limit =
+        <a href="staking_config.md#0x1_staking_config_get_voting_power_increase_limit">staking_config::get_voting_power_increase_limit</a>(&config);
+    <b>let</b> max_voting_power_increase =
+        <a href="stake.md#0x1_stake_calculate_max_voting_power_increase">calculate_max_voting_power_increase</a>(
+            cur_validator_set.total_voting_power,
+            voting_power_increase_limit,
+        );
+    <b>let</b> used_voting_power_increase = 0u128;
     <b>let</b> (rewards_rate, rewards_rate_denominator) =
         <a href="staking_config.md#0x1_staking_config_get_reward_rate">staking_config::get_reward_rate</a>(&config);
 
@@ -3741,12 +3828,26 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
                     num_candidates - 1 - candidate_idx
                 )
             };
+        <b>let</b> baseline_voting_power =
+            <b>if</b> (candidate_in_current) {
+                candidate.voting_power
+            } <b>else</b> {
+                0
+            };
         <b>let</b> (new_voting_power, new_validator_info) = <a href="stake.md#0x1_stake_compute_simulated_validator_info">compute_simulated_validator_info</a>(
             candidate,
             num_new_actives,
             &simulated_deposit_deltas,
+            maximum_stake,
+            baseline_voting_power,
+            max_voting_power_increase,
+            used_voting_power_increase,
         );
         <b>if</b> (new_voting_power &gt;= minimum_stake) {
+            used_voting_power_increase += <a href="stake.md#0x1_stake_voting_power_increase">voting_power_increase</a>(
+                baseline_voting_power,
+                new_voting_power,
+            );
             <b>spec</b> {
                 <b>assume</b> new_total_power + new_voting_power &lt;= MAX_U128;
             };
@@ -3776,9 +3877,28 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
                 candidate,
                 new_active_validators.length(),
                 &simulated_deposit_deltas,
+                maximum_stake,
+                <b>if</b> (in_active) { candidate.voting_power } <b>else</b> { 0 },
+                max_voting_power_increase,
+                used_voting_power_increase,
             );
-            new_active_validators.push_back(new_validator_info);
-            new_total_power +=(new_voting_power <b>as</b> u128);
+            used_voting_power_increase += <a href="stake.md#0x1_stake_voting_power_increase">voting_power_increase</a>(
+                <b>if</b> (in_active) { candidate.voting_power } <b>else</b> { 0 },
+                new_voting_power,
+            );
+            <b>if</b> (new_voting_power &gt; 0) {
+                new_active_validators.push_back(new_validator_info);
+                new_total_power += (new_voting_power <b>as</b> u128);
+            };
+        };
+        <b>if</b> (new_total_power == 0) {
+            <b>let</b> (snapshot_validators, snapshot_total_voting_power) =
+                <a href="stake.md#0x1_stake_previous_positive_active_validator_snapshot">previous_positive_active_validator_snapshot</a>(
+                    &cur_validator_set.active_validators,
+                    num_cur_actives,
+                );
+            new_active_validators = snapshot_validators;
+            new_total_power = snapshot_total_voting_power;
         };
     };
 
@@ -3805,7 +3925,7 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
 
 
 
-<pre><code><b>fun</b> <a href="stake.md#0x1_stake_compute_simulated_validator_info">compute_simulated_validator_info</a>(candidate: &<a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>, validator_index: u64, simulated_deposit_deltas: &<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_SimpleMap">simple_map::SimpleMap</a>&lt;<b>address</b>, u64&gt;): (u64, <a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>)
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_compute_simulated_validator_info">compute_simulated_validator_info</a>(candidate: &<a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>, validator_index: u64, simulated_deposit_deltas: &<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_SimpleMap">simple_map::SimpleMap</a>&lt;<b>address</b>, u64&gt;, maximum_stake: u64, baseline_voting_power: u64, max_voting_power_increase: u128, used_voting_power_increase: u128): (u64, <a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>)
 </code></pre>
 
 
@@ -3818,10 +3938,21 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
     candidate: &<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a>,
     validator_index: u64,
     simulated_deposit_deltas: &SimpleMap&lt;<b>address</b>, u64&gt;,
+    maximum_stake: u64,
+    baseline_voting_power: u64,
+    max_voting_power_increase: u128,
+    used_voting_power_increase: u128,
 ): (u64, <a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a>) <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorConfig">ValidatorConfig</a> {
-    <b>let</b> new_voting_power = <a href="stake.md#0x1_stake_get_validator_total_power_with_extra_deposit_for_next_epoch">get_validator_total_power_with_extra_deposit_for_next_epoch</a>(
+    <b>let</b> raw_voting_power = <a href="stake.md#0x1_stake_get_validator_total_power_with_extra_deposit_for_next_epoch">get_validator_total_power_with_extra_deposit_for_next_epoch</a>(
         candidate.addr,
         simulated_deposit_deltas,
+    );
+    <b>let</b> new_voting_power = <a href="stake.md#0x1_stake_cap_voting_power_for_epoch">cap_voting_power_for_epoch</a>(
+        raw_voting_power,
+        maximum_stake,
+        baseline_voting_power,
+        max_voting_power_increase,
+        used_voting_power_increase,
     );
     <b>let</b> config = *<b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorConfig">ValidatorConfig</a>&gt;(candidate.addr);
     config.validator_index = validator_index;
@@ -3829,6 +3960,96 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
         new_voting_power,
         <a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a> { addr: candidate.addr, voting_power: new_voting_power, config }
     )
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_previous_positive_active_validator_snapshot"></a>
+
+## Function `previous_positive_active_validator_snapshot`
+
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_previous_positive_active_validator_snapshot">previous_positive_active_validator_snapshot</a>(candidates: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>&gt;, previous_active_count: u64): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>&gt;, u128)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_previous_positive_active_validator_snapshot">previous_positive_active_validator_snapshot</a>(
+    candidates: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a>&gt;,
+    previous_active_count: u64,
+): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a>&gt;, u128) <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorConfig">ValidatorConfig</a> {
+    <b>let</b> snapshot_validators = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> snapshot_total_voting_power = 0u128;
+    <b>let</b> len = candidates.length();
+    <b>let</b> i = 0;
+    <b>while</b> ({
+        <b>spec</b> {
+            <b>invariant</b> i &lt;= len;
+            <b>invariant</b> <a href="stake.md#0x1_stake_spec_validators_are_initialized">spec_validators_are_initialized</a>(snapshot_validators);
+        };
+        i &lt; len
+    }) {
+        <b>if</b> (i &lt; previous_active_count) {
+            <b>let</b> candidate = candidates.borrow(i);
+            <b>if</b> (candidate.voting_power &gt; 0) {
+                <b>let</b> config = *<b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorConfig">ValidatorConfig</a>&gt;(candidate.addr);
+                config.validator_index = snapshot_validators.length();
+                snapshot_validators.push_back(<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a> {
+                    addr: candidate.addr,
+                    voting_power: candidate.voting_power,
+                    config,
+                });
+                snapshot_total_voting_power += (candidate.voting_power <b>as</b> u128);
+            };
+        };
+        i += 1;
+    };
+    (snapshot_validators, snapshot_total_voting_power)
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_sync_registry_statuses_to_active_set"></a>
+
+## Function `sync_registry_statuses_to_active_set`
+
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_sync_registry_statuses_to_active_set">sync_registry_statuses_to_active_set</a>(candidates: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>&gt;, active_set: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>&gt;)
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_sync_registry_statuses_to_active_set">sync_registry_statuses_to_active_set</a>(
+    candidates: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a>&gt;,
+    active_set: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a>&gt;,
+) {
+    <b>let</b> len = candidates.length();
+    <b>let</b> i = 0;
+    <b>while</b> (i &lt; len) {
+        <b>let</b> candidate = candidates.borrow(i);
+        <b>if</b> (<a href="stake.md#0x1_stake_find_validator">find_validator</a>(active_set, candidate.addr).is_some()) {
+            <a href="staking_registry.md#0x1_staking_registry_set_validator_active">staking_registry::set_validator_active</a>(candidate.addr);
+        } <b>else</b> {
+            <a href="staking_registry.md#0x1_staking_registry_set_validator_inactive">staking_registry::set_validator_inactive</a>(candidate.addr);
+        };
+        i += 1;
+    }
 }
 </code></pre>
 
@@ -3916,8 +4137,9 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
         <b>return</b>
     };
 
+    <b>let</b> (_, maximum_stake) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>());
     <b>let</b> epoch_reward = <a href="stake.md#0x1_stake_calculate_rewards_amount">calculate_rewards_amount</a>(
-        current_pool_power,
+        <a href="stake.md#0x1_stake_min_u64">min_u64</a>(current_pool_power, maximum_stake),
         num_successful_proposals,
         num_total_proposals,
         rewards_rate,
@@ -4637,6 +4859,179 @@ All arithmetic uses u128 to avoid overflow before the final division.
 ): <a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a> {
     <b>let</b> voting_power = <a href="staking_registry.md#0x1_staking_registry_get_validator_total_power">staking_registry::get_validator_total_power</a>(addr);
     <a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a> { addr, voting_power, config }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_cap_validator_info_voting_power_for_epoch"></a>
+
+## Function `cap_validator_info_voting_power_for_epoch`
+
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_cap_validator_info_voting_power_for_epoch">cap_validator_info_voting_power_for_epoch</a>(info: <a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>, maximum_stake: u64, baseline_voting_power: u64, max_voting_power_increase: u128, used_voting_power_increase: u128): <a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_cap_validator_info_voting_power_for_epoch">cap_validator_info_voting_power_for_epoch</a>(
+    info: <a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a>,
+    maximum_stake: u64,
+    baseline_voting_power: u64,
+    max_voting_power_increase: u128,
+    used_voting_power_increase: u128,
+): <a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a> {
+    <a href="stake.md#0x1_stake_ValidatorInfo">ValidatorInfo</a> {
+        addr: info.addr,
+        voting_power: <a href="stake.md#0x1_stake_cap_voting_power_for_epoch">cap_voting_power_for_epoch</a>(
+            info.voting_power,
+            maximum_stake,
+            baseline_voting_power,
+            max_voting_power_increase,
+            used_voting_power_increase,
+        ),
+        config: info.config,
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_cap_voting_power_for_epoch"></a>
+
+## Function `cap_voting_power_for_epoch`
+
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_cap_voting_power_for_epoch">cap_voting_power_for_epoch</a>(raw_voting_power: u64, maximum_stake: u64, baseline_voting_power: u64, max_voting_power_increase: u128, used_voting_power_increase: u128): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_cap_voting_power_for_epoch">cap_voting_power_for_epoch</a>(
+    raw_voting_power: u64,
+    maximum_stake: u64,
+    baseline_voting_power: u64,
+    max_voting_power_increase: u128,
+    used_voting_power_increase: u128,
+): u64 {
+    <b>let</b> capped_by_maximum = <a href="stake.md#0x1_stake_min_u64">min_u64</a>(raw_voting_power, maximum_stake);
+    <b>if</b> (capped_by_maximum &lt;= baseline_voting_power) {
+        <b>return</b> capped_by_maximum
+    };
+
+    <b>let</b> remaining_increase =
+        <b>if</b> (used_voting_power_increase &gt;= max_voting_power_increase) {
+            0
+        } <b>else</b> {
+            max_voting_power_increase - used_voting_power_increase
+        };
+    <b>let</b> allowed_voting_power =
+        (baseline_voting_power <b>as</b> u128) + remaining_increase;
+    <b>if</b> ((capped_by_maximum <b>as</b> u128) &gt; allowed_voting_power) {
+        allowed_voting_power <b>as</b> u64
+    } <b>else</b> {
+        capped_by_maximum
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_calculate_max_voting_power_increase"></a>
+
+## Function `calculate_max_voting_power_increase`
+
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_calculate_max_voting_power_increase">calculate_max_voting_power_increase</a>(total_voting_power: u128, voting_power_increase_limit: u64): u128
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_calculate_max_voting_power_increase">calculate_max_voting_power_increase</a>(
+    total_voting_power: u128,
+    voting_power_increase_limit: u64,
+): u128 {
+    <b>if</b> (total_voting_power == 0) {
+        <a href="stake.md#0x1_stake_MAX_U64">MAX_U64</a>
+    } <b>else</b> {
+        (total_voting_power * (voting_power_increase_limit <b>as</b> u128)) / 100
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_voting_power_increase"></a>
+
+## Function `voting_power_increase`
+
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_voting_power_increase">voting_power_increase</a>(baseline_voting_power: u64, new_voting_power: u64): u128
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_voting_power_increase">voting_power_increase</a>(
+    baseline_voting_power: u64,
+    new_voting_power: u64,
+): u128 {
+    <b>if</b> (new_voting_power &gt; baseline_voting_power) {
+        ((new_voting_power - baseline_voting_power) <b>as</b> u128)
+    } <b>else</b> {
+        0
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_stake_min_u64"></a>
+
+## Function `min_u64`
+
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_min_u64">min_u64</a>(a: u64, b: u64): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_min_u64">min_u64</a>(a: u64, b: u64): u64 {
+    <b>if</b> (a &lt; b) { a } <b>else</b> { b }
 }
 </code></pre>
 
@@ -5594,13 +5989,17 @@ All arithmetic uses u128 to avoid overflow before the final division.
 ### Function `compute_simulated_validator_info`
 
 
-<pre><code><b>fun</b> <a href="stake.md#0x1_stake_compute_simulated_validator_info">compute_simulated_validator_info</a>(candidate: &<a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>, validator_index: u64, simulated_deposit_deltas: &<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_SimpleMap">simple_map::SimpleMap</a>&lt;<b>address</b>, u64&gt;): (u64, <a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>)
+<pre><code><b>fun</b> <a href="stake.md#0x1_stake_compute_simulated_validator_info">compute_simulated_validator_info</a>(candidate: &<a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>, validator_index: u64, simulated_deposit_deltas: &<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_SimpleMap">simple_map::SimpleMap</a>&lt;<b>address</b>, u64&gt;, maximum_stake: u64, baseline_voting_power: u64, max_voting_power_increase: u128, used_voting_power_increase: u128): (u64, <a href="stake.md#0x1_stake_ValidatorInfo">stake::ValidatorInfo</a>)
 </code></pre>
 
 
 
 
 <pre><code><b>let</b> _unused_simulated_deposit_deltas = simulated_deposit_deltas;
+<b>let</b> _unused_maximum_stake = maximum_stake;
+<b>let</b> _unused_baseline_voting_power = baseline_voting_power;
+<b>let</b> _unused_max_voting_power_increase = max_voting_power_increase;
+<b>let</b> _unused_used_voting_power_increase = used_voting_power_increase;
 <b>aborts_if</b> <b>false</b>;
 <b>ensures</b> result_2.addr == candidate.addr;
 <b>ensures</b> result_2.config.validator_index == validator_index;

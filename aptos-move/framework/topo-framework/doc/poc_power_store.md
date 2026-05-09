@@ -499,7 +499,7 @@ PowerStore resource has not been initialized yet
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>) {
+<pre><code><b>friend</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>) {
     <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store_internal">initialize_power_store_internal</a>(
         aptos_framework,
         operator,
@@ -528,7 +528,7 @@ PowerStore resource has not been initialized yet
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_with_power_period">initialize_with_power_period</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_with_power_period">initialize_with_power_period</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     operator: <b>address</b>,
     power_period_in_epochs: u64,
@@ -866,7 +866,7 @@ next 60 committed epochs    → period 2
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_commit_next_period_if_boundary">commit_next_period_if_boundary</a>() <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
+<pre><code><b>friend</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_commit_next_period_if_boundary">commit_next_period_if_boundary</a>() <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
     <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@aptos_framework)) {
         <b>return</b>
     };

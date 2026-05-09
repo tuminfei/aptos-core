@@ -13,10 +13,13 @@ Staking Registry — Delegation, power accounting, and reward distribution for t
 
 This module is the economic heart of the Topo chain's Proof-of-Contribution (POC) staking system.
 It replaces the traditional "stake amount = voting power" model with a hybrid model where a user's
-effective voting power is the MINIMUM of:
+raw effective voting power is the MINIMUM of:
 1. Their committed POC power (from <code><a href="poc_power_store.md#0x1_poc_power_store">poc_power_store</a></code>) — contribution-based weight
 2. Their deposit coverage (deposit_octas * 1,000,000 / octas_per_million_power) — economic skin-in-the-game
 If <code>octas_per_million_power == 0</code>, no deposit backing is required.
+
+For users already delegated to a validator with a positive registry deposit, final effective voting
+power is floored to 1 so participating stake cannot decay or round down to zero.
 
 This dual-constraint design ensures that:
 - Pure capital holders without contribution history cannot dominate governance
@@ -31,8 +34,8 @@ This dual-constraint design ensures that:
 
 - ValidatorPool: A pool owned by a validator. Delegators stake behind a pool to lend it their power.
 - UserStakeInfo: Per-user record of deposited TOPO coins, current delegation target, and cooldown state.
-- Effective Power: min(committed_poc_power, deposit_octas * 1,000,000 / octas_per_million_power),
-or committed_poc_power when deposit backing is disabled.
+- Effective Power: max(1, raw_effective_power) for a delegated user with a positive registry deposit;
+otherwise 0 when inactive/unbound, or raw_effective_power for non-zero raw power.
 - Commission: Validators earn a percentage of epoch rewards and transaction fees from their pool.
 - Cooldown: After undelegating, users must wait <code>cooldown_secs</code> before they can re-delegate or withdraw.
 This prevents rapid stake-hopping that could destabilize the validator set.
@@ -141,11 +144,13 @@ Only ACTIVE and PENDING_INACTIVE validators contribute to effective power reads.
 -  [Function `should_force_undelegate`](#0x1_staking_registry_should_force_undelegate)
 -  [Function `force_undelegate_member`](#0x1_staking_registry_force_undelegate_member)
 -  [Function `calculate_effective_power`](#0x1_staking_registry_calculate_effective_power)
+-  [Function `calculate_raw_effective_power`](#0x1_staking_registry_calculate_raw_effective_power)
 -  [Function `get_user_effective_power_for_validator`](#0x1_staking_registry_get_user_effective_power_for_validator)
 -  [Function `get_user_effective_power_for_validator_with_extra_deposit`](#0x1_staking_registry_get_user_effective_power_for_validator_with_extra_deposit)
 -  [Function `get_user_effective_power_for_validator_for_next_epoch`](#0x1_staking_registry_get_user_effective_power_for_validator_for_next_epoch)
 -  [Function `get_user_effective_power_for_validator_for_next_epoch_with_extra_deposit`](#0x1_staking_registry_get_user_effective_power_for_validator_for_next_epoch_with_extra_deposit)
--  [Function `calculate_effective_power_from_deposit`](#0x1_staking_registry_calculate_effective_power_from_deposit)
+-  [Function `calculate_raw_effective_power_from_deposit`](#0x1_staking_registry_calculate_raw_effective_power_from_deposit)
+-  [Function `apply_participating_effective_power_floor`](#0x1_staking_registry_apply_participating_effective_power_floor)
 -  [Function `copy_addresses`](#0x1_staking_registry_copy_addresses)
 -  [Function `build_validator_view`](#0x1_staking_registry_build_validator_view)
 -  [Function `empty_validator_view`](#0x1_staking_registry_empty_validator_view)
@@ -154,6 +159,8 @@ Only ACTIVE and PENDING_INACTIVE validators contribute to effective power reads.
 -  [Function `build_delegator_view`](#0x1_staking_registry_build_delegator_view)
 -  [Function `get_active_effective_power`](#0x1_staking_registry_get_active_effective_power)
 -  [Function `calculate_validator_total_power`](#0x1_staking_registry_calculate_validator_total_power)
+-  [Function `saturating_u128_to_u64`](#0x1_staking_registry_saturating_u128_to_u64)
+-  [Function `cap_pool_power_by_maximum_stake`](#0x1_staking_registry_cap_pool_power_by_maximum_stake)
 -  [Function `copy_address_range`](#0x1_staking_registry_copy_address_range)
 -  [Function `range_end`](#0x1_staking_registry_range_end)
 -  [Function `calculate_rewards_amount`](#0x1_staking_registry_calculate_rewards_amount)
@@ -164,6 +171,7 @@ Only ACTIVE and PENDING_INACTIVE validators contribute to effective power reads.
 
 <pre><code><b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
 <b>use</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">0x1::dispatchable_fungible_asset</a>;
+<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">0x1::error</a>;
 <b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
 <b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
 <b>use</b> <a href="poc_power_store.md#0x1_poc_power_store">0x1::poc_power_store</a>;
@@ -171,6 +179,7 @@ Only ACTIVE and PENDING_INACTIVE validators contribute to effective power reads.
 <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 <b>use</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map">0x1::simple_map</a>;
 <b>use</b> <a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table">0x1::smart_table</a>;
+<b>use</b> <a href="staking_config.md#0x1_staking_config">0x1::staking_config</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
 <b>use</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
 <b>use</b> <a href="timestamp.md#0x1_timestamp">0x1::timestamp</a>;
@@ -618,12 +627,33 @@ No stake info record found for this user address
 
 
 
+<a id="0x1_staking_registry_EVALIDATOR_POWER_EXCEEDS_MAX"></a>
+
+Delegating would push the validator pool above the configured maximum stake.
+
+
+<pre><code><b>const</b> <a href="staking_registry.md#0x1_staking_registry_EVALIDATOR_POWER_EXCEEDS_MAX">EVALIDATOR_POWER_EXCEEDS_MAX</a>: u64 = 16;
+</code></pre>
+
+
+
 <a id="0x1_staking_registry_EZERO_DEPOSIT"></a>
 
 Deposit amount must be greater than zero
 
 
 <pre><code><b>const</b> <a href="staking_registry.md#0x1_staking_registry_EZERO_DEPOSIT">EZERO_DEPOSIT</a>: u64 = 7;
+</code></pre>
+
+
+
+<a id="0x1_staking_registry_MIN_PARTICIPATING_EFFECTIVE_POWER"></a>
+
+Any currently delegated user with a positive registry deposit contributes at least
+this much final effective power.
+
+
+<pre><code><b>const</b> <a href="staking_registry.md#0x1_staking_registry_MIN_PARTICIPATING_EFFECTIVE_POWER">MIN_PARTICIPATING_EFFECTIVE_POWER</a>: u64 = 1;
 </code></pre>
 
 
@@ -719,7 +749,7 @@ but the mint cap is created before the registry config parameters are known.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     mint_cap: MintCapability&lt;TopoCoin&gt;,
 ) {
@@ -757,7 +787,7 @@ Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     octas_per_million_power: u64,
     max_delegators_per_validator: u64,
@@ -1005,7 +1035,7 @@ governance proposal window — which would allow double-influence attacks.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">ensure_min_cooldown_secs</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">ensure_min_cooldown_secs</a>(
     aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     min_cooldown_secs: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
@@ -1046,7 +1076,7 @@ before the first epoch begins.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_genesis_power_from_stake">calculate_genesis_power_from_stake</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_genesis_power_from_stake">calculate_genesis_power_from_stake</a>(
     stake_amount: u64,
 ): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
@@ -1109,7 +1139,7 @@ before the first epoch begins.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_register_validator_for_genesis">register_validator_for_genesis</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_register_validator_for_genesis">register_validator_for_genesis</a>(
     owner_address: <b>address</b>,
     validator_address: <b>address</b>,
     commission_bps: u64,
@@ -1138,7 +1168,7 @@ before the first epoch begins.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_register_validator_for_owner">register_validator_for_owner</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_register_validator_for_owner">register_validator_for_owner</a>(
     owner_address: <b>address</b>,
     validator_address: <b>address</b>,
     commission_bps: u64,
@@ -1320,10 +1350,11 @@ or committed_poc_power when deposit backing is disabled.
 Returns 0 if:
 - User is not delegated to any validator
 - The validator they are delegated to is not ACTIVE or PENDING_INACTIVE
-- Committed POC power is zero
-- Deposit coverage is zero while deposit backing is enabled
+- The user has no positive registry deposit
 
 This is the value used for governance voting weight and reward distribution.
+Currently delegated users with a positive registry deposit have their final
+effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code>#[view]
@@ -1461,7 +1492,7 @@ This is the value used for governance voting weight and reward distribution.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_total_power_for_next_epoch">get_validator_total_power_for_next_epoch</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_total_power_for_next_epoch">get_validator_total_power_for_next_epoch</a>(
     validator_address: <b>address</b>,
 ): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>let</b> extra_deposit_octas_by_user = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_create">simple_map::create</a>&lt;<b>address</b>, u64&gt;();
@@ -1492,7 +1523,7 @@ This is the value used for governance voting weight and reward distribution.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_for_next_epoch">get_validator_member_powers_for_next_epoch</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_for_next_epoch">get_validator_member_powers_for_next_epoch</a>(
     validator_address: <b>address</b>,
     extra_deposit_octas_by_user: &SimpleMap&lt;<b>address</b>, u64&gt;,
 ): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
@@ -1531,7 +1562,7 @@ This is the value used for governance voting weight and reward distribution.
         powers.push_back(power);
         total_power += (power <b>as</b> u128);
     });
-    (addresses, powers, total_power <b>as</b> u64)
+    (addresses, powers, <a href="staking_registry.md#0x1_staking_registry_saturating_u128_to_u64">saturating_u128_to_u64</a>(total_power))
 }
 </code></pre>
 
@@ -1554,7 +1585,7 @@ This is the value used for governance voting weight and reward distribution.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_with_current_power">get_validator_member_powers_with_current_power</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_with_current_power">get_validator_member_powers_with_current_power</a>(
     validator_address: <b>address</b>,
     extra_deposit_octas_by_user: &SimpleMap&lt;<b>address</b>, u64&gt;,
 ): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
@@ -1588,7 +1619,7 @@ This is the value used for governance voting weight and reward distribution.
         powers.push_back(power);
         total_power += (power <b>as</b> u128);
     });
-    (addresses, powers, total_power <b>as</b> u64)
+    (addresses, powers, <a href="staking_registry.md#0x1_staking_registry_saturating_u128_to_u64">saturating_u128_to_u64</a>(total_power))
 }
 </code></pre>
 
@@ -2198,7 +2229,7 @@ This is the value used for governance voting weight and reward distribution.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_total_staked_power">set_total_staked_power</a>(total_staked_power: u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_total_staked_power">set_total_staked_power</a>(total_staked_power: u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
         <b>return</b>
     };
@@ -2341,7 +2372,7 @@ This is the value used for governance voting weight and reward distribution.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_validator_pending_active">set_validator_pending_active</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_validator_pending_active">set_validator_pending_active</a>(
     validator_address: <b>address</b>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_set_validator_status">set_validator_status</a>(validator_address, <a href="staking_registry.md#0x1_staking_registry_VALIDATOR_STATUS_PENDING_ACTIVE">VALIDATOR_STATUS_PENDING_ACTIVE</a>);
@@ -2367,7 +2398,7 @@ This is the value used for governance voting weight and reward distribution.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_validator_active">set_validator_active</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_validator_active">set_validator_active</a>(
     validator_address: <b>address</b>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_set_validator_status">set_validator_status</a>(validator_address, <a href="staking_registry.md#0x1_staking_registry_VALIDATOR_STATUS_ACTIVE">VALIDATOR_STATUS_ACTIVE</a>);
@@ -2393,7 +2424,7 @@ This is the value used for governance voting weight and reward distribution.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_validator_pending_inactive">set_validator_pending_inactive</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_validator_pending_inactive">set_validator_pending_inactive</a>(
     validator_address: <b>address</b>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_set_validator_status">set_validator_status</a>(validator_address, <a href="staking_registry.md#0x1_staking_registry_VALIDATOR_STATUS_PENDING_INACTIVE">VALIDATOR_STATUS_PENDING_INACTIVE</a>);
@@ -2419,7 +2450,7 @@ This is the value used for governance voting weight and reward distribution.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_validator_inactive">set_validator_inactive</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_validator_inactive">set_validator_inactive</a>(
     validator_address: <b>address</b>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_set_validator_status">set_validator_status</a>(validator_address, <a href="staking_registry.md#0x1_staking_registry_VALIDATOR_STATUS_INACTIVE">VALIDATOR_STATUS_INACTIVE</a>);
@@ -2458,7 +2489,7 @@ Force-undelegated users receive the same cooldown as voluntary undelegation.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_force_undelegate_below_threshold">force_undelegate_below_threshold</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_force_undelegate_below_threshold">force_undelegate_below_threshold</a>(
     validator_address: <b>address</b>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
@@ -2515,7 +2546,7 @@ Force-undelegated users receive the same cooldown as voluntary undelegation.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_update_validator_commission">update_validator_commission</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_update_validator_commission">update_validator_commission</a>(
     validator_address: <b>address</b>,
     commission_bps: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
@@ -2545,7 +2576,7 @@ Distribute epoch staking rewards to all delegators of a validator pool.
 Called by <code><a href="stake.md#0x1_stake_on_new_epoch">stake::on_new_epoch</a></code> for each active and pending_inactive validator.
 
 Reward formula:
-epoch_reward = pool_power * rewards_rate * num_successful_proposals
+epoch_reward = min(pool_power, maximum_stake) * rewards_rate * num_successful_proposals
 / (rewards_rate_denominator * num_total_proposals)
 
 Distribution:
@@ -2553,6 +2584,9 @@ commission = epoch_reward * commission_bps / 10000  → minted to owner's deposi
 distributable = epoch_reward - commission
 each delegator gets: distributable * member_power / pool_power
 rounding dust (distributable - sum_distributed) goes to the owner
+
+The configured maximum_stake caps the total reward budget for a pool. The capped
+reward is still distributed pro-rata by each member's raw pool share.
 
 All rewards are minted as new TopoCoin and deposited directly into each user's
 registry deposit balance (auto-compounding — no separate claim step needed).
@@ -2569,7 +2603,7 @@ If pool_power == 0 or epoch_reward == 0, this is a no-op.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_distribute_epoch_rewards">distribute_epoch_rewards</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_distribute_epoch_rewards">distribute_epoch_rewards</a>(
     validator_address: <b>address</b>,
     num_successful_proposals: u64,
     num_total_proposals: u64,
@@ -2601,8 +2635,9 @@ If pool_power == 0 or epoch_reward == 0, this is a no-op.
         <b>return</b>
     };
 
+    <b>let</b> reward_power = <a href="staking_registry.md#0x1_staking_registry_cap_pool_power_by_maximum_stake">cap_pool_power_by_maximum_stake</a>(pool_power);
     <b>let</b> epoch_reward = <a href="staking_registry.md#0x1_staking_registry_calculate_rewards_amount">calculate_rewards_amount</a>(
-        pool_power <b>as</b> u64,
+        reward_power,
         num_successful_proposals,
         num_total_proposals,
         rewards_rate,
@@ -2673,7 +2708,7 @@ this re-mints the validator's share as a reward).
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_distribute_transaction_fees">distribute_transaction_fees</a>(
+<pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_distribute_transaction_fees">distribute_transaction_fees</a>(
     validator_address: <b>address</b>,
     fee_amount_octa: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
@@ -2791,7 +2826,8 @@ Checks:
 2. User must not already be delegated
 3. Cooldown must have elapsed
 4. User's effective power must be >= min_active_power
-5. Pool must not exceed max_delegators_per_validator
+5. Pool must not exceed maximum_stake
+6. Pool must not exceed max_delegators_per_validator
 
 On success: adds user to pool's delegator_list, sets delegated_to, clears cooldown.
 
@@ -2824,11 +2860,22 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
         info.cooldown_until_secs == 0 || now_seconds &gt;= info.cooldown_until_secs,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_ECOOLDOWN_ACTIVE">ECOOLDOWN_ACTIVE</a>),
     );
-    <b>let</b> effective_power =
-        <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power">calculate_effective_power</a>(info, registry.config.octas_per_million_power, user_address);
+    <b>let</b> effective_power = <a href="staking_registry.md#0x1_staking_registry_calculate_raw_effective_power">calculate_raw_effective_power</a>(
+        info,
+        registry.config.octas_per_million_power,
+        user_address,
+    );
     <b>assert</b>!(
         effective_power &gt;= registry.config.min_active_power,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EPOWER_BELOW_MIN_ACTIVE">EPOWER_BELOW_MIN_ACTIVE</a>),
+    );
+
+    <b>let</b> (_, maximum_stake) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>());
+    <b>let</b> pool = registry.validators.borrow(validator_address);
+    <b>let</b> current_pool_power = <a href="staking_registry.md#0x1_staking_registry_calculate_validator_total_power">calculate_validator_total_power</a>(registry, pool, validator_address);
+    <b>assert</b>!(
+        (current_pool_power <b>as</b> u128) + (effective_power <b>as</b> u128) &lt;= (maximum_stake <b>as</b> u128),
+        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EVALIDATOR_POWER_EXCEEDS_MAX">EVALIDATOR_POWER_EXCEEDS_MAX</a>),
     );
 
     <b>let</b> max_delegators = registry.config.max_delegators_per_validator;
@@ -3362,9 +3409,43 @@ A user who withdraws their deposit loses deposit_cover and their effective power
     octas_per_million_power: u64,
     user: <b>address</b>,
 ): u64 {
+    <b>let</b> deposit_octas = <a href="coin.md#0x1_coin_value">coin::value</a>(&info.deposit) <b>as</b> u128;
+    <b>let</b> raw_effective_power = <a href="staking_registry.md#0x1_staking_registry_calculate_raw_effective_power_from_deposit">calculate_raw_effective_power_from_deposit</a>(
+        <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power">poc_power_store::get_user_committed_power</a>(user),
+        deposit_octas,
+        octas_per_million_power,
+    );
+    <a href="staking_registry.md#0x1_staking_registry_apply_participating_effective_power_floor">apply_participating_effective_power_floor</a>(raw_effective_power, deposit_octas)
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_staking_registry_calculate_raw_effective_power"></a>
+
+## Function `calculate_raw_effective_power`
+
+
+
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_raw_effective_power">calculate_raw_effective_power</a>(info: &<a href="staking_registry.md#0x1_staking_registry_UserStakeInfo">staking_registry::UserStakeInfo</a>, octas_per_million_power: u64, user: <b>address</b>): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_raw_effective_power">calculate_raw_effective_power</a>(
+    info: &<a href="staking_registry.md#0x1_staking_registry_UserStakeInfo">UserStakeInfo</a>,
+    octas_per_million_power: u64,
+    user: <b>address</b>,
+): u64 {
     <b>let</b> committed_power = <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power">poc_power_store::get_user_committed_power</a>(user);
     <b>let</b> deposit_octas = <a href="coin.md#0x1_coin_value">coin::value</a>(&info.deposit) <b>as</b> u128;
-    <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power_from_deposit">calculate_effective_power_from_deposit</a>(
+    <a href="staking_registry.md#0x1_staking_registry_calculate_raw_effective_power_from_deposit">calculate_raw_effective_power_from_deposit</a>(
         committed_power,
         deposit_octas,
         octas_per_million_power,
@@ -3442,11 +3523,12 @@ A user who withdraws their deposit loses deposit_cover and their effective power
     <b>let</b> committed_power = <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power">poc_power_store::get_user_committed_power</a>(user);
     <b>let</b> deposit_octas = (<a href="coin.md#0x1_coin_value">coin::value</a>(&info.deposit) <b>as</b> u128)
         + (extra_deposit_octas <b>as</b> u128);
-    <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power_from_deposit">calculate_effective_power_from_deposit</a>(
+    <b>let</b> raw_effective_power = <a href="staking_registry.md#0x1_staking_registry_calculate_raw_effective_power_from_deposit">calculate_raw_effective_power_from_deposit</a>(
         committed_power,
         deposit_octas,
         registry.config.octas_per_million_power,
-    )
+    );
+    <a href="staking_registry.md#0x1_staking_registry_apply_participating_effective_power_floor">apply_participating_effective_power_floor</a>(raw_effective_power, deposit_octas)
 }
 </code></pre>
 
@@ -3523,11 +3605,13 @@ A user who withdraws their deposit loses deposit_cover and their effective power
     <b>let</b> committed_power = <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_power_for_next_epoch">poc_power_store::get_user_committed_power_for_next_epoch</a>(user);
     <b>let</b> deposit_octas = (<a href="coin.md#0x1_coin_value">coin::value</a>(&info.deposit) <b>as</b> u128)
         + (extra_deposit_octas <b>as</b> u128);
-    <b>let</b> effective_power = <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power_from_deposit">calculate_effective_power_from_deposit</a>(
+    <b>let</b> raw_effective_power = <a href="staking_registry.md#0x1_staking_registry_calculate_raw_effective_power_from_deposit">calculate_raw_effective_power_from_deposit</a>(
         committed_power,
         deposit_octas,
         registry.config.octas_per_million_power,
     );
+    <b>let</b> effective_power =
+        <a href="staking_registry.md#0x1_staking_registry_apply_participating_effective_power_floor">apply_participating_effective_power_floor</a>(raw_effective_power, deposit_octas);
     <b>if</b> (effective_power &lt; maintain_threshold) {
         0
     } <b>else</b> {
@@ -3540,13 +3624,13 @@ A user who withdraws their deposit loses deposit_cover and their effective power
 
 </details>
 
-<a id="0x1_staking_registry_calculate_effective_power_from_deposit"></a>
+<a id="0x1_staking_registry_calculate_raw_effective_power_from_deposit"></a>
 
-## Function `calculate_effective_power_from_deposit`
+## Function `calculate_raw_effective_power_from_deposit`
 
 
 
-<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power_from_deposit">calculate_effective_power_from_deposit</a>(committed_power: u64, deposit_octas: u128, octas_per_million_power: u64): u64
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_raw_effective_power_from_deposit">calculate_raw_effective_power_from_deposit</a>(committed_power: u64, deposit_octas: u128, octas_per_million_power: u64): u64
 </code></pre>
 
 
@@ -3555,7 +3639,7 @@ A user who withdraws their deposit loses deposit_cover and their effective power
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_effective_power_from_deposit">calculate_effective_power_from_deposit</a>(
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_calculate_raw_effective_power_from_deposit">calculate_raw_effective_power_from_deposit</a>(
     committed_power: u64,
     deposit_octas: u128,
     octas_per_million_power: u64,
@@ -3573,6 +3657,37 @@ A user who withdraws their deposit loses deposit_cover and their effective power
         committed_power
     } <b>else</b> {
         deposit_cover <b>as</b> u64
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_staking_registry_apply_participating_effective_power_floor"></a>
+
+## Function `apply_participating_effective_power_floor`
+
+
+
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_apply_participating_effective_power_floor">apply_participating_effective_power_floor</a>(effective_power: u64, deposit_octas: u128): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_apply_participating_effective_power_floor">apply_participating_effective_power_floor</a>(
+    effective_power: u64,
+    deposit_octas: u128,
+): u64 {
+    <b>if</b> (effective_power == 0 && deposit_octas &gt; 0) {
+        <a href="staking_registry.md#0x1_staking_registry_MIN_PARTICIPATING_EFFECTIVE_POWER">MIN_PARTICIPATING_EFFECTIVE_POWER</a>
+    } <b>else</b> {
+        effective_power
     }
 }
 </code></pre>
@@ -3846,7 +3961,64 @@ A user who withdraws their deposit loses deposit_cover and their effective power
             validator_address,
         ) <b>as</b> u128);
     });
-    total_power <b>as</b> u64
+    <a href="staking_registry.md#0x1_staking_registry_saturating_u128_to_u64">saturating_u128_to_u64</a>(total_power)
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_staking_registry_saturating_u128_to_u64"></a>
+
+## Function `saturating_u128_to_u64`
+
+
+
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_saturating_u128_to_u64">saturating_u128_to_u64</a>(value: u128): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_saturating_u128_to_u64">saturating_u128_to_u64</a>(value: u128): u64 {
+    <b>if</b> (value &gt; <a href="staking_registry.md#0x1_staking_registry_MAX_U64">MAX_U64</a>) {
+        <a href="staking_registry.md#0x1_staking_registry_MAX_U64">MAX_U64</a> <b>as</b> u64
+    } <b>else</b> {
+        value <b>as</b> u64
+    }
+}
+</code></pre>
+
+
+
+</details>
+
+<a id="0x1_staking_registry_cap_pool_power_by_maximum_stake"></a>
+
+## Function `cap_pool_power_by_maximum_stake`
+
+
+
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_cap_pool_power_by_maximum_stake">cap_pool_power_by_maximum_stake</a>(pool_power: u128): u64
+</code></pre>
+
+
+
+<details>
+<summary>Implementation</summary>
+
+
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_cap_pool_power_by_maximum_stake">cap_pool_power_by_maximum_stake</a>(pool_power: u128): u64 {
+    <b>let</b> (_, maximum_stake) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>());
+    <b>if</b> (pool_power &gt; (maximum_stake <b>as</b> u128)) {
+        maximum_stake
+    } <b>else</b> {
+        pool_power <b>as</b> u64
+    }
 }
 </code></pre>
 

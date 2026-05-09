@@ -737,7 +737,7 @@ Only callable by friend modules (genesis).
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>friend</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="poc_registry.md#0x1_poc_registry_initialize_registry">initialize_registry</a>(aptos_framework);
 }
 </code></pre>
