@@ -1239,7 +1239,7 @@ This is **extremely dangerous** and should be granted only when it's absolutely 
 Only called during genesis to initialize system resources for this module.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="account.md#0x1_account_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="account.md#0x1_account_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1248,9 +1248,9 @@ Only called during genesis to initialize system resources for this module.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="account.md#0x1_account_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <b>move_to</b>(aptos_framework, <a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a> {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="account.md#0x1_account_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
+    <b>move_to</b>(topo_framework, <a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a> {
         address_map: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
     });
 }
@@ -1278,7 +1278,7 @@ Only called during genesis to initialize system resources for this module.
 <pre><code><b>public</b> <b>fun</b> <a href="account.md#0x1_account_create_account_if_does_not_exist">create_account_if_does_not_exist</a>(account_address: <b>address</b>) {
     <b>if</b> (!<a href="account.md#0x1_account_resource_exists_at">resource_exists_at</a>(account_address)) {
         <b>assert</b>!(
-            account_address != @vm_reserved && account_address != @aptos_framework && account_address != @aptos_token,
+            account_address != @vm_reserved && account_address != @topo_framework && account_address != @aptos_token,
             <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="account.md#0x1_account_ECANNOT_RESERVED_ADDRESS">ECANNOT_RESERVED_ADDRESS</a>)
         );
         <a href="account.md#0x1_account_create_account_unchecked">create_account_unchecked</a>(account_address);
@@ -1313,7 +1313,7 @@ is returned. This way, the caller of this function can publish additional resour
     <b>assert</b>!(!<b>exists</b>&lt;<a href="account.md#0x1_account_Account">Account</a>&gt;(new_address), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="account.md#0x1_account_EACCOUNT_ALREADY_EXISTS">EACCOUNT_ALREADY_EXISTS</a>));
     // NOTE: @core_resources gets created via a `create_account` call, so we do not <b>include</b> it below.
     <b>assert</b>!(
-        new_address != @vm_reserved && new_address != @aptos_framework && new_address != @aptos_token,
+        new_address != @vm_reserved && new_address != @topo_framework && new_address != @aptos_token,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="account.md#0x1_account_ECANNOT_RESERVED_ADDRESS">ECANNOT_RESERVED_ADDRESS</a>)
     );
     <b>if</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_is_default_account_resource_enabled">features::is_default_account_resource_enabled</a>()) {
@@ -1534,7 +1534,7 @@ When the feature flag is disabled:
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="account.md#0x1_account_originating_address">originating_address</a>(auth_key: <b>address</b>): Option&lt;<b>address</b>&gt; <b>acquires</b> <a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a> {
-    <b>let</b> address_map_ref = &<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>[@aptos_framework].address_map;
+    <b>let</b> address_map_ref = &<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>[@topo_framework].address_map;
     <b>if</b> (address_map_ref.contains(auth_key)) {
         <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(*address_map_ref.borrow(auth_key))
     } <b>else</b> {
@@ -2210,7 +2210,7 @@ authority of the new authentication key.
     <b>let</b> auth_key_as_address =
         <a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_to_address">from_bcs::to_address</a>(<a href="account.md#0x1_account_Account">Account</a>[account_addr].authentication_key);
     <b>let</b> address_map_ref_mut =
-        &<b>mut</b> <a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>[@aptos_framework].address_map;
+        &<b>mut</b> <a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>[@topo_framework].address_map;
     <b>if</b> (address_map_ref_mut.contains(auth_key_as_address)) {
         <b>assert</b>!(
             *address_map_ref_mut.borrow(auth_key_as_address) == account_addr,
@@ -2677,7 +2677,7 @@ in the event of key recovery.
     account_resource: &<b>mut</b> <a href="account.md#0x1_account_Account">Account</a>,
     new_auth_key_vector: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
 ) <b>acquires</b> <a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a> {
-    <b>let</b> address_map = &<b>mut</b> <a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>[@aptos_framework].address_map;
+    <b>let</b> address_map = &<b>mut</b> <a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>[@topo_framework].address_map;
     <b>let</b> curr_auth_key = <a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_to_address">from_bcs::to_address</a>(account_resource.authentication_key);
     <b>let</b> new_auth_key = <a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_to_address">from_bcs::to_address</a>(new_auth_key_vector);
     <b>assert</b>!(
@@ -3086,7 +3086,7 @@ Capability based functions for efficient use.
 <td>1</td>
 <td>The initialization of the account module should result in the proper system initialization with valid and consistent resources.</td>
 <td>High</td>
-<td>Initialization of the account module creates a valid address_map table and moves the resources to the OriginatingAddress under the aptos_framework account.</td>
+<td>Initialization of the account module creates a valid address_map table and moves the resources to the OriginatingAddress under the topo_framework account.</td>
 <td>Audited that the address_map table is created and populated correctly with the expected initial values.</td>
 </tr>
 
@@ -3198,15 +3198,15 @@ Capability based functions for efficient use.
 ### Function `initialize`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="account.md#0x1_account_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="account.md#0x1_account_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
-Only the address <code>@aptos_framework</code> can call.
-OriginatingAddress does not exist under <code>@aptos_framework</code> before the call.
+Only the address <code>@topo_framework</code> can call.
+OriginatingAddress does not exist under <code>@topo_framework</code> before the call.
 
 
-<pre><code><b>let</b> aptos_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<pre><code><b>let</b> aptos_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(aptos_addr);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(aptos_addr);
 <b>ensures</b> <b>exists</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(aptos_addr);
@@ -3230,7 +3230,7 @@ Ensure that the account exists at the end of the call.
 <b>modifies</b> <b>global</b>&lt;<a href="account.md#0x1_account_Account">Account</a>&gt;(account_address);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_Account">Account</a>&gt;(account_address) && (
     account_address == @vm_reserved
-    || account_address == @aptos_framework
+    || account_address == @topo_framework
     || account_address == @aptos_token
     || !(len(authentication_key) == 32)
 );
@@ -3250,11 +3250,11 @@ Ensure that the account exists at the end of the call.
 
 Check if the bytes of the new address is 32.
 The Account does not exist under the new address before creating the account.
-Limit the new account address is not @vm_reserved / @aptos_framework / @aptos_toke.
+Limit the new account address is not @vm_reserved / @topo_framework / @aptos_toke.
 
 
 <pre><code><b>include</b> <a href="account.md#0x1_account_CreateAccountAbortsIf">CreateAccountAbortsIf</a> {addr: new_address};
-<b>aborts_if</b> new_address == @vm_reserved || new_address == @aptos_framework || new_address == @aptos_token;
+<b>aborts_if</b> new_address == @vm_reserved || new_address == @topo_framework || new_address == @aptos_token;
 <b>ensures</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(result) == new_address;
 // This enforces <a id="high-level-req-2" href="#high-level-req">high-level requirement 2</a>:
 <b>ensures</b> <b>exists</b>&lt;<a href="account.md#0x1_account_Account">Account</a>&gt;(new_address);
@@ -3562,9 +3562,9 @@ The authentication scheme is ED25519_SCHEME and MULTI_ED25519_SCHEME
 };
 <b>let</b> originating_addr = addr;
 <b>let</b> new_auth_key_vector = <a href="account.md#0x1_account_spec_assert_valid_rotation_proof_signature_and_get_auth_key">spec_assert_valid_rotation_proof_signature_and_get_auth_key</a>(to_scheme, to_public_key_bytes, cap_update_table, challenge);
-<b>let</b> address_map = <b>global</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@aptos_framework).address_map;
+<b>let</b> address_map = <b>global</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@topo_framework).address_map;
 <b>let</b> new_auth_key = <a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserialize">from_bcs::deserialize</a>&lt;<b>address</b>&gt;(new_auth_key_vector);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@topo_framework);
 <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserializable">from_bcs::deserializable</a>&lt;<b>address</b>&gt;(account_resource.authentication_key);
 <b>aborts_if</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(address_map, curr_auth_key) &&
     <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(address_map, curr_auth_key) != originating_addr;
@@ -3612,8 +3612,8 @@ The authentication scheme is ED25519_SCHEME and MULTI_ED25519_SCHEME
     challenge,
 };
 <b>let</b> new_auth_key_vector = <a href="account.md#0x1_account_spec_assert_valid_rotation_proof_signature_and_get_auth_key">spec_assert_valid_rotation_proof_signature_and_get_auth_key</a>(new_scheme, new_public_key_bytes, cap_update_table, challenge);
-<b>let</b> address_map = <b>global</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@aptos_framework).address_map;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@aptos_framework);
+<b>let</b> address_map = <b>global</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@topo_framework).address_map;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@topo_framework);
 <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserializable">from_bcs::deserializable</a>&lt;<b>address</b>&gt;(offerer_account_resource.authentication_key);
 <b>aborts_if</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(address_map, curr_auth_key) &&
     <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(address_map, curr_auth_key) != rotation_cap_offerer_address;
@@ -3644,12 +3644,12 @@ The authentication scheme is ED25519_SCHEME and MULTI_ED25519_SCHEME
 <pre><code><b>let</b> source_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
 <b>let</b> account_resource = <b>global</b>&lt;<a href="account.md#0x1_account_Account">Account</a>&gt;(source_address);
 <b>let</b> proof_challenge = <a href="account.md#0x1_account_RotationCapabilityOfferProofChallengeV2">RotationCapabilityOfferProofChallengeV2</a> {
-    <a href="chain_id.md#0x1_chain_id">chain_id</a>: <b>global</b>&lt;<a href="chain_id.md#0x1_chain_id_ChainId">chain_id::ChainId</a>&gt;(@aptos_framework).id,
+    <a href="chain_id.md#0x1_chain_id">chain_id</a>: <b>global</b>&lt;<a href="chain_id.md#0x1_chain_id_ChainId">chain_id::ChainId</a>&gt;(@topo_framework).id,
     sequence_number: account_resource.sequence_number,
     source_address,
     recipient_address,
 };
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="chain_id.md#0x1_chain_id_ChainId">chain_id::ChainId</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="chain_id.md#0x1_chain_id_ChainId">chain_id::ChainId</a>&gt;(@topo_framework);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_Account">Account</a>&gt;(recipient_address);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_Account">Account</a>&gt;(source_address);
 <b>include</b> account_scheme == <a href="account.md#0x1_account_ED25519_SCHEME">ED25519_SCHEME</a> ==&gt; <a href="../../aptos-stdlib/doc/ed25519.md#0x1_ed25519_NewUnvalidatedPublicKeyFromBytesAbortsIf">ed25519::NewUnvalidatedPublicKeyFromBytesAbortsIf</a> { bytes: account_public_key_bytes };
@@ -4017,7 +4017,7 @@ The value of signer_capability_offer.for of Account resource under the signer is
 
 
 
-<pre><code><b>modifies</b> <b>global</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@aptos_framework);
+<pre><code><b>modifies</b> <b>global</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@topo_framework);
 <b>include</b> <a href="account.md#0x1_account_UpdateAuthKeyAndOriginatingAddressTableAbortsIf">UpdateAuthKeyAndOriginatingAddressTableAbortsIf</a>;
 </code></pre>
 
@@ -4031,17 +4031,17 @@ The value of signer_capability_offer.for of Account resource under the signer is
     originating_addr: <b>address</b>;
     account_resource: <a href="account.md#0x1_account_Account">Account</a>;
     new_auth_key_vector: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
-    <b>let</b> address_map = <b>global</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@aptos_framework).address_map;
+    <b>let</b> address_map = <b>global</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@topo_framework).address_map;
     <b>let</b> curr_auth_key = <a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserialize">from_bcs::deserialize</a>&lt;<b>address</b>&gt;(account_resource.authentication_key);
     <b>let</b> new_auth_key = <a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserialize">from_bcs::deserialize</a>&lt;<b>address</b>&gt;(new_auth_key_vector);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@topo_framework);
     <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserializable">from_bcs::deserializable</a>&lt;<b>address</b>&gt;(account_resource.authentication_key);
     <b>aborts_if</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(address_map, curr_auth_key) &&
         <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(address_map, curr_auth_key) != originating_addr;
     <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserializable">from_bcs::deserializable</a>&lt;<b>address</b>&gt;(new_auth_key_vector);
     <b>aborts_if</b> curr_auth_key == new_auth_key;
     <b>aborts_if</b> curr_auth_key != new_auth_key && <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(address_map, new_auth_key);
-    <b>ensures</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(<b>global</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@aptos_framework).address_map, <a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserialize">from_bcs::deserialize</a>&lt;<b>address</b>&gt;(new_auth_key_vector));
+    <b>ensures</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(<b>global</b>&lt;<a href="account.md#0x1_account_OriginatingAddress">OriginatingAddress</a>&gt;(@topo_framework).address_map, <a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserialize">from_bcs::deserialize</a>&lt;<b>address</b>&gt;(new_auth_key_vector));
 }
 </code></pre>
 

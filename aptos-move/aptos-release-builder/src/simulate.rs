@@ -235,7 +235,7 @@ where
     Ok(())
 }
 
-/// Patches `aptos_framework::topo_governance::resolve_multi_step_proposal` so that
+/// Patches `topo_framework::topo_governance::resolve_multi_step_proposal` so that
 /// it returns the requested signer directly, skipping the governance process altogether.
 fn patch_topo_governance(
     state_view: &impl SimulationStateStore,

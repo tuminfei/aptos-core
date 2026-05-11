@@ -102,7 +102,7 @@ Initialize the configuration. Used in genesis or governance.
 
 <pre><code><b>public</b> <b>fun</b> <a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_initialize">initialize</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
-    <b>if</b> (!<b>exists</b>&lt;<a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_RandomnessConfigSeqNum">RandomnessConfigSeqNum</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_RandomnessConfigSeqNum">RandomnessConfigSeqNum</a>&gt;(@topo_framework)) {
         <b>move_to</b>(framework, <a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_RandomnessConfigSeqNum">RandomnessConfigSeqNum</a> { seq_num: 0 })
     }
 }
@@ -132,8 +132,8 @@ Only used in reconfigurations to apply the pending <code>RandomnessConfig</code>
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
     <b>if</b> (<a href="config_buffer.md#0x1_config_buffer_does_exist">config_buffer::does_exist</a>&lt;<a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_RandomnessConfigSeqNum">RandomnessConfigSeqNum</a>&gt;()) {
         <b>let</b> new_config = <a href="config_buffer.md#0x1_config_buffer_extract_v2">config_buffer::extract_v2</a>&lt;<a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_RandomnessConfigSeqNum">RandomnessConfigSeqNum</a>&gt;();
-        <b>if</b> (<b>exists</b>&lt;<a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_RandomnessConfigSeqNum">RandomnessConfigSeqNum</a>&gt;(@aptos_framework)) {
-            *<b>borrow_global_mut</b>&lt;<a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_RandomnessConfigSeqNum">RandomnessConfigSeqNum</a>&gt;(@aptos_framework) = new_config;
+        <b>if</b> (<b>exists</b>&lt;<a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_RandomnessConfigSeqNum">RandomnessConfigSeqNum</a>&gt;(@topo_framework)) {
+            *<b>borrow_global_mut</b>&lt;<a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_RandomnessConfigSeqNum">RandomnessConfigSeqNum</a>&gt;(@topo_framework) = new_config;
         } <b>else</b> {
             <b>move_to</b>(framework, new_config);
         }
@@ -161,7 +161,7 @@ Only used in reconfigurations to apply the pending <code>RandomnessConfig</code>
 
 
 
-<pre><code><b>requires</b> @aptos_framework == std::signer::address_of(framework);
+<pre><code><b>requires</b> @topo_framework == std::signer::address_of(framework);
 <b>include</b> <a href="config_buffer.md#0x1_config_buffer_OnNewEpochRequirement">config_buffer::OnNewEpochRequirement</a>&lt;<a href="randomness_config_seqnum.md#0x1_randomness_config_seqnum_RandomnessConfigSeqNum">RandomnessConfigSeqNum</a>&gt;;
 <b>aborts_if</b> <b>false</b>;
 </code></pre>

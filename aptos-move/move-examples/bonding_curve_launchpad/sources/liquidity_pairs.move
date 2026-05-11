@@ -3,14 +3,14 @@ module bonding_curve_launchpad::liquidity_pairs {
     use std::vector;
     use aptos_std::signer;
     use aptos_std::math128;
-    use aptos_framework::coin;
-    use aptos_framework::topo_account;
-    use aptos_framework::topo_coin::{TopoCoin};
-    use aptos_framework::object::{Self, Object, ExtendRef};
-    use aptos_framework::event;
-    use aptos_framework::fungible_asset;
-    use aptos_framework::fungible_asset::{Metadata, TransferRef, FungibleAsset, FungibleStore};
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::coin;
+    use topo_framework::topo_account;
+    use topo_framework::topo_coin::{TopoCoin};
+    use topo_framework::object::{Self, Object, ExtendRef};
+    use topo_framework::event;
+    use topo_framework::fungible_asset;
+    use topo_framework::fungible_asset::{Metadata, TransferRef, FungibleAsset, FungibleStore};
+    use topo_framework::primary_fungible_store;
     use swap::router;
     use swap::liquidity_pool;
     use swap::coin_wrapper;
@@ -65,7 +65,7 @@ module bonding_curve_launchpad::liquidity_pairs {
         signer_extender: ExtendRef
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     struct LiquidityPair has store, key {
         extend_ref: ExtendRef,
         is_enabled: bool,

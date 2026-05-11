@@ -1,12 +1,12 @@
 #[test_only]
-module aptos_framework::aggregator_tests {
+module topo_framework::aggregator_tests {
 
-    use aptos_framework::aggregator;
-    use aptos_framework::aggregator_factory;
+    use topo_framework::aggregator;
+    use topo_framework::aggregator_factory;
 
     const MAX_U128: u128 = 340282366920938463463374607431768211455;
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     fun test_can_add_and_sub_and_read(account: signer) {
         aggregator_factory::initialize_aggregator_factory_for_test(&account);
         let aggregator = aggregator_factory::create_aggregator_for_test();
@@ -28,8 +28,8 @@ module aptos_framework::aggregator_tests {
         aggregator::destroy(aggregator);
     }
 
-    #[test(account = @aptos_framework)]
-    #[expected_failure(abort_code = 0x020001, location = aptos_framework::aggregator)]
+    #[test(account = @topo_framework)]
+    #[expected_failure(abort_code = 0x020001, location = topo_framework::aggregator)]
     fun test_overflow(account: signer) {
         aggregator_factory::initialize_aggregator_factory_for_test(&account);
         let aggregator = aggregator_factory::create_aggregator_for_test();
@@ -41,8 +41,8 @@ module aptos_framework::aggregator_tests {
         aggregator::destroy(aggregator);
     }
 
-    #[test(account = @aptos_framework)]
-    #[expected_failure(abort_code = 0x020002, location = aptos_framework::aggregator)]
+    #[test(account = @topo_framework)]
+    #[expected_failure(abort_code = 0x020002, location = topo_framework::aggregator)]
     fun test_underflow(account: signer) {
         aggregator_factory::initialize_aggregator_factory_for_test(&account);
         let aggregator = aggregator_factory::create_aggregator_for_test();

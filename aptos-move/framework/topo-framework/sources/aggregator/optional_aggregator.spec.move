@@ -1,4 +1,4 @@
-spec aptos_framework::optional_aggregator {
+spec topo_framework::optional_aggregator {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: When creating a new integer instance, it guarantees that the limit assigned is a value passed into the
@@ -115,7 +115,7 @@ spec aptos_framework::optional_aggregator {
     }
 
     spec new(parallelizable: bool): OptionalAggregator {
-        aborts_if parallelizable && !exists<aggregator_factory::AggregatorFactory>(@aptos_framework);
+        aborts_if parallelizable && !exists<aggregator_factory::AggregatorFactory>(@topo_framework);
         ensures parallelizable ==> is_parallelizable(result);
         ensures !parallelizable ==> !is_parallelizable(result);
         ensures optional_aggregator_value(result) == 0;

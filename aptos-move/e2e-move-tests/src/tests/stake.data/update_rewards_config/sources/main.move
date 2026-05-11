@@ -1,10 +1,10 @@
 script {
-    use aptos_framework::topo_governance;
-    use aptos_framework::staking_config;
+    use topo_framework::topo_governance;
+    use topo_framework::staking_config;
     use aptos_std::fixed_point64;
 
     fun main(core_resources: &signer) {
-        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @aptos_framework);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @topo_framework);
         staking_config::update_rewards_config(
             &framework_signer,
             fixed_point64::create_from_rational(1, 100),

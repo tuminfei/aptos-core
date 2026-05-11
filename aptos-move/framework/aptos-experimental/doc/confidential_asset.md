@@ -1184,7 +1184,7 @@ This function facilitates making both calls in a single transaction.
 Enables the allow list, restricting confidential transfers to tokens on the allow list.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_enable_allow_list">enable_allow_list</a>(aptos_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_enable_allow_list">enable_allow_list</a>(topo_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1193,8 +1193,8 @@ Enables the allow list, restricting confidential transfers to tokens on the allo
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_enable_allow_list">enable_allow_list</a>(aptos_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="confidential_asset.md#0x7_confidential_asset_FAController">FAController</a> {
-    <a href="../../aptos-trading/../topo-framework/doc/system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_enable_allow_list">enable_allow_list</a>(topo_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="confidential_asset.md#0x7_confidential_asset_FAController">FAController</a> {
+    <a href="../../aptos-trading/../topo-framework/doc/system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
     <b>let</b> fa_controller = <b>borrow_global_mut</b>&lt;<a href="confidential_asset.md#0x7_confidential_asset_FAController">FAController</a>&gt;(@aptos_experimental);
 
@@ -1218,7 +1218,7 @@ Enables the allow list, restricting confidential transfers to tokens on the allo
 Disables the allow list, allowing confidential transfers for all tokens.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_disable_allow_list">disable_allow_list</a>(aptos_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_disable_allow_list">disable_allow_list</a>(topo_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1227,8 +1227,8 @@ Disables the allow list, allowing confidential transfers for all tokens.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_disable_allow_list">disable_allow_list</a>(aptos_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="confidential_asset.md#0x7_confidential_asset_FAController">FAController</a> {
-    <a href="../../aptos-trading/../topo-framework/doc/system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_disable_allow_list">disable_allow_list</a>(topo_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="confidential_asset.md#0x7_confidential_asset_FAController">FAController</a> {
+    <a href="../../aptos-trading/../topo-framework/doc/system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
     <b>let</b> fa_controller = <b>borrow_global_mut</b>&lt;<a href="confidential_asset.md#0x7_confidential_asset_FAController">FAController</a>&gt;(@aptos_experimental);
 
@@ -1252,7 +1252,7 @@ Disables the allow list, allowing confidential transfers for all tokens.
 Enables confidential transfers for the specified token.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_enable_token">enable_token</a>(aptos_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: <a href="../../aptos-trading/../topo-framework/doc/object.md#0x1_object_Object">object::Object</a>&lt;<a href="../../aptos-trading/../topo-framework/doc/fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_enable_token">enable_token</a>(topo_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: <a href="../../aptos-trading/../topo-framework/doc/object.md#0x1_object_Object">object::Object</a>&lt;<a href="../../aptos-trading/../topo-framework/doc/fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;)
 </code></pre>
 
 
@@ -1262,9 +1262,9 @@ Enables confidential transfers for the specified token.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_enable_token">enable_token</a>(
-    aptos_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: Object&lt;Metadata&gt;
+    topo_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: Object&lt;Metadata&gt;
 ) <b>acquires</b> <a href="confidential_asset.md#0x7_confidential_asset_FAConfig">FAConfig</a>, <a href="confidential_asset.md#0x7_confidential_asset_FAController">FAController</a> {
-    <a href="../../aptos-trading/../topo-framework/doc/system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="../../aptos-trading/../topo-framework/doc/system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
     <b>let</b> fa_config = <b>borrow_global_mut</b>&lt;<a href="confidential_asset.md#0x7_confidential_asset_FAConfig">FAConfig</a>&gt;(<a href="confidential_asset.md#0x7_confidential_asset_ensure_fa_config_exists">ensure_fa_config_exists</a>(token));
 
@@ -1285,7 +1285,7 @@ Enables confidential transfers for the specified token.
 Disables confidential transfers for the specified token.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_disable_token">disable_token</a>(aptos_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: <a href="../../aptos-trading/../topo-framework/doc/object.md#0x1_object_Object">object::Object</a>&lt;<a href="../../aptos-trading/../topo-framework/doc/fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_disable_token">disable_token</a>(topo_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: <a href="../../aptos-trading/../topo-framework/doc/object.md#0x1_object_Object">object::Object</a>&lt;<a href="../../aptos-trading/../topo-framework/doc/fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;)
 </code></pre>
 
 
@@ -1295,9 +1295,9 @@ Disables confidential transfers for the specified token.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_disable_token">disable_token</a>(
-    aptos_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: Object&lt;Metadata&gt;
+    topo_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: Object&lt;Metadata&gt;
 ) <b>acquires</b> <a href="confidential_asset.md#0x7_confidential_asset_FAConfig">FAConfig</a>, <a href="confidential_asset.md#0x7_confidential_asset_FAController">FAController</a> {
-    <a href="../../aptos-trading/../topo-framework/doc/system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="../../aptos-trading/../topo-framework/doc/system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
     <b>let</b> fa_config = <b>borrow_global_mut</b>&lt;<a href="confidential_asset.md#0x7_confidential_asset_FAConfig">FAConfig</a>&gt;(<a href="confidential_asset.md#0x7_confidential_asset_ensure_fa_config_exists">ensure_fa_config_exists</a>(token));
 
@@ -1320,7 +1320,7 @@ Sets the auditor's public key for the specified token.
 NOTE: Ensures that new_auditor_ek is a valid Ristretto255 point
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_set_auditor">set_auditor</a>(aptos_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: <a href="../../aptos-trading/../topo-framework/doc/object.md#0x1_object_Object">object::Object</a>&lt;<a href="../../aptos-trading/../topo-framework/doc/fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, new_auditor_ek: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_set_auditor">set_auditor</a>(topo_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: <a href="../../aptos-trading/../topo-framework/doc/object.md#0x1_object_Object">object::Object</a>&lt;<a href="../../aptos-trading/../topo-framework/doc/fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, new_auditor_ek: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -1330,9 +1330,9 @@ NOTE: Ensures that new_auditor_ek is a valid Ristretto255 point
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="confidential_asset.md#0x7_confidential_asset_set_auditor">set_auditor</a>(
-    aptos_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: Object&lt;Metadata&gt;, new_auditor_ek: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+    topo_framework: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, token: Object&lt;Metadata&gt;, new_auditor_ek: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 ) <b>acquires</b> <a href="confidential_asset.md#0x7_confidential_asset_FAConfig">FAConfig</a>, <a href="confidential_asset.md#0x7_confidential_asset_FAController">FAController</a> {
-    <a href="../../aptos-trading/../topo-framework/doc/system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="../../aptos-trading/../topo-framework/doc/system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
     <b>let</b> fa_config = <b>borrow_global_mut</b>&lt;<a href="confidential_asset.md#0x7_confidential_asset_FAConfig">FAConfig</a>&gt;(<a href="confidential_asset.md#0x7_confidential_asset_ensure_fa_config_exists">ensure_fa_config_exists</a>(token));
 

@@ -11,7 +11,7 @@ use crate::{
     },
     store_element, structure_from_ty_arg,
 };
-use aptos_gas_schedule::gas_params::natives::{aptos_framework::*, move_stdlib::*};
+use aptos_gas_schedule::gas_params::natives::{topo_framework::*, move_stdlib::*};
 use aptos_native_interface::{
     safely_pop_arg, SafeNativeContext, SafeNativeError, SafeNativeResult,
 };

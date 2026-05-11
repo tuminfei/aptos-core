@@ -255,8 +255,8 @@ module aptos_experimental::order_book {
 
     #[test_only]
     public fun set_up_test_with_id(): OrderBook<u64> {
-        aptos_framework::timestamp::set_time_has_started_for_testing(
-            &aptos_framework::account::create_signer_for_test(@0x1)
+        topo_framework::timestamp::set_time_has_started_for_testing(
+            &topo_framework::account::create_signer_for_test(@0x1)
         );
         new_order_book()
     }

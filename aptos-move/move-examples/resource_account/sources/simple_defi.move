@@ -18,10 +18,10 @@ module resource_account::simple_defi {
     use std::signer;
     use std::string;
 
-    use aptos_framework::account;
-    use aptos_framework::coin::{Self, Coin, MintCapability, BurnCapability};
-    use aptos_framework::resource_account;
-    use aptos_framework::topo_coin::{TopoCoin};
+    use topo_framework::account;
+    use topo_framework::coin::{Self, Coin, MintCapability, BurnCapability};
+    use topo_framework::resource_account;
+    use topo_framework::topo_coin::{TopoCoin};
 
     struct ModuleData has key {
         resource_signer_cap: account::SignerCapability,
@@ -105,9 +105,9 @@ module resource_account::simple_defi {
         init_module(resource_account);
     }
 
-    #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, framework = @aptos_framework)]
+    #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, framework = @topo_framework)]
     public entry fun test_exchange_to_and_exchange_from(origin_account: signer, resource_account: signer, framework: signer) acquires ModuleData {
-        use aptos_framework::topo_coin;
+        use topo_framework::topo_coin;
 
         let (topo_coin_burn_cap, topo_coin_mint_cap) = topo_coin::initialize_for_test(&framework);
         set_up_test(&origin_account, &resource_account);

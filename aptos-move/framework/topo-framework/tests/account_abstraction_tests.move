@@ -1,8 +1,8 @@
 #[test_only]
-module aptos_framework::account_abstraction_tests {
+module topo_framework::account_abstraction_tests {
     use std::signer;
-    use aptos_framework::auth_data::AbstractionAuthData;
-    use aptos_framework::object;
+    use topo_framework::auth_data::AbstractionAuthData;
+    use topo_framework::object;
 
     public fun invalid_authenticate(
         account: signer,

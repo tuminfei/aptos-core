@@ -119,7 +119,7 @@ pub fn generate_gas_upgrade_proposal(
         is_testnet,
         next_execution_hash,
         is_multi_step,
-        &["aptos_framework::gas_schedule"],
+        &["topo_framework::gas_schedule"],
         |writer| {
             let gas_schedule_blob = bcs::to_bytes(new_gas_schedule).unwrap();
             assert!(gas_schedule_blob.len() < 65536);

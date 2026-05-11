@@ -1,8 +1,8 @@
-module aptos_framework::base16 {
+module topo_framework::base16 {
 
     use std::vector;
 
-    friend aptos_framework::ethereum_derivable_account;
+    friend topo_framework::ethereum_derivable_account;
 
     // Convert a hex character to a u8
     public(friend) fun hex_char_to_u8(c: u8): u8 {

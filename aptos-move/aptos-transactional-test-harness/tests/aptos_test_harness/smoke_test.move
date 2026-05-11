@@ -3,9 +3,9 @@
 
 //# publish --private-key 56a26140eb233750cd14fb168c3eb4bd0782b099cde626ec8aff7f3cceb6364f
 module Alice::hello_world {
-    use aptos_framework::signer;
-    use aptos_framework::coin;
-    use aptos_framework::topo_coin::TopoCoin;
+    use topo_framework::signer;
+    use topo_framework::coin;
+    use topo_framework::topo_coin::TopoCoin;
     use std::string::{Self, String};
 
     struct ModuleData has key, store {

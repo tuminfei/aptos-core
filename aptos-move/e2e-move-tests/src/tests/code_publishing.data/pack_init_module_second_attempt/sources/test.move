@@ -1,6 +1,6 @@
 module 0xcafe::test {
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::topo_coin::TopoCoin;
+    use topo_framework::coin::{Self, Coin};
+    use topo_framework::topo_coin::TopoCoin;
 
     struct State has key {
         important_value: u64,

@@ -1,23 +1,23 @@
 /// This module defines a struct storing the metadata of the block and new block events.
-module aptos_framework::block {
+module topo_framework::block {
     use std::error;
     use std::vector;
     use std::option;
     use aptos_std::table_with_length::{Self, TableWithLength};
     use std::option::Option;
-    use aptos_framework::randomness;
-    use aptos_framework::decryption;
+    use topo_framework::randomness;
+    use topo_framework::decryption;
 
-    use aptos_framework::account;
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::reconfiguration;
-    use aptos_framework::reconfiguration_with_dkg;
-    use aptos_framework::stake;
-    use aptos_framework::state_storage;
-    use aptos_framework::system_addresses;
-    use aptos_framework::timestamp;
+    use topo_framework::account;
+    use topo_framework::event::{Self, EventHandle};
+    use topo_framework::reconfiguration;
+    use topo_framework::reconfiguration_with_dkg;
+    use topo_framework::stake;
+    use topo_framework::state_storage;
+    use topo_framework::system_addresses;
+    use topo_framework::timestamp;
 
-    friend aptos_framework::genesis;
+    friend topo_framework::genesis;
 
     const MAX_U64: u64 = 18446744073709551615;
 
@@ -90,15 +90,15 @@ module aptos_framework::block {
 
     /// This can only be called during Genesis.
     public(friend) fun initialize(
-        aptos_framework: &signer, epoch_interval_microsecs: u64
+        topo_framework: &signer, epoch_interval_microsecs: u64
     ) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert!(
             epoch_interval_microsecs > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL)
         );
 
         move_to<CommitHistory>(
-            aptos_framework,
+            topo_framework,
             CommitHistory {
                 max_capacity: 2000,
                 next_idx: 0,
@@ -107,15 +107,15 @@ module aptos_framework::block {
         );
 
         move_to<BlockResource>(
-            aptos_framework,
+            topo_framework,
             BlockResource {
                 height: 0,
                 epoch_interval: epoch_interval_microsecs,
                 new_block_events: account::new_event_handle<NewBlockEvent>(
-                    aptos_framework
+                    topo_framework
                 ),
                 update_epoch_interval_events: account::new_event_handle<
-                    UpdateEpochIntervalEvent>(aptos_framework)
+                    UpdateEpochIntervalEvent>(topo_framework)
             }
         );
     }
@@ -132,12 +132,12 @@ module aptos_framework::block {
     /// Update the epoch interval.
     /// Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
     public fun update_epoch_interval_microsecs(
-        aptos_framework: &signer, new_epoch_interval: u64
+        topo_framework: &signer, new_epoch_interval: u64
     ) acquires BlockResource {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert!(new_epoch_interval > 0, error::invalid_argument(EZERO_EPOCH_INTERVAL));
 
-        let block_resource = borrow_global_mut<BlockResource>(@aptos_framework);
+        let block_resource = borrow_global_mut<BlockResource>(@topo_framework);
         let old_epoch_interval = block_resource.epoch_interval;
         block_resource.epoch_interval = new_epoch_interval;
 
@@ -147,7 +147,7 @@ module aptos_framework::block {
     #[view]
     /// Return epoch interval in seconds.
     public fun get_epoch_interval_secs(): u64 acquires BlockResource {
-        borrow_global<BlockResource>(@aptos_framework).epoch_interval / 1000000
+        borrow_global<BlockResource>(@topo_framework).epoch_interval / 1000000
     }
 
     fun block_prologue_common(
@@ -174,7 +174,7 @@ module aptos_framework::block {
             proposer_index = option::some(stake::get_validator_index(proposer));
         };
 
-        let block_metadata_ref = borrow_global_mut<BlockResource>(@aptos_framework);
+        let block_metadata_ref = borrow_global_mut<BlockResource>(@topo_framework);
         block_metadata_ref.height = event::counter(&block_metadata_ref.new_block_events);
 
         let new_block_event = NewBlockEvent {
@@ -305,7 +305,7 @@ module aptos_framework::block {
     #[view]
     /// Get the current block height
     public fun get_current_block_height(): u64 acquires BlockResource {
-        borrow_global<BlockResource>(@aptos_framework).height
+        borrow_global<BlockResource>(@topo_framework).height
     }
 
     /// Emit the event and update height and global timestamp
@@ -314,8 +314,8 @@ module aptos_framework::block {
         event_handle: &mut EventHandle<NewBlockEvent>,
         new_block_event: NewBlockEvent
     ) acquires CommitHistory {
-        if (exists<CommitHistory>(@aptos_framework)) {
-            let commit_history_ref = borrow_global_mut<CommitHistory>(@aptos_framework);
+        if (exists<CommitHistory>(@topo_framework)) {
+            let commit_history_ref = borrow_global_mut<CommitHistory>(@topo_framework);
             let idx = commit_history_ref.next_idx;
             if (commit_history_ref.table.contains(idx)) {
                 commit_history_ref.table.remove(idx);
@@ -339,7 +339,7 @@ module aptos_framework::block {
     /// Emit a `NewBlockEvent` event. This function will be invoked by genesis directly to generate the very first
     /// reconfiguration event.
     fun emit_genesis_block_event(vm: signer) acquires BlockResource, CommitHistory {
-        let block_metadata_ref = borrow_global_mut<BlockResource>(@aptos_framework);
+        let block_metadata_ref = borrow_global_mut<BlockResource>(@topo_framework);
         let genesis_id = @0x0;
         emit_new_block_event(
             &vm,
@@ -363,7 +363,7 @@ module aptos_framework::block {
         vm_signer: &signer, fake_block_hash: address
     ) acquires BlockResource, CommitHistory {
         system_addresses::assert_vm(vm_signer);
-        let block_metadata_ref = borrow_global_mut<BlockResource>(@aptos_framework);
+        let block_metadata_ref = borrow_global_mut<BlockResource>(@topo_framework);
         block_metadata_ref.height = event::counter(&block_metadata_ref.new_block_events);
 
         emit_new_block_event(
@@ -389,22 +389,22 @@ module aptos_framework::block {
         initialize(account, epoch_interval_microsecs);
     }
 
-    #[test(aptos_framework = @aptos_framework)]
-    public entry fun test_update_epoch_interval(aptos_framework: signer) acquires BlockResource {
-        account::create_account_for_test(@aptos_framework);
-        initialize(&aptos_framework, 1);
-        assert!(borrow_global<BlockResource>(@aptos_framework).epoch_interval == 1, 0);
-        update_epoch_interval_microsecs(&aptos_framework, 2);
-        assert!(borrow_global<BlockResource>(@aptos_framework).epoch_interval == 2, 1);
+    #[test(topo_framework = @topo_framework)]
+    public entry fun test_update_epoch_interval(topo_framework: signer) acquires BlockResource {
+        account::create_account_for_test(@topo_framework);
+        initialize(&topo_framework, 1);
+        assert!(borrow_global<BlockResource>(@topo_framework).epoch_interval == 1, 0);
+        update_epoch_interval_microsecs(&topo_framework, 2);
+        assert!(borrow_global<BlockResource>(@topo_framework).epoch_interval == 2, 1);
     }
 
-    #[test(aptos_framework = @aptos_framework, account = @0x123)]
-    #[expected_failure(abort_code = 0x50003, location = aptos_framework::system_addresses)]
+    #[test(topo_framework = @topo_framework, account = @0x123)]
+    #[expected_failure(abort_code = 0x50003, location = topo_framework::system_addresses)]
     public entry fun test_update_epoch_interval_unauthorized_should_fail(
-        aptos_framework: signer, account: signer
+        topo_framework: signer, account: signer
     ) acquires BlockResource {
-        account::create_account_for_test(@aptos_framework);
-        initialize(&aptos_framework, 1);
+        account::create_account_for_test(@topo_framework);
+        initialize(&topo_framework, 1);
         update_epoch_interval_microsecs(&account, 2);
     }
 }

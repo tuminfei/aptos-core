@@ -7,13 +7,13 @@ use aptos_package_builder::PackageBuilder;
 use aptos_types::account_address::AccountAddress;
 
 #[test]
-fn topo_framework_dep_still_exposes_aptos_framework_namespace() {
+fn topo_framework_dep_exposes_topo_framework_namespace() {
     let mut builder = PackageBuilder::new("Package");
     builder.add_source(
         "rename_smoke.move",
         r#"
         module 0xcafe::rename_smoke {
-            use aptos_framework::chain_id;
+            use topo_framework::chain_id;
 
             entry fun verify_namespace(_s: &signer) {
                 let _chain_id = chain_id::get();

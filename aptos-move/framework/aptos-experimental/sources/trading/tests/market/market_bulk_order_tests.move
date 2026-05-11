@@ -160,7 +160,7 @@ module aptos_experimental::market_bulk_order_tests {
 
     #[
         test(
-            aptos_framework = @0x1,
+            topo_framework = @0x1,
             admin = @0x1,
             market_signer = @0x123,
             maker1 = @0x456,
@@ -168,14 +168,14 @@ module aptos_experimental::market_bulk_order_tests {
         )
     ]
     public fun test_self_matching_allowed(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         admin: &signer,
         market_signer: &signer,
         maker1: &signer,
         maker2: &signer
     ) {
         test_self_matching_allowed_helper(
-            aptos_framework,
+            topo_framework,
             admin,
             market_signer,
             maker1,

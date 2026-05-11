@@ -28,10 +28,10 @@ module poc_framework::poc_registry {
 
     use aptos_std::table::{Self, Table};
 
-    use aptos_framework::event;
-    use aptos_framework::fungible_asset::Metadata;
-    use aptos_framework::object;
-    use aptos_framework::system_addresses;
+    use topo_framework::event;
+    use topo_framework::fungible_asset::Metadata;
+    use topo_framework::object;
+    use topo_framework::system_addresses;
 
     // ========== 应用自身运行状态（由 Dapp 独立应用自行管控） ==========
     // 运行中：应用正常运营，可以发起可信贡献发放
@@ -178,8 +178,8 @@ module poc_framework::poc_registry {
 
     // 由 genesis 模块调用，在链创世时初始化注册中心。
     // 仅限 friend 模块（genesis）调用。
-    public(friend) fun initialize(aptos_framework: &signer) {
-        initialize_registry(aptos_framework);
+    public(friend) fun initialize(topo_framework: &signer) {
+        initialize_registry(topo_framework);
     }
 
     // 初始化注册中心资源。
@@ -768,11 +768,11 @@ module poc_framework::poc_registry {
     #[test_only]
     use std::string;
     #[test_only]
-    use aptos_framework::fungible_asset;
+    use topo_framework::fungible_asset;
     #[test_only]
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::primary_fungible_store;
     #[test_only]
-    use aptos_framework::timestamp;
+    use topo_framework::timestamp;
 
     // 测试：注册应用后，可通过 3 种地址维度正常反查到同一注册主体。
     // 验证注册后的默认状态：app_state = ACTIVE, poc_listing_status = REGISTERED。

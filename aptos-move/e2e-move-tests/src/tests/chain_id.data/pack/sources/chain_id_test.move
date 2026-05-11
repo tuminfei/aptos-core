@@ -1,7 +1,7 @@
 module 0x1::chain_id_test {
     use aptos_std::type_info;
-    use aptos_framework::topo_governance;
-    use aptos_framework::chain_id;
+    use topo_framework::topo_governance;
+    use topo_framework::chain_id;
     use std::features;
 
     /// Since tests in e2e-move-tests/ can only call entry functions which don't have return values, we must store
@@ -23,7 +23,7 @@ module 0x1::chain_id_test {
         topo_governance::force_end_epoch(sender);
     }
 
-    /// Fetches the chain ID (via aptos_framework::chain_id::get()) and stores it in the ChainIdStore resource.
+    /// Fetches the chain ID (via topo_framework::chain_id::get()) and stores it in the ChainIdStore resource.
     public entry fun store_chain_id_from_aptos_framework(_s: &signer) acquires ChainIdStore {
         let store = borrow_global_mut<ChainIdStore>(@0x1);
         store.id = chain_id::get();

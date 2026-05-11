@@ -1,4 +1,4 @@
-spec aptos_framework::object {
+spec topo_framework::object {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: It's not possible to create an object twice on the same address.
@@ -576,6 +576,6 @@ spec aptos_framework::object {
     spec fun spec_create_guid_object_address(source: address, creation_num: u64): address;
 
     spec fun spec_generate_signer_for_extending(ref: &ExtendRef): signer {
-        aptos_framework::create_signer::spec_create_signer(ref.self)
+        topo_framework::create_signer::spec_create_signer(ref.self)
     }
 }

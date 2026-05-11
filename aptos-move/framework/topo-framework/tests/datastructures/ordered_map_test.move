@@ -1,5 +1,5 @@
 #[test_only]
-module aptos_framework::ordered_map_test {
+module topo_framework::ordered_map_test {
     use std::ordered_map::{new, new_from};
     use std::option;
 
@@ -89,7 +89,7 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x20002, location = aptos_framework::ordered_map)] /// EKEY_ALREADY_EXISTS
+    #[expected_failure(abort_code = 0x20002, location = topo_framework::ordered_map)] /// EKEY_ALREADY_EXISTS
     fun test_add_all_mismatch() {
         new_from(vector[1, 3], vector[10]);
     }
@@ -102,13 +102,13 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10001, location = aptos_framework::ordered_map)] /// EKEY_ALREADY_EXISTS
+    #[expected_failure(abort_code = 0x10001, location = topo_framework::ordered_map)] /// EKEY_ALREADY_EXISTS
     fun test_new_from_duplicate() {
         new_from(vector[1, 3, 1, 5], vector[10, 30, 11, 50]);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x20002, location = aptos_framework::ordered_map)] /// EKEY_ALREADY_EXISTS
+    #[expected_failure(abort_code = 0x20002, location = topo_framework::ordered_map)] /// EKEY_ALREADY_EXISTS
     fun test_upsert_all_mismatch() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.upsert_all(vector[2], vector[20, 35]);
@@ -188,7 +188,7 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10001, location = aptos_framework::ordered_map)] /// EKEY_ALREADY_EXISTS
+    #[expected_failure(abort_code = 0x10001, location = topo_framework::ordered_map)] /// EKEY_ALREADY_EXISTS
     fun test_add_twice() {
         let map = new<u64, u64>();
         map.add(3, 1);
@@ -199,7 +199,7 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10002, location = aptos_framework::ordered_map)] /// EKEY_NOT_FOUND
+    #[expected_failure(abort_code = 0x10002, location = topo_framework::ordered_map)] /// EKEY_NOT_FOUND
     fun test_remove_twice_1() {
         let map = new<u64, u64>();
         map.add(3, 1);
@@ -210,7 +210,7 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10002, location = aptos_framework::ordered_map)] /// EKEY_NOT_FOUND
+    #[expected_failure(abort_code = 0x10002, location = topo_framework::ordered_map)] /// EKEY_NOT_FOUND
     fun test_remove_twice_2() {
         let map = new<u64, u64>();
         map.add(3, 1);
@@ -300,7 +300,7 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10001, location = aptos_framework::ordered_map)] /// EKEY_ALREADY_EXISTS
+    #[expected_failure(abort_code = 0x10001, location = topo_framework::ordered_map)] /// EKEY_ALREADY_EXISTS
     fun test_append_disjoint_abort() {
         let map = new_from(vector[1], vector[10]);
         let other = new_from(vector[1], vector[11]);
@@ -356,7 +356,7 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10002, location = aptos_framework::ordered_map)] /// EKEY_NOT_FOUND
+    #[expected_failure(abort_code = 0x10002, location = topo_framework::ordered_map)] /// EKEY_NOT_FOUND
     fun test_replace_key_inplace_not_found_1() {
         let map = new_from(vector[1, 3, 6], vector[10, 30, 50]);
         map.replace_key_inplace(&4, 5);
@@ -364,63 +364,63 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10002, location = aptos_framework::ordered_map)] /// EKEY_NOT_FOUND
+    #[expected_failure(abort_code = 0x10002, location = topo_framework::ordered_map)] /// EKEY_NOT_FOUND
     fun test_replace_key_inplace_not_found_2() {
         let map = new_from(vector[1, 3, 6], vector[10, 30, 50]);
         map.replace_key_inplace(&7, 8);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10004, location = aptos_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
+    #[expected_failure(abort_code = 0x10004, location = topo_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
     fun test_replace_key_inplace_not_in_order_1() {
         let map = new_from(vector[1, 3, 6], vector[10, 30, 50]);
         map.replace_key_inplace(&3, 7);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10004, location = aptos_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
+    #[expected_failure(abort_code = 0x10004, location = topo_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
     fun test_replace_key_inplace_not_in_order_2() {
         let map = new_from(vector[1, 3, 6], vector[10, 30, 50]);
         map.replace_key_inplace(&1, 3);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10004, location = aptos_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
+    #[expected_failure(abort_code = 0x10004, location = topo_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
     fun test_replace_key_inplace_not_in_order_3() {
         let map = new_from(vector[1, 3, 6], vector[10, 30, 50]);
         map.replace_key_inplace(&6, 3);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
     public fun test_iter_end_next_abort() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_end_iter().iter_next(&map);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
     public fun test_iter_end_borrow_key_abort() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_end_iter().iter_borrow_key(&map);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
     public fun test_iter_end_borrow_abort() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_end_iter().iter_borrow(&map);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
     public fun test_iter_end_borrow_mut_abort() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_end_iter().iter_borrow_mut(&mut map);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
     public fun test_iter_begin_prev_abort() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_begin_iter().iter_prev(&map);
@@ -451,7 +451,7 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
         public fun test_iter_remove_abort() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_end_iter().iter_remove(&mut map);
@@ -465,7 +465,7 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::ordered_map)] /// EITER_OUT_OF_BOUNDS
         public fun test_iter_replace_abort() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_end_iter().iter_replace(&mut map, 35);
@@ -496,28 +496,28 @@ module aptos_framework::ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10004, location = aptos_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
+    #[expected_failure(abort_code = 0x10004, location = topo_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
     public fun test_iter_add_abort_1() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_begin_iter().iter_add(&mut map, 1, 5);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10004, location = aptos_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
+    #[expected_failure(abort_code = 0x10004, location = topo_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
     public fun test_iter_add_abort_2() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_end_iter().iter_add(&mut map, 5, 55);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10004, location = aptos_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
+    #[expected_failure(abort_code = 0x10004, location = topo_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
     public fun test_iter_add_abort_3() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_begin_iter().iter_next(&map).iter_add(&mut map, 1, 15);
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10004, location = aptos_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
+    #[expected_failure(abort_code = 0x10004, location = topo_framework::ordered_map)] /// ENEW_KEY_NOT_IN_ORDER
     public fun test_iter_add_abort_4() {
         let map = new_from(vector[1, 3, 5], vector[10, 30, 50]);
         map.internal_new_begin_iter().iter_next(&map).iter_add(&mut map, 3, 25);

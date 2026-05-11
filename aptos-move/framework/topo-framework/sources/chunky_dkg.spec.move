@@ -1,9 +1,9 @@
-spec aptos_framework::chunky_dkg {
+spec topo_framework::chunky_dkg {
 
-    spec initialize(aptos_framework: &signer) {
+    spec initialize(topo_framework: &signer) {
         use std::signer;
-        let aptos_framework_addr = signer::address_of(aptos_framework);
-        aborts_if aptos_framework_addr != @aptos_framework;
+        let aptos_framework_addr = signer::address_of(topo_framework);
+        aborts_if aptos_framework_addr != @topo_framework;
     }
 
     spec start(
@@ -12,21 +12,21 @@ spec aptos_framework::chunky_dkg {
         dealer_validator_set: vector<ValidatorConsensusInfo>,
         target_validator_set: vector<ValidatorConsensusInfo>,
     ) {
-        aborts_if !exists<ChunkyDKGState>(@aptos_framework);
-        aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
+        aborts_if !exists<ChunkyDKGState>(@topo_framework);
+        aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@topo_framework);
     }
 
     spec finish(aggregated_subtranscript: vector<u8>) {
         use std::option;
-        requires exists<ChunkyDKGState>(@aptos_framework);
-        requires option::is_some(global<ChunkyDKGState>(@aptos_framework).in_progress);
+        requires exists<ChunkyDKGState>(@topo_framework);
+        requires option::is_some(global<ChunkyDKGState>(@topo_framework).in_progress);
         aborts_if false;
     }
 
     spec try_clear_incomplete_session(fx: &signer) {
         use std::signer;
         let addr = signer::address_of(fx);
-        aborts_if addr != @aptos_framework;
+        aborts_if addr != @topo_framework;
     }
 
     spec incomplete_session(): Option<ChunkyDKGSessionState> {

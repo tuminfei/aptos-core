@@ -120,7 +120,7 @@ Only called during genesis.
 Publishes the Version config.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="version.md#0x1_version_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, initial_version: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="version.md#0x1_version_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, initial_version: u64)
 </code></pre>
 
 
@@ -129,13 +129,13 @@ Publishes the Version config.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="version.md#0x1_version_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, initial_version: u64) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="version.md#0x1_version_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, initial_version: u64) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
-    <b>move_to</b>(aptos_framework, <a href="version.md#0x1_version_Version">Version</a> { major: initial_version });
+    <b>move_to</b>(topo_framework, <a href="version.md#0x1_version_Version">Version</a> { major: initial_version });
     // Give aptos framework <a href="account.md#0x1_account">account</a> <a href="../../aptos-stdlib/doc/capability.md#0x1_capability">capability</a> <b>to</b> call set <a href="version.md#0x1_version">version</a>. This allows on chain governance <b>to</b> do it through
     // control of the aptos framework <a href="account.md#0x1_account">account</a>.
-    <b>move_to</b>(aptos_framework, <a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a> {});
+    <b>move_to</b>(topo_framework, <a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a> {});
 }
 </code></pre>
 
@@ -167,10 +167,10 @@ TODO: update all the tests that reference this function, then disable this funct
     <b>assert</b>!(<b>exists</b>&lt;<a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>)), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="version.md#0x1_version_ENOT_AUTHORIZED">ENOT_AUTHORIZED</a>));
     <a href="chain_status.md#0x1_chain_status_assert_genesis">chain_status::assert_genesis</a>();
 
-    <b>let</b> old_major = <b>borrow_global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework).major;
+    <b>let</b> old_major = <b>borrow_global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework).major;
     <b>assert</b>!(old_major &lt; major, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="version.md#0x1_version_EINVALID_MAJOR_VERSION_NUMBER">EINVALID_MAJOR_VERSION_NUMBER</a>));
 
-    <b>let</b> config = <b>borrow_global_mut</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework);
+    <b>let</b> config = <b>borrow_global_mut</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework);
     config.major = major;
 
     // Need <b>to</b> trigger <a href="reconfiguration.md#0x1_reconfiguration">reconfiguration</a> so validator nodes can sync on the updated <a href="version.md#0x1_version">version</a>.
@@ -188,8 +188,8 @@ TODO: update all the tests that reference this function, then disable this funct
 
 Used in on-chain governances to update the major version for the next epoch.
 Example usage:
-- <code>aptos_framework::version::set_for_next_epoch(&framework_signer, new_version);</code>
-- <code>aptos_framework::topo_governance::reconfigure(&framework_signer);</code>
+- <code>topo_framework::version::set_for_next_epoch(&framework_signer, new_version);</code>
+- <code>topo_framework::topo_governance::reconfigure(&framework_signer);</code>
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="version.md#0x1_version_set_for_next_epoch">set_for_next_epoch</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, major: u64)
@@ -203,7 +203,7 @@ Example usage:
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="version.md#0x1_version_set_for_next_epoch">set_for_next_epoch</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, major: u64) <b>acquires</b> <a href="version.md#0x1_version_Version">Version</a> {
     <b>assert</b>!(<b>exists</b>&lt;<a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>)), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="version.md#0x1_version_ENOT_AUTHORIZED">ENOT_AUTHORIZED</a>));
-    <b>let</b> old_major = <b>borrow_global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework).major;
+    <b>let</b> old_major = <b>borrow_global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework).major;
     <b>assert</b>!(old_major &lt; major, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="version.md#0x1_version_EINVALID_MAJOR_VERSION_NUMBER">EINVALID_MAJOR_VERSION_NUMBER</a>));
     <a href="config_buffer.md#0x1_config_buffer_upsert">config_buffer::upsert</a>(<a href="version.md#0x1_version_Version">Version</a> {major});
 }
@@ -233,8 +233,8 @@ Only used in reconfigurations to apply the pending <code><a href="version.md#0x1
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
     <b>if</b> (<a href="config_buffer.md#0x1_config_buffer_does_exist">config_buffer::does_exist</a>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;()) {
         <b>let</b> new_value = <a href="config_buffer.md#0x1_config_buffer_extract_v2">config_buffer::extract_v2</a>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;();
-        <b>if</b> (<b>exists</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework)) {
-            *<b>borrow_global_mut</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework) = new_value;
+        <b>if</b> (<b>exists</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework)) {
+            *<b>borrow_global_mut</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework) = new_value;
         } <b>else</b> {
             <b>move_to</b>(framework, new_value);
         }
@@ -326,7 +326,7 @@ to update the version.
 ### Function `initialize`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="version.md#0x1_version_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, initial_version: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="version.md#0x1_version_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, initial_version: u64)
 </code></pre>
 
 
@@ -334,13 +334,13 @@ Abort if resource already exists in <code>@aptos_framwork</code> when initializi
 
 
 <pre><code>// This enforces <a id="high-level-req-1" href="#high-level-req">high-level requirement 1</a>:
-<b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework) != @aptos_framework;
-<b>aborts_if</b> <b>exists</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework);
-<b>aborts_if</b> <b>exists</b>&lt;<a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a>&gt;(@aptos_framework);
-<b>ensures</b> <b>exists</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework);
-<b>ensures</b> <b>exists</b>&lt;<a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a>&gt;(@aptos_framework);
-<b>ensures</b> <b>global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework) == <a href="version.md#0x1_version_Version">Version</a> { major: initial_version };
-<b>ensures</b> <b>global</b>&lt;<a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a>&gt;(@aptos_framework) == <a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a> {};
+<b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework) != @topo_framework;
+<b>aborts_if</b> <b>exists</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework);
+<b>aborts_if</b> <b>exists</b>&lt;<a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a>&gt;(@topo_framework);
+<b>ensures</b> <b>exists</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework);
+<b>ensures</b> <b>exists</b>&lt;<a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a>&gt;(@topo_framework);
+<b>ensures</b> <b>global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework) == <a href="version.md#0x1_version_Version">Version</a> { major: initial_version };
+<b>ensures</b> <b>global</b>&lt;<a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a>&gt;(@topo_framework) == <a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a> {};
 </code></pre>
 
 
@@ -360,13 +360,13 @@ Abort if resource already exists in <code>@aptos_framwork</code> when initializi
 <b>include</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigRequirement">staking_config::StakingRewardsConfigRequirement</a>;
 <b>requires</b> <a href="chain_status.md#0x1_chain_status_is_genesis">chain_status::is_genesis</a>();
 <b>requires</b> <a href="timestamp.md#0x1_timestamp_spec_now_microseconds">timestamp::spec_now_microseconds</a>() &gt;= <a href="reconfiguration.md#0x1_reconfiguration_last_reconfiguration_time">reconfiguration::last_reconfiguration_time</a>();
-<b>requires</b> <b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(@aptos_framework);
+<b>requires</b> <b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(@topo_framework);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>));
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework);
-<b>let</b> old_major = <b>global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework).major;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework);
+<b>let</b> old_major = <b>global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework).major;
 // This enforces <a id="high-level-req-2" href="#high-level-req">high-level requirement 2</a>:
 <b>aborts_if</b> !(old_major &lt; major);
-<b>ensures</b> <b>global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework).major == major;
+<b>ensures</b> <b>global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework).major == major;
 </code></pre>
 
 
@@ -383,9 +383,9 @@ Abort if resource already exists in <code>@aptos_framwork</code> when initializi
 
 
 <pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="version.md#0x1_version_SetVersionCapability">SetVersionCapability</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>));
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework);
-<b>aborts_if</b> <b>global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@aptos_framework).major &gt;= major;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="config_buffer.md#0x1_config_buffer_PendingConfigs">config_buffer::PendingConfigs</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework);
+<b>aborts_if</b> <b>global</b>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;(@topo_framework).major &gt;= major;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="config_buffer.md#0x1_config_buffer_PendingConfigs">config_buffer::PendingConfigs</a>&gt;(@topo_framework);
 </code></pre>
 
 
@@ -401,7 +401,7 @@ Abort if resource already exists in <code>@aptos_framwork</code> when initializi
 
 
 
-<pre><code><b>requires</b> @aptos_framework == std::signer::address_of(framework);
+<pre><code><b>requires</b> @topo_framework == std::signer::address_of(framework);
 <b>include</b> <a href="config_buffer.md#0x1_config_buffer_OnNewEpochRequirement">config_buffer::OnNewEpochRequirement</a>&lt;<a href="version.md#0x1_version_Version">Version</a>&gt;;
 <b>aborts_if</b> <b>false</b>;
 </code></pre>

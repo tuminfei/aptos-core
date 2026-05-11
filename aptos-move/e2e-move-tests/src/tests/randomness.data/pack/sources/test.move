@@ -1,7 +1,7 @@
 module 0x1::test {
-    use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::randomness;
-    use aptos_framework::coin;
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::randomness;
+    use topo_framework::coin;
 
     entry fun ok_if_not_annotated_and_not_using_randomness() {
         // Do nothing.

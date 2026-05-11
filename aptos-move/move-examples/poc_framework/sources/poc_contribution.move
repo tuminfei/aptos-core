@@ -33,11 +33,11 @@ module poc_framework::poc_contribution {
     use std::error;
     use std::signer;
 
-    use aptos_framework::event;
-    use aptos_framework::fungible_asset::Metadata;
-    use aptos_framework::object;
+    use topo_framework::event;
+    use topo_framework::fungible_asset::Metadata;
+    use topo_framework::object;
     use poc_framework::poc_registry;
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::primary_fungible_store;
 
     // ========== 错误码 ==========
     /// 发放数量不能为 0

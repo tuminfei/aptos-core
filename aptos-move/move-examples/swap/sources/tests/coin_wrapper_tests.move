@@ -1,8 +1,8 @@
 #[test_only]
 module swap::coin_wrapper_tests {
-    use aptos_framework::account;
-    use aptos_framework::coin::{Self, Coin, FakeMoney};
-    use aptos_framework::fungible_asset::{Self, FungibleAsset};
+    use topo_framework::account;
+    use topo_framework::coin::{Self, Coin, FakeMoney};
+    use topo_framework::fungible_asset::{Self, FungibleAsset};
     use swap::coin_wrapper;
     use swap::test_helpers;
     use std::signer;

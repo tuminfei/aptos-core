@@ -3,15 +3,15 @@
 /// the constructor of `Aggregator` struct so that only a system account
 /// can initialize one. In the future, this might change and aggregators
 /// can be enabled for the public.
-module aptos_framework::aggregator_factory {
+module topo_framework::aggregator_factory {
     use std::error;
 
-    use aptos_framework::system_addresses;
-    use aptos_framework::aggregator::Aggregator;
+    use topo_framework::system_addresses;
+    use topo_framework::aggregator::Aggregator;
     use aptos_std::table::{Self, Table};
 
-    friend aptos_framework::genesis;
-    friend aptos_framework::optional_aggregator;
+    friend topo_framework::genesis;
+    friend topo_framework::optional_aggregator;
 
     /// Aggregator factory is not published yet.
     const EAGGREGATOR_FACTORY_NOT_FOUND: u64 = 1;
@@ -29,22 +29,22 @@ module aptos_framework::aggregator_factory {
     }
 
     /// Creates a new factory for aggregators. Can only be called during genesis.
-    public(friend) fun initialize_aggregator_factory(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public(friend) fun initialize_aggregator_factory(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
         let aggregator_factory = AggregatorFactory {
             phantom_table: table::new()
         };
-        move_to(aptos_framework, aggregator_factory);
+        move_to(topo_framework, aggregator_factory);
     }
 
     /// Creates a new aggregator instance which overflows on exceeding a `limit`.
     public(friend) fun create_aggregator_internal(): Aggregator acquires AggregatorFactory {
         assert!(
-            exists<AggregatorFactory>(@aptos_framework),
+            exists<AggregatorFactory>(@topo_framework),
             error::not_found(EAGGREGATOR_FACTORY_NOT_FOUND)
         );
 
-        let aggregator_factory = borrow_global_mut<AggregatorFactory>(@aptos_framework);
+        let aggregator_factory = borrow_global_mut<AggregatorFactory>(@topo_framework);
         new_aggregator(aggregator_factory, MAX_U128)
     }
 
@@ -72,12 +72,12 @@ module aptos_framework::aggregator_factory {
     }
 
     #[test_only]
-    public fun initialize_aggregator_factory_for_test(aptos_framework: &signer) {
-        initialize_aggregator_factory(aptos_framework);
+    public fun initialize_aggregator_factory_for_test(topo_framework: &signer) {
+        initialize_aggregator_factory(topo_framework);
     }
 
     #[test_only]
     public fun aggregator_factory_exists_for_testing(): bool {
-        exists<AggregatorFactory>(@aptos_framework)
+        exists<AggregatorFactory>(@topo_framework)
     }
 }

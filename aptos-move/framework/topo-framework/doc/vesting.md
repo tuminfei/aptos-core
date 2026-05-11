@@ -3812,7 +3812,7 @@ This address should be deterministic for the same admin and vesting contract cre
 <pre><code>// This enforces <a id="high-level-req-6" href="#high-level-req">high-level requirement 6</a>:
 <b>aborts_if</b> !(len(schedule) &gt; 0);
 <b>aborts_if</b> !(period_duration &gt; 0);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 <b>aborts_if</b> !(start_timestamp_secs &gt;= <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>());
 </code></pre>
 
@@ -3831,7 +3831,7 @@ This address should be deterministic for the same admin and vesting contract cre
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
 // This enforces <a id="high-level-req-10" href="#high-level-req">high-level requirement 10</a>:
-<b>aborts_if</b> withdrawal_address == @aptos_framework || withdrawal_address == @vm_reserved;
+<b>aborts_if</b> withdrawal_address == @topo_framework || withdrawal_address == @vm_reserved;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_Account">account::Account</a>&gt;(withdrawal_address);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;TopoCoin&gt;&gt;(withdrawal_address);
 <b>aborts_if</b> len(shareholders) == 0;
@@ -4451,8 +4451,8 @@ This address should be deterministic for the same admin and vesting contract cre
     <b>let</b> pool_address_1 = <a href="staking_contract.md#0x1_staking_contract">staking_contract</a>.owner_cap.pool_address;
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(pool_address_1);
     <b>let</b> stake_pool_1 = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(pool_address_1);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">stake::ValidatorSet</a>&gt;(@aptos_framework);
-    <b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">stake::ValidatorSet</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">stake::ValidatorSet</a>&gt;(@topo_framework);
+    <b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">stake::ValidatorSet</a>&gt;(@topo_framework);
     <b>let</b> inactive_state = !<a href="stake.md#0x1_stake_spec_contains">stake::spec_contains</a>(validator_set.pending_active, pool_address_1)
         && !<a href="stake.md#0x1_stake_spec_contains">stake::spec_contains</a>(validator_set.active_validators, pool_address_1)
         && !<a href="stake.md#0x1_stake_spec_contains">stake::spec_contains</a>(validator_set.pending_inactive, pool_address_1);

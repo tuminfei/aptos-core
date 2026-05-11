@@ -96,7 +96,7 @@ Conversion factor between seconds and microseconds
 Marks that time has started. This can only be called from genesis and with the aptos framework account.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="timestamp.md#0x1_timestamp_set_time_has_started">set_time_has_started</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="timestamp.md#0x1_timestamp_set_time_has_started">set_time_has_started</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -105,10 +105,10 @@ Marks that time has started. This can only be called from genesis and with the a
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="timestamp.md#0x1_timestamp_set_time_has_started">set_time_has_started</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="timestamp.md#0x1_timestamp_set_time_has_started">set_time_has_started</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>let</b> timer = <a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">CurrentTimeMicroseconds</a> { microseconds: 0 };
-    <b>move_to</b>(aptos_framework, timer);
+    <b>move_to</b>(topo_framework, timer);
 }
 </code></pre>
 
@@ -140,7 +140,7 @@ Updates the wall clock time by consensus. Requires VM privilege and will be invo
     // Can only be invoked by AptosVM <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>.
     <a href="system_addresses.md#0x1_system_addresses_assert_vm">system_addresses::assert_vm</a>(<a href="account.md#0x1_account">account</a>);
 
-    <b>let</b> global_timer = <b>borrow_global_mut</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+    <b>let</b> global_timer = <b>borrow_global_mut</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">CurrentTimeMicroseconds</a>&gt;(@topo_framework);
     <b>let</b> now = global_timer.microseconds;
     <b>if</b> (proposer == @vm_reserved) {
         // NIL <a href="block.md#0x1_block">block</a> <b>with</b> null <b>address</b> <b>as</b> proposer. Timestamp must be equal.
@@ -175,7 +175,7 @@ Gets the current time in microseconds.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="timestamp.md#0x1_timestamp_now_microseconds">now_microseconds</a>(): u64 <b>acquires</b> <a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">CurrentTimeMicroseconds</a> {
-    <b>borrow_global</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">CurrentTimeMicroseconds</a>&gt;(@aptos_framework).microseconds
+    <b>borrow_global</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">CurrentTimeMicroseconds</a>&gt;(@topo_framework).microseconds
 }
 </code></pre>
 
@@ -237,7 +237,7 @@ Gets the current time in seconds.
 <td>2</td>
 <td>The global wall clock resource should only be owned by the Aptos framework.</td>
 <td>High</td>
-<td>The function set_time_has_started ensures that only the aptos_framework account can possess the CurrentTimeMicroseconds resource using the assert_aptos_framework function.</td>
+<td>The function set_time_has_started ensures that only the topo_framework account can possess the CurrentTimeMicroseconds resource using the assert_aptos_framework function.</td>
 <td>Formally verified via <a href="#high-level-req-2">module</a>.</td>
 </tr>
 
@@ -268,7 +268,7 @@ Gets the current time in seconds.
 
 
 <pre><code>// This enforces <a id="high-level-req-1" href="#high-level-req">high-level requirement 1</a> and <a id="high-level-req-2" href="#high-level-req">high-level requirement 2</a>:
-<b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt; <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt; <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 </code></pre>
 
 
@@ -314,7 +314,7 @@ Gets the current time in seconds.
 
 
 <pre><code><b>fun</b> <a href="timestamp.md#0x1_timestamp_spec_now_microseconds">spec_now_microseconds</a>(): u64 {
-   <b>global</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">CurrentTimeMicroseconds</a>&gt;(@aptos_framework).microseconds
+   <b>global</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">CurrentTimeMicroseconds</a>&gt;(@topo_framework).microseconds
 }
 </code></pre>
 

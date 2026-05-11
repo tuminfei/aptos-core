@@ -16,9 +16,9 @@
 /// - Solflare
 /// - Backpack
 /// - OKX
-module aptos_framework::solana_derivable_account {
-    use aptos_framework::auth_data::AbstractionAuthData;
-    use aptos_framework::common_account_abstractions_utils::{construct_message, daa_authenticate};
+module topo_framework::solana_derivable_account {
+    use topo_framework::auth_data::AbstractionAuthData;
+    use topo_framework::common_account_abstractions_utils::{construct_message, daa_authenticate};
     use aptos_std::ed25519::{
         Self,
         new_signature_from_bytes,
@@ -174,7 +174,7 @@ module aptos_framework::solana_derivable_account {
     #[test_only]
     use std::string::{String, utf8};
     #[test_only]
-    use aptos_framework::auth_data::{create_derivable_auth_data};
+    use topo_framework::auth_data::{create_derivable_auth_data};
     #[test_only]
     use std::chain_id;
 

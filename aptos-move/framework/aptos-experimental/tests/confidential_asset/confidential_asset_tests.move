@@ -5,12 +5,12 @@ module aptos_experimental::confidential_asset_tests {
     use std::signer;
     use std::string::utf8;
     use aptos_std::ristretto255::Scalar;
-    use aptos_framework::account;
-    use aptos_framework::chain_id;
-    use aptos_framework::coin;
-    use aptos_framework::fungible_asset::{Self, Metadata};
-    use aptos_framework::object::{Self, Object};
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::account;
+    use topo_framework::chain_id;
+    use topo_framework::coin;
+    use topo_framework::fungible_asset::{Self, Metadata};
+    use topo_framework::object::{Self, Object};
+    use topo_framework::primary_fungible_store;
 
     use aptos_experimental::confidential_asset;
     use aptos_experimental::confidential_balance;
@@ -292,7 +292,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             fa = @0xfa,
             alice = @0xa1,
             bob = @0xb0
@@ -346,7 +346,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             fa = @0xfa,
             alice = @0xa1,
             bob = @0xb0
@@ -402,7 +402,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             fa = @0xfa,
             alice = @0xa1,
             bob = @0xb0
@@ -468,7 +468,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             fa = @0xfa,
             alice = @0xa1,
             bob = @0xb0
@@ -553,7 +553,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             fa = @0xfa,
             alice = @0xa1,
             bob = @0xb0
@@ -618,7 +618,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             fa = @0xfa,
             alice = @0xa1,
             bob = @0xb0
@@ -679,7 +679,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             fa = @0xfa,
             alice = @0xa1,
             bob = @0xb0
@@ -750,7 +750,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             fa = @0xfa,
             alice = @0xa1
         )
@@ -785,7 +785,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             fa = @0xfa,
             alice = @0xa1
         )
@@ -820,7 +820,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             alice = @0xa1
         )
     ]
@@ -866,7 +866,7 @@ module aptos_experimental::confidential_asset_tests {
     #[
         test(
             confidential_asset = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             alice = @0xa1
         )
     ]

@@ -34,7 +34,7 @@
 //   ACTIVE → STOPPED   (stop_app, irreversible)
 //   PAUSED → STOPPED   (stop_app, irreversible)
 //
-// POC inclusion status (controlled by @aptos_framework / DAO governance):
+// POC inclusion status (controlled by @topo_framework / DAO governance):
 //   REGISTERED → WHITELISTED  (whitelist_app_for_poc)
 //   WHITELISTED → SUSPENDED   (suspend_poc_listing)
 //   SUSPENDED → WHITELISTED   (whitelist_app_for_poc)
@@ -42,17 +42,17 @@
 //
 // An application can emit trusted ContributionEvents only when BOTH:
 //   app_state == ACTIVE  AND  poc_listing_status == WHITELISTED
-module aptos_framework::poc_registry {
+module topo_framework::poc_registry {
     use std::error;
     use std::signer;
     use std::string::String;
 
     use aptos_std::table::{Self, Table};
 
-    use aptos_framework::event;
-    use aptos_framework::fungible_asset::Metadata;
-    use aptos_framework::object;
-    use aptos_framework::system_addresses;
+    use topo_framework::event;
+    use topo_framework::fungible_asset::Metadata;
+    use topo_framework::object;
+    use topo_framework::system_addresses;
 
     // ========== App Operational State (controlled by app_admin) ==========
     // ACTIVE: Application is running normally; trusted contribution events can be emitted
@@ -64,7 +64,7 @@ module aptos_framework::poc_registry {
     //          and cannot be restored to ACTIVE or PAUSED
     const APP_STATE_STOPPED: u8 = 3;
 
-    // ========== Platform POC Inclusion Status (controlled by @aptos_framework / DAO governance) ==========
+    // ========== Platform POC Inclusion Status (controlled by @topo_framework / DAO governance) ==========
     // REGISTERED: Application has completed registration but has not yet been included in the POC power system.
     //             Contribution events from this app are NOT counted toward POC power by off-chain indexers.
     const POC_LISTING_STATUS_REGISTERED: u8 = 1;
@@ -115,7 +115,7 @@ module aptos_framework::poc_registry {
 
     // ========== Core Data Structures ==========
 
-    /// Global registry, stored under @aptos_framework, initialized at genesis.
+    /// Global registry, stored under @topo_framework, initialized at genesis.
     ///
     /// Maintains 4 lookup tables to support reverse-lookup from any of:
     /// admin address, contract address, custody address, or equity token address
@@ -153,12 +153,12 @@ module aptos_framework::poc_registry {
         /// Controlled exclusively by the app_admin.
         app_state: u8,
         /// Platform POC inclusion status (POC_LISTING_STATUS_REGISTERED / WHITELISTED / SUSPENDED).
-        /// Controlled by the chain's DAO governance organization (currently @aptos_framework).
+        /// Controlled by the chain's DAO governance organization (currently @topo_framework).
         poc_listing_status: u8,
         /// Application's official website or authoritative information link
         metadata_uri: String,
         /// Effective weight in per-basis-points (0–10000). 10000 = 100% weight.
-        /// Controlled by @aptos_framework / DAO governance to adjust the app's actual contribution weight.
+        /// Controlled by @topo_framework / DAO governance to adjust the app's actual contribution weight.
         effective_weight_pbs: u64,
     }
 
@@ -226,16 +226,16 @@ module aptos_framework::poc_registry {
 
     /// Called by the genesis module to initialize the registry at chain genesis.
     /// Only callable by friend modules (genesis).
-    friend fun initialize(aptos_framework: &signer) {
-        initialize_registry(aptos_framework);
+    friend fun initialize(topo_framework: &signer) {
+        initialize_registry(topo_framework);
     }
 
     /// Initialize the Registry resource.
-    /// Only callable by @aptos_framework. Idempotent — skips if already initialized.
-    public entry fun initialize_registry(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        if (!exists<Registry>(@aptos_framework)) {
-            move_to(aptos_framework, Registry {
+    /// Only callable by @topo_framework. Idempotent — skips if already initialized.
+    public entry fun initialize_registry(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        if (!exists<Registry>(@topo_framework)) {
+            move_to(topo_framework, Registry {
                 apps: table::new(),
                 app_address_to_admin: table::new(),
                 custody_address_to_admin: table::new(),
@@ -276,10 +276,10 @@ module aptos_framework::poc_registry {
     ) acquires Registry {
         let app_admin_address = signer::address_of(app_admin);
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global_mut<Registry>(@aptos_framework);
+        let registry = borrow_global_mut<Registry>(@topo_framework);
 
         assert!(
             !registry.apps.contains(app_admin_address),
@@ -344,10 +344,10 @@ module aptos_framework::poc_registry {
         };
 
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global_mut<Registry>(@aptos_framework);
+        let registry = borrow_global_mut<Registry>(@topo_framework);
         assert!(
             !registry.app_address_to_admin.contains(new_app_address),
             error::already_exists(EAPP_ADDRESS_ALREADY_EXISTS),
@@ -392,10 +392,10 @@ module aptos_framework::poc_registry {
         };
 
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global_mut<Registry>(@aptos_framework);
+        let registry = borrow_global_mut<Registry>(@topo_framework);
         assert!(
             !registry.equity_token_to_admin.contains(new_equity_token_address),
             error::already_exists(EEQUITY_TOKEN_ALREADY_EXISTS),
@@ -436,10 +436,10 @@ module aptos_framework::poc_registry {
         };
 
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global_mut<Registry>(@aptos_framework);
+        let registry = borrow_global_mut<Registry>(@topo_framework);
         assert!(
             !registry.custody_address_to_admin.contains(new_custody_address),
             error::already_exists(ECUSTODY_ADDRESS_ALREADY_EXISTS),
@@ -490,21 +490,21 @@ module aptos_framework::poc_registry {
         update_app_state(signer::address_of(app_admin), APP_STATE_STOPPED);
     }
 
-    // ========== Platform POC Inclusion Status Management (controlled by @aptos_framework / DAO governance) ==========
+    // ========== Platform POC Inclusion Status Management (controlled by @topo_framework / DAO governance) ==========
 
     /// Set the POC inclusion status for an application.
     ///
-    /// Only callable by @aptos_framework (currently centralized governance; can be migrated to DAO later).
+    /// Only callable by @topo_framework (currently centralized governance; can be migrated to DAO later).
     /// Valid values: REGISTERED / WHITELISTED / SUSPENDED.
     ///
     /// This is the master setter; `whitelist_app_for_poc` and `suspend_poc_listing` are
     /// convenience wrappers around this function.
     public entry fun set_poc_listing_status(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         app_admin: address,
         new_poc_listing_status: u8,
     ) acquires Registry {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_valid_poc_listing_status(new_poc_listing_status);
         update_poc_listing_status(app_admin, new_poc_listing_status);
     }
@@ -513,46 +513,46 @@ module aptos_framework::poc_registry {
     ///
     /// While suspended, the application's contribution events are NOT counted toward POC power.
     /// The suspension can be lifted by calling `whitelist_app_for_poc` after investigation.
-    /// Only callable by @aptos_framework.
+    /// Only callable by @topo_framework.
     public entry fun suspend_poc_listing(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         app_admin: address,
     ) acquires Registry {
-        set_poc_listing_status(aptos_framework, app_admin, POC_LISTING_STATUS_SUSPENDED);
+        set_poc_listing_status(topo_framework, app_admin, POC_LISTING_STATUS_SUSPENDED);
     }
 
     /// Add an application to the POC whitelist (WHITELISTED / active state).
     ///
     /// After whitelisting, contribution events emitted by this application are scanned
     /// by off-chain indexers and counted toward POC power, which can participate in governance voting.
-    /// Only callable by @aptos_framework.
+    /// Only callable by @topo_framework.
     public entry fun whitelist_app_for_poc(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         app_admin: address,
     ) acquires Registry {
-        set_poc_listing_status(aptos_framework, app_admin, POC_LISTING_STATUS_WHITELISTED);
+        set_poc_listing_status(topo_framework, app_admin, POC_LISTING_STATUS_WHITELISTED);
     }
 
     /// Set the effective weight for an application (in per-basis-points, 0–10000).
     ///
-    /// Only callable by @aptos_framework (DAO governance).
+    /// Only callable by @topo_framework (DAO governance).
     /// 10000 means 100% weight (full contribution counted); 5000 means 50%, etc.
     /// Idempotent: if the new value equals the current value, returns without emitting an event.
     public entry fun set_effective_weight_pbs(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         app_admin: address,
         new_effective_weight_pbs: u64,
     ) acquires Registry {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert!(
             new_effective_weight_pbs <= MAX_EFFECTIVE_WEIGHT_PBS,
             error::invalid_argument(EINVALID_EFFECTIVE_WEIGHT),
         );
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global_mut<Registry>(@aptos_framework);
+        let registry = borrow_global_mut<Registry>(@topo_framework);
         let info = borrow_app_info_mut(registry, app_admin);
         let old_effective_weight_pbs = info.effective_weight_pbs;
         if (old_effective_weight_pbs == new_effective_weight_pbs) {
@@ -573,10 +573,10 @@ module aptos_framework::poc_registry {
     #[view]
     /// Check whether an application is registered under the given admin address.
     public fun exists_app(app_admin: address): bool acquires Registry {
-        if (!exists<Registry>(@aptos_framework)) {
+        if (!exists<Registry>(@topo_framework)) {
             return false
         };
-        borrow_global<Registry>(@aptos_framework).apps.contains(app_admin)
+        borrow_global<Registry>(@topo_framework).apps.contains(app_admin)
     }
 
     #[view]
@@ -584,7 +584,7 @@ module aptos_framework::poc_registry {
     public fun exists_apps(app_admins: vector<address>): vector<bool> acquires Registry {
         let exists_flags = vector[];
         let len = app_admins.length();
-        if (!exists<Registry>(@aptos_framework)) {
+        if (!exists<Registry>(@topo_framework)) {
             let i = 0;
             while (i < len) {
                 exists_flags.push_back(false);
@@ -592,7 +592,7 @@ module aptos_framework::poc_registry {
             };
             return exists_flags
         };
-        let registry = borrow_global<Registry>(@aptos_framework);
+        let registry = borrow_global<Registry>(@topo_framework);
         let i = 0;
         while (i < len) {
             exists_flags.push_back(registry.apps.contains(*app_admins.borrow(i)));
@@ -606,10 +606,10 @@ module aptos_framework::poc_registry {
     public fun get_app_infos_by_admins(
         app_admins: vector<address>,
     ): vector<AppInfo> acquires Registry {
-        if (!exists<Registry>(@aptos_framework)) {
+        if (!exists<Registry>(@topo_framework)) {
             return vector[]
         };
-        let registry = borrow_global<Registry>(@aptos_framework);
+        let registry = borrow_global<Registry>(@topo_framework);
         let infos = vector[];
         let len = app_admins.length();
         let i = 0;
@@ -633,7 +633,7 @@ module aptos_framework::poc_registry {
     ): vector<address> acquires Registry {
         let app_admins = vector[];
         let len = app_addresses.length();
-        if (!exists<Registry>(@aptos_framework)) {
+        if (!exists<Registry>(@topo_framework)) {
             let i = 0;
             while (i < len) {
                 app_admins.push_back(@0x0);
@@ -641,7 +641,7 @@ module aptos_framework::poc_registry {
             };
             return app_admins
         };
-        let registry = borrow_global<Registry>(@aptos_framework);
+        let registry = borrow_global<Registry>(@topo_framework);
         let i = 0;
         while (i < len) {
             let app_address = *app_addresses.borrow(i);
@@ -665,10 +665,10 @@ module aptos_framework::poc_registry {
         app_address: address,
     ): address acquires Registry {
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global<Registry>(@aptos_framework);
+        let registry = borrow_global<Registry>(@topo_framework);
         assert!(
             registry.app_address_to_admin.contains(app_address),
             error::not_found(EAPP_ADDRESS_NOT_FOUND),
@@ -682,10 +682,10 @@ module aptos_framework::poc_registry {
         custody_address: address,
     ): address acquires Registry {
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global<Registry>(@aptos_framework);
+        let registry = borrow_global<Registry>(@topo_framework);
         assert!(
             registry.custody_address_to_admin.contains(custody_address),
             error::not_found(ECUSTODY_ADDRESS_NOT_FOUND),
@@ -699,10 +699,10 @@ module aptos_framework::poc_registry {
         equity_token_address: address,
     ): address acquires Registry {
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global<Registry>(@aptos_framework);
+        let registry = borrow_global<Registry>(@topo_framework);
         assert!(
             registry.equity_token_to_admin.contains(equity_token_address),
             error::not_found(EEQUITY_TOKEN_NOT_FOUND),
@@ -714,10 +714,10 @@ module aptos_framework::poc_registry {
     #[view]
     public fun get_app_info(app_admin: address): AppInfo acquires Registry {
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global<Registry>(@aptos_framework);
+        let registry = borrow_global<Registry>(@topo_framework);
         assert!(
             registry.apps.contains(app_admin),
             error::not_found(EAPP_ADMIN_NOT_FOUND),
@@ -831,10 +831,10 @@ module aptos_framework::poc_registry {
     ) acquires Registry {
         assert_valid_app_state(new_app_state);
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global_mut<Registry>(@aptos_framework);
+        let registry = borrow_global_mut<Registry>(@topo_framework);
         let info = borrow_app_info_mut(registry, app_admin);
         let old_app_state = info.app_state;
         if (old_app_state == new_app_state) {
@@ -857,10 +857,10 @@ module aptos_framework::poc_registry {
         new_poc_listing_status: u8,
     ) acquires Registry {
         assert!(
-            exists<Registry>(@aptos_framework),
+            exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
-        let registry = borrow_global_mut<Registry>(@aptos_framework);
+        let registry = borrow_global_mut<Registry>(@topo_framework);
         let info = borrow_app_info_mut(registry, app_admin);
         let old_poc_listing_status = info.poc_listing_status;
         if (old_poc_listing_status == new_poc_listing_status) {
@@ -927,11 +927,11 @@ module aptos_framework::poc_registry {
     #[test_only]
     use std::string;
     #[test_only]
-    use aptos_framework::fungible_asset;
+    use topo_framework::fungible_asset;
     #[test_only]
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::primary_fungible_store;
     #[test_only]
-    use aptos_framework::timestamp;
+    use topo_framework::timestamp;
 
     // 测试：注册应用后，可通过 3 种地址维度正常反查到同一注册主体。
     // 验证注册后的默认状态：app_state = ACTIVE, poc_listing_status = REGISTERED。

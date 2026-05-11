@@ -116,13 +116,13 @@ Called during genesis initialization.
 
 <pre><code><b>public</b> <b>fun</b> <a href="decryption.md#0x1_decryption_initialize">initialize</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
-    <b>if</b> (!<b>exists</b>&lt;<a href="decryption.md#0x1_decryption_PerBlockDecryptionKey">PerBlockDecryptionKey</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="decryption.md#0x1_decryption_PerBlockDecryptionKey">PerBlockDecryptionKey</a>&gt;(@topo_framework)) {
         <b>move_to</b>(
             framework,
             <a href="decryption.md#0x1_decryption_PerBlockDecryptionKey">PerBlockDecryptionKey</a> { epoch: 0, round: 0, decryption_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>() }
         );
     };
-    <b>if</b> (!<b>exists</b>&lt;<a href="decryption.md#0x1_decryption_PerEpochEncryptionKey">PerEpochEncryptionKey</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="decryption.md#0x1_decryption_PerEpochEncryptionKey">PerEpochEncryptionKey</a>&gt;(@topo_framework)) {
         <b>move_to</b>(
             framework,
             <a href="decryption.md#0x1_decryption_PerEpochEncryptionKey">PerEpochEncryptionKey</a> { epoch: 0, encryption_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>() }
@@ -158,9 +158,9 @@ Invoked in block prologues to update the block decryption key.
     decryption_key_for_new_block: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;
 ) <b>acquires</b> <a href="decryption.md#0x1_decryption_PerBlockDecryptionKey">PerBlockDecryptionKey</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_vm">system_addresses::assert_vm</a>(vm);
-    <b>if</b> (<b>exists</b>&lt;<a href="decryption.md#0x1_decryption_PerBlockDecryptionKey">PerBlockDecryptionKey</a>&gt;(@aptos_framework)) {
+    <b>if</b> (<b>exists</b>&lt;<a href="decryption.md#0x1_decryption_PerBlockDecryptionKey">PerBlockDecryptionKey</a>&gt;(@topo_framework)) {
         <b>let</b> decryption_key =
-            <b>borrow_global_mut</b>&lt;<a href="decryption.md#0x1_decryption_PerBlockDecryptionKey">PerBlockDecryptionKey</a>&gt;(@aptos_framework);
+            <b>borrow_global_mut</b>&lt;<a href="decryption.md#0x1_decryption_PerBlockDecryptionKey">PerBlockDecryptionKey</a>&gt;(@topo_framework);
         decryption_key.epoch = epoch;
         decryption_key.round = round;
         decryption_key.decryption_key = decryption_key_for_new_block;
@@ -220,8 +220,8 @@ Apply buffered PerEpochEncryptionKey on epoch transition.
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
     <b>if</b> (<a href="config_buffer.md#0x1_config_buffer_does_exist">config_buffer::does_exist</a>&lt;<a href="decryption.md#0x1_decryption_PerEpochEncryptionKey">PerEpochEncryptionKey</a>&gt;()) {
         <b>let</b> new_key = <a href="config_buffer.md#0x1_config_buffer_extract_v2">config_buffer::extract_v2</a>&lt;<a href="decryption.md#0x1_decryption_PerEpochEncryptionKey">PerEpochEncryptionKey</a>&gt;();
-        <b>if</b> (<b>exists</b>&lt;<a href="decryption.md#0x1_decryption_PerEpochEncryptionKey">PerEpochEncryptionKey</a>&gt;(@aptos_framework)) {
-            *<b>borrow_global_mut</b>&lt;<a href="decryption.md#0x1_decryption_PerEpochEncryptionKey">PerEpochEncryptionKey</a>&gt;(@aptos_framework) = new_key;
+        <b>if</b> (<b>exists</b>&lt;<a href="decryption.md#0x1_decryption_PerEpochEncryptionKey">PerEpochEncryptionKey</a>&gt;(@topo_framework)) {
+            *<b>borrow_global_mut</b>&lt;<a href="decryption.md#0x1_decryption_PerEpochEncryptionKey">PerEpochEncryptionKey</a>&gt;(@topo_framework) = new_key;
         } <b>else</b> {
             <b>move_to</b>(framework, new_key);
         }

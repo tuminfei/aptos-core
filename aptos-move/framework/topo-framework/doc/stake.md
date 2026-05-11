@@ -439,7 +439,7 @@ Refreshed at each epoch boundary from the live ValidatorConfig and staking_regis
 
 ## Resource `ValidatorSet`
 
-The canonical validator set, stored at @aptos_framework.
+The canonical validator set, stored at @topo_framework.
 
 State machine:
 join_validator_set  → pending_active
@@ -1597,7 +1597,7 @@ Returns the validator's state.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_validator_state">get_validator_state</a>(pool_address: <b>address</b>): u64 <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <b>if</b> (<a href="stake.md#0x1_stake_find_validator">find_validator</a>(&validator_set.pending_active, pool_address).is_some()) {
         <a href="stake.md#0x1_stake_VALIDATOR_STATUS_PENDING_ACTIVE">VALIDATOR_STATUS_PENDING_ACTIVE</a>
     } <b>else</b> <b>if</b> (<a href="stake.md#0x1_stake_find_validator">find_validator</a>(&validator_set.active_validators, pool_address).is_some()) {
@@ -1751,7 +1751,7 @@ Return the number of successful and failed proposals for the proposal at the giv
     validator_index: u64
 ): (u64, u64) <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a> {
     <b>let</b> validator_performances =
-        &<b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@aptos_framework).validators;
+        &<b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@topo_framework).validators;
     <b>let</b> validator_performance = validator_performances.borrow(validator_index);
     (
         validator_performance.successful_proposals,
@@ -1843,7 +1843,7 @@ Returns the pending transaction fee that is accumulated in current epoch.
 <pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_transaction_fee">get_pending_transaction_fee</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; <b>acquires</b> <a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a> {
     <b>let</b> result = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
     <b>let</b> fee_table =
-        &<b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@aptos_framework).pending_fee_by_validator;
+        &<b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@topo_framework).pending_fee_by_validator;
     <b>let</b> num_validators = fee_table.compute_length();
     <b>let</b> i = 0;
     <b>while</b> (i &lt; num_validators) {
@@ -1877,7 +1877,7 @@ Return the number of active validators in the current epoch.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_active_validator_count">get_active_validator_count</a>(): u64 <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework).active_validators.length()
+    <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework).active_validators.length()
 }
 </code></pre>
 
@@ -1903,7 +1903,7 @@ Return the number of validators waiting to become active next epoch.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_active_validator_count">get_pending_active_validator_count</a>(): u64 <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework).pending_active.length()
+    <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework).pending_active.length()
 }
 </code></pre>
 
@@ -1929,7 +1929,7 @@ Return the number of validators still active this epoch but leaving next epoch.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_pending_inactive_validator_count">get_pending_inactive_validator_count</a>(): u64 <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework).pending_inactive.length()
+    <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework).pending_inactive.length()
 }
 </code></pre>
 
@@ -1958,7 +1958,7 @@ Return active validator pool addresses in current-epoch order.
     offset: u64,
     limit: u64
 ): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <a href="stake.md#0x1_stake_get_validator_addresses">get_validator_addresses</a>(&validator_set.active_validators, offset, limit)
 }
 </code></pre>
@@ -1988,7 +1988,7 @@ Return pending-active validator pool addresses.
     offset: u64,
     limit: u64
 ): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <a href="stake.md#0x1_stake_get_validator_addresses">get_validator_addresses</a>(&validator_set.pending_active, offset, limit)
 }
 </code></pre>
@@ -2018,7 +2018,7 @@ Return pending-inactive validator pool addresses.
     offset: u64,
     limit: u64
 ): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <a href="stake.md#0x1_stake_get_validator_addresses">get_validator_addresses</a>(&validator_set.pending_inactive, offset, limit)
 }
 </code></pre>
@@ -2049,7 +2049,7 @@ active validators followed by pending-inactive validators.
     offset: u64,
     limit: u64
 ): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <b>let</b> addresses = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> total = validator_set.active_validators.length()
         + validator_set.pending_inactive.length();
@@ -2081,7 +2081,7 @@ active validators followed by pending-inactive validators.
 Initialize validator set to the core resource account.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="stake.md#0x1_stake_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="stake.md#0x1_stake_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -2090,11 +2090,11 @@ Initialize validator set to the core resource account.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="stake.md#0x1_stake_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="stake.md#0x1_stake_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
     <b>move_to</b>(
-        aptos_framework,
+        topo_framework,
         <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
             consensus_scheme: 0,
             active_validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>(),
@@ -2105,7 +2105,7 @@ Initialize validator set to the core resource account.
         }
     );
 
-    <b>move_to</b>(aptos_framework, <a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a> { validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>() });
+    <b>move_to</b>(topo_framework, <a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a> { validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>() });
 }
 </code></pre>
 
@@ -2121,7 +2121,7 @@ This is only called during Genesis, which is where MintCapability<TopoCoin> can 
 Beyond genesis, no one can create TopoCoin mint/burn capabilities.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="stake.md#0x1_stake_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="stake.md#0x1_stake_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -2131,10 +2131,10 @@ Beyond genesis, no one can create TopoCoin mint/burn capabilities.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="stake.md#0x1_stake_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: MintCapability&lt;TopoCoin&gt;
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: MintCapability&lt;TopoCoin&gt;
 ) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <b>move_to</b>(aptos_framework, <a href="stake.md#0x1_stake_TopoCoinCapabilities">TopoCoinCapabilities</a> { mint_cap })
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
+    <b>move_to</b>(topo_framework, <a href="stake.md#0x1_stake_TopoCoinCapabilities">TopoCoinCapabilities</a> { mint_cap })
 }
 </code></pre>
 
@@ -2149,7 +2149,7 @@ Beyond genesis, no one can create TopoCoin mint/burn capabilities.
 Allow on chain governance to remove validators from the validator set.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_remove_validators">remove_validators</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_remove_validators">remove_validators</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;)
 </code></pre>
 
 
@@ -2159,11 +2159,11 @@ Allow on chain governance to remove validators from the validator set.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_remove_validators">remove_validators</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
 ) <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
     <a href="stake.md#0x1_stake_assert_reconfig_not_in_progress">assert_reconfig_not_in_progress</a>();
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <b>let</b> validator_set = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
+    <b>let</b> validator_set = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <b>let</b> active_validators = &<b>mut</b> validator_set.active_validators;
     <b>let</b> pending_inactive = &<b>mut</b> validator_set.pending_inactive;
     <b>spec</b> {
@@ -2224,7 +2224,7 @@ Allow on chain governance to remove validators from the validator set.
 <pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_initialize_pending_transaction_fee">initialize_pending_transaction_fee</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
 
-    <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@topo_framework)) {
         <b>move_to</b>(
             framework,
             <a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a> {
@@ -2295,8 +2295,8 @@ Allow on chain governance to remove validators from the validator set.
 ) <b>acquires</b> <a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
 
-    <b>if</b> (<b>exists</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@aptos_framework)) {
-        *<b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@aptos_framework) = config;
+    <b>if</b> (<b>exists</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@topo_framework)) {
+        *<b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@topo_framework) = config;
     } <b>else</b> {
         <b>move_to</b>(framework, config);
     }
@@ -2335,7 +2335,7 @@ Allow on chain governance to remove validators from the validator set.
     );
 
     <b>let</b> num_validators_to_distribute = fee_distribution_validator_indices.length();
-    <b>let</b> pending_fee = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@aptos_framework);
+    <b>let</b> pending_fee = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@topo_framework);
     <b>let</b> i = 0;
     <b>while</b> (i &lt; num_validators_to_distribute) {
         <b>let</b> validator_index = fee_distribution_validator_indices[i];
@@ -3051,7 +3051,7 @@ On success: validator is added to pending_active and staking_registry status is 
     );
 
     // Validate the current validator set size <b>has</b> not exceeded the limit.
-    <b>let</b> validator_set = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> validator_set = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     validator_set.pending_active.push_back(
         <a href="stake.md#0x1_stake_generate_validator_info">generate_validator_info</a>(pool_address, *validator_config)
     );
@@ -3112,7 +3112,7 @@ Can only be called by the operator of the validator/staking pool.
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_unauthenticated">error::unauthenticated</a>(<a href="stake.md#0x1_stake_ENOT_OPERATOR">ENOT_OPERATOR</a>)
     );
 
-    <b>let</b> validator_set = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> validator_set = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     // If the validator is still pending_active, directly kick the validator out.
     <b>let</b> maybe_pending_active_index =
         <a href="stake.md#0x1_stake_find_validator">find_validator</a>(&validator_set.pending_active, pool_address);
@@ -3208,7 +3208,7 @@ This function cannot abort.
 ) <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a> {
     // Validator set cannot change until the end of the epoch, so the validator index in arguments should
     // match <b>with</b> those of the validators in <a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a> resource.
-    <b>let</b> validator_perf = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@aptos_framework);
+    <b>let</b> validator_perf = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@topo_framework);
     <b>let</b> validator_len = validator_perf.validators.length();
 
     <b>spec</b> {
@@ -3321,9 +3321,9 @@ Phase 7 — Housekeeping:
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="stake.md#0x1_stake_on_new_epoch">on_new_epoch</a>() <b>acquires</b> <a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>, <a href="stake.md#0x1_stake_StakePool">StakePool</a>, <a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>, <a href="stake.md#0x1_stake_ValidatorConfig">ValidatorConfig</a>, <a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>, <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>let</b> validator_set = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> validator_set = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <b>let</b> config = <a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>();
-    <b>let</b> validator_perf = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@aptos_framework);
+    <b>let</b> validator_perf = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@topo_framework);
 
     <b>let</b> (rewards_rate, rewards_rate_denominator) =
         <a href="staking_config.md#0x1_staking_config_get_reward_rate">staking_config::get_reward_rate</a>(&config);
@@ -3620,9 +3620,9 @@ Phase 7 — Housekeeping:
         validator_index += 1;
     };
 
-    <b>if</b> (<b>exists</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@aptos_framework)) {
+    <b>if</b> (<b>exists</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@topo_framework)) {
         <b>let</b> pending_fee_by_validator =
-            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@aptos_framework).pending_fee_by_validator;
+            &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@topo_framework).pending_fee_by_validator;
         <b>assert</b>!(
             pending_fee_by_validator.is_empty(),
             <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_internal">error::internal</a>(<a href="stake.md#0x1_stake_ETRANSACTION_FEE_NOT_FULLY_DISTRIBUTED">ETRANSACTION_FEE_NOT_FULLY_DISTRIBUTED</a>)
@@ -3660,7 +3660,7 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_cur_validator_consensus_infos">cur_validator_consensus_infos</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;ValidatorConsensusInfo&gt; <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <a href="stake.md#0x1_stake_validator_consensus_infos_from_validator_set">validator_consensus_infos_from_validator_set</a>(validator_set)
 }
 </code></pre>
@@ -3685,11 +3685,11 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_get_current_epoch_governance_voting_power">get_current_epoch_governance_voting_power</a>(): u64 <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework)) {
         <b>return</b> 0
     };
 
-    <b>let</b> cur_validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> cur_validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <b>let</b> (_, maximum_stake) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>());
     <b>let</b> total_power = 0u128;
     cur_validator_set.active_validators.for_each_ref(|validator| {
@@ -3759,9 +3759,9 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
 
 
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_simulate_next_epoch_validator_set">simulate_next_epoch_validator_set</a>(): <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> <b>acquires</b> <a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>, <a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>, <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>, <a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>, <a href="stake.md#0x1_stake_ValidatorConfig">ValidatorConfig</a> {
-    <b>let</b> cur_validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> cur_validator_set = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <b>let</b> config = <a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>();
-    <b>let</b> validator_perf = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@aptos_framework);
+    <b>let</b> validator_perf = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@topo_framework);
     <b>let</b> simulated_deposit_deltas = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_create">simple_map::create</a>&lt;<b>address</b>, u64&gt;();
     <b>let</b> (minimum_stake, maximum_stake) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&config);
     <b>let</b> voting_power_increase_limit =
@@ -4357,20 +4357,20 @@ Return the <code>ValidatorConsensusInfo</code> of each current validator, sorted
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_get_pending_transaction_fee_for_validator">get_pending_transaction_fee_for_validator</a>(
     validator_index: u64
 ): u64 <b>acquires</b> <a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>, <a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@topo_framework)) {
         <b>return</b> 0
     };
 
     <b>let</b> fee_limit =
-        <b>if</b> (<b>exists</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@aptos_framework)) {
+        <b>if</b> (<b>exists</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@topo_framework)) {
             <b>let</b> TransactionFeeConfig::V0 { max_fee_octa_allowed_per_epoch_per_pool } =
-                <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@aptos_framework);
+                <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@topo_framework);
             *max_fee_octa_allowed_per_epoch_per_pool
         } <b>else</b> {
             <a href="stake.md#0x1_stake_MAX_U64">MAX_U64</a> <b>as</b> u64
         };
     <b>let</b> pending_fee_by_validator =
-        &<b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@aptos_framework).pending_fee_by_validator;
+        &<b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@topo_framework).pending_fee_by_validator;
     <b>if</b> (!pending_fee_by_validator.contains(&validator_index)) {
         <b>return</b> 0
     };
@@ -4592,20 +4592,20 @@ This function should not abort; it is called inside on_new_epoch which must comp
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_collect_transaction_fee_for_validator">collect_transaction_fee_for_validator</a>(
     validator_index: u64
 ): u64 <b>acquires</b> <a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>, <a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@topo_framework)) {
         <b>return</b> 0
     };
 
     <b>let</b> fee_limit =
-        <b>if</b> (<b>exists</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@aptos_framework)) {
+        <b>if</b> (<b>exists</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@topo_framework)) {
             <b>let</b> TransactionFeeConfig::V0 { max_fee_octa_allowed_per_epoch_per_pool } =
-                <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@aptos_framework);
+                <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_TransactionFeeConfig">TransactionFeeConfig</a>&gt;(@topo_framework);
             *max_fee_octa_allowed_per_epoch_per_pool
         } <b>else</b> {
             <a href="stake.md#0x1_stake_MAX_U64">MAX_U64</a> <b>as</b> u64
         };
     <b>let</b> pending_fee_by_validator =
-        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@aptos_framework).pending_fee_by_validator;
+        &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_PendingTransactionFee">PendingTransactionFee</a>&gt;(@topo_framework).pending_fee_by_validator;
     <b>if</b> (!pending_fee_by_validator.contains(&validator_index)) {
         <b>return</b> 0
     };
@@ -5055,7 +5055,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_update_voting_power_increase">update_voting_power_increase</a>(increase_amount: u64) <b>acquires</b> <a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a> {
-    <b>let</b> validator_set = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>let</b> validator_set = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
     <b>let</b> voting_power_increase_limit =
         (
             <a href="staking_config.md#0x1_staking_config_get_voting_power_increase_limit">staking_config::get_voting_power_increase_limit</a>(&<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>()) <b>as</b> u128
@@ -5111,7 +5111,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_configure_allowed_validators">configure_allowed_validators</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, accounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_configure_allowed_validators">configure_allowed_validators</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, accounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;)
 </code></pre>
 
 
@@ -5121,12 +5121,12 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_configure_allowed_validators">configure_allowed_validators</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, accounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, accounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
 ) <b>acquires</b> <a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a> {
-    <b>let</b> aptos_framework_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <b>let</b> aptos_framework_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(aptos_framework_address)) {
-        <b>move_to</b>(aptos_framework, <a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a> { accounts });
+        <b>move_to</b>(topo_framework, <a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a> { accounts });
     } <b>else</b> {
         <b>let</b> allowed = <b>borrow_global_mut</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(aptos_framework_address);
         allowed.accounts = accounts;
@@ -5154,9 +5154,9 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_is_allowed">is_allowed</a>(<a href="account.md#0x1_account">account</a>: <b>address</b>): bool <b>acquires</b> <a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@aptos_framework)) { <b>true</b> }
+    <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@topo_framework)) { <b>true</b> }
     <b>else</b> {
-        <b>let</b> allowed = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@aptos_framework);
+        <b>let</b> allowed = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@topo_framework);
         allowed.accounts.contains(&<a href="account.md#0x1_account">account</a>)
     }
 }
@@ -5280,14 +5280,14 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 <pre><code><b>pragma</b> verify = <b>true</b>;
 <b>pragma</b> aborts_if_is_partial;
-<b>invariant</b> [suspendable] <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework) ==&gt;
+<b>invariant</b> [suspendable] <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework) ==&gt;
     <a href="stake.md#0x1_stake_validator_set_is_valid">validator_set_is_valid</a>();
 <b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt;
-    <b>exists</b>&lt;<a href="stake.md#0x1_stake_TopoCoinCapabilities">TopoCoinCapabilities</a>&gt;(@aptos_framework);
+    <b>exists</b>&lt;<a href="stake.md#0x1_stake_TopoCoinCapabilities">TopoCoinCapabilities</a>&gt;(@topo_framework);
 <b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt;
-    <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@aptos_framework);
+    <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@topo_framework);
 <b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt;
-    <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+    <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
 <b>apply</b> <a href="stake.md#0x1_stake_ValidatorOwnerNoChange">ValidatorOwnerNoChange</a> <b>to</b> *;
 <b>apply</b> <a href="stake.md#0x1_stake_ValidatorNotChangeDuringReconfig">ValidatorNotChangeDuringReconfig</a> <b>to</b> * <b>except</b> on_new_epoch;
 <b>apply</b> <a href="stake.md#0x1_stake_StakePoolNotChangeDuringReconfig">StakePoolNotChangeDuringReconfig</a> <b>to</b> * <b>except</b> on_new_epoch, update_stake_pool;
@@ -5367,10 +5367,10 @@ All arithmetic uses u128 to avoid overflow before the final division.
 <pre><code><b>schema</b> <a href="stake.md#0x1_stake_ValidatorNotChangeDuringReconfig">ValidatorNotChangeDuringReconfig</a> {
     <b>ensures</b> (
         <a href="reconfiguration_state.md#0x1_reconfiguration_state_spec_is_in_progress">reconfiguration_state::spec_is_in_progress</a>()
-            && <b>old</b>(<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework))
+            && <b>old</b>(<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework))
     ) ==&gt;
-        <b>old</b>(<b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework))
-            == <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+        <b>old</b>(<b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework))
+            == <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
 }
 </code></pre>
 
@@ -5436,7 +5436,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_validator_set_is_valid">validator_set_is_valid</a>(): bool {
-   <b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+   <b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
    <a href="stake.md#0x1_stake_validator_set_is_valid_impl">validator_set_is_valid_impl</a>(validator_set)
 }
 </code></pre>
@@ -5471,8 +5471,8 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 
-<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
-<b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
+<b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
 <b>ensures</b> result == <a href="stake.md#0x1_stake_VALIDATOR_STATUS_PENDING_ACTIVE">VALIDATOR_STATUS_PENDING_ACTIVE</a> ==&gt;
     <a href="stake.md#0x1_stake_spec_contains">spec_contains</a>(validator_set.pending_active, pool_address);
 <b>ensures</b> result == <a href="stake.md#0x1_stake_VALIDATOR_STATUS_ACTIVE">VALIDATOR_STATUS_ACTIVE</a> ==&gt;
@@ -5511,14 +5511,14 @@ All arithmetic uses u128 to avoid overflow before the final division.
 ### Function `initialize`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="stake.md#0x1_stake_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="stake.md#0x1_stake_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> disable_invariants_in_body;
-<b>let</b> aptos_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<b>let</b> aptos_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(aptos_addr);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(aptos_addr);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(aptos_addr);
@@ -5534,15 +5534,15 @@ All arithmetic uses u128 to avoid overflow before the final division.
 ### Function `remove_validators`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_remove_validators">remove_validators</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_remove_validators">remove_validators</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;)
 </code></pre>
 
 
 
 
 <pre><code><b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
-<b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
-<b>let</b> <b>post</b> post_validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+<b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
+<b>let</b> <b>post</b> post_validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
 <b>let</b> active_validators = validator_set.active_validators;
 <b>let</b> <b>post</b> post_active_validators = post_validator_set.active_validators;
 <b>let</b> pending_inactive_validators = validator_set.pending_inactive;
@@ -5608,9 +5608,9 @@ All arithmetic uses u128 to avoid overflow before the final division.
 <b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(pubkey_from_pop);
 <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
 <b>let</b> post_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
-<b>let</b> allowed = <b>global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@aptos_framework);
+<b>let</b> allowed = <b>global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@topo_framework);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorConfig">ValidatorConfig</a>&gt;(addr);
-<b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@aptos_framework)
+<b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@topo_framework)
     && !<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_spec_contains">vector::spec_contains</a>(allowed.accounts, addr);
 <b>aborts_if</b> <a href="stake.md#0x1_stake_stake_pool_exists">stake_pool_exists</a>(addr);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_OwnerCapability">OwnerCapability</a>&gt;(addr);
@@ -5759,7 +5759,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 
-<pre><code><b>let</b> config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
+<pre><code><b>let</b> config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@topo_framework);
 <b>let</b> pool_address = owner_cap.pool_address;
 <b>let</b> pre_stake_pool = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">StakePool</a>&gt;(pool_address);
 <b>let</b> <b>post</b> stake_pool = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">StakePool</a>&gt;(pool_address);
@@ -5770,8 +5770,8 @@ All arithmetic uses u128 to avoid overflow before the final division.
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_StakePool">StakePool</a>&gt;(pool_address);
 <b>aborts_if</b> pre_stake_pool.locked_until_secs &gt;= lockup + now_seconds;
 <b>aborts_if</b> lockup + now_seconds &gt; <a href="stake.md#0x1_stake_MAX_U64">MAX_U64</a>;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@topo_framework);
 <b>ensures</b> stake_pool.locked_until_secs == lockup + now_seconds;
 </code></pre>
 
@@ -5794,12 +5794,12 @@ All arithmetic uses u128 to avoid overflow before the final division.
 <b>aborts_if</b> !<a href="staking_config.md#0x1_staking_config_get_allow_validator_set_change">staking_config::get_allow_validator_set_change</a>(<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>());
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_StakePool">StakePool</a>&gt;(pool_address);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorConfig">ValidatorConfig</a>&gt;(pool_address);
-<b>aborts_if</b> !<b>exists</b>&lt;StakingConfig&gt;(@aptos_framework);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;StakingConfig&gt;(@topo_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
 <b>aborts_if</b> <a href="reconfiguration_state.md#0x1_reconfiguration_state_spec_is_in_progress">reconfiguration_state::spec_is_in_progress</a>();
 <b>let</b> stake_pool = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">StakePool</a>&gt;(pool_address);
-<b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
-<b>let</b> <b>post</b> p_validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+<b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
+<b>let</b> <b>post</b> p_validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
 <b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(operator) != stake_pool.operator_address;
 <b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(
     <a href="stake.md#0x1_stake_spec_find_validator">spec_find_validator</a>(validator_set.active_validators, pool_address)
@@ -5858,17 +5858,17 @@ All arithmetic uses u128 to avoid overflow before the final division.
 <b>let</b> config = <a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>();
 <b>aborts_if</b> !<a href="staking_config.md#0x1_staking_config_get_allow_validator_set_change">staking_config::get_allow_validator_set_change</a>(config);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_StakePool">StakePool</a>&gt;(pool_address);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@topo_framework);
 <b>let</b> stake_pool = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">StakePool</a>&gt;(pool_address);
 <b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(operator) != stake_pool.operator_address;
-<b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+<b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
 <b>let</b> validator_find_bool = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(
     <a href="stake.md#0x1_stake_spec_find_validator">spec_find_validator</a>(validator_set.pending_active, pool_address)
 );
 <b>let</b> active_validators = validator_set.active_validators;
 <b>let</b> pending_active = validator_set.pending_active;
-<b>let</b> <b>post</b> post_validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+<b>let</b> <b>post</b> post_validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
 <b>let</b> <b>post</b> post_active_validators = post_validator_set.active_validators;
 <b>let</b> pending_inactive_validators = validator_set.pending_inactive;
 <b>let</b> <b>post</b> post_pending_inactive_validators = post_validator_set.pending_inactive;
@@ -5884,7 +5884,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 <b>aborts_if</b> validator_find_bool
     && <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(validator_set.pending_active)
         &lt;= <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(<a href="stake.md#0x1_stake_spec_find_validator">spec_find_validator</a>(pending_active, pool_address));
-<b>let</b> <b>post</b> p_validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+<b>let</b> <b>post</b> p_validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
 <b>ensures</b> !validator_find_bool ==&gt;
     !<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(
         <a href="stake.md#0x1_stake_spec_find_validator">spec_find_validator</a>(p_validator_set.pending_active, pool_address)
@@ -5924,8 +5924,8 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 <pre><code><b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
 <b>aborts_if</b> <b>false</b>;
-<b>let</b> validator_perf = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@aptos_framework);
-<b>let</b> <b>post</b> post_validator_perf = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@aptos_framework);
+<b>let</b> validator_perf = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@topo_framework);
+<b>let</b> <b>post</b> post_validator_perf = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@topo_framework);
 <b>let</b> validator_len = len(validator_perf.validators);
 <b>ensures</b> (
     <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(<a href="stake.md#0x1_stake_ghost_proposer_idx">ghost_proposer_idx</a>)
@@ -5956,7 +5956,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 <b>include</b> <a href="stake.md#0x1_stake_ResourceRequirement">ResourceRequirement</a>;
 <b>include</b> <a href="stake.md#0x1_stake_GetReconfigStartTimeRequirement">GetReconfigStartTimeRequirement</a>;
 <b>include</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigRequirement">staking_config::StakingRewardsConfigRequirement</a>;
-<b>include</b> aptos_framework::topo_coin::ExistsTopoCoin;
+<b>include</b> topo_framework::topo_coin::ExistsTopoCoin;
 // This enforces <a id="high-level-req-4" href="#high-level-req">high-level requirement 4</a>:
 <b>aborts_if</b> <b>false</b>;
 </code></pre>
@@ -6039,9 +6039,9 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_spec_is_allowed">spec_is_allowed</a>(<a href="account.md#0x1_account">account</a>: <b>address</b>): bool {
-   <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@aptos_framework)) { <b>true</b> }
+   <b>if</b> (!<b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@topo_framework)) { <b>true</b> }
    <b>else</b> {
-       <b>let</b> allowed = <b>global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@aptos_framework);
+       <b>let</b> allowed = <b>global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(@topo_framework);
        contains(allowed.accounts, <a href="account.md#0x1_account">account</a>)
    }
 }
@@ -6143,7 +6143,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_spec_validator_index_upper_bound">spec_validator_index_upper_bound</a>(): u64 {
-   len(<b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@aptos_framework).validators)
+   len(<b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@topo_framework).validators)
 }
 </code></pre>
 
@@ -6202,7 +6202,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_spec_is_current_epoch_validator">spec_is_current_epoch_validator</a>(pool_address: <b>address</b>): bool {
-   <b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
+   <b>let</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
    !<a href="stake.md#0x1_stake_spec_contains">spec_contains</a>(validator_set.pending_active, pool_address)
        && (
            <a href="stake.md#0x1_stake_spec_contains">spec_contains</a>(validator_set.active_validators, pool_address)
@@ -6218,13 +6218,13 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>schema</b> <a href="stake.md#0x1_stake_ResourceRequirement">ResourceRequirement</a> {
-    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_TopoCoinCapabilities">TopoCoinCapabilities</a>&gt;(@aptos_framework);
-    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@aptos_framework);
-    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
-    <b>requires</b> <b>exists</b>&lt;StakingConfig&gt;(@aptos_framework);
-    <b>requires</b> <b>exists</b>&lt;StakingRewardsConfig&gt;(@aptos_framework)
+    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_TopoCoinCapabilities">TopoCoinCapabilities</a>&gt;(@topo_framework);
+    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">ValidatorPerformance</a>&gt;(@topo_framework);
+    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
+    <b>requires</b> <b>exists</b>&lt;StakingConfig&gt;(@topo_framework);
+    <b>requires</b> <b>exists</b>&lt;StakingRewardsConfig&gt;(@topo_framework)
         || !<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_periodical_reward_rate_decrease_enabled">features::spec_periodical_reward_rate_decrease_enabled</a>();
-    <b>requires</b> <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+    <b>requires</b> <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 }
 </code></pre>
 
@@ -6237,7 +6237,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_spec_get_reward_rate_1">spec_get_reward_rate_1</a>(config: StakingConfig): num {
    <b>if</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_periodical_reward_rate_decrease_enabled">features::spec_periodical_reward_rate_decrease_enabled</a>()) {
        <b>let</b> epoch_rewards_rate =
-           <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@aptos_framework).rewards_rate;
+           <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@topo_framework).rewards_rate;
        <b>if</b> (epoch_rewards_rate.value == 0) { 0 }
        <b>else</b> {
            <b>let</b> denominator_0 =
@@ -6271,7 +6271,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_spec_get_reward_rate_2">spec_get_reward_rate_2</a>(config: StakingConfig): num {
    <b>if</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_periodical_reward_rate_decrease_enabled">features::spec_periodical_reward_rate_decrease_enabled</a>()) {
        <b>let</b> epoch_rewards_rate =
-           <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@aptos_framework).rewards_rate;
+           <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@topo_framework).rewards_rate;
        <b>if</b> (epoch_rewards_rate.value == 0) { 1 }
        <b>else</b> {
            <b>let</b> denominator_0 =
@@ -6380,7 +6380,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>schema</b> <a href="stake.md#0x1_stake_GetReconfigStartTimeRequirement">GetReconfigStartTimeRequirement</a> {
-    <b>requires</b> <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+    <b>requires</b> <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
     <b>include</b> <a href="reconfiguration_state.md#0x1_reconfiguration_state_StartTimeSecsRequirement">reconfiguration_state::StartTimeSecsRequirement</a>;
 }
 </code></pre>
@@ -6392,7 +6392,7 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>fun</b> <a href="stake.md#0x1_stake_spec_get_reconfig_start_time_secs">spec_get_reconfig_start_time_secs</a>(): u64 {
-   <b>if</b> (<b>exists</b>&lt;<a href="reconfiguration_state.md#0x1_reconfiguration_state_State">reconfiguration_state::State</a>&gt;(@aptos_framework)) {
+   <b>if</b> (<b>exists</b>&lt;<a href="reconfiguration_state.md#0x1_reconfiguration_state_State">reconfiguration_state::State</a>&gt;(@topo_framework)) {
        <a href="reconfiguration_state.md#0x1_reconfiguration_state_spec_start_time_secs">reconfiguration_state::spec_start_time_secs</a>()
    } <b>else</b> {
        <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>()
@@ -6513,9 +6513,9 @@ All arithmetic uses u128 to avoid overflow before the final division.
 
 
 <pre><code><b>requires</b> !<a href="reconfiguration_state.md#0x1_reconfiguration_state_spec_is_in_progress">reconfiguration_state::spec_is_in_progress</a>();
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@aptos_framework);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
-<b>let</b> aptos = @aptos_framework;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(@topo_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@topo_framework);
+<b>let</b> aptos = @topo_framework;
 <b>let</b> pre_validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(aptos);
 <b>let</b> <b>post</b> validator_set = <b>global</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">ValidatorSet</a>&gt;(aptos);
 <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(aptos);
@@ -6558,13 +6558,13 @@ All arithmetic uses u128 to avoid overflow before the final division.
 ### Function `configure_allowed_validators`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_configure_allowed_validators">configure_allowed_validators</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, accounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="stake.md#0x1_stake_configure_allowed_validators">configure_allowed_validators</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, accounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;)
 </code></pre>
 
 
 
 
-<pre><code><b>let</b> aptos_framework_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<pre><code><b>let</b> aptos_framework_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(aptos_framework_address);
 <b>let</b> <b>post</b> allowed = <b>global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">AllowedValidators</a>&gt;(aptos_framework_address);
 <b>ensures</b> allowed.accounts == accounts;

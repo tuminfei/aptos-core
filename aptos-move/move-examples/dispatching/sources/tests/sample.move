@@ -2,7 +2,7 @@
 module dispatching::sample {
     use std::string;
 
-    use aptos_framework::function_info;
+    use topo_framework::function_info;
 
     use dispatching::engine;
     use dispatching::sample_callback;

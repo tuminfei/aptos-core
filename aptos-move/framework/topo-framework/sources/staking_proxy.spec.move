@@ -1,4 +1,4 @@
-spec aptos_framework::staking_proxy {
+spec topo_framework::staking_proxy {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: When updating the operator through the proxy, the direct stake pool owned by the caller should follow it.
@@ -54,7 +54,7 @@ spec aptos_framework::staking_proxy {
     }
 
     spec schema AbortsIfSignerPermissionStakeProxy {
-        use aptos_framework::permissioned_signer;
+        use topo_framework::permissioned_signer;
 
         s: signer;
         let perm = StakeProxyPermission {};

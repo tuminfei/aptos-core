@@ -1,5 +1,5 @@
 script {
-    use aptos_framework::coin;
+    use topo_framework::coin;
     use std::option::Option;
     use std::signer;
 

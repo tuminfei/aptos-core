@@ -1,12 +1,12 @@
 module raffle::raffle_test {
     #[test_only]
-    use aptos_framework::account;
+    use topo_framework::account;
     #[test_only]
-    use aptos_framework::topo_coin::{Self, TopoCoin};
+    use topo_framework::topo_coin::{Self, TopoCoin};
     #[test_only]
-    use aptos_framework::coin;
+    use topo_framework::coin;
     #[test_only]
-    use aptos_framework::coin::MintCapability;
+    use topo_framework::coin::MintCapability;
 
     #[test_only]
     use aptos_std::debug;
@@ -24,7 +24,7 @@ module raffle::raffle_test {
     #[test_only]
     use aptos_std::crypto_algebra::enable_cryptography_algebra_natives;
     #[test_only]
-    use aptos_framework::randomness;
+    use topo_framework::randomness;
 
     #[test_only]
     fun give_coins(mint_cap: &MintCapability<TopoCoin>, to: &signer) {
@@ -40,7 +40,7 @@ module raffle::raffle_test {
 
     #[test(
         deployer = @raffle,
-        fx = @aptos_framework,
+        fx = @topo_framework,
         u1 = @0xA001, u2 = @0xA002, u3 = @0xA003, u4 = @0xA004
     )]
     fun test_raffle(
@@ -58,7 +58,7 @@ module raffle::raffle_test {
         // Needed to mint coins out of thin air for testing
         let (burn_cap, mint_cap) = topo_coin::initialize_for_test(&fx);
 
-        // Create fake coins for users participating in raffle & initialize aptos_framework
+        // Create fake coins for users participating in raffle & initialize topo_framework
         give_coins(&mint_cap, &u1);
         give_coins(&mint_cap, &u2);
         give_coins(&mint_cap, &u3);

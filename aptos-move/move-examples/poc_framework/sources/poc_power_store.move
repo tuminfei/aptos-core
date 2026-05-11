@@ -13,10 +13,10 @@ module poc_framework::poc_power_store {
 
     use aptos_std::table::{Self, Table};
 
-    use aptos_framework::event;
-    use aptos_framework::system_addresses;
+    use topo_framework::event;
+    use topo_framework::system_addresses;
 
-    //friend aptos_framework::genesis;
+    //friend topo_framework::genesis;
 
     const POWER_DECIMALS: u64 = 18;
 
@@ -63,8 +63,8 @@ module poc_framework::poc_power_store {
     // ========== 初始化 ==========
 
     /// 由 genesis 调用的 friend 初始化入口。
-    public(friend) fun initialize(aptos_framework: &signer, operator: address) {
-        initialize_power_store(aptos_framework, operator);
+    public(friend) fun initialize(topo_framework: &signer, operator: address) {
+        initialize_power_store(topo_framework, operator);
     }
 
     /// 初始化全局算力存储。

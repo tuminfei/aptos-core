@@ -1,21 +1,21 @@
-module aptos_framework::topo_account {
-    use aptos_framework::account::{Self, new_event_handle};
-    use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::create_signer::create_signer;
-    use aptos_framework::event::{EventHandle, emit};
-    use aptos_framework::fungible_asset::{Self, Metadata, BurnRef, FungibleAsset};
-    use aptos_framework::primary_fungible_store;
-    use aptos_framework::object;
+module topo_framework::topo_account {
+    use topo_framework::account::{Self, new_event_handle};
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin::{Self, Coin};
+    use topo_framework::create_signer::create_signer;
+    use topo_framework::event::{EventHandle, emit};
+    use topo_framework::fungible_asset::{Self, Metadata, BurnRef, FungibleAsset};
+    use topo_framework::primary_fungible_store;
+    use topo_framework::object;
 
     use std::error;
     use std::signer;
-    use aptos_framework::object::Object;
+    use topo_framework::object::Object;
 
-    friend aptos_framework::genesis;
-    friend aptos_framework::resource_account;
-    friend aptos_framework::transaction_fee;
-    friend aptos_framework::transaction_validation;
+    friend topo_framework::genesis;
+    friend topo_framework::resource_account;
+    friend topo_framework::transaction_fee;
+    friend topo_framework::transaction_validation;
 
     /// Account does not exist.
     const EACCOUNT_NOT_FOUND: u64 = 1;
@@ -304,7 +304,7 @@ module aptos_framework::topo_account {
     #[test_only]
     use std::string::utf8;
     #[test_only]
-    use aptos_framework::account::create_account_for_test;
+    use topo_framework::account::create_account_for_test;
 
     #[test_only]
     struct FakeCoin {}
@@ -320,7 +320,7 @@ module aptos_framework::topo_account {
                 x"00000000000000000000000000000000000000000000000000000000000ca501"
             );
 
-        let (burn_cap, mint_cap) = aptos_framework::topo_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = topo_framework::topo_coin::initialize_for_test(core);
         create_account(signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
         transfer(alice, bob, 500);
@@ -336,14 +336,14 @@ module aptos_framework::topo_account {
 
     #[test(alice = @0xa11ce, core = @0x1)]
     public fun test_transfer_permission(alice: &signer, core: &signer) {
-        use aptos_framework::permissioned_signer;
+        use topo_framework::permissioned_signer;
 
         let bob =
             from_bcs::to_address(
                 x"0000000000000000000000000000000000000000000000000000000000000b0b"
             );
 
-        let (burn_cap, mint_cap) = aptos_framework::topo_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = topo_framework::topo_coin::initialize_for_test(core);
         create_account(signer::address_of(alice));
         coin::deposit(signer::address_of(alice), coin::mint(10000, &mint_cap));
 
@@ -365,7 +365,7 @@ module aptos_framework::topo_account {
     ) {
         let (resource_account, _) = account::create_resource_account(alice, vector[]);
         let resource_acc_addr = signer::address_of(&resource_account);
-        let (burn_cap, mint_cap) = aptos_framework::topo_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = topo_framework::topo_coin::initialize_for_test(core);
         assert!(coin::is_account_registered<TopoCoin>(resource_acc_addr), 0);
 
         create_account(signer::address_of(alice));
@@ -386,7 +386,7 @@ module aptos_framework::topo_account {
         recipient_1: &signer,
         recipient_2: &signer
     ) {
-        let (burn_cap, mint_cap) = aptos_framework::topo_coin::initialize_for_test(core);
+        let (burn_cap, mint_cap) = topo_framework::topo_coin::initialize_for_test(core);
         create_account(signer::address_of(from));
         let recipient_1_addr = signer::address_of(recipient_1);
         let recipient_2_addr = signer::address_of(recipient_2);
@@ -483,8 +483,8 @@ module aptos_framework::topo_account {
 
     #[test(user = @0xcafe)]
     fun test_primary_fungible_store_address(user: &signer) {
-        use aptos_framework::fungible_asset::Metadata;
-        use aptos_framework::topo_coin;
+        use topo_framework::fungible_asset::Metadata;
+        use topo_framework::topo_coin;
 
         topo_coin::ensure_initialized_with_topo_fa_metadata_for_test();
 

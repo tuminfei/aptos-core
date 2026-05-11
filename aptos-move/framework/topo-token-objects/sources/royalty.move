@@ -4,9 +4,9 @@
 module topo_token_objects::royalty {
     use std::error;
     use std::option::{Self, Option};
-    use aptos_framework::object::{ConstructorRef, ExtendRef, Object};
+    use topo_framework::object::{ConstructorRef, ExtendRef, Object};
     #[test_only]
-    use aptos_framework::object::Self;
+    use topo_framework::object::Self;
 
     friend topo_token_objects::token;
 
@@ -17,7 +17,7 @@ module topo_token_objects::royalty {
     /// The royalty denominator cannot be 0
     const EROYALTY_DENOMINATOR_IS_ZERO: u64 = 3;
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// The royalty of a token within this collection
     ///
     /// Royalties are optional for a collection.  Royalty percentage is calculated

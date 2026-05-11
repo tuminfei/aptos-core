@@ -4,7 +4,7 @@ module aptos_experimental::market_tests_common {
     use std::option::Option;
     use std::signer;
     use std::vector;
-    use aptos_framework::timestamp;
+    use topo_framework::timestamp;
     use aptos_trading::order_book_types::{
         OrderId,
         good_till_cancelled,
@@ -902,14 +902,14 @@ module aptos_experimental::market_tests_common {
     }
 
     public fun test_self_matching_allowed_helper(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         admin: &signer,
         market_signer: &signer,
         maker1: &signer,
         maker2: &signer,
         is_bulk: bool
     ) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+        timestamp::set_time_has_started_for_testing(topo_framework);
         let market = setup_market_and_clearinghouse(admin, market_signer, true);
         let maker1_addr = signer::address_of(maker1);
         let event_store = event_utils::new_event_store();

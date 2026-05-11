@@ -89,7 +89,7 @@ The blockchain is not in the operating status.
 Marks that genesis has finished.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chain_status.md#0x1_chain_status_set_genesis_end">set_genesis_end</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chain_status.md#0x1_chain_status_set_genesis_end">set_genesis_end</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -98,9 +98,9 @@ Marks that genesis has finished.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chain_status.md#0x1_chain_status_set_genesis_end">set_genesis_end</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <b>move_to</b>(aptos_framework, <a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a> {});
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chain_status.md#0x1_chain_status_set_genesis_end">set_genesis_end</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
+    <b>move_to</b>(topo_framework, <a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a> {});
 }
 </code></pre>
 
@@ -126,7 +126,7 @@ Helper function to determine if Aptos is in genesis state.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="chain_status.md#0x1_chain_status_is_genesis">is_genesis</a>(): bool {
-    !<b>exists</b>&lt;<a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a>&gt;(@aptos_framework)
+    !<b>exists</b>&lt;<a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a>&gt;(@topo_framework)
 }
 </code></pre>
 
@@ -154,7 +154,7 @@ Testing <code><a href="chain_status.md#0x1_chain_status_is_operating">is_operati
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="chain_status.md#0x1_chain_status_is_operating">is_operating</a>(): bool {
-    <b>exists</b>&lt;<a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a>&gt;(@aptos_framework)
+    <b>exists</b>&lt;<a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a>&gt;(@topo_framework)
 }
 </code></pre>
 
@@ -275,7 +275,7 @@ Helper function to assert genesis state.
 ### Function `set_genesis_end`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chain_status.md#0x1_chain_status_set_genesis_end">set_genesis_end</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chain_status.md#0x1_chain_status_set_genesis_end">set_genesis_end</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -283,12 +283,12 @@ Helper function to assert genesis state.
 
 <pre><code><b>pragma</b> verify = <b>true</b>;
 <b>pragma</b> delegate_invariants_to_caller;
-<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
-<b>aborts_if</b> addr != @aptos_framework;
+<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<b>aborts_if</b> addr != @topo_framework;
 // This enforces <a id="high-level-req-3" href="#high-level-req">high-level requirement 3</a>:
-<b>aborts_if</b> <b>exists</b>&lt;<a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a>&gt;(@aptos_framework);
+<b>aborts_if</b> <b>exists</b>&lt;<a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a>&gt;(@topo_framework);
 // This enforces <a id="high-level-req-1" href="#high-level-req">high-level requirement 1</a>:
-<b>ensures</b> <b>global</b>&lt;<a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a>&gt;(@aptos_framework) == <a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a> {};
+<b>ensures</b> <b>global</b>&lt;<a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a>&gt;(@topo_framework) == <a href="chain_status.md#0x1_chain_status_GenesisEndMarker">GenesisEndMarker</a> {};
 </code></pre>
 
 

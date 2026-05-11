@@ -1,9 +1,9 @@
 script {
-    use aptos_framework::topo_governance;
-    use aptos_framework::block;
+    use topo_framework::topo_governance;
+    use topo_framework::block;
 
     fun main(proposal_id: u64) {
-        let framework_signer = topo_governance::resolve(proposal_id, @aptos_framework);
+        let framework_signer = topo_governance::resolve(proposal_id, @topo_framework);
         // Update epoch interval to 2 hours.
         let epoch_interval_secs = 2 * 60 * 60;
         let epoch_interval_microsecs = epoch_interval_secs * 1000000;

@@ -159,9 +159,9 @@
 
 ## Function `chain_id`
 
-Returns the current chain ID, mirroring what <code>aptos_framework::chain_id::get()</code> would return, except in <code>#[test]</code>
-functions, where this will always return <code>4u8</code> as the chain ID, whereas <code>aptos_framework::chain_id::get()</code> will
-return whichever ID was passed to <code>aptos_framework::chain_id::initialize_for_test()</code>.
+Returns the current chain ID, mirroring what <code>topo_framework::chain_id::get()</code> would return, except in <code>#[test]</code>
+functions, where this will always return <code>4u8</code> as the chain ID, whereas <code>topo_framework::chain_id::get()</code> will
+return whichever ID was passed to <code>topo_framework::chain_id::initialize_for_test()</code>.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="type_info.md#0x1_type_info_chain_id">chain_id</a>(): u8

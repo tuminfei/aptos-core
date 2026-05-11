@@ -1,9 +1,9 @@
 #[test_only]
 module swap::test_helpers {
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::fungible_asset::{Self, FungibleAsset};
-    use aptos_framework::object;
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::coin::{Self, Coin};
+    use topo_framework::fungible_asset::{Self, FungibleAsset};
+    use topo_framework::object;
+    use topo_framework::primary_fungible_store;
     use std::option;
     use std::string;
     use swap::package_manager;

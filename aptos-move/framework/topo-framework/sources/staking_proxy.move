@@ -1,8 +1,8 @@
-module aptos_framework::staking_proxy {
+module topo_framework::staking_proxy {
     use std::error;
     use std::signer;
-    use aptos_framework::permissioned_signer;
-    use aptos_framework::stake;
+    use topo_framework::permissioned_signer;
+    use topo_framework::stake;
 
     struct StakeProxyPermission has copy, drop, store {}
 

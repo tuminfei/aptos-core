@@ -1,4 +1,4 @@
-spec aptos_framework::chain_status {
+spec topo_framework::chain_status {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: The end of genesis mark should persist throughout the entire life of the chain.
@@ -27,16 +27,16 @@ spec aptos_framework::chain_status {
         invariant is_genesis() == !is_operating();
     }
 
-    spec set_genesis_end(aptos_framework: &signer) {
+    spec set_genesis_end(topo_framework: &signer) {
         use std::signer;
         pragma verify = true;
         pragma delegate_invariants_to_caller;
-        let addr = signer::address_of(aptos_framework);
-        aborts_if addr != @aptos_framework;
+        let addr = signer::address_of(topo_framework);
+        aborts_if addr != @topo_framework;
         /// [high-level-req-3]
-        aborts_if exists<GenesisEndMarker>(@aptos_framework);
+        aborts_if exists<GenesisEndMarker>(@topo_framework);
         /// [high-level-req-1]
-        ensures global<GenesisEndMarker>(@aptos_framework) == GenesisEndMarker {};
+        ensures global<GenesisEndMarker>(@topo_framework) == GenesisEndMarker {};
     }
 
     spec schema RequiresIsOperating {

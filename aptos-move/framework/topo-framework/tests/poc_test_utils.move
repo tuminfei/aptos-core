@@ -1,13 +1,13 @@
 #[test_only]
-module aptos_framework::poc_test_utils {
+module topo_framework::poc_test_utils {
     use std::signer;
 
-    use aptos_framework::account;
-    use aptos_framework::event;
-    use aptos_framework::poc_power_store;
-    use aptos_framework::stake;
-    use aptos_framework::staking_registry;
-    use aptos_framework::validator_consensus_info;
+    use topo_framework::account;
+    use topo_framework::event;
+    use topo_framework::poc_power_store;
+    use topo_framework::stake;
+    use topo_framework::staking_registry;
+    use topo_framework::validator_consensus_info;
 
     /// Shared status constants used by the external PoC end-to-end tests.
     ///
@@ -28,14 +28,14 @@ module aptos_framework::poc_test_utils {
     /// The rest of the environment still goes through the real framework setup path from
     /// `stake.move`, and the pending fee accumulator is initialized eagerly so fee-oriented
     /// scenarios can exercise the production distribution logic without extra ceremony.
-    public fun setup_poc_env(aptos_framework: &signer) {
+    public fun setup_poc_env(topo_framework: &signer) {
         poc_power_store::initialize_power_store_with_period(
-            aptos_framework,
-            @aptos_framework,
+            topo_framework,
+            @topo_framework,
             TEST_POWER_PERIOD_IN_EPOCHS,
         );
         stake::initialize_for_test_custom(
-            aptos_framework,
+            topo_framework,
             100,
             10000,
             3600,
@@ -44,7 +44,7 @@ module aptos_framework::poc_test_utils {
             100,
             1000000,
         );
-        stake::initialize_pending_transaction_fee(aptos_framework);
+        stake::initialize_pending_transaction_fee(topo_framework);
     }
 
     /// Create a validator account with stake and POC power, but do not join it yet.
@@ -56,13 +56,13 @@ module aptos_framework::poc_test_utils {
     /// The caller remains responsible for deciding when to join and when to advance
     /// the epoch, which is important for scenario-specific assertions.
     public fun create_validator(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         amount: u64,
     ) {
         let (_sk, pk, pop) = stake::generate_identity();
         stake::initialize_test_validator(
-            aptos_framework,
+            topo_framework,
             &pk,
             &pop,
             validator,
@@ -77,11 +77,11 @@ module aptos_framework::poc_test_utils {
     /// This is the standard entry point for scenarios that need a stable active
     /// validator before adding delegators or manipulating epoch transitions.
     public fun create_active_validator(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         amount: u64,
     ) {
-        create_validator(aptos_framework, validator, amount);
+        create_validator(topo_framework, validator, amount);
         stake::join_validator_set(validator, signer::address_of(validator));
         stake::end_epoch();
         assert_validator_state(signer::address_of(validator), VALIDATOR_STATUS_ACTIVE, 0);
@@ -93,11 +93,11 @@ module aptos_framework::poc_test_utils {
     /// committed epoch. Tests that need to update power after genesis should use
     /// `stage_next_period_power` instead.
     public fun seed_genesis_power(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         user: address,
         power: u64,
     ) {
-        poc_power_store::set_genesis_committed_power(aptos_framework, user, power);
+        poc_power_store::set_genesis_committed_power(topo_framework, user, power);
     }
 
     /// Stage a power value for the next active period.
@@ -105,13 +105,13 @@ module aptos_framework::poc_test_utils {
     /// With the test environment's 60-epoch period, the staged value becomes visible
     /// only after the chain crosses into the next power period.
     public fun stage_next_period_power(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         user: address,
         power: u64,
     ) {
         let target_period = poc_power_store::get_current_period() + 1;
         poc_power_store::stage_batch_update(
-            aptos_framework,
+            topo_framework,
             target_period,
             vector[user],
             vector[power],
@@ -119,7 +119,7 @@ module aptos_framework::poc_test_utils {
     }
 
     public fun create_delegator_with_power_and_stake(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         delegator: &signer,
         validator_address: address,
         power: u64,
@@ -127,7 +127,7 @@ module aptos_framework::poc_test_utils {
     ) {
         let delegator_address = signer::address_of(delegator);
         account::create_account_for_test(delegator_address);
-        seed_genesis_power(aptos_framework, delegator_address, power);
+        seed_genesis_power(topo_framework, delegator_address, power);
         stake::mint_and_add_stake(delegator, stake_amount);
         staking_registry::delegate(delegator, validator_address);
     }

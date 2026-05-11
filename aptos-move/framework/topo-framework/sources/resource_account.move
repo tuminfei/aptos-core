@@ -60,13 +60,13 @@
 ///    module.resource_signer_cap = option::some(resource_signer_cap);
 /// }
 /// ```
-module aptos_framework::resource_account {
+module topo_framework::resource_account {
     use std::error;
     use std::signer;
     use std::vector;
-    use aptos_framework::account;
-    use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::coin;
+    use topo_framework::account;
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin;
     use aptos_std::simple_map::{Self, SimpleMap};
 
     /// Container resource not found in account
@@ -129,7 +129,7 @@ module aptos_framework::resource_account {
     ) acquires Container {
         let (resource, resource_signer_cap) =
             account::create_resource_account(origin, seed);
-        aptos_framework::code::publish_package_txn(&resource, metadata_serialized, code);
+        topo_framework::code::publish_package_txn(&resource, metadata_serialized, code);
         rotate_account_authentication_key_and_store_capability(
             origin,
             resource,
@@ -206,7 +206,7 @@ module aptos_framework::resource_account {
         let container = borrow_global<Container>(user_addr);
 
         let resource_addr =
-            aptos_framework::account::create_resource_address(&user_addr, seed);
+            topo_framework::account::create_resource_address(&user_addr, seed);
         let resource_cap = container.store.borrow(&resource_addr);
 
         let resource = account::create_signer_with_capability(resource_cap);
@@ -237,8 +237,8 @@ module aptos_framework::resource_account {
     #[test(framework = @0x1, user = @0x1234)]
     public entry fun with_coin(framework: signer, user: signer) acquires Container {
         let user_addr = signer::address_of(&user);
-        let (burn, mint) = aptos_framework::topo_coin::initialize_for_test(&framework);
-        aptos_framework::topo_account::create_account(copy user_addr);
+        let (burn, mint) = topo_framework::topo_coin::initialize_for_test(&framework);
+        topo_framework::topo_account::create_account(copy user_addr);
 
         let coin = coin::mint<TopoCoin>(100, &mint);
         coin::deposit(copy user_addr, coin);
@@ -247,7 +247,7 @@ module aptos_framework::resource_account {
         create_resource_account_and_fund(&user, copy seed, vector::empty(), 10);
 
         let resource_addr =
-            aptos_framework::account::create_resource_address(&user_addr, seed);
+            topo_framework::account::create_resource_address(&user_addr, seed);
         coin::transfer<TopoCoin>(&user, resource_addr, 10);
 
         coin::destroy_burn_cap(burn);

@@ -2073,7 +2073,7 @@ Return true if the voting period of the given proposal has already ended.
 <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(voting_forum.proposals, proposal_id);
 <b>aborts_if</b> <a href="voting.md#0x1_voting_is_voting_period_over">is_voting_period_over</a>(proposal);
 <b>aborts_if</b> proposal.is_resolved;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 <b>aborts_if</b> !std::string::spec_internal_check_utf8(<a href="voting.md#0x1_voting_IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY">IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY</a>);
 <b>let</b> execution_key = std::string::spec_utf8(<a href="voting.md#0x1_voting_IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY">IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY</a>);
 <b>aborts_if</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(proposal.metadata, execution_key) &&
@@ -2157,7 +2157,7 @@ Return true if the voting period of the given proposal has already ended.
 <b>aborts_if</b> has_multi_step_key && <a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserialize">from_bcs::deserialize</a>&lt;bool&gt;(<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(proposal.metadata, multi_step_key));
 <b>let</b> <b>post</b> post_voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">VotingForum</a>&lt;ProposalType&gt;&gt;(voting_forum_address);
 <b>let</b> <b>post</b> post_proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(post_voting_forum.proposals, proposal_id);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 // This enforces <a id="high-level-req-3" href="#high-level-req">high-level requirement 3</a>:
 <b>ensures</b> post_proposal.is_resolved == <b>true</b>;
 <b>ensures</b> post_proposal.resolution_time_secs == <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>();
@@ -2200,7 +2200,7 @@ Return true if the voting period of the given proposal has already ended.
 <b>let</b> is_multi_step = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(proposal.metadata, multi_step_key) &&
     <a href="../../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs_deserialize">from_bcs::deserialize</a>(<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(proposal.metadata, multi_step_key));
 <b>aborts_if</b> !is_multi_step && len(next_execution_hash) != 0;
-<b>aborts_if</b> len(next_execution_hash) == 0 && !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<b>aborts_if</b> len(next_execution_hash) == 0 && !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 <b>aborts_if</b> len(next_execution_hash) == 0 && is_multi_step && !<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(proposal.metadata, multi_step_in_execution_key);
 // This enforces <a id="high-level-req-4" href="#high-level-req">high-level requirement 4</a>:
 <b>ensures</b> len(next_execution_hash) == 0 ==&gt; post_proposal.resolution_time_secs == <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>();
@@ -2263,7 +2263,7 @@ Return true if the voting period of the given proposal has already ended.
 
 <pre><code><b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
 <b>include</b> <a href="voting.md#0x1_voting_AbortsIfNotContainProposalID">AbortsIfNotContainProposalID</a>&lt;ProposalType&gt;;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 <b>ensures</b> result == <a href="voting.md#0x1_voting_spec_is_voting_closed">spec_is_voting_closed</a>&lt;ProposalType&gt;(voting_forum_address, proposal_id);
 </code></pre>
 

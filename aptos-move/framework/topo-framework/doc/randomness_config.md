@@ -198,7 +198,7 @@ Initialize the configuration. Used in genesis or governance.
 
 <pre><code><b>public</b> <b>fun</b> <a href="randomness_config.md#0x1_randomness_config_initialize">initialize</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, config: <a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
-    <b>if</b> (!<b>exists</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@topo_framework)) {
         <b>move_to</b>(framework, config)
     }
 }
@@ -254,8 +254,8 @@ Only used in reconfigurations to apply the pending <code><a href="randomness_con
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
     <b>if</b> (<a href="config_buffer.md#0x1_config_buffer_does_exist">config_buffer::does_exist</a>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;()) {
         <b>let</b> new_config = <a href="config_buffer.md#0x1_config_buffer_extract_v2">config_buffer::extract_v2</a>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;();
-        <b>if</b> (<b>exists</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@aptos_framework)) {
-            *<b>borrow_global_mut</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@aptos_framework) = new_config;
+        <b>if</b> (<b>exists</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@topo_framework)) {
+            *<b>borrow_global_mut</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@topo_framework) = new_config;
         } <b>else</b> {
             <b>move_to</b>(framework, new_config);
         }
@@ -287,8 +287,8 @@ The feature works if and only if <code><a href="consensus_config.md#0x1_consensu
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="randomness_config.md#0x1_randomness_config_enabled">enabled</a>(): bool <b>acquires</b> <a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a> {
-    <b>if</b> (<b>exists</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@aptos_framework)) {
-        <b>let</b> config = <b>borrow_global</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@aptos_framework);
+    <b>if</b> (<b>exists</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@topo_framework)) {
+        <b>let</b> config = <b>borrow_global</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@topo_framework);
         <b>let</b> variant_type_name = *config.variant.type_name().bytes();
         variant_type_name != b"<a href="randomness_config.md#0x1_randomness_config_ConfigOff">0x1::randomness_config::ConfigOff</a>"
     } <b>else</b> {
@@ -410,8 +410,8 @@ Get the currently effective randomness configuration object.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="randomness_config.md#0x1_randomness_config_current">current</a>(): <a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a> <b>acquires</b> <a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a> {
-    <b>if</b> (<b>exists</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@aptos_framework)) {
-        *<b>borrow_global</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@aptos_framework)
+    <b>if</b> (<b>exists</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@topo_framework)) {
+        *<b>borrow_global</b>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;(@topo_framework)
     } <b>else</b> {
         <a href="randomness_config.md#0x1_randomness_config_new_off">new_off</a>()
     }
@@ -438,7 +438,7 @@ Get the currently effective randomness configuration object.
 
 
 
-<pre><code><b>requires</b> @aptos_framework == std::signer::address_of(framework);
+<pre><code><b>requires</b> @topo_framework == std::signer::address_of(framework);
 <b>include</b> <a href="config_buffer.md#0x1_config_buffer_OnNewEpochRequirement">config_buffer::OnNewEpochRequirement</a>&lt;<a href="randomness_config.md#0x1_randomness_config_RandomnessConfig">RandomnessConfig</a>&gt;;
 <b>aborts_if</b> <b>false</b>;
 </code></pre>

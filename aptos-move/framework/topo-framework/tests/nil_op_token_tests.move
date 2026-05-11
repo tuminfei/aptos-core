@@ -1,7 +1,7 @@
 #[test_only]
-module aptos_framework::nil_op_token_tests {
-    use aptos_framework::fungible_asset::{Self, Metadata, TestToken};
-    use aptos_framework::dispatchable_fungible_asset;
+module topo_framework::nil_op_token_tests {
+    use topo_framework::fungible_asset::{Self, Metadata, TestToken};
+    use topo_framework::dispatchable_fungible_asset;
     use 0xcafe::nil_op_token;
     use std::option;
 

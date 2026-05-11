@@ -870,7 +870,7 @@ Can be called during genesis or by the governance itself.
 Stores the signer capability for a given address.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_store_signer_cap">store_signer_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, signer_address: <b>address</b>, signer_cap: <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_store_signer_cap">store_signer_cap</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, signer_address: <b>address</b>, signer_cap: <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>)
 </code></pre>
 
 
@@ -880,21 +880,21 @@ Stores the signer capability for a given address.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_store_signer_cap">store_signer_cap</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     signer_address: <b>address</b>,
     signer_cap: SignerCapability,
 ) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <a href="system_addresses.md#0x1_system_addresses_assert_framework_reserved">system_addresses::assert_framework_reserved</a>(signer_address);
 
-    <b>if</b> (!<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework)) {
         <b>move_to</b>(
-            aptos_framework,
+            topo_framework,
             <a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a> { signer_caps: <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_create">simple_map::create</a>&lt;<b>address</b>, SignerCapability&gt;() }
         );
     };
 
-    <b>let</b> signer_caps = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework).signer_caps;
+    <b>let</b> signer_caps = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework).signer_caps;
     signer_caps.add(signer_address, signer_cap);
 }
 </code></pre>
@@ -908,11 +908,11 @@ Stores the signer capability for a given address.
 ## Function `initialize`
 
 Initializes the state for Aptos Governance. Can only be called during Genesis with a signer
-for the aptos_framework (0x1) account.
+for the topo_framework (0x1) account.
 This function is private because it's called directly from the vm.
 
 
-<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_voting_threshold: u128, required_proposer_stake: u64, voting_duration_secs: u64)
+<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_voting_threshold: u128, required_proposer_stake: u64, voting_duration_secs: u64)
 </code></pre>
 
 
@@ -922,29 +922,29 @@ This function is private because it's called directly from the vm.
 
 
 <pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_initialize">initialize</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     min_voting_threshold: u128,
     required_proposer_stake: u64,
     voting_duration_secs: u64,
 ) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
-    <a href="voting.md#0x1_voting_register">voting::register</a>&lt;GovernanceProposal&gt;(aptos_framework);
-    <a href="topo_governance.md#0x1_topo_governance_initialize_partial_voting">initialize_partial_voting</a>(aptos_framework);
-    <b>move_to</b>(aptos_framework, <a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a> {
+    <a href="voting.md#0x1_voting_register">voting::register</a>&lt;GovernanceProposal&gt;(topo_framework);
+    <a href="topo_governance.md#0x1_topo_governance_initialize_partial_voting">initialize_partial_voting</a>(topo_framework);
+    <b>move_to</b>(topo_framework, <a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a> {
         voting_duration_secs,
         min_voting_threshold,
         required_proposer_stake,
     });
-    <b>move_to</b>(aptos_framework, <a href="topo_governance.md#0x1_topo_governance_GovernanceEvents">GovernanceEvents</a> {
-        create_proposal_events: <a href="account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="topo_governance.md#0x1_topo_governance_CreateProposalEvent">CreateProposalEvent</a>&gt;(aptos_framework),
-        update_config_events: <a href="account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="topo_governance.md#0x1_topo_governance_UpdateConfigEvent">UpdateConfigEvent</a>&gt;(aptos_framework),
-        vote_events: <a href="account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="topo_governance.md#0x1_topo_governance_VoteEvent">VoteEvent</a>&gt;(aptos_framework),
+    <b>move_to</b>(topo_framework, <a href="topo_governance.md#0x1_topo_governance_GovernanceEvents">GovernanceEvents</a> {
+        create_proposal_events: <a href="account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="topo_governance.md#0x1_topo_governance_CreateProposalEvent">CreateProposalEvent</a>&gt;(topo_framework),
+        update_config_events: <a href="account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="topo_governance.md#0x1_topo_governance_UpdateConfigEvent">UpdateConfigEvent</a>&gt;(topo_framework),
+        vote_events: <a href="account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="topo_governance.md#0x1_topo_governance_VoteEvent">VoteEvent</a>&gt;(topo_framework),
     });
-    <b>move_to</b>(aptos_framework, <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a> {
+    <b>move_to</b>(topo_framework, <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a> {
         votes: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
     });
-    <b>move_to</b>(aptos_framework, <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a> {
+    <b>move_to</b>(topo_framework, <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a> {
         hashes: <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_create">simple_map::create</a>&lt;u64, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;(),
     })
 }
@@ -962,7 +962,7 @@ Update the governance configurations. This can only be called as part of resolvi
 TopoGovernance.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_update_governance_config">update_governance_config</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_voting_threshold: u128, required_proposer_stake: u64, voting_duration_secs: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_update_governance_config">update_governance_config</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_voting_threshold: u128, required_proposer_stake: u64, voting_duration_secs: u64)
 </code></pre>
 
 
@@ -972,18 +972,18 @@ TopoGovernance.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_update_governance_config">update_governance_config</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     min_voting_threshold: u128,
     required_proposer_stake: u64,
     voting_duration_secs: u64,
 ) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
-    <b>let</b> governance_config = <b>borrow_global_mut</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework);
+    <b>let</b> governance_config = <b>borrow_global_mut</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework);
     governance_config.voting_duration_secs = voting_duration_secs;
     governance_config.min_voting_threshold = min_voting_threshold;
     governance_config.required_proposer_stake = required_proposer_stake;
-    <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">staking_registry::ensure_min_cooldown_secs</a>(aptos_framework, voting_duration_secs);
+    <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">staking_registry::ensure_min_cooldown_secs</a>(topo_framework, voting_duration_secs);
 
     <a href="event.md#0x1_event_emit">event::emit</a>(
         <a href="topo_governance.md#0x1_topo_governance_UpdateConfig">UpdateConfig</a> {
@@ -1004,10 +1004,10 @@ TopoGovernance.
 ## Function `initialize_partial_voting`
 
 Initializes the state for Aptos Governance partial voting. Can only be called through Aptos governance
-proposals with a signer for the aptos_framework (0x1) account.
+proposals with a signer for the topo_framework (0x1) account.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_initialize_partial_voting">initialize_partial_voting</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_initialize_partial_voting">initialize_partial_voting</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1017,11 +1017,11 @@ proposals with a signer for the aptos_framework (0x1) account.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_initialize_partial_voting">initialize_partial_voting</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
 ) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
-    <b>move_to</b>(aptos_framework, <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a> {
+    <b>move_to</b>(topo_framework, <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a> {
         votes: <a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_new">smart_table::new</a>(),
     });
 }
@@ -1048,7 +1048,7 @@ proposals with a signer for the aptos_framework (0x1) account.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_voting_duration_secs">get_voting_duration_secs</a>(): u64 <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a> {
-    <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework).voting_duration_secs
+    <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework).voting_duration_secs
 }
 </code></pre>
 
@@ -1073,7 +1073,7 @@ proposals with a signer for the aptos_framework (0x1) account.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_has_governance_config">has_governance_config</a>(): bool {
-    <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework)
+    <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework)
 }
 </code></pre>
 
@@ -1098,7 +1098,7 @@ proposals with a signer for the aptos_framework (0x1) account.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_min_voting_threshold">get_min_voting_threshold</a>(): u128 <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a> {
-    <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework).min_voting_threshold
+    <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework).min_voting_threshold
 }
 </code></pre>
 
@@ -1123,7 +1123,7 @@ proposals with a signer for the aptos_framework (0x1) account.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_required_proposer_stake">get_required_proposer_stake</a>(): u64 <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a> {
-    <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework).required_proposer_stake
+    <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework).required_proposer_stake
 }
 </code></pre>
 
@@ -1155,7 +1155,7 @@ Return true if a stake pool has already voted on a proposal before partial gover
     };
     // If a <a href="stake.md#0x1_stake">stake</a> pool <b>has</b> already voted on a proposal before partial governance <a href="voting.md#0x1_voting">voting</a> is enabled,
     // there is a record in <a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>.
-    <b>let</b> voting_records = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
+    <b>let</b> voting_records = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@topo_framework);
     voting_records.votes.contains(record_key)
 }
 </code></pre>
@@ -1189,7 +1189,7 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
     <a href="topo_governance.md#0x1_topo_governance_assert_voting_initialization">assert_voting_initialization</a>();
 
     <b>let</b> proposal_expiration = <a href="voting.md#0x1_voting_get_proposal_expiration_secs">voting::get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(
-        @aptos_framework,
+        @topo_framework,
         proposal_id
     );
     <b>if</b> (<a href="topo_governance.md#0x1_topo_governance_is_proposal_expired">is_proposal_expired</a>(proposal_expiration)) {
@@ -1207,7 +1207,7 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
         proposal_id,
     };
     <b>let</b> used_voting_power =
-        *<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>[@aptos_framework].votes.borrow_with_default(record_key, &0);
+        *<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>[@topo_framework].votes.borrow_with_default(record_key, &0);
     <b>if</b> (used_voting_power &gt;= total_voting_power) {
         0
     } <b>else</b> {
@@ -1238,7 +1238,7 @@ Note: a stake pool's voting power on a proposal could increase over time(e.g. re
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_assert_proposal_expiration">assert_proposal_expiration</a>(voter: <b>address</b>, proposal_id: u64) {
     <a href="topo_governance.md#0x1_topo_governance_assert_voting_initialization">assert_voting_initialization</a>();
     <b>let</b> proposal_expiration = <a href="voting.md#0x1_voting_get_proposal_expiration_secs">voting::get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(
-        @aptos_framework,
+        @topo_framework,
         proposal_id
     );
     <b>assert</b>!(
@@ -1367,7 +1367,7 @@ only the exact script with matching hash can be successfully executed.
     <a href="topo_governance.md#0x1_topo_governance_check_governance_permission">check_governance_permission</a>(proposer);
     <b>let</b> proposer_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(proposer);
 
-    <b>let</b> governance_config = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework);
+    <b>let</b> governance_config = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework);
     <b>let</b> stake_balance = <a href="staking_registry.md#0x1_staking_registry_get_effective_power">staking_registry::get_effective_power</a>(proposer_address);
     <b>assert</b>!(
         stake_balance &gt;= governance_config.required_proposer_stake,
@@ -1388,7 +1388,7 @@ only the exact script with matching hash can be successfully executed.
 
     <b>let</b> proposal_id = <a href="voting.md#0x1_voting_create_proposal_v2">voting::create_proposal_v2</a>(
         proposer_address,
-        @aptos_framework,
+        @topo_framework,
         <a href="governance_proposal.md#0x1_governance_proposal_create_proposal">governance_proposal::create_proposal</a>(),
         execution_hash,
         governance_config.min_voting_threshold,
@@ -1512,7 +1512,7 @@ cannot vote on the proposal even after partial governance voting is enabled.
 
     <a href="voting.md#0x1_voting_vote">voting::vote</a>&lt;GovernanceProposal&gt;(
         &<a href="governance_proposal.md#0x1_governance_proposal_create_empty_proposal">governance_proposal::create_empty_proposal</a>(),
-        @aptos_framework,
+        @topo_framework,
         proposal_id,
         voting_power,
         should_pass,
@@ -1522,7 +1522,7 @@ cannot vote on the proposal even after partial governance voting is enabled.
         voter: voting_subject,
         proposal_id,
     };
-    <b>let</b> used_voting_power = <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>[@aptos_framework].votes.borrow_mut_with_default(record_key, 0);
+    <b>let</b> used_voting_power = <a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>[@topo_framework].votes.borrow_mut_with_default(record_key, 0);
     // This calculation should never overflow because the used <a href="voting.md#0x1_voting">voting</a> cannot exceed the total <a href="voting.md#0x1_voting">voting</a> power of this <a href="stake.md#0x1_stake">stake</a> pool.
     *used_voting_power += voting_power;
 
@@ -1535,7 +1535,7 @@ cannot vote on the proposal even after partial governance voting is enabled.
         },
     );
 
-    <b>let</b> proposal_state = <a href="voting.md#0x1_voting_get_proposal_state">voting::get_proposal_state</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
+    <b>let</b> proposal_state = <a href="voting.md#0x1_voting_get_proposal_state">voting::get_proposal_state</a>&lt;GovernanceProposal&gt;(@topo_framework, proposal_id);
     <b>if</b> (proposal_state == <a href="topo_governance.md#0x1_topo_governance_PROPOSAL_STATE_SUCCEEDED">PROPOSAL_STATE_SUCCEEDED</a>) {
         <a href="topo_governance.md#0x1_topo_governance_add_approved_script_hash">add_approved_script_hash</a>(proposal_id);
     }
@@ -1589,13 +1589,13 @@ are too large (e.g. module upgrades).
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_add_approved_script_hash">add_approved_script_hash</a>(proposal_id: u64) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a> {
-    <b>let</b> approved_hashes = <b>borrow_global_mut</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework);
+    <b>let</b> approved_hashes = <b>borrow_global_mut</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework);
 
     // Ensure the proposal can be resolved.
-    <b>let</b> proposal_state = <a href="voting.md#0x1_voting_get_proposal_state">voting::get_proposal_state</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
+    <b>let</b> proposal_state = <a href="voting.md#0x1_voting_get_proposal_state">voting::get_proposal_state</a>&lt;GovernanceProposal&gt;(@topo_framework, proposal_id);
     <b>assert</b>!(proposal_state == <a href="topo_governance.md#0x1_topo_governance_PROPOSAL_STATE_SUCCEEDED">PROPOSAL_STATE_SUCCEEDED</a>, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_governance.md#0x1_topo_governance_EPROPOSAL_NOT_RESOLVABLE_YET">EPROPOSAL_NOT_RESOLVABLE_YET</a>));
 
-    <b>let</b> execution_hash = <a href="voting.md#0x1_voting_get_execution_hash">voting::get_execution_hash</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
+    <b>let</b> execution_hash = <a href="voting.md#0x1_voting_get_execution_hash">voting::get_execution_hash</a>&lt;GovernanceProposal&gt;(@topo_framework, proposal_id);
 
     // If this is a multi-step proposal, the proposal id will already exist in the <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a> map.
     // We will <b>update</b> execution <a href="../../aptos-stdlib/../move-stdlib/doc/hash.md#0x1_hash">hash</a> in <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a> <b>to</b> be the next_execution_hash.
@@ -1633,7 +1633,7 @@ than yes).
     proposal_id: u64,
     signer_address: <b>address</b>
 ): <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a> <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>, <a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a> {
-    <a href="voting.md#0x1_voting_resolve">voting::resolve</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
+    <a href="voting.md#0x1_voting_resolve">voting::resolve</a>&lt;GovernanceProposal&gt;(@topo_framework, proposal_id);
     <a href="topo_governance.md#0x1_topo_governance_remove_approved_hash">remove_approved_hash</a>(proposal_id);
     <a href="topo_governance.md#0x1_topo_governance_get_signer">get_signer</a>(signer_address)
 }
@@ -1664,7 +1664,7 @@ Resolve a successful multi-step proposal. This would fail if the proposal is not
     signer_address: <b>address</b>,
     next_execution_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 ): <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a> <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>, <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a> {
-    <a href="voting.md#0x1_voting_resolve_proposal_v2">voting::resolve_proposal_v2</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id, next_execution_hash);
+    <a href="voting.md#0x1_voting_resolve_proposal_v2">voting::resolve_proposal_v2</a>&lt;GovernanceProposal&gt;(@topo_framework, proposal_id, next_execution_hash);
     // If the current step is the last step of this multi-step proposal,
     // we will remove the execution <a href="../../aptos-stdlib/../move-stdlib/doc/hash.md#0x1_hash">hash</a> from the <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a> map.
     <b>if</b> (next_execution_hash.length() == 0) {
@@ -1701,11 +1701,11 @@ Remove an approved proposal's execution script hash.
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_remove_approved_hash">remove_approved_hash</a>(proposal_id: u64) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a> {
     <b>assert</b>!(
-        <a href="voting.md#0x1_voting_is_resolved">voting::is_resolved</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id),
+        <a href="voting.md#0x1_voting_is_resolved">voting::is_resolved</a>&lt;GovernanceProposal&gt;(@topo_framework, proposal_id),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_governance.md#0x1_topo_governance_EPROPOSAL_NOT_RESOLVED_YET">EPROPOSAL_NOT_RESOLVED_YET</a>),
     );
 
-    <b>let</b> approved_hashes = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework).hashes;
+    <b>let</b> approved_hashes = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework).hashes;
     <b>if</b> (approved_hashes.contains_key(&proposal_id)) {
         approved_hashes.remove(&proposal_id);
     };
@@ -1731,7 +1731,7 @@ This behavior affects when an update of an on-chain config (e.g. <code>Consensus
 since such updates are applied whenever we enter an new epoch.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_reconfigure">reconfigure</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_reconfigure">reconfigure</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1740,8 +1740,8 @@ since such updates are applied whenever we enter an new epoch.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_reconfigure">reconfigure</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_reconfigure">reconfigure</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>if</b> (<a href="consensus_config.md#0x1_consensus_config_validator_txn_enabled">consensus_config::validator_txn_enabled</a>() && <a href="randomness_config.md#0x1_randomness_config_enabled">randomness_config::enabled</a>()) {
         <b>if</b> (<a href="chunky_dkg_config.md#0x1_chunky_dkg_config_enabled">chunky_dkg_config::enabled</a>()) {
             <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_try_start_with_chunky_dkg">reconfiguration_with_dkg::try_start_with_chunky_dkg</a>();
@@ -1749,7 +1749,7 @@ since such updates are applied whenever we enter an new epoch.
             <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_try_start">reconfiguration_with_dkg::try_start</a>();
         }
     } <b>else</b> {
-        <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_finish">reconfiguration_with_dkg::finish</a>(aptos_framework);
+        <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_finish">reconfiguration_with_dkg::finish</a>(topo_framework);
     }
 }
 </code></pre>
@@ -1770,7 +1770,7 @@ WARNING: currently only used by tests. In most cases you should use <code><a hre
 TODO: migrate these tests to be aware of async reconfiguration.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch">force_end_epoch</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch">force_end_epoch</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1779,9 +1779,9 @@ TODO: migrate these tests to be aware of async reconfiguration.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch">force_end_epoch</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_finish">reconfiguration_with_dkg::finish</a>(aptos_framework);
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch">force_end_epoch</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
+    <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_finish">reconfiguration_with_dkg::finish</a>(topo_framework);
 }
 </code></pre>
 
@@ -1797,7 +1797,7 @@ TODO: migrate these tests to be aware of async reconfiguration.
 where the core resources account exists and has been granted power to mint Aptos coins.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch_test_only">force_end_epoch_test_only</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch_test_only">force_end_epoch_test_only</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1806,8 +1806,8 @@ where the core resources account exists and has been granted power to mint Aptos
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch_test_only">force_end_epoch_test_only</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a> {
-    <b>let</b> core_signer = <a href="topo_governance.md#0x1_topo_governance_get_signer_testnet_only">get_signer_testnet_only</a>(aptos_framework, @0x1);
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch_test_only">force_end_epoch_test_only</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a> {
+    <b>let</b> core_signer = <a href="topo_governance.md#0x1_topo_governance_get_signer_testnet_only">get_signer_testnet_only</a>(topo_framework, @0x1);
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(&core_signer);
     <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_finish">reconfiguration_with_dkg::finish</a>(&core_signer);
 }
@@ -1891,7 +1891,7 @@ period using the framework signer delegated to <code>@core_resources</code>.
 Update feature flags and also trigger reconfiguration.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_toggle_features">toggle_features</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, enable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, disable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_toggle_features">toggle_features</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, enable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, disable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -1900,10 +1900,10 @@ Update feature flags and also trigger reconfiguration.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_toggle_features">toggle_features</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, enable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, disable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_change_feature_flags_for_next_epoch">features::change_feature_flags_for_next_epoch</a>(aptos_framework, enable, disable);
-    <a href="topo_governance.md#0x1_topo_governance_reconfigure">reconfigure</a>(aptos_framework);
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_toggle_features">toggle_features</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, enable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, disable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
+    <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_change_feature_flags_for_next_epoch">features::change_feature_flags_for_next_epoch</a>(topo_framework, enable, disable);
+    <a href="topo_governance.md#0x1_topo_governance_reconfigure">reconfigure</a>(topo_framework);
 }
 </code></pre>
 
@@ -1957,7 +1957,7 @@ Return a signer for making changes to 0x1 as part of on-chain governance proposa
 
 
 <pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_get_signer">get_signer</a>(signer_address: <b>address</b>): <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a> <b>acquires</b> <a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a> {
-    <b>let</b> governance_responsibility = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework);
+    <b>let</b> governance_responsibility = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework);
     <b>let</b> signer_cap = governance_responsibility.signer_caps.borrow(&signer_address);
     create_signer_with_capability(signer_cap)
 }
@@ -2016,7 +2016,7 @@ Return a signer for making changes to 0x1 as part of on-chain governance proposa
 
 
 <pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_assert_voting_initialization">assert_voting_initialization</a>() {
-    <b>assert</b>!(<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="topo_governance.md#0x1_topo_governance_EPARTIAL_VOTING_NOT_INITIALIZED">EPARTIAL_VOTING_NOT_INITIALIZED</a>));
+    <b>assert</b>!(<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@topo_framework), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="topo_governance.md#0x1_topo_governance_EPARTIAL_VOTING_NOT_INITIALIZED">EPARTIAL_VOTING_NOT_INITIALIZED</a>));
 }
 </code></pre>
 
@@ -2106,19 +2106,19 @@ Return a signer for making changes to 0x1 as part of on-chain governance proposa
 ### Function `store_signer_cap`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_store_signer_cap">store_signer_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, signer_address: <b>address</b>, signer_cap: <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_store_signer_cap">store_signer_cap</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, signer_address: <b>address</b>, signer_cap: <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>)
 </code></pre>
 
 
 
 
-<pre><code><b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework));
+<pre><code><b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework));
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_framework_reserved_address">system_addresses::is_framework_reserved_address</a>(signer_address);
-<b>let</b> signer_caps = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework).signer_caps;
-<b>aborts_if</b> <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework) &&
+<b>let</b> signer_caps = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework).signer_caps;
+<b>aborts_if</b> <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework) &&
     <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(signer_caps, signer_address);
-<b>ensures</b> <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework);
-<b>let</b> <b>post</b> post_signer_caps = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework).signer_caps;
+<b>ensures</b> <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework);
+<b>let</b> <b>post</b> post_signer_caps = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework).signer_caps;
 <b>ensures</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(post_signer_caps, signer_address);
 </code></pre>
 
@@ -2129,18 +2129,18 @@ Return a signer for making changes to 0x1 as part of on-chain governance proposa
 ### Function `initialize`
 
 
-<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_voting_threshold: u128, required_proposer_stake: u64, voting_duration_secs: u64)
+<pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_voting_threshold: u128, required_proposer_stake: u64, voting_duration_secs: u64)
 </code></pre>
 
 
-Signer address must be @aptos_framework.
+Signer address must be @topo_framework.
 The signer does not allow these resources (GovernanceProposal, GovernanceConfig, GovernanceEvents, VotingRecords, ApprovedExecutionHashes) to exist.
 The signer must have an Account.
 Limit addition overflow.
 
 
 <pre><code><b>pragma</b> aborts_if_is_partial;
-<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 <b>let</b> register_account = <b>global</b>&lt;<a href="account.md#0x1_account_Account">account::Account</a>&gt;(addr);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(addr);
 <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_spec_is_struct">type_info::spec_is_struct</a>&lt;GovernanceProposal&gt;();
@@ -2160,21 +2160,21 @@ Limit addition overflow.
 ### Function `update_governance_config`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_update_governance_config">update_governance_config</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_voting_threshold: u128, required_proposer_stake: u64, voting_duration_secs: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_update_governance_config">update_governance_config</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_voting_threshold: u128, required_proposer_stake: u64, voting_duration_secs: u64)
 </code></pre>
 
 
-Signer address must be @aptos_framework.
-Address @aptos_framework must exist GovernanceConfig and GovernanceEvents.
+Signer address must be @topo_framework.
+Address @topo_framework must exist GovernanceConfig and GovernanceEvents.
 
 
-<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
-<b>let</b> governance_config = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework);
-<b>let</b> <b>post</b> new_governance_config = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework);
-<b>aborts_if</b> addr != @aptos_framework;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework);
+<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<b>let</b> governance_config = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework);
+<b>let</b> <b>post</b> new_governance_config = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework);
+<b>aborts_if</b> addr != @topo_framework;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework);
 <b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_is_enabled">features::spec_is_enabled</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_MODULE_EVENT_MIGRATION">features::MODULE_EVENT_MIGRATION</a>) && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceEvents">GovernanceEvents</a>&gt;(
-    @aptos_framework
+    @topo_framework
 );
 <b>modifies</b> <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(addr);
 <b>ensures</b> new_governance_config.voting_duration_secs == voting_duration_secs;
@@ -2189,18 +2189,18 @@ Address @aptos_framework must exist GovernanceConfig and GovernanceEvents.
 ### Function `initialize_partial_voting`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_initialize_partial_voting">initialize_partial_voting</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_initialize_partial_voting">initialize_partial_voting</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
-Signer address must be @aptos_framework.
+Signer address must be @topo_framework.
 Abort if structs have already been created.
 
 
-<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
-<b>aborts_if</b> addr != @aptos_framework;
-<b>aborts_if</b> <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
-<b>ensures</b> <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
+<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<b>aborts_if</b> addr != @topo_framework;
+<b>aborts_if</b> <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@topo_framework);
+<b>ensures</b> <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@topo_framework);
 </code></pre>
 
 
@@ -2210,13 +2210,13 @@ Abort if structs have already been created.
 
 
 <pre><code><b>schema</b> <a href="topo_governance.md#0x1_topo_governance_InitializeAbortIf">InitializeAbortIf</a> {
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
     min_voting_threshold: u128;
     required_proposer_stake: u64;
     voting_duration_secs: u64;
-    <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+    <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
     <b>let</b> <a href="account.md#0x1_account">account</a> = <b>global</b>&lt;<a href="account.md#0x1_account_Account">account::Account</a>&gt;(addr);
-    <b>aborts_if</b> addr != @aptos_framework;
+    <b>aborts_if</b> addr != @topo_framework;
     <b>aborts_if</b> <b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;<a href="governance_proposal.md#0x1_governance_proposal_GovernanceProposal">governance_proposal::GovernanceProposal</a>&gt;&gt;(addr);
     <b>aborts_if</b> <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(addr);
     <b>aborts_if</b> <b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceEvents">GovernanceEvents</a>&gt;(addr);
@@ -2284,7 +2284,7 @@ Abort if structs have already been created.
 
 
 <pre><code><b>schema</b> <a href="topo_governance.md#0x1_topo_governance_AbortsIfNotGovernanceConfig">AbortsIfNotGovernanceConfig</a> {
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework);
 }
 </code></pre>
 
@@ -2302,7 +2302,7 @@ Abort if structs have already been created.
 
 
 
-<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
+<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@topo_framework);
 </code></pre>
 
 
@@ -2319,12 +2319,12 @@ Abort if structs have already been created.
 
 
 
-<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
+<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@topo_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@topo_framework);
 <b>include</b> <a href="voting.md#0x1_voting_AbortsIfNotContainProposalID">voting::AbortsIfNotContainProposalID</a>&lt;GovernanceProposal&gt; {
-    voting_forum_address: @aptos_framework
+    voting_forum_address: @topo_framework
 };
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 <b>ensures</b> result == <a href="topo_governance.md#0x1_topo_governance_spec_get_remaining_voting_power">spec_get_remaining_voting_power</a>(voter, proposal_id);
 </code></pre>
 
@@ -2336,8 +2336,8 @@ Abort if structs have already been created.
 
 <pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_spec_get_remaining_voting_power">spec_get_remaining_voting_power</a>(stake_pool: <b>address</b>, proposal_id: u64): u64 {
    <b>let</b> spec_proposal_expiration =
-       <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
-   <b>let</b> voting_records_v2 = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
+       <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@topo_framework, proposal_id);
+   <b>let</b> voting_records_v2 = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@topo_framework);
    <b>let</b> record_key = <a href="topo_governance.md#0x1_topo_governance_RecordKey">RecordKey</a> {
        voter: stake_pool,
        proposal_id,
@@ -2370,7 +2370,7 @@ Abort if structs have already been created.
 
 
 <pre><code><b>fun</b> <a href="topo_governance.md#0x1_topo_governance_spec_has_entirely_voted">spec_has_entirely_voted</a>(stake_pool: <b>address</b>, proposal_id: u64, record_key: <a href="topo_governance.md#0x1_topo_governance_RecordKey">RecordKey</a>): bool {
-   <b>let</b> voting_records = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
+   <b>let</b> voting_records = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@topo_framework);
    <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(voting_records.votes, record_key)
 }
 </code></pre>
@@ -2389,10 +2389,10 @@ Abort if structs have already been created.
 
 
 <pre><code><b>include</b> <a href="topo_governance.md#0x1_topo_governance_VotingInitializationAbortIfs">VotingInitializationAbortIfs</a>;
-<b>include</b> <a href="voting.md#0x1_voting_AbortsIfNotContainProposalID">voting::AbortsIfNotContainProposalID</a>&lt;GovernanceProposal&gt;{voting_forum_address: @aptos_framework};
-<b>let</b> proposal_expiration = <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
+<b>include</b> <a href="voting.md#0x1_voting_AbortsIfNotContainProposalID">voting::AbortsIfNotContainProposalID</a>&lt;GovernanceProposal&gt;{voting_forum_address: @topo_framework};
+<b>let</b> proposal_expiration = <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@topo_framework, proposal_id);
 <b>aborts_if</b> <a href="staking_registry.md#0x1_staking_registry_spec_get_effective_power">staking_registry::spec_get_effective_power</a>(voter) == 0;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 <b>aborts_if</b> <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() &gt;= proposal_expiration;
 </code></pre>
 
@@ -2435,7 +2435,7 @@ The same as spec of <code><a href="topo_governance.md#0x1_topo_governance_create
 
 
 The proposer now uses its own address as the voting subject.
-Address @aptos_framework must exist GovernanceEvents.
+Address @topo_framework must exist GovernanceEvents.
 
 
 <a id="0x1_topo_governance_CreateProposalAbortsIf"></a>
@@ -2449,35 +2449,35 @@ Address @aptos_framework must exist GovernanceEvents.
     <b>include</b> <a href="topo_governance.md#0x1_topo_governance_AbortsIfNotGovernanceConfig">AbortsIfNotGovernanceConfig</a>;
     <b>let</b> proposer_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(proposer);
     <b>let</b> stake_balance = <a href="staking_registry.md#0x1_staking_registry_spec_get_effective_power">staking_registry::spec_get_effective_power</a>(proposer_address);
-    <b>let</b> governance_config = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@aptos_framework);
+    <b>let</b> governance_config = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceConfig">GovernanceConfig</a>&gt;(@topo_framework);
     <b>let</b> required_proposer_stake = governance_config.required_proposer_stake;
     // This enforces <a id="high-level-req-2" href="#high-level-req">high-level requirement 2</a>:
     <b>aborts_if</b> stake_balance &lt; required_proposer_stake;
     <b>aborts_if</b> stake_balance == 0;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
     <b>include</b> <a href="topo_governance.md#0x1_topo_governance_CreateProposalMetadataAbortsIf">CreateProposalMetadataAbortsIf</a>;
     <b>let</b> addr =
-        aptos_std::type_info::type_of&lt;aptos_framework::topo_coin::TopoCoin&gt;().account_address;
-    <b>aborts_if</b> !<b>exists</b>&lt;aptos_framework::coin::CoinInfo&lt;aptos_framework::topo_coin::TopoCoin&gt;&gt;(addr);
+        aptos_std::type_info::type_of&lt;topo_framework::topo_coin::TopoCoin&gt;().account_address;
+    <b>aborts_if</b> !<b>exists</b>&lt;topo_framework::coin::CoinInfo&lt;topo_framework::topo_coin::TopoCoin&gt;&gt;(addr);
     <b>let</b> maybe_supply =
-        <b>global</b>&lt;aptos_framework::coin::CoinInfo&lt;aptos_framework::topo_coin::TopoCoin&gt;&gt;(addr).supply;
+        <b>global</b>&lt;topo_framework::coin::CoinInfo&lt;topo_framework::topo_coin::TopoCoin&gt;&gt;(addr).supply;
     <b>let</b> supply = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(maybe_supply);
-    <b>let</b> total_supply = aptos_framework::optional_aggregator::optional_aggregator_value(supply);
+    <b>let</b> total_supply = topo_framework::optional_aggregator::optional_aggregator_value(supply);
     <b>let</b> early_resolution_vote_threshold_value = total_supply / 2 + 1;
     <b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(maybe_supply) && governance_config.min_voting_threshold &gt; early_resolution_vote_threshold_value;
     <b>aborts_if</b> len(execution_hash) == 0;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
-    <b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
+    <b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
     <b>let</b> proposal_id = voting_forum.next_proposal_id;
     <b>aborts_if</b> proposal_id + 1 &gt; <a href="topo_governance.md#0x1_topo_governance_MAX_U64">MAX_U64</a>;
-    <b>let</b> <b>post</b> post_voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+    <b>let</b> <b>post</b> post_voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
     <b>let</b> <b>post</b> post_next_proposal_id = post_voting_forum.next_proposal_id;
     <b>ensures</b> post_next_proposal_id == proposal_id + 1;
     <b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(<a href="voting.md#0x1_voting_IS_MULTI_STEP_PROPOSAL_KEY">voting::IS_MULTI_STEP_PROPOSAL_KEY</a>);
     <b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(<a href="voting.md#0x1_voting_IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY">voting::IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY</a>);
     <b>aborts_if</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(voting_forum.proposals,proposal_id);
     <b>ensures</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(post_voting_forum.proposals, proposal_id);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceEvents">GovernanceEvents</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceEvents">GovernanceEvents</a>&gt;(@topo_framework);
 }
 </code></pre>
 
@@ -2493,7 +2493,7 @@ Address @aptos_framework must exist GovernanceEvents.
 
 
 The caller votes with its own address and effective power from staking_registry.
-Address @aptos_framework must exist VotingRecords and GovernanceProposal.
+Address @topo_framework must exist VotingRecords and GovernanceProposal.
 
 
 <pre><code><b>pragma</b> verify_duration_estimate = 60;
@@ -2516,8 +2516,8 @@ Address @aptos_framework must exist VotingRecords and GovernanceProposal.
 
 
 The voter uses its own address as the voting subject.
-Address @aptos_framework must exist VotingRecords and GovernanceProposal.
-Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting flag is enabled.
+Address @topo_framework must exist VotingRecords and GovernanceProposal.
+Address @topo_framework must exist VotingRecordsV2 if partial_governance_voting flag is enabled.
 
 
 <pre><code><b>pragma</b> verify_duration_estimate = 60;
@@ -2539,8 +2539,8 @@ Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting
 
 
 The voter uses its own address as the voting subject.
-Address @aptos_framework must exist VotingRecords and GovernanceProposal.
-Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting flag is enabled.
+Address @topo_framework must exist VotingRecords and GovernanceProposal.
+Address @topo_framework must exist VotingRecordsV2 if partial_governance_voting flag is enabled.
 
 
 <pre><code><b>pragma</b> verify_duration_estimate = 60;
@@ -2562,21 +2562,21 @@ Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting
     proposal_id: u64;
     should_pass: bool;
     voting_power: u64;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@aptos_framework);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@topo_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecords">VotingRecords</a>&gt;(@topo_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
     <b>include</b> <a href="voting.md#0x1_voting_AbortsIfNotContainProposalID">voting::AbortsIfNotContainProposalID</a>&lt;GovernanceProposal&gt; {
-        voting_forum_address: @aptos_framework
+        voting_forum_address: @topo_framework
     };
     <b>let</b> spec_proposal_expiration =
-        <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@aptos_framework, proposal_id);
+        <a href="voting.md#0x1_voting_spec_get_proposal_expiration_secs">voting::spec_get_proposal_expiration_secs</a>&lt;GovernanceProposal&gt;(@topo_framework, proposal_id);
     <b>aborts_if</b> <a href="staking_registry.md#0x1_staking_registry_spec_get_effective_power">staking_registry::spec_get_effective_power</a>(stake_pool) == 0;
     <b>aborts_if</b> <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>() &gt;= spec_proposal_expiration;
     <b>let</b> record_key = <a href="topo_governance.md#0x1_topo_governance_RecordKey">RecordKey</a> {
         voter: stake_pool,
         proposal_id,
     };
-    <b>let</b> voting_records_v2 = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
+    <b>let</b> voting_records_v2 = <b>borrow_global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@topo_framework);
     <b>let</b> used_voting_power = <b>if</b> (<a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_spec_contains">smart_table::spec_contains</a>(voting_records_v2.votes, record_key)) {
         <a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_spec_get">smart_table::spec_get</a>(voting_records_v2.votes, record_key)
     } <b>else</b> {
@@ -2585,8 +2585,8 @@ Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting
     <b>let</b> remaining_power = <a href="topo_governance.md#0x1_topo_governance_spec_get_remaining_voting_power">spec_get_remaining_voting_power</a>(stake_pool, proposal_id);
     <b>let</b> real_voting_power = <b>min</b>(voting_power, remaining_power);
     <b>aborts_if</b> !(real_voting_power &gt; 0);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
-    <b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
+    <b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
     <b>let</b> proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(voting_forum.proposals, proposal_id);
     <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(voting_forum.proposals, proposal_id);
     <b>let</b> proposal_expiration = proposal.expiration_secs;
@@ -2598,14 +2598,14 @@ Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting
               <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(proposal.metadata, execution_key) != std::bcs::to_bytes(<b>false</b>);
     <b>aborts_if</b>
         <b>if</b> (should_pass) { proposal.yes_votes + real_voting_power &gt; MAX_U128 } <b>else</b> { proposal.no_votes + real_voting_power &gt; MAX_U128 };
-    <b>let</b> <b>post</b> post_voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+    <b>let</b> <b>post</b> post_voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
     <b>let</b> <b>post</b> post_proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(post_voting_forum.proposals, proposal_id);
     <b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(<a href="voting.md#0x1_voting_RESOLVABLE_TIME_METADATA_KEY">voting::RESOLVABLE_TIME_METADATA_KEY</a>);
     <b>let</b> key = utf8(<a href="voting.md#0x1_voting_RESOLVABLE_TIME_METADATA_KEY">voting::RESOLVABLE_TIME_METADATA_KEY</a>);
     <b>ensures</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(post_proposal.metadata, key);
     <b>ensures</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(post_proposal.metadata, key) == std::bcs::to_bytes(<a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>());
     <b>aborts_if</b> used_voting_power + real_voting_power &gt; <a href="topo_governance.md#0x1_topo_governance_MAX_U64">MAX_U64</a>;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceEvents">GovernanceEvents</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceEvents">GovernanceEvents</a>&gt;(@topo_framework);
     <b>let</b> early_resolution_threshold = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(proposal.early_resolution_vote_threshold);
     <b>let</b> is_voting_period_over = <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>() &gt;= proposal_expiration;
     <b>let</b> new_proposal_yes_votes_0 = proposal.yes_votes + real_voting_power;
@@ -2643,23 +2643,23 @@ Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting
     <b>let</b> <b>post</b> proposal_state_successed = is_voting_closed && post_proposal.yes_votes &gt; post_proposal.no_votes &&
                                      post_proposal.yes_votes + post_proposal.no_votes &gt;= proposal.min_vote_threshold;
     <b>let</b> execution_hash = proposal.execution_hash;
-    <b>let</b> <b>post</b> post_approved_hashes = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework);
+    <b>let</b> <b>post</b> post_approved_hashes = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework);
     // This enforces <a id="high-level-req-3" href="#high-level-req">high-level requirement 3</a>:
     <b>aborts_if</b>
         <b>if</b> (should_pass) {
-            proposal_state_successed_0 && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework)
+            proposal_state_successed_0 && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework)
         } <b>else</b> {
-            proposal_state_successed_1 && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework)
+            proposal_state_successed_1 && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework)
         };
     <b>aborts_if</b>
         <b>if</b> (should_pass) {
-            proposal_state_successed_2 && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework)
+            proposal_state_successed_2 && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework)
         } <b>else</b> {
-            proposal_state_successed_3 && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework)
+            proposal_state_successed_3 && !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework)
         };
     <b>ensures</b> proposal_state_successed ==&gt; <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(post_approved_hashes.hashes, proposal_id) &&
                                          <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(post_approved_hashes.hashes, proposal_id) == execution_hash;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@topo_framework);
 }
 </code></pre>
 
@@ -2688,9 +2688,9 @@ Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting
 
 <pre><code><b>schema</b> <a href="topo_governance.md#0x1_topo_governance_AddApprovedScriptHash">AddApprovedScriptHash</a> {
     proposal_id: u64;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
-    <b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
+    <b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
     <b>let</b> proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(voting_forum.proposals, proposal_id);
     <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(voting_forum.proposals, proposal_id);
     <b>let</b> early_resolution_threshold = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(proposal.early_resolution_vote_threshold);
@@ -2701,7 +2701,7 @@ Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting
         <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(proposal.early_resolution_vote_threshold) && (proposal.yes_votes &gt;= early_resolution_threshold ||
                                                                            proposal.no_votes &gt;= early_resolution_threshold)) &&
         (proposal.yes_votes &lt;= proposal.no_votes || proposal.yes_votes + proposal.no_votes &lt; proposal.min_vote_threshold);
-    <b>let</b> <b>post</b> post_approved_hashes = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework);
+    <b>let</b> <b>post</b> post_approved_hashes = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework);
     // This enforces <a id="high-level-req-4" href="#high-level-req">high-level requirement 4</a>:
     <b>ensures</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(post_approved_hashes.hashes, proposal_id) &&
         <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(post_approved_hashes.hashes, proposal_id) == proposal.execution_hash;
@@ -2736,12 +2736,12 @@ Address @aptos_framework must exist VotingRecordsV2 if partial_governance_voting
 </code></pre>
 
 
-Address @aptos_framework must exist ApprovedExecutionHashes and GovernanceProposal and GovernanceResponsbility.
+Address @topo_framework must exist ApprovedExecutionHashes and GovernanceProposal and GovernanceResponsbility.
 
 
 <pre><code><b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
 <b>include</b> <a href="topo_governance.md#0x1_topo_governance_VotingIsProposalResolvableAbortsif">VotingIsProposalResolvableAbortsif</a>;
-<b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+<b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
 <b>let</b> proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(voting_forum.proposals, proposal_id);
 <b>let</b> multi_step_key = utf8(<a href="voting.md#0x1_voting_IS_MULTI_STEP_PROPOSAL_KEY">voting::IS_MULTI_STEP_PROPOSAL_KEY</a>);
 <b>let</b> has_multi_step_key = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(proposal.metadata, multi_step_key);
@@ -2749,15 +2749,15 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
 <b>aborts_if</b> has_multi_step_key && !aptos_std::from_bcs::deserializable&lt;bool&gt;(<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(proposal.metadata, multi_step_key));
 <b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(<a href="voting.md#0x1_voting_IS_MULTI_STEP_PROPOSAL_KEY">voting::IS_MULTI_STEP_PROPOSAL_KEY</a>);
 <b>aborts_if</b> has_multi_step_key && is_multi_step_proposal;
-<b>let</b> <b>post</b> post_voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+<b>let</b> <b>post</b> post_voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
 <b>let</b> <b>post</b> post_proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(post_voting_forum.proposals, proposal_id);
 <b>ensures</b> post_proposal.is_resolved == <b>true</b> && post_proposal.resolution_time_secs == <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>();
 <b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_none">option::is_none</a>(proposal.execution_content);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework);
-<b>let</b> <b>post</b> post_approved_hashes = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework).hashes;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework);
+<b>let</b> <b>post</b> post_approved_hashes = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework).hashes;
 <b>ensures</b> !<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(post_approved_hashes, proposal_id);
 <b>include</b> <a href="topo_governance.md#0x1_topo_governance_GetSignerAbortsIf">GetSignerAbortsIf</a>;
-<b>let</b> governance_responsibility = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework);
+<b>let</b> governance_responsibility = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework);
 <b>let</b> signer_cap = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(governance_responsibility.signer_caps, signer_address);
 <b>let</b> addr = signer_cap.<a href="account.md#0x1_account">account</a>;
 <b>ensures</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(result) == addr;
@@ -2779,9 +2779,9 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
 <pre><code><b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
 <b>pragma</b> verify_duration_estimate = 120;
 <b>include</b> <a href="topo_governance.md#0x1_topo_governance_VotingIsProposalResolvableAbortsif">VotingIsProposalResolvableAbortsif</a>;
-<b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+<b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
 <b>let</b> proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(voting_forum.proposals, proposal_id);
-<b>let</b> <b>post</b> post_voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+<b>let</b> <b>post</b> post_voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
 <b>let</b> <b>post</b> post_proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(post_voting_forum.proposals, proposal_id);
 <b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(<a href="voting.md#0x1_voting_IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY">voting::IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY</a>);
 <b>let</b> multi_step_in_execution_key = utf8(<a href="voting.md#0x1_voting_IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY">voting::IS_MULTI_STEP_PROPOSAL_IN_EXECUTION_KEY</a>);
@@ -2803,13 +2803,13 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
             is_multi_step_proposal_in_execution_value == std::bcs::serialize(<b>true</b>)
     };
 <b>ensures</b> !next_execution_hash_is_empty ==&gt; post_proposal.execution_hash == next_execution_hash;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework);
-<b>let</b> <b>post</b> post_approved_hashes = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework).hashes;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework);
+<b>let</b> <b>post</b> post_approved_hashes = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework).hashes;
 <b>ensures</b> next_execution_hash_is_empty ==&gt; !<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(post_approved_hashes, proposal_id);
 <b>ensures</b> !next_execution_hash_is_empty ==&gt;
     <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(post_approved_hashes, proposal_id) == next_execution_hash;
 <b>include</b> <a href="topo_governance.md#0x1_topo_governance_GetSignerAbortsIf">GetSignerAbortsIf</a>;
-<b>let</b> governance_responsibility = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework);
+<b>let</b> governance_responsibility = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework);
 <b>let</b> signer_cap = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(governance_responsibility.signer_caps, signer_address);
 <b>let</b> addr = signer_cap.<a href="account.md#0x1_account">account</a>;
 <b>ensures</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(result) == addr;
@@ -2823,8 +2823,8 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
 
 <pre><code><b>schema</b> <a href="topo_governance.md#0x1_topo_governance_VotingIsProposalResolvableAbortsif">VotingIsProposalResolvableAbortsif</a> {
     proposal_id: u64;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
-    <b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
+    <b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
     <b>let</b> proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(voting_forum.proposals, proposal_id);
     <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(voting_forum.proposals, proposal_id);
     <b>let</b> early_resolution_threshold = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(proposal.early_resolution_vote_threshold);
@@ -2841,7 +2841,7 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
     <b>let</b> resolvable_time = aptos_std::from_bcs::deserialize&lt;u64&gt;(<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(proposal.metadata, utf8(<a href="voting.md#0x1_voting_RESOLVABLE_TIME_METADATA_KEY">voting::RESOLVABLE_TIME_METADATA_KEY</a>)));
     <b>aborts_if</b> !aptos_std::from_bcs::deserializable&lt;u64&gt;(<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(proposal.metadata, utf8(<a href="voting.md#0x1_voting_RESOLVABLE_TIME_METADATA_KEY">voting::RESOLVABLE_TIME_METADATA_KEY</a>)));
     <b>aborts_if</b> <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() &lt;= resolvable_time;
-    <b>aborts_if</b> aptos_framework::transaction_context::spec_get_script_hash() != proposal.execution_hash;
+    <b>aborts_if</b> topo_framework::transaction_context::spec_get_script_hash() != proposal.execution_hash;
 }
 </code></pre>
 
@@ -2856,17 +2856,17 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
 </code></pre>
 
 
-Address @aptos_framework must exist ApprovedExecutionHashes and GovernanceProposal.
+Address @topo_framework must exist ApprovedExecutionHashes and GovernanceProposal.
 
 
-<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework);
-<b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework);
+<b>let</b> voting_forum = <b>global</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
 <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(voting_forum.proposals, proposal_id);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="voting.md#0x1_voting_VotingForum">voting::VotingForum</a>&lt;GovernanceProposal&gt;&gt;(@topo_framework);
 <b>let</b> proposal = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(voting_forum.proposals, proposal_id);
 <b>aborts_if</b> !proposal.is_resolved;
-<b>let</b> <b>post</b> approved_hashes = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@aptos_framework).hashes;
+<b>let</b> <b>post</b> approved_hashes = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_ApprovedExecutionHashes">ApprovedExecutionHashes</a>&gt;(@topo_framework).hashes;
 <b>ensures</b> !<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(approved_hashes, proposal_id);
 </code></pre>
 
@@ -2877,21 +2877,21 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
 ### Function `reconfigure`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_reconfigure">reconfigure</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_reconfigure">reconfigure</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework));
+<b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework));
 <b>include</b> <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_FinishRequirement">reconfiguration_with_dkg::FinishRequirement</a> {
-    framework: aptos_framework
+    framework: topo_framework
 };
 <b>include</b> <a href="stake.md#0x1_stake_GetReconfigStartTimeRequirement">stake::GetReconfigStartTimeRequirement</a>;
 <b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
-<b>requires</b> <b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(@aptos_framework);
-<b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@aptos_framework);
+<b>requires</b> <b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(@topo_framework);
+<b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@topo_framework);
 <b>include</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigRequirement">staking_config::StakingRewardsConfigRequirement</a>;
 </code></pre>
 
@@ -2902,16 +2902,16 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
 ### Function `force_end_epoch`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch">force_end_epoch</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch">force_end_epoch</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>let</b> <b>address</b> = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<b>let</b> <b>address</b> = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 <b>include</b> <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_FinishRequirement">reconfiguration_with_dkg::FinishRequirement</a> {
-    framework: aptos_framework
+    framework: topo_framework
 };
 </code></pre>
 
@@ -2922,7 +2922,7 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
 
 
 <pre><code><b>schema</b> <a href="topo_governance.md#0x1_topo_governance_VotingInitializationAbortIfs">VotingInitializationAbortIfs</a> {
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_VotingRecordsV2">VotingRecordsV2</a>&gt;(@topo_framework);
 }
 </code></pre>
 
@@ -2933,7 +2933,7 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
 ### Function `force_end_epoch_test_only`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch_test_only">force_end_epoch_test_only</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_force_end_epoch_test_only">force_end_epoch_test_only</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -2949,24 +2949,24 @@ Address @aptos_framework must exist ApprovedExecutionHashes and GovernancePropos
 ### Function `toggle_features`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_toggle_features">toggle_features</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, enable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, disable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="topo_governance.md#0x1_topo_governance_toggle_features">toggle_features</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, enable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, disable: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
-Signer address must be @aptos_framework.
-Address @aptos_framework must exist GovernanceConfig and GovernanceEvents.
+Signer address must be @topo_framework.
+Address @topo_framework must exist GovernanceConfig and GovernanceEvents.
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
-<b>aborts_if</b> addr != @aptos_framework;
+<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<b>aborts_if</b> addr != @topo_framework;
 <b>include</b> <a href="reconfiguration_with_dkg.md#0x1_reconfiguration_with_dkg_FinishRequirement">reconfiguration_with_dkg::FinishRequirement</a> {
-    framework: aptos_framework
+    framework: topo_framework
 };
 <b>include</b> <a href="stake.md#0x1_stake_GetReconfigStartTimeRequirement">stake::GetReconfigStartTimeRequirement</a>;
 <b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
-<b>requires</b> <b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(@aptos_framework);
-<b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@aptos_framework);
+<b>requires</b> <b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(@topo_framework);
+<b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@topo_framework);
 <b>include</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigRequirement">staking_config::StakingRewardsConfigRequirement</a>;
 </code></pre>
 
@@ -2983,7 +2983,7 @@ Address @aptos_framework must exist GovernanceConfig and GovernanceEvents.
 
 Signer address must be @core_resources.
 signer must exist in MintCapStore.
-Address @aptos_framework must exist GovernanceResponsbility.
+Address @topo_framework must exist GovernanceResponsbility.
 
 
 <pre><code><b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(core_resources) != @core_resources;
@@ -3026,8 +3026,8 @@ Address @aptos_framework must exist GovernanceResponsbility.
 
 <pre><code><b>schema</b> <a href="topo_governance.md#0x1_topo_governance_GetSignerAbortsIf">GetSignerAbortsIf</a> {
     signer_address: <b>address</b>;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework);
-    <b>let</b> cap_map = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@aptos_framework).signer_caps;
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework);
+    <b>let</b> cap_map = <b>global</b>&lt;<a href="topo_governance.md#0x1_topo_governance_GovernanceResponsbility">GovernanceResponsbility</a>&gt;(@topo_framework).signer_caps;
     <b>aborts_if</b> !<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(cap_map, signer_address);
 }
 </code></pre>

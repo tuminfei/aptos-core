@@ -1,4 +1,4 @@
-spec aptos_framework::ordered_map {
+spec topo_framework::ordered_map {
 
     spec OrderedMap {
         pragma intrinsic = map,

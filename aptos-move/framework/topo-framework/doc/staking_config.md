@@ -61,7 +61,7 @@ Provides the configuration for staking and rewards
 
 ## Resource `StakingConfig`
 
-Validator set configurations that will be stored with the @aptos_framework account.
+Validator set configurations that will be stored with the @topo_framework account.
 
 
 <pre><code><b>struct</b> <a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a> <b>has</b> <b>copy</b>, drop, key
@@ -125,7 +125,7 @@ Validator set configurations that will be stored with the @aptos_framework accou
 
 ## Resource `StakingRewardsConfig`
 
-Staking reward configurations that will be stored with the @aptos_framework account.
+Staking reward configurations that will be stored with the @topo_framework account.
 
 
 <pre><code><b>struct</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a> <b>has</b> <b>copy</b>, drop, key
@@ -334,7 +334,7 @@ Limit the maximum value of <code>rewards_rate</code> in order to avoid any arith
 Only called during genesis.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, minimum_stake: u64, maximum_stake: u64, recurring_lockup_duration_secs: u64, allow_validator_set_change: bool, rewards_rate: u64, rewards_rate_denominator: u64, voting_power_increase_limit: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, minimum_stake: u64, maximum_stake: u64, recurring_lockup_duration_secs: u64, allow_validator_set_change: bool, rewards_rate: u64, rewards_rate_denominator: u64, voting_power_increase_limit: u64)
 </code></pre>
 
 
@@ -344,7 +344,7 @@ Only called during genesis.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize">initialize</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     minimum_stake: u64,
     maximum_stake: u64,
     recurring_lockup_duration_secs: u64,
@@ -353,7 +353,7 @@ Only called during genesis.
     rewards_rate_denominator: u64,
     voting_power_increase_limit: u64,
 ) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
     // This can fail <a href="genesis.md#0x1_genesis">genesis</a> but is necessary so that <a href="../../aptos-stdlib/doc/any.md#0x1_any">any</a> misconfigurations can be corrected before <a href="genesis.md#0x1_genesis">genesis</a> succeeds
     <a href="staking_config.md#0x1_staking_config_validate_required_stake">validate_required_stake</a>(minimum_stake, maximum_stake);
@@ -376,7 +376,7 @@ Only called during genesis.
     // We <b>assert</b> that (rewards_rate / rewards_rate_denominator &lt;= 1).
     <b>assert</b>!(rewards_rate &lt;= rewards_rate_denominator, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_config.md#0x1_staking_config_EINVALID_REWARDS_RATE">EINVALID_REWARDS_RATE</a>));
 
-    <b>move_to</b>(aptos_framework, <a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a> {
+    <b>move_to</b>(topo_framework, <a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a> {
         minimum_stake,
         maximum_stake,
         recurring_lockup_duration_secs,
@@ -389,7 +389,7 @@ Only called during genesis.
     // Initialize <a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a> <b>with</b> the given rewards_rate and rewards_rate_denominator,
     // <b>while</b> setting min_rewards_rate and rewards_rate_decrease_rate <b>to</b> 0.
     <a href="staking_config.md#0x1_staking_config_initialize_rewards">initialize_rewards</a>(
-        aptos_framework,
+        topo_framework,
         <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_create_from_rational">fixed_point64::create_from_rational</a>((rewards_rate <b>as</b> u128), (rewards_rate_denominator <b>as</b> u128)),
         <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_create_from_rational">fixed_point64::create_from_rational</a>(0, 1000),
         <a href="staking_config.md#0x1_staking_config_ONE_YEAR_IN_SECS">ONE_YEAR_IN_SECS</a>,
@@ -421,7 +421,7 @@ Return the reward rate of this epoch as a tuple (numerator, denominator).
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_reward_rate">reward_rate</a>(): (u64, u64) <b>acquires</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>, <a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a> {
-    <a href="staking_config.md#0x1_staking_config_get_reward_rate">get_reward_rate</a>(<b>borrow_global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework))
+    <a href="staking_config.md#0x1_staking_config_get_reward_rate">get_reward_rate</a>(<b>borrow_global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework))
 }
 </code></pre>
 
@@ -437,7 +437,7 @@ Initialize rewards configurations.
 Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize_rewards">initialize_rewards</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, min_rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, rewards_rate_period_in_secs: u64, last_rewards_rate_period_start_in_secs: u64, rewards_rate_decrease_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize_rewards">initialize_rewards</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, min_rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, rewards_rate_period_in_secs: u64, last_rewards_rate_period_start_in_secs: u64, rewards_rate_decrease_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>)
 </code></pre>
 
 
@@ -447,14 +447,14 @@ Can only be called as part of the Aptos governance proposal process established 
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize_rewards">initialize_rewards</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     rewards_rate: FixedPoint64,
     min_rewards_rate: FixedPoint64,
     rewards_rate_period_in_secs: u64,
     last_rewards_rate_period_start_in_secs: u64,
     rewards_rate_decrease_rate: FixedPoint64,
 ) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
     <a href="staking_config.md#0x1_staking_config_validate_rewards_config">validate_rewards_config</a>(
         rewards_rate,
@@ -467,7 +467,7 @@ Can only be called as part of the Aptos governance proposal process established 
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_config.md#0x1_staking_config_EINVALID_LAST_REWARDS_RATE_PERIOD_START">EINVALID_LAST_REWARDS_RATE_PERIOD_START</a>)
     );
 
-    <b>move_to</b>(aptos_framework, <a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a> {
+    <b>move_to</b>(topo_framework, <a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a> {
         rewards_rate,
         min_rewards_rate,
         rewards_rate_period_in_secs,
@@ -497,7 +497,7 @@ Can only be called as part of the Aptos governance proposal process established 
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_get">get</a>(): <a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a> <b>acquires</b> <a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a> {
-    *<b>borrow_global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework)
+    *<b>borrow_global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework)
 }
 </code></pre>
 
@@ -599,7 +599,7 @@ Return the reward rate of this epoch.
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_get_reward_rate">get_reward_rate</a>(config: &<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>): (u64, u64) <b>acquires</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a> {
     <b>if</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_periodical_reward_rate_decrease_enabled">features::periodical_reward_rate_decrease_enabled</a>()) {
-        <b>let</b> epoch_rewards_rate = <b>borrow_global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework).rewards_rate;
+        <b>let</b> epoch_rewards_rate = <b>borrow_global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework).rewards_rate;
         <b>if</b> (epoch_rewards_rate.is_zero()) {
             (0u64, 1u64)
         } <b>else</b> {
@@ -691,7 +691,7 @@ Calculate and return the up-to-date StakingRewardsConfig.
 
 
 <pre><code><b>fun</b> <a href="staking_config.md#0x1_staking_config_calculate_and_save_latest_rewards_config">calculate_and_save_latest_rewards_config</a>(): <a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a> <b>acquires</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a> {
-    <b>let</b> staking_rewards_config = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework);
+    <b>let</b> staking_rewards_config = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework);
     <b>let</b> current_time_in_secs = <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>();
     <b>assert</b>!(
         current_time_in_secs &gt;= staking_rewards_config.last_rewards_rate_period_start_in_secs,
@@ -730,7 +730,7 @@ Update the min and max stake amounts.
 Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_required_stake">update_required_stake</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, minimum_stake: u64, maximum_stake: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_required_stake">update_required_stake</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, minimum_stake: u64, maximum_stake: u64)
 </code></pre>
 
 
@@ -740,14 +740,14 @@ Can only be called as part of the Aptos governance proposal process established 
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_required_stake">update_required_stake</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     minimum_stake: u64,
     maximum_stake: u64,
 ) <b>acquires</b> <a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <a href="staking_config.md#0x1_staking_config_validate_required_stake">validate_required_stake</a>(minimum_stake, maximum_stake);
 
-    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
+    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
     <a href="staking_config.md#0x1_staking_config">staking_config</a>.minimum_stake = minimum_stake;
     <a href="staking_config.md#0x1_staking_config">staking_config</a>.maximum_stake = maximum_stake;
 }
@@ -765,7 +765,7 @@ Update the recurring lockup duration.
 Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_recurring_lockup_duration_secs">update_recurring_lockup_duration_secs</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_recurring_lockup_duration_secs: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_recurring_lockup_duration_secs">update_recurring_lockup_duration_secs</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_recurring_lockup_duration_secs: u64)
 </code></pre>
 
 
@@ -775,13 +775,13 @@ Can only be called as part of the Aptos governance proposal process established 
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_recurring_lockup_duration_secs">update_recurring_lockup_duration_secs</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     new_recurring_lockup_duration_secs: u64,
 ) <b>acquires</b> <a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a> {
     <b>assert</b>!(new_recurring_lockup_duration_secs &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_config.md#0x1_staking_config_EZERO_LOCKUP_DURATION">EZERO_LOCKUP_DURATION</a>));
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
-    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
+    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
     <a href="staking_config.md#0x1_staking_config">staking_config</a>.recurring_lockup_duration_secs = new_recurring_lockup_duration_secs;
 }
 </code></pre>
@@ -799,7 +799,7 @@ Update the rewards rate.
 Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_rate">update_rewards_rate</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_rewards_rate: u64, new_rewards_rate_denominator: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_rate">update_rewards_rate</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_rewards_rate: u64, new_rewards_rate_denominator: u64)
 </code></pre>
 
 
@@ -809,12 +809,12 @@ Can only be called as part of the Aptos governance proposal process established 
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_rate">update_rewards_rate</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     new_rewards_rate: u64,
     new_rewards_rate_denominator: u64,
 ) <b>acquires</b> <a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a> {
     <b>assert</b>!(!<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_periodical_reward_rate_decrease_enabled">features::periodical_reward_rate_decrease_enabled</a>(), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_config.md#0x1_staking_config_EDEPRECATED_FUNCTION">EDEPRECATED_FUNCTION</a>));
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>assert</b>!(
         new_rewards_rate_denominator &gt; 0,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_config.md#0x1_staking_config_EZERO_REWARDS_RATE_DENOMINATOR">EZERO_REWARDS_RATE_DENOMINATOR</a>),
@@ -827,7 +827,7 @@ Can only be called as part of the Aptos governance proposal process established 
     // We <b>assert</b> that (rewards_rate / rewards_rate_denominator &lt;= 1).
     <b>assert</b>!(new_rewards_rate &lt;= new_rewards_rate_denominator, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_config.md#0x1_staking_config_EINVALID_REWARDS_RATE">EINVALID_REWARDS_RATE</a>));
 
-    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
+    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
     <a href="staking_config.md#0x1_staking_config">staking_config</a>.rewards_rate = new_rewards_rate;
     <a href="staking_config.md#0x1_staking_config">staking_config</a>.rewards_rate_denominator = new_rewards_rate_denominator;
 }
@@ -843,7 +843,7 @@ Can only be called as part of the Aptos governance proposal process established 
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_config">update_rewards_config</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, min_rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, rewards_rate_period_in_secs: u64, rewards_rate_decrease_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_config">update_rewards_config</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, min_rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, rewards_rate_period_in_secs: u64, rewards_rate_decrease_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>)
 </code></pre>
 
 
@@ -853,13 +853,13 @@ Can only be called as part of the Aptos governance proposal process established 
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_config">update_rewards_config</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     rewards_rate: FixedPoint64,
     min_rewards_rate: FixedPoint64,
     rewards_rate_period_in_secs: u64,
     rewards_rate_decrease_rate: FixedPoint64,
 ) <b>acquires</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
     <a href="staking_config.md#0x1_staking_config_validate_rewards_config">validate_rewards_config</a>(
         rewards_rate,
@@ -868,7 +868,7 @@ Can only be called as part of the Aptos governance proposal process established 
         rewards_rate_decrease_rate,
     );
 
-    <b>let</b> staking_rewards_config = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework);
+    <b>let</b> staking_rewards_config = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework);
     // Currently rewards_rate_period_in_secs is not allowed <b>to</b> be changed because this could bring complicated
     // logics. At the moment the argument is just a placeholder for future <b>use</b>.
     <b>assert</b>!(
@@ -894,7 +894,7 @@ Update the joining limit %.
 Can only be called as part of the Aptos governance proposal process established by the TopoGovernance module.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_voting_power_increase_limit">update_voting_power_increase_limit</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_voting_power_increase_limit: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_voting_power_increase_limit">update_voting_power_increase_limit</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_voting_power_increase_limit: u64)
 </code></pre>
 
 
@@ -904,16 +904,16 @@ Can only be called as part of the Aptos governance proposal process established 
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_voting_power_increase_limit">update_voting_power_increase_limit</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     new_voting_power_increase_limit: u64,
 ) <b>acquires</b> <a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>assert</b>!(
         new_voting_power_increase_limit &gt; 0 && new_voting_power_increase_limit &lt;= 50,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_config.md#0x1_staking_config_EINVALID_VOTING_POWER_INCREASE_LIMIT">EINVALID_VOTING_POWER_INCREASE_LIMIT</a>),
     );
 
-    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
+    <b>let</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>borrow_global_mut</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
     <a href="staking_config.md#0x1_staking_config">staking_config</a>.voting_power_increase_limit = new_voting_power_increase_limit;
 }
 </code></pre>
@@ -1014,7 +1014,7 @@ Can only be called as part of the Aptos governance proposal process established 
 <td>1</td>
 <td>The ability to initialize the staking config and staking rewards resources, as well as the ability to update the staking config and staking rewards should only be available to the Aptos framework account.</td>
 <td>Medium</td>
-<td>The function initialize and initialize_rewards are used to initialize the StakingConfig and StakingRewardConfig resources. Updating the resources, can be done using the update_required_stake, update_recurring_lockup_duration_secs, update_rewards_rate, update_rewards_config, update_voting_power_increase_limit functions, which ensure that the signer is aptos_framework using the assert_aptos_framework function.</td>
+<td>The function initialize and initialize_rewards are used to initialize the StakingConfig and StakingRewardConfig resources. Updating the resources, can be done using the update_required_stake, update_recurring_lockup_duration_secs, update_rewards_rate, update_rewards_config, update_voting_power_increase_limit functions, which ensure that the signer is topo_framework using the assert_aptos_framework function.</td>
 <td>Verified via <a href="#high-level-req-1.1">initialize</a>, <a href="#high-level-req-1.2">initialize_rewards</a>, <a href="#high-level-req-1.3">update_required_stake</a>, <a href="#high-level-req-1.4">update_recurring_lockup_duration_secs</a>, <a href="#high-level-req-1.5">update_rewards_rate</a>, <a href="#high-level-req-1.6">update_rewards_config</a>, and <a href="#high-level-req-1.7">update_voting_power_increase_limit</a>.</td>
 </tr>
 
@@ -1076,8 +1076,8 @@ Can only be called as part of the Aptos governance proposal process established 
 ### Module-level Specification
 
 
-<pre><code><b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt; <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
-<b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt; <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework);
+<pre><code><b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt; <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
+<b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt; <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework);
 <b>pragma</b> verify = <b>true</b>;
 <b>pragma</b> aborts_if_is_strict;
 </code></pre>
@@ -1215,23 +1215,23 @@ Can only be called as part of the Aptos governance proposal process established 
 ### Function `initialize`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, minimum_stake: u64, maximum_stake: u64, recurring_lockup_duration_secs: u64, allow_validator_set_change: bool, rewards_rate: u64, rewards_rate_denominator: u64, voting_power_increase_limit: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, minimum_stake: u64, maximum_stake: u64, recurring_lockup_duration_secs: u64, allow_validator_set_change: bool, rewards_rate: u64, rewards_rate_denominator: u64, voting_power_increase_limit: u64)
 </code></pre>
 
 
-Caller must be @aptos_framework.
+Caller must be @topo_framework.
 The maximum_stake must be greater than maximum_stake in the range of Specified stake and the maximum_stake greater than zero.
 The rewards_rate_denominator must greater than zero.
 Only this %0-%50 of current total voting power is allowed to join the validator set in each epoch.
 The <code>rewards_rate</code> which is the numerator is limited to be <code>&lt;= <a href="staking_config.md#0x1_staking_config_MAX_REWARDS_RATE">MAX_REWARDS_RATE</a></code> in order to avoid the arithmetic overflow in the rewards calculation.
 rewards_rate/rewards_rate_denominator <= 1.
-StakingConfig does not exist under the aptos_framework before creating it.
+StakingConfig does not exist under the topo_framework before creating it.
 
 
-<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
-<b>requires</b> <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<b>requires</b> <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 // This enforces <a id="high-level-req-1.1" href="#high-level-req">high-level requirement 1</a>:
-<b>aborts_if</b> addr != @aptos_framework;
+<b>aborts_if</b> addr != @topo_framework;
 <b>aborts_if</b> minimum_stake &gt; maximum_stake || maximum_stake == 0;
 // This enforces <a id="high-level-req-3.1" href="#high-level-req">high-level requirement 3</a>:
 <b>aborts_if</b> recurring_lockup_duration_secs == 0;
@@ -1260,11 +1260,11 @@ StakingConfig does not exist under the aptos_framework before creating it.
 
 
 
-<pre><code><b>let</b> config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
+<pre><code><b>let</b> config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
 <b>include</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigRequirement">StakingRewardsConfigRequirement</a>;
 <b>ensures</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_periodical_reward_rate_decrease_enabled">features::spec_periodical_reward_rate_decrease_enabled</a>() &&
-    (<b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework).rewards_rate.value <b>as</b> u64) != 0) ==&gt;
+    (<b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework).rewards_rate.value <b>as</b> u64) != 0) ==&gt;
     result_1 &lt;= <a href="staking_config.md#0x1_staking_config_MAX_REWARDS_RATE">MAX_REWARDS_RATE</a> && result_2 &lt;= <a href="staking_config.md#0x1_staking_config_MAX_U64">MAX_U64</a>;
 </code></pre>
 
@@ -1275,21 +1275,21 @@ StakingConfig does not exist under the aptos_framework before creating it.
 ### Function `initialize_rewards`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize_rewards">initialize_rewards</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, min_rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, rewards_rate_period_in_secs: u64, last_rewards_rate_period_start_in_secs: u64, rewards_rate_decrease_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_initialize_rewards">initialize_rewards</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, min_rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, rewards_rate_period_in_secs: u64, last_rewards_rate_period_start_in_secs: u64, rewards_rate_decrease_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>)
 </code></pre>
 
 
-Caller must be @aptos_framework.
+Caller must be @topo_framework.
 last_rewards_rate_period_start_in_secs cannot be later than now.
 Abort at any condition in StakingRewardsConfigValidationAborts.
-StakingRewardsConfig does not exist under the aptos_framework before creating it.
+StakingRewardsConfig does not exist under the topo_framework before creating it.
 
 
 <pre><code><b>pragma</b> verify_duration_estimate = 120;
-<b>requires</b> <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
-<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<b>requires</b> <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
+<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 // This enforces <a id="high-level-req-1.2" href="#high-level-req">high-level requirement 1</a>:
-<b>aborts_if</b> addr != @aptos_framework;
+<b>aborts_if</b> addr != @topo_framework;
 <b>aborts_if</b> last_rewards_rate_period_start_in_secs &gt; <a href="timestamp.md#0x1_timestamp_spec_now_seconds">timestamp::spec_now_seconds</a>();
 <b>include</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigValidationAbortsIf">StakingRewardsConfigValidationAbortsIf</a>;
 <b>aborts_if</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(addr);
@@ -1309,7 +1309,7 @@ StakingRewardsConfig does not exist under the aptos_framework before creating it
 
 
 
-<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
+<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
 </code></pre>
 
 
@@ -1330,7 +1330,7 @@ StakingRewardsConfig does not exist under the aptos_framework before creating it
 <b>ensures</b> result_2 &gt; 0;
 <b>ensures</b> result_1 &lt;= result_2;
 <b>ensures</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_periodical_reward_rate_decrease_enabled">features::spec_periodical_reward_rate_decrease_enabled</a>() &&
-    (<b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework).rewards_rate.value <b>as</b> u64) != 0) ==&gt;
+    (<b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework).rewards_rate.value <b>as</b> u64) != 0) ==&gt;
         result_2 &lt;= <a href="staking_config.md#0x1_staking_config_MAX_U64">MAX_U64</a>;
 </code></pre>
 
@@ -1348,7 +1348,7 @@ StakingRewardsConfig does not exist under the aptos_framework before creating it
 
 
 <pre><code><b>pragma</b> verify_duration_estimate = 120;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework);
 <b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_periodical_reward_rate_decrease_enabled">features::spec_periodical_reward_rate_decrease_enabled</a>();
 <b>include</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigRequirement">StakingRewardsConfigRequirement</a>;
 </code></pre>
@@ -1369,7 +1369,7 @@ StakingRewardsConfig does not exist under the aptos_framework before creating it
 <pre><code><b>pragma</b> verify_duration_estimate = 120;
 <b>requires</b> <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_periodical_reward_rate_decrease_enabled">features::spec_periodical_reward_rate_decrease_enabled</a>();
 <b>include</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigRequirement">StakingRewardsConfigRequirement</a>;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework);
 </code></pre>
 
 
@@ -1379,22 +1379,22 @@ StakingRewardsConfig does not exist under the aptos_framework before creating it
 ### Function `update_required_stake`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_required_stake">update_required_stake</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, minimum_stake: u64, maximum_stake: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_required_stake">update_required_stake</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, minimum_stake: u64, maximum_stake: u64)
 </code></pre>
 
 
-Caller must be @aptos_framework.
+Caller must be @topo_framework.
 The maximum_stake must be greater than maximum_stake in the range of Specified stake and the maximum_stake greater than zero.
-The StakingConfig is under @aptos_framework.
+The StakingConfig is under @topo_framework.
 
 
-<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 // This enforces <a id="high-level-req-1.3" href="#high-level-req">high-level requirement 1</a>:
-<b>aborts_if</b> addr != @aptos_framework;
+<b>aborts_if</b> addr != @topo_framework;
 <b>aborts_if</b> minimum_stake &gt; maximum_stake || maximum_stake == 0;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
-<b>ensures</b> <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework).minimum_stake == minimum_stake &&
-    <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework).maximum_stake == maximum_stake;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
+<b>ensures</b> <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework).minimum_stake == minimum_stake &&
+    <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework).maximum_stake == maximum_stake;
 </code></pre>
 
 
@@ -1404,22 +1404,22 @@ The StakingConfig is under @aptos_framework.
 ### Function `update_recurring_lockup_duration_secs`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_recurring_lockup_duration_secs">update_recurring_lockup_duration_secs</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_recurring_lockup_duration_secs: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_recurring_lockup_duration_secs">update_recurring_lockup_duration_secs</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_recurring_lockup_duration_secs: u64)
 </code></pre>
 
 
-Caller must be @aptos_framework.
+Caller must be @topo_framework.
 The new_recurring_lockup_duration_secs must greater than zero.
-The StakingConfig is under @aptos_framework.
+The StakingConfig is under @topo_framework.
 
 
-<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 // This enforces <a id="high-level-req-1.4" href="#high-level-req">high-level requirement 1</a>:
-<b>aborts_if</b> addr != @aptos_framework;
+<b>aborts_if</b> addr != @topo_framework;
 // This enforces <a id="high-level-req-3.2" href="#high-level-req">high-level requirement 3</a>:
 <b>aborts_if</b> new_recurring_lockup_duration_secs == 0;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
-<b>ensures</b> <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework).recurring_lockup_duration_secs == new_recurring_lockup_duration_secs;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
+<b>ensures</b> <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework).recurring_lockup_duration_secs == new_recurring_lockup_duration_secs;
 </code></pre>
 
 
@@ -1429,26 +1429,26 @@ The StakingConfig is under @aptos_framework.
 ### Function `update_rewards_rate`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_rate">update_rewards_rate</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_rewards_rate: u64, new_rewards_rate_denominator: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_rate">update_rewards_rate</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_rewards_rate: u64, new_rewards_rate_denominator: u64)
 </code></pre>
 
 
-Caller must be @aptos_framework.
+Caller must be @topo_framework.
 The new_rewards_rate_denominator must greater than zero.
-The StakingConfig is under @aptos_framework.
+The StakingConfig is under @topo_framework.
 The <code>rewards_rate</code> which is the numerator is limited to be <code>&lt;= <a href="staking_config.md#0x1_staking_config_MAX_REWARDS_RATE">MAX_REWARDS_RATE</a></code> in order to avoid the arithmetic overflow in the rewards calculation.
 rewards_rate/rewards_rate_denominator <= 1.
 
 
 <pre><code><b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_periodical_reward_rate_decrease_enabled">features::spec_periodical_reward_rate_decrease_enabled</a>();
-<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 // This enforces <a id="high-level-req-1.5" href="#high-level-req">high-level requirement 1</a>:
-<b>aborts_if</b> addr != @aptos_framework;
+<b>aborts_if</b> addr != @topo_framework;
 <b>aborts_if</b> new_rewards_rate_denominator == 0;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
 <b>aborts_if</b> new_rewards_rate &gt; <a href="staking_config.md#0x1_staking_config_MAX_REWARDS_RATE">MAX_REWARDS_RATE</a>;
 <b>aborts_if</b> new_rewards_rate &gt; new_rewards_rate_denominator;
-<b>let</b> <b>post</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
+<b>let</b> <b>post</b> <a href="staking_config.md#0x1_staking_config">staking_config</a> = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
 <b>ensures</b> <a href="staking_config.md#0x1_staking_config">staking_config</a>.rewards_rate == new_rewards_rate;
 <b>ensures</b> <a href="staking_config.md#0x1_staking_config">staking_config</a>.rewards_rate_denominator == new_rewards_rate_denominator;
 </code></pre>
@@ -1460,23 +1460,23 @@ rewards_rate/rewards_rate_denominator <= 1.
 ### Function `update_rewards_config`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_config">update_rewards_config</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, min_rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, rewards_rate_period_in_secs: u64, rewards_rate_decrease_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_rewards_config">update_rewards_config</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, min_rewards_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, rewards_rate_period_in_secs: u64, rewards_rate_decrease_rate: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>)
 </code></pre>
 
 
-Caller must be @aptos_framework.
-StakingRewardsConfig is under the @aptos_framework.
+Caller must be @topo_framework.
+StakingRewardsConfig is under the @topo_framework.
 
 
 <pre><code><b>pragma</b> verify_duration_estimate = 120;
 <b>include</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigRequirement">StakingRewardsConfigRequirement</a>;
-<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 // This enforces <a id="high-level-req-1.6" href="#high-level-req">high-level requirement 1</a>:
-<b>aborts_if</b> addr != @aptos_framework;
-<b>aborts_if</b> <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework).rewards_rate_period_in_secs != rewards_rate_period_in_secs;
+<b>aborts_if</b> addr != @topo_framework;
+<b>aborts_if</b> <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework).rewards_rate_period_in_secs != rewards_rate_period_in_secs;
 <b>include</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigValidationAbortsIf">StakingRewardsConfigValidationAbortsIf</a>;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(addr);
-<b>let</b> <b>post</b> staking_rewards_config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework);
+<b>let</b> <b>post</b> staking_rewards_config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework);
 <b>ensures</b> staking_rewards_config.rewards_rate == rewards_rate;
 <b>ensures</b> staking_rewards_config.min_rewards_rate == min_rewards_rate;
 <b>ensures</b> staking_rewards_config.rewards_rate_period_in_secs == rewards_rate_period_in_secs;
@@ -1490,22 +1490,22 @@ StakingRewardsConfig is under the @aptos_framework.
 ### Function `update_voting_power_increase_limit`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_voting_power_increase_limit">update_voting_power_increase_limit</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_voting_power_increase_limit: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_config.md#0x1_staking_config_update_voting_power_increase_limit">update_voting_power_increase_limit</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_voting_power_increase_limit: u64)
 </code></pre>
 
 
-Caller must be @aptos_framework.
+Caller must be @topo_framework.
 Only this %0-%50 of current total voting power is allowed to join the validator set in each epoch.
-The StakingConfig is under @aptos_framework.
+The StakingConfig is under @topo_framework.
 
 
-<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 // This enforces <a id="high-level-req-1.7" href="#high-level-req">high-level requirement 1</a>:
-<b>aborts_if</b> addr != @aptos_framework;
+<b>aborts_if</b> addr != @topo_framework;
 // This enforces <a id="high-level-req-2.2" href="#high-level-req">high-level requirement 2</a>:
 <b>aborts_if</b> new_voting_power_increase_limit == 0 || new_voting_power_increase_limit &gt; 50;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework);
-<b>ensures</b> <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@aptos_framework).voting_power_increase_limit == new_voting_power_increase_limit;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework);
+<b>ensures</b> <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">StakingConfig</a>&gt;(@topo_framework).voting_power_increase_limit == new_voting_power_increase_limit;
 </code></pre>
 
 
@@ -1573,7 +1573,7 @@ rewards_rate_decrease_rate must be within [0,1].
 
 
 <pre><code><b>schema</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigRequirement">StakingRewardsConfigRequirement</a> {
-    <b>requires</b> <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+    <b>requires</b> <b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
     <b>include</b> <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_periodical_reward_rate_decrease_enabled">features::spec_periodical_reward_rate_decrease_enabled</a>() ==&gt; <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigEnabledRequirement">StakingRewardsConfigEnabledRequirement</a>;
 }
 </code></pre>
@@ -1585,8 +1585,8 @@ rewards_rate_decrease_rate must be within [0,1].
 
 
 <pre><code><b>schema</b> <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigEnabledRequirement">StakingRewardsConfigEnabledRequirement</a> {
-    <b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework);
-    <b>let</b> staking_rewards_config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@aptos_framework);
+    <b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework);
+    <b>let</b> staking_rewards_config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">StakingRewardsConfig</a>&gt;(@topo_framework);
     <b>let</b> rewards_rate = staking_rewards_config.rewards_rate;
     <b>let</b> min_rewards_rate = staking_rewards_config.min_rewards_rate;
     <b>let</b> rewards_rate_period_in_secs = staking_rewards_config.rewards_rate_period_in_secs;

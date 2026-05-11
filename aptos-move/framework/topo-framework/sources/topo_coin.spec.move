@@ -1,4 +1,4 @@
-spec aptos_framework::topo_coin {
+spec topo_framework::topo_coin {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: The native token, TOPO, must be initialized during genesis.
@@ -34,15 +34,15 @@ spec aptos_framework::topo_coin {
         pragma aborts_if_is_partial;
     }
 
-    spec initialize(aptos_framework: &signer): (BurnCapability<TopoCoin>, MintCapability<TopoCoin>) {
-        use aptos_framework::aggregator_factory;
-        use aptos_framework::permissioned_signer;
+    spec initialize(topo_framework: &signer): (BurnCapability<TopoCoin>, MintCapability<TopoCoin>) {
+        use topo_framework::aggregator_factory;
+        use topo_framework::permissioned_signer;
 
         pragma verify = false;
 
-        aborts_if permissioned_signer::spec_is_permissioned_signer(aptos_framework);
-        let addr = signer::address_of(aptos_framework);
-        aborts_if addr != @aptos_framework;
+        aborts_if permissioned_signer::spec_is_permissioned_signer(topo_framework);
+        let addr = signer::address_of(topo_framework);
+        aborts_if addr != @topo_framework;
         aborts_if !string::spec_internal_check_utf8(b"Topo Coin");
         aborts_if !string::spec_internal_check_utf8(b"TOPO");
         aborts_if exists<MintCapStore>(addr);
@@ -59,9 +59,9 @@ spec aptos_framework::topo_coin {
     }
 
     spec destroy_mint_cap {
-        let addr = signer::address_of(aptos_framework);
-        aborts_if addr != @aptos_framework;
-        aborts_if !exists<MintCapStore>(@aptos_framework);
+        let addr = signer::address_of(topo_framework);
+        aborts_if addr != @topo_framework;
+        aborts_if !exists<MintCapStore>(@topo_framework);
     }
 
     // Test function, not needed verify.
@@ -93,7 +93,7 @@ spec aptos_framework::topo_coin {
     }
 
     spec schema ExistsTopoCoin {
-        requires exists<coin::CoinInfo<TopoCoin>>(@aptos_framework);
+        requires exists<coin::CoinInfo<TopoCoin>>(@topo_framework);
     }
 
 }

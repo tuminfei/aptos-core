@@ -1,4 +1,4 @@
-module aptos_framework::permissioned_delegation {
+module topo_framework::permissioned_delegation {
     use std::error;
     use std::option::Option;
     use std::signer;
@@ -9,17 +9,17 @@ module aptos_framework::permissioned_delegation {
         UnvalidatedPublicKey
     };
     use aptos_std::big_ordered_map::{Self, BigOrderedMap};
-    use aptos_framework::auth_data::AbstractionAuthData;
-    use aptos_framework::bcs_stream::{Self, deserialize_u8};
-    use aptos_framework::permissioned_signer::{Self, is_permissioned_signer, StorablePermissionedHandle};
-    use aptos_framework::rate_limiter;
-    use aptos_framework::rate_limiter::RateLimiter;
+    use topo_framework::auth_data::AbstractionAuthData;
+    use topo_framework::bcs_stream::{Self, deserialize_u8};
+    use topo_framework::permissioned_signer::{Self, is_permissioned_signer, StorablePermissionedHandle};
+    use topo_framework::rate_limiter;
+    use topo_framework::rate_limiter::RateLimiter;
     #[test_only]
     use std::bcs;
     #[test_only]
     use std::option;
     #[test_only]
-    use aptos_framework::auth_data;
+    use topo_framework::auth_data;
 
     const ENOT_MASTER_SIGNER: u64 = 1;
     const EINVALID_PUBLIC_KEY: u64 = 2;
@@ -159,9 +159,9 @@ module aptos_framework::permissioned_delegation {
         public_key_into_unvalidated
     };
     #[test_only]
-    use aptos_framework::account::create_signer_for_test;
+    use topo_framework::account::create_signer_for_test;
     #[test_only]
-    use aptos_framework::timestamp;
+    use topo_framework::timestamp;
 
     #[test_only]
     struct SignatureBundle has drop {
@@ -171,8 +171,8 @@ module aptos_framework::permissioned_delegation {
 
     #[test(account = @0xcafe, account_copy = @0xcafe)]
     fun test_basics(account: signer, account_copy: signer) acquires RegisteredDelegations {
-        let aptos_framework = create_signer_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        let topo_framework = create_signer_for_test(@topo_framework);
+        timestamp::set_time_has_started_for_testing(&topo_framework);
         let (sk, vpk) = generate_keys();
         let signature = sign_arbitrary_bytes(&sk, vector[1, 2, 3]);
         let pubkey_bytes = validated_public_key_to_bytes(&vpk);
@@ -192,8 +192,8 @@ module aptos_framework::permissioned_delegation {
     #[test(account = @0xcafe, account_copy = @0xcafe, account_copy_2 = @0xcafe)]
     #[expected_failure(abort_code = 0x50006, location = Self)]
     fun test_rate_limit(account: signer, account_copy: signer, account_copy_2: signer) acquires RegisteredDelegations {
-        let aptos_framework = create_signer_for_test(@aptos_framework);
-        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        let topo_framework = create_signer_for_test(@topo_framework);
+        timestamp::set_time_has_started_for_testing(&topo_framework);
         let (sk, vpk) = generate_keys();
         let signature = sign_arbitrary_bytes(&sk, vector[1, 2, 3]);
         let pubkey_bytes = validated_public_key_to_bytes(&vpk);

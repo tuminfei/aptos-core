@@ -1360,9 +1360,9 @@ Get the paired fungible asset metadata object of a coin type. If not exist, retu
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="coin.md#0x1_coin_paired_metadata">paired_metadata</a>&lt;CoinType&gt;(): Option&lt;Object&lt;Metadata&gt;&gt; <b>acquires</b> <a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a> {
-    <b>if</b> (<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@aptos_framework)) {
+    <b>if</b> (<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@topo_framework)) {
         <b>let</b> map =
-            &<b>borrow_global</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@aptos_framework).coin_to_fungible_asset_map;
+            &<b>borrow_global</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@topo_framework).coin_to_fungible_asset_map;
         <b>let</b> type = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;CoinType&gt;();
         <b>if</b> (map.contains(type)) {
             <b>return</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(*map.borrow(type))
@@ -1382,7 +1382,7 @@ Get the paired fungible asset metadata object of a coin type. If not exist, retu
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="coin.md#0x1_coin_create_coin_conversion_map">create_coin_conversion_map</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="coin.md#0x1_coin_create_coin_conversion_map">create_coin_conversion_map</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1391,11 +1391,11 @@ Get the paired fungible asset metadata object of a coin type. If not exist, retu
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="coin.md#0x1_coin_create_coin_conversion_map">create_coin_conversion_map</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <b>if</b> (!<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@aptos_framework)) {
+<pre><code><b>public</b> entry <b>fun</b> <a href="coin.md#0x1_coin_create_coin_conversion_map">create_coin_conversion_map</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
+    <b>if</b> (!<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@topo_framework)) {
         <b>move_to</b>(
-            aptos_framework,
+            topo_framework,
             <a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a> { coin_to_fungible_asset_map: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>() }
         )
     };
@@ -1413,7 +1413,7 @@ Get the paired fungible asset metadata object of a coin type. If not exist, retu
 Create TOPO pairing by passing <code>TopoCoin</code>.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="coin.md#0x1_coin_create_pairing">create_pairing</a>&lt;CoinType&gt;(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="coin.md#0x1_coin_create_pairing">create_pairing</a>&lt;CoinType&gt;(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1423,9 +1423,9 @@ Create TOPO pairing by passing <code>TopoCoin</code>.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="coin.md#0x1_coin_create_pairing">create_pairing</a>&lt;CoinType&gt;(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>
 ) <b>acquires</b> <a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>, <a href="coin.md#0x1_coin_CoinInfo">CoinInfo</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <a href="coin.md#0x1_coin_create_and_return_paired_metadata_if_not_exist">create_and_return_paired_metadata_if_not_exist</a>&lt;CoinType&gt;(<b>true</b>);
 }
 </code></pre>
@@ -1477,10 +1477,10 @@ Create TOPO pairing by passing <code>TopoCoin</code>.
     allow_topo_creation: bool
 ): Object&lt;Metadata&gt; {
     <b>assert</b>!(
-        <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@aptos_framework),
+        <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@topo_framework),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="coin.md#0x1_coin_ECOIN_CONVERSION_MAP_NOT_FOUND">ECOIN_CONVERSION_MAP_NOT_FOUND</a>)
     );
-    <b>let</b> map = <b>borrow_global_mut</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@aptos_framework);
+    <b>let</b> map = <b>borrow_global_mut</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@topo_framework);
     <b>let</b> type = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;CoinType&gt;();
     <b>if</b> (!map.coin_to_fungible_asset_map.contains(type)) {
         <b>let</b> is_topo = <a href="coin.md#0x1_coin_is_topo">is_topo</a>&lt;CoinType&gt;();
@@ -1491,7 +1491,7 @@ Create TOPO pairing by passing <code>TopoCoin</code>.
         <b>let</b> metadata_object_cref =
             <b>if</b> (is_topo) {
                 <a href="object.md#0x1_object_create_sticky_object_at_address">object::create_sticky_object_at_address</a>(
-                    @aptos_framework, @aptos_fungible_asset
+                    @topo_framework, @aptos_fungible_asset
                 )
             } <b>else</b> {
                 <a href="object.md#0x1_object_create_named_object">object::create_named_object</a>(
@@ -3537,8 +3537,8 @@ Destroy a burn capability.
     <b>if</b> (maybe_supply.is_some()) {
         <b>let</b> <a href="coin.md#0x1_coin_supply">supply</a> = maybe_supply.borrow_mut();
         <b>spec</b> {
-            <b>use</b> aptos_framework::optional_aggregator;
-            <b>use</b> aptos_framework::aggregator;
+            <b>use</b> topo_framework::optional_aggregator;
+            <b>use</b> topo_framework::aggregator;
             <b>assume</b> <a href="optional_aggregator.md#0x1_optional_aggregator_is_parallelizable">optional_aggregator::is_parallelizable</a>(<a href="coin.md#0x1_coin_supply">supply</a>) ==&gt;
                 (
                     <a href="aggregator.md#0x1_aggregator_spec_aggregator_get_val">aggregator::spec_aggregator_get_val</a>(
@@ -3854,7 +3854,7 @@ Destroy a burn capability.
 </code></pre>
 
 
-Can only be updated by <code>@aptos_framework</code>.
+Can only be updated by <code>@topo_framework</code>.
 
 
 <pre><code><b>aborts_if</b> <b>true</b>;
@@ -3984,9 +3984,9 @@ Get address by reflection.
 
 
 <pre><code><b>fun</b> <a href="coin.md#0x1_coin_spec_paired_metadata">spec_paired_metadata</a>&lt;CoinType&gt;(): Option&lt;Object&lt;Metadata&gt;&gt; {
-   <b>if</b> (<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@aptos_framework)) {
+   <b>if</b> (<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@topo_framework)) {
        <b>let</b> map =
-           <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@aptos_framework).coin_to_fungible_asset_map;
+           <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinConversionMap">CoinConversionMap</a>&gt;(@topo_framework).coin_to_fungible_asset_map;
        <b>if</b> (<a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(map, <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;CoinType&gt;())) {
            <b>let</b> metadata = <a href="../../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(map, <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;CoinType&gt;());
            <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(metadata)
@@ -4369,7 +4369,7 @@ The value of <code>zero_coin</code> must be 0.
 </code></pre>
 
 
-The creator of <code>CoinType</code> must be <code>@aptos_framework</code>.
+The creator of <code>CoinType</code> must be <code>@topo_framework</code>.
 <code><a href="coin.md#0x1_coin_SupplyConfig">SupplyConfig</a></code> allow upgrade.
 
 
@@ -4412,9 +4412,9 @@ The creator of <code>CoinType</code> must be <code>@aptos_framework</code>.
 
 
 <pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
-<b>aborts_if</b> addr != @aptos_framework;
+<b>aborts_if</b> addr != @topo_framework;
 <b>aborts_if</b> monitor_supply
-    && !<b>exists</b>&lt;<a href="aggregator_factory.md#0x1_aggregator_factory_AggregatorFactory">aggregator_factory::AggregatorFactory</a>&gt;(@aptos_framework);
+    && !<b>exists</b>&lt;<a href="aggregator_factory.md#0x1_aggregator_factory_AggregatorFactory">aggregator_factory::AggregatorFactory</a>&gt;(@topo_framework);
 <b>include</b> <a href="coin.md#0x1_coin_InitializeInternalSchema">InitializeInternalSchema</a>&lt;CoinType&gt; {
     name: name.bytes,
     symbol: symbol.bytes
@@ -4447,7 +4447,7 @@ The creator of <code>CoinType</code> must be <code>@aptos_framework</code>.
 <b>modifies</b> <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">CoinInfo</a>&lt;CoinType&gt;&gt;(account_addr);
 <b>aborts_if</b> monitor_supply
     && parallelizable
-    && !<b>exists</b>&lt;<a href="aggregator_factory.md#0x1_aggregator_factory_AggregatorFactory">aggregator_factory::AggregatorFactory</a>&gt;(@aptos_framework);
+    && !<b>exists</b>&lt;<a href="aggregator_factory.md#0x1_aggregator_factory_AggregatorFactory">aggregator_factory::AggregatorFactory</a>&gt;(@topo_framework);
 // This enforces <a id="high-level-req-2" href="managed_coin.md#high-level-req">high-level requirement 2</a> of the <a href="managed_coin.md">managed_coin</a> module:
 <b>ensures</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">CoinInfo</a>&lt;CoinType&gt;&gt;(account_addr)
     && coin_info.name == name

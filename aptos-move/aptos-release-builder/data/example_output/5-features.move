@@ -4,7 +4,7 @@
 // Disabled Features: []
 //
 script {
-    use aptos_framework::topo_governance;
+    use topo_framework::topo_governance;
     use std::features;
 
     fun main(proposal_id: u64) {

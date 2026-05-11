@@ -1,6 +1,6 @@
 script {
-    use aptos_framework::topo_coin;
-    use aptos_framework::coin;
+    use topo_framework::topo_coin;
+    use topo_framework::coin;
 
     fun main(
         first: &signer,

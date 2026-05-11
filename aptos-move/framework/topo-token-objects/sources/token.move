@@ -10,14 +10,14 @@ module topo_token_objects::token {
     use std::option::{Self, Option};
     use std::string::{Self, String};
     use std::signer;
-    use aptos_framework::aggregator_v2::{Self, AggregatorSnapshot, DerivedStringSnapshot};
-    use aptos_framework::event;
-    use aptos_framework::object::{Self, ConstructorRef, Object};
+    use topo_framework::aggregator_v2::{Self, AggregatorSnapshot, DerivedStringSnapshot};
+    use topo_framework::event;
+    use topo_framework::object::{Self, ConstructorRef, Object};
     use topo_token_objects::collection::{Self, Collection};
     use topo_token_objects::royalty::{Self, Royalty};
 
     #[test_only]
-    use aptos_framework::object::ExtendRef;
+    use topo_framework::object::ExtendRef;
 
     /// The token does not exist
     const ETOKEN_DOES_NOT_EXIST: u64 = 1;
@@ -43,7 +43,7 @@ module topo_token_objects::token {
     const MAX_URI_LENGTH: u64 = 512;
     const MAX_DESCRIPTION_LENGTH: u64 = 2048;
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Represents the common fields to all tokens.
     struct Token has key {
         /// The collection from which this token resides.
@@ -70,7 +70,7 @@ module topo_token_objects::token {
         mutation_events: event::EventHandle<MutationEvent>,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Represents first addition to the common fields for all tokens
     /// Started being populated once aggregator_v2_api_enabled was enabled.
     struct TokenIdentifiers has key {
@@ -83,7 +83,7 @@ module topo_token_objects::token {
 
     // DEPRECATED, NEVER USED
     #[deprecated]
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     struct ConcurrentTokenIdentifiers has key {
         index: AggregatorSnapshot<u64>,
         name: AggregatorSnapshot<String>,
@@ -838,9 +838,9 @@ module topo_token_objects::token {
         assert!(option::some(expected_royalty) == royalty(token), 2);
     }
 
-    #[test(creator = @0x123, trader = @0x456, aptos_framework = @aptos_framework)]
-    fun test_create_and_transfer_token_as_collection_owner(creator: &signer, trader: &signer, aptos_framework: &signer) acquires Token {
-        features::change_feature_flags_for_testing(aptos_framework, vector[features::get_collection_owner_feature()], vector[]);
+    #[test(creator = @0x123, trader = @0x456, topo_framework = @topo_framework)]
+    fun test_create_and_transfer_token_as_collection_owner(creator: &signer, trader: &signer, topo_framework: &signer) acquires Token {
+        features::change_feature_flags_for_testing(topo_framework, vector[features::get_collection_owner_feature()], vector[]);
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
 
@@ -870,10 +870,10 @@ module topo_token_objects::token {
         );
     }
 
-    #[test(creator = @0x123, trader = @0x456, aptos_framework = @aptos_framework)]
+    #[test(creator = @0x123, trader = @0x456, topo_framework = @topo_framework)]
     #[expected_failure(abort_code = 0x40008, location = topo_token_objects::token)]
-    fun test_create_token_non_collection_owner(creator: &signer, trader: &signer, aptos_framework: &signer) {
-        features::change_feature_flags_for_testing(aptos_framework, vector[features::get_collection_owner_feature()], vector[]);
+    fun test_create_token_non_collection_owner(creator: &signer, trader: &signer, topo_framework: &signer) {
+        features::change_feature_flags_for_testing(topo_framework, vector[features::get_collection_owner_feature()], vector[]);
         let constructor_ref = &create_fixed_collection_as_collection_owner(creator, string::utf8(b"collection name"), 5);
         let collection = get_collection_from_ref(&constructor_ref.generate_extend_ref());
         create_token_as_collection_owner(
@@ -890,10 +890,10 @@ module topo_token_objects::token {
         create_token_with_collection_helper(trader, collection, string::utf8(b"token name"));
     }
 
-    #[test(creator = @0x123, trader = @0x456, aptos_framework = @aptos_framework)]
+    #[test(creator = @0x123, trader = @0x456, topo_framework = @topo_framework)]
     #[expected_failure(abort_code = 0x40008, location = topo_token_objects::token)]
-    fun test_create_named_token_non_collection_owner(creator: &signer, trader: &signer, aptos_framework: &signer) {
-        features::change_feature_flags_for_testing(aptos_framework, vector[features::get_collection_owner_feature()], vector[]);
+    fun test_create_named_token_non_collection_owner(creator: &signer, trader: &signer, topo_framework: &signer) {
+        features::change_feature_flags_for_testing(topo_framework, vector[features::get_collection_owner_feature()], vector[]);
         let constructor_ref = &create_fixed_collection_as_collection_owner(creator, string::utf8(b"collection name"), 5);
         let collection = get_collection_from_ref(&constructor_ref.generate_extend_ref());
         create_named_token_as_collection_owner_helper(trader, collection, string::utf8(b"token name"));
@@ -921,10 +921,10 @@ module topo_token_objects::token {
         );
     }
 
-    #[test(creator = @0x123, trader = @0x456, aptos_framework = @aptos_framework)]
+    #[test(creator = @0x123, trader = @0x456, topo_framework = @topo_framework)]
     #[expected_failure(abort_code = 0x40008, location = topo_token_objects::token)]
-    fun test_create_named_token_from_seed_non_collection_owner(creator: &signer, trader: &signer, aptos_framework: &signer) {
-        features::change_feature_flags_for_testing(aptos_framework, vector[features::get_collection_owner_feature()], vector[]);
+    fun test_create_named_token_from_seed_non_collection_owner(creator: &signer, trader: &signer, topo_framework: &signer) {
+        features::change_feature_flags_for_testing(topo_framework, vector[features::get_collection_owner_feature()], vector[]);
         let constructor_ref = &create_fixed_collection_as_collection_owner(creator, string::utf8(b"collection name"), 5);
         let collection = get_collection_from_ref(&constructor_ref.generate_extend_ref());
         create_named_token_as_collection_owner(
@@ -955,10 +955,10 @@ module topo_token_objects::token {
         assert!(option::some(expected_royalty) == royalty(token), 2);
     }
 
-    #[test(creator = @0x123, trader = @0x456, aptos_framework = @aptos_framework)]
+    #[test(creator = @0x123, trader = @0x456, topo_framework = @topo_framework)]
     #[expected_failure(abort_code = 0x40008, location = topo_token_objects::token)]
-    fun test_create_token_after_transferring_collection(creator: &signer, trader: &signer, aptos_framework: &signer) {
-        features::change_feature_flags_for_testing(aptos_framework, vector[features::get_collection_owner_feature()], vector[]);
+    fun test_create_token_after_transferring_collection(creator: &signer, trader: &signer, topo_framework: &signer) {
+        features::change_feature_flags_for_testing(topo_framework, vector[features::get_collection_owner_feature()], vector[]);
         let constructor_ref = &create_fixed_collection_as_collection_owner(creator, string::utf8(b"collection name"), 5);
         let collection = get_collection_from_ref(&constructor_ref.generate_extend_ref());
         create_token_as_collection_owner(
@@ -975,9 +975,9 @@ module topo_token_objects::token {
         );
     }
 
-    #[test(creator = @0x123, trader = @0x456, aptos_framework = @aptos_framework)]
-    fun create_token_works_with_new_collection_owner(creator: &signer, trader: &signer, aptos_framework: &signer) {
-        features::change_feature_flags_for_testing(aptos_framework, vector[features::get_collection_owner_feature()], vector[]);
+    #[test(creator = @0x123, trader = @0x456, topo_framework = @topo_framework)]
+    fun create_token_works_with_new_collection_owner(creator: &signer, trader: &signer, topo_framework: &signer) {
+        features::change_feature_flags_for_testing(topo_framework, vector[features::get_collection_owner_feature()], vector[]);
         let constructor_ref = &create_fixed_collection_as_collection_owner(creator, string::utf8(b"collection name"), 5);
         let collection = get_collection_from_ref(&constructor_ref.generate_extend_ref());
         create_token_as_collection_owner(
@@ -1065,7 +1065,7 @@ module topo_token_objects::token {
     }
 
     #[test(creator = @0x123)]
-    #[expected_failure(abort_code = 0x80001, location = aptos_framework::object)]
+    #[expected_failure(abort_code = 0x80001, location = topo_framework::object)]
     fun test_duplicate_tokens(creator: &signer) {
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
@@ -1175,7 +1175,7 @@ module topo_token_objects::token {
 
     #[test(creator = @0x123)]
     fun test_create_from_account_burn_and_delete(creator: &signer) acquires Token, TokenIdentifiers {
-        use aptos_framework::account;
+        use topo_framework::account;
 
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");
@@ -1200,7 +1200,7 @@ module topo_token_objects::token {
 
     #[test(creator = @0x123)]
     fun test_create_burn_and_delete(creator: &signer) acquires Token, TokenIdentifiers {
-        use aptos_framework::account;
+        use topo_framework::account;
 
         let collection_name = string::utf8(b"collection name");
         let token_name = string::utf8(b"token name");

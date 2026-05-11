@@ -1,10 +1,10 @@
 #[test_only]
-module aptos_framework::simple_token_fa_tests {
-    use aptos_framework::fungible_asset::{
+module topo_framework::simple_token_fa_tests {
+    use topo_framework::fungible_asset::{
         amount, balance, create_test_token, init_test_metadata,
         supply, create_store, create_test_store, remove_store, is_frozen, upgrade_to_concurrent, Metadata, TestToken
     };
-    use aptos_framework::object;
+    use topo_framework::object;
     use 0xcafe::simple_token;
     use std::option;
     use std::features;
@@ -62,7 +62,7 @@ module aptos_framework::simple_token_fa_tests {
         burn_ref.burn(cash);
     }
 
-    #[test(fx = @aptos_framework, creator = @0xcafe)]
+    #[test(fx = @topo_framework, creator = @0xcafe)]
     fun test_fungible_asset_upgrade(
         fx: &signer,
         creator: &signer
@@ -94,7 +94,7 @@ module aptos_framework::simple_token_fa_tests {
     }
 
     #[test(creator = @0xcafe)]
-    #[expected_failure(abort_code = 0x50003, location = aptos_framework::fungible_asset)]
+    #[expected_failure(abort_code = 0x50003, location = topo_framework::fungible_asset)]
     fun test_mint_to_frozen(
         creator: &signer
     ) {

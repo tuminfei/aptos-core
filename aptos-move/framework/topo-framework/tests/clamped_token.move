@@ -2,10 +2,10 @@
 module 0xcafe::clamped_token {
     // Create a token with max amount one can withdraw on each withdraw call.
 
-    use aptos_framework::fungible_asset::{Self, FungibleAsset, RawBalanceRef, RawSupplyRef, TransferRef};
-    use aptos_framework::dispatchable_fungible_asset;
-    use aptos_framework::object::{ConstructorRef, Object};
-    use aptos_framework::function_info;
+    use topo_framework::fungible_asset::{Self, FungibleAsset, RawBalanceRef, RawSupplyRef, TransferRef};
+    use topo_framework::dispatchable_fungible_asset;
+    use topo_framework::object::{ConstructorRef, Object};
+    use topo_framework::function_info;
 
     use std::option;
     use std::option::Option;

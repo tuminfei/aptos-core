@@ -941,7 +941,7 @@ Address of TOPO Primary Fungible Store
 
 Check if the bytes of the auth_key is 32.
 The Account does not exist under the auth_key before creating the account.
-Limit the address of auth_key is not @vm_reserved / @aptos_framework / @aptos_toke.
+Limit the address of auth_key is not @vm_reserved / @topo_framework / @aptos_toke.
 
 
 <pre><code>// This enforces <a id="high-level-req-1" href="#high-level-req">high-level requirement 1</a>:
@@ -958,7 +958,7 @@ Limit the address of auth_key is not @vm_reserved / @aptos_framework / @aptos_to
 <pre><code><b>schema</b> <a href="topo_account.md#0x1_topo_account_CreateAccountAbortsIf">CreateAccountAbortsIf</a> {
     auth_key: <b>address</b>;
     <b>aborts_if</b> <b>exists</b>&lt;<a href="account.md#0x1_account_Account">account::Account</a>&gt;(auth_key);
-    <b>aborts_if</b> auth_key == @vm_reserved || auth_key == @aptos_framework || auth_key == @aptos_token;
+    <b>aborts_if</b> auth_key == @vm_reserved || auth_key == @topo_framework || auth_key == @aptos_token;
 }
 </code></pre>
 
@@ -997,10 +997,10 @@ Limit the address of auth_key is not @vm_reserved / @aptos_framework / @aptos_to
 <b>aborts_if</b> <b>exists</b> i in 0..len(recipients):
         !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) && <a href="topo_account.md#0x1_topo_account_length_judgment">length_judgment</a>(recipients[i]);
 <b>aborts_if</b> <b>exists</b> i in 0..len(recipients):
-        !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) && (recipients[i] == @vm_reserved || recipients[i] == @aptos_framework || recipients[i] == @aptos_token);
+        !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) && (recipients[i] == @vm_reserved || recipients[i] == @topo_framework || recipients[i] == @aptos_token);
 <b>ensures</b> <b>forall</b> i in 0..len(recipients):
         (!<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) ==&gt; !<a href="topo_account.md#0x1_topo_account_length_judgment">length_judgment</a>(recipients[i])) &&
-            (!<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) ==&gt; (recipients[i] != @vm_reserved && recipients[i] != @aptos_framework && recipients[i] != @aptos_token));
+            (!<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) ==&gt; (recipients[i] != @vm_reserved && recipients[i] != @topo_framework && recipients[i] != @aptos_token));
 <b>aborts_if</b> <b>exists</b> i in 0..len(recipients):
     !<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;TopoCoin&gt;&gt;(account_addr_source);
 <b>aborts_if</b> <b>exists</b> i in 0..len(recipients):
@@ -1036,7 +1036,7 @@ Limit the address of auth_key is not @vm_reserved / @aptos_framework / @aptos_to
 <b>include</b> <a href="topo_account.md#0x1_topo_account_TransferEnsures">TransferEnsures</a>&lt;TopoCoin&gt;;
 <b>aborts_if</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;TopoCoin&gt;&gt;(<b>to</b>) && <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;TopoCoin&gt;&gt;(<b>to</b>).frozen;
 // This enforces <a id="high-level-req-5" href="#high-level-req">high-level requirement 5</a>:
-<b>ensures</b> <b>exists</b>&lt;aptos_framework::account::Account&gt;(<b>to</b>);
+<b>ensures</b> <b>exists</b>&lt;topo_framework::account::Account&gt;(<b>to</b>);
 <b>ensures</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;TopoCoin&gt;&gt;(<b>to</b>);
 </code></pre>
 
@@ -1062,10 +1062,10 @@ Limit the address of auth_key is not @vm_reserved / @aptos_framework / @aptos_to
 <b>aborts_if</b> <b>exists</b> i in 0..len(recipients):
         !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) && <a href="topo_account.md#0x1_topo_account_length_judgment">length_judgment</a>(recipients[i]);
 <b>aborts_if</b> <b>exists</b> i in 0..len(recipients):
-        !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) && (recipients[i] == @vm_reserved || recipients[i] == @aptos_framework || recipients[i] == @aptos_token);
+        !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) && (recipients[i] == @vm_reserved || recipients[i] == @topo_framework || recipients[i] == @aptos_token);
 <b>ensures</b> <b>forall</b> i in 0..len(recipients):
         (!<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) ==&gt; !<a href="topo_account.md#0x1_topo_account_length_judgment">length_judgment</a>(recipients[i])) &&
-            (!<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) ==&gt; (recipients[i] != @vm_reserved && recipients[i] != @aptos_framework && recipients[i] != @aptos_token));
+            (!<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(recipients[i]) ==&gt; (recipients[i] != @vm_reserved && recipients[i] != @topo_framework && recipients[i] != @aptos_token));
 <b>aborts_if</b> <b>exists</b> i in 0..len(recipients):
     !<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;CoinType&gt;&gt;(account_addr_source);
 <b>aborts_if</b> <b>exists</b> i in 0..len(recipients):
@@ -1101,8 +1101,8 @@ Limit the address of auth_key is not @vm_reserved / @aptos_framework / @aptos_to
 <b>include</b> <a href="topo_account.md#0x1_topo_account_RegistCoinAbortsIf">RegistCoinAbortsIf</a>&lt;CoinType&gt;;
 <b>include</b> <a href="topo_account.md#0x1_topo_account_TransferEnsures">TransferEnsures</a>&lt;CoinType&gt;;
 <b>aborts_if</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;CoinType&gt;&gt;(<b>to</b>) && <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;CoinType&gt;&gt;(<b>to</b>).frozen;
-<b>ensures</b> <b>exists</b>&lt;aptos_framework::account::Account&gt;(<b>to</b>);
-<b>ensures</b> <b>exists</b>&lt;aptos_framework::coin::CoinStore&lt;CoinType&gt;&gt;(<b>to</b>);
+<b>ensures</b> <b>exists</b>&lt;topo_framework::account::Account&gt;(<b>to</b>);
+<b>ensures</b> <b>exists</b>&lt;topo_framework::coin::CoinStore&lt;CoinType&gt;&gt;(<b>to</b>);
 </code></pre>
 
 
@@ -1125,8 +1125,8 @@ Limit the address of auth_key is not @vm_reserved / @aptos_framework / @aptos_to
 <b>let</b> if_exist_coin = <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;CoinType&gt;&gt;(<b>to</b>);
 <b>aborts_if</b> if_exist_coin && <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;CoinType&gt;&gt;(<b>to</b>).frozen;
 // This enforces <a id="high-level-spec-6" href="#high-level-req">high-level requirement 6</a>:
-<b>ensures</b> <b>exists</b>&lt;aptos_framework::account::Account&gt;(<b>to</b>);
-<b>ensures</b> <b>exists</b>&lt;aptos_framework::coin::CoinStore&lt;CoinType&gt;&gt;(<b>to</b>);
+<b>ensures</b> <b>exists</b>&lt;topo_framework::account::Account&gt;(<b>to</b>);
+<b>ensures</b> <b>exists</b>&lt;topo_framework::coin::CoinStore&lt;CoinType&gt;&gt;(<b>to</b>);
 <b>let</b> coin_store_to = <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;CoinType&gt;&gt;(<b>to</b>).<a href="coin.md#0x1_coin">coin</a>.value;
 <b>let</b> <b>post</b> post_coin_store_to = <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;CoinType&gt;&gt;(<b>to</b>).<a href="coin.md#0x1_coin">coin</a>.value;
 <b>ensures</b> if_exist_coin ==&gt; post_coin_store_to == coin_store_to + coins.value;
@@ -1325,7 +1325,7 @@ Check if the TopoCoin under the address existed.
 <pre><code><b>schema</b> <a href="topo_account.md#0x1_topo_account_CreateAccountTransferAbortsIf">CreateAccountTransferAbortsIf</a> {
     <b>to</b>: <b>address</b>;
     <b>aborts_if</b> !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(<b>to</b>) && <a href="topo_account.md#0x1_topo_account_length_judgment">length_judgment</a>(<b>to</b>);
-    <b>aborts_if</b> !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(<b>to</b>) && (<b>to</b> == @vm_reserved || <b>to</b> == @aptos_framework || <b>to</b> == @aptos_token);
+    <b>aborts_if</b> !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(<b>to</b>) && (<b>to</b> == @vm_reserved || <b>to</b> == @topo_framework || <b>to</b> == @aptos_token);
 }
 </code></pre>
 
@@ -1369,7 +1369,7 @@ Check if the TopoCoin under the address existed.
 
 <pre><code><b>schema</b> <a href="topo_account.md#0x1_topo_account_RegistCoinAbortsIf">RegistCoinAbortsIf</a>&lt;CoinType&gt; {
     <b>to</b>: <b>address</b>;
-    <b>aborts_if</b> <b>exists</b>&lt;aptos_framework::account::Account&gt;(<b>to</b>);
+    <b>aborts_if</b> <b>exists</b>&lt;topo_framework::account::Account&gt;(<b>to</b>);
     <b>aborts_if</b> <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;CoinType&gt;() != <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;();
 }
 </code></pre>

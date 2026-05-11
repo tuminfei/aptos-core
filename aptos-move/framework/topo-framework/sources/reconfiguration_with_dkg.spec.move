@@ -1,14 +1,14 @@
-spec aptos_framework::reconfiguration_with_dkg {
+spec topo_framework::reconfiguration_with_dkg {
     spec module {
         pragma verify = true;
     }
 
     spec try_start() {
-        use aptos_framework::chain_status;
-        use aptos_framework::staking_config;
-        use aptos_framework::reconfiguration;
+        use topo_framework::chain_status;
+        use topo_framework::staking_config;
+        use topo_framework::reconfiguration;
         pragma verify_duration_estimate = 120;
-        requires exists<reconfiguration::Configuration>(@aptos_framework);
+        requires exists<reconfiguration::Configuration>(@topo_framework);
         requires chain_status::is_operating();
         include stake::ResourceRequirement;
         include stake::GetReconfigStartTimeRequirement;
@@ -29,24 +29,24 @@ spec aptos_framework::reconfiguration_with_dkg {
     }
 
     spec schema FinishRequirement {
-        use aptos_framework::chain_status;
+        use topo_framework::chain_status;
         use std::signer;
         use std::features;
-        use aptos_framework::coin::CoinInfo;
-        use aptos_framework::topo_coin::TopoCoin;
-        use aptos_framework::staking_config;
-        use aptos_framework::config_buffer;
-        use aptos_framework::version;
-        use aptos_framework::consensus_config;
-        use aptos_framework::execution_config;
-        use aptos_framework::gas_schedule;
-        use aptos_framework::jwks;
-        use aptos_framework::randomness_config;
-        use aptos_framework::jwk_consensus_config;
+        use topo_framework::coin::CoinInfo;
+        use topo_framework::topo_coin::TopoCoin;
+        use topo_framework::staking_config;
+        use topo_framework::config_buffer;
+        use topo_framework::version;
+        use topo_framework::consensus_config;
+        use topo_framework::execution_config;
+        use topo_framework::gas_schedule;
+        use topo_framework::jwks;
+        use topo_framework::randomness_config;
+        use topo_framework::jwk_consensus_config;
         framework: signer;
-        requires signer::address_of(framework) == @aptos_framework;
+        requires signer::address_of(framework) == @topo_framework;
         requires chain_status::is_operating();
-        requires exists<CoinInfo<TopoCoin>>(@aptos_framework);
+        requires exists<CoinInfo<TopoCoin>>(@topo_framework);
         include staking_config::StakingRewardsConfigRequirement;
         requires exists<features::Features>(@std);
         include config_buffer::OnNewEpochRequirement<version::Version>;
@@ -68,7 +68,7 @@ spec aptos_framework::reconfiguration_with_dkg {
     }
 
     spec finish_with_dkg_result(account: &signer, dkg_result: vector<u8>) {
-        use aptos_framework::dkg;
+        use topo_framework::dkg;
         pragma verify_duration_estimate = 1500;
         include FinishRequirement { framework: account };
         requires dkg::has_incomplete_session();

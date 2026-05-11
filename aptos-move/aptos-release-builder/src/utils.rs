@@ -15,7 +15,7 @@ pub(crate) fn generate_governance_proposal_header(
     emitln!(writer, "script {");
     writer.indent();
 
-    emitln!(writer, "use aptos_framework::topo_governance;");
+    emitln!(writer, "use topo_framework::topo_governance;");
     for deps_name in deps_names {
         emitln!(writer, "use {};", deps_name);
     }
@@ -39,7 +39,7 @@ pub(crate) fn generate_testnet_header(writer: &CodeWriter, deps_names: &[&str]) 
     emitln!(writer, "script {");
     writer.indent();
 
-    emitln!(writer, "use aptos_framework::topo_governance;");
+    emitln!(writer, "use topo_framework::topo_governance;");
     for deps_name in deps_names {
         emitln!(writer, "use {};", deps_name);
     }

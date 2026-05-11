@@ -6,7 +6,7 @@ use crate::aggregator_natives::{
     NativeAggregatorContext,
 };
 use aptos_aggregator::aggregator_v1_extension::AggregatorID;
-use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_gas_schedule::gas_params::natives::topo_framework::*;
 use aptos_native_interface::{
     safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeResult,
 };

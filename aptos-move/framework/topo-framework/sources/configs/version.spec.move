@@ -1,4 +1,4 @@
-spec aptos_framework::version {
+spec topo_framework::version {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: During genesis, the Version resource should be initialized with the initial version and stored along
@@ -24,53 +24,53 @@ spec aptos_framework::version {
 
     spec set_version(account: &signer, major: u64) {
         use std::signer;
-        use aptos_framework::chain_status;
-        use aptos_framework::timestamp;
-        use aptos_framework::coin::CoinInfo;
-        use aptos_framework::topo_coin::TopoCoin;
-        use aptos_framework::staking_config;
-        use aptos_framework::reconfiguration;
+        use topo_framework::chain_status;
+        use topo_framework::timestamp;
+        use topo_framework::coin::CoinInfo;
+        use topo_framework::topo_coin::TopoCoin;
+        use topo_framework::staking_config;
+        use topo_framework::reconfiguration;
 
         // TODO: set because of timeout (property proved)
         pragma verify_duration_estimate = 120;
         include staking_config::StakingRewardsConfigRequirement;
         requires chain_status::is_genesis();
         requires timestamp::spec_now_microseconds() >= reconfiguration::last_reconfiguration_time();
-        requires exists<CoinInfo<TopoCoin>>(@aptos_framework);
+        requires exists<CoinInfo<TopoCoin>>(@topo_framework);
 
         aborts_if !exists<SetVersionCapability>(signer::address_of(account));
-        aborts_if !exists<Version>(@aptos_framework);
+        aborts_if !exists<Version>(@topo_framework);
 
-        let old_major = global<Version>(@aptos_framework).major;
+        let old_major = global<Version>(@topo_framework).major;
         /// [high-level-req-2]
         aborts_if !(old_major < major);
 
-        ensures global<Version>(@aptos_framework).major == major;
+        ensures global<Version>(@topo_framework).major == major;
     }
 
     /// Abort if resource already exists in `@aptos_framwork` when initializing.
-    spec initialize(aptos_framework: &signer, initial_version: u64) {
+    spec initialize(topo_framework: &signer, initial_version: u64) {
         use std::signer;
 
         /// [high-level-req-1]
-        aborts_if signer::address_of(aptos_framework) != @aptos_framework;
-        aborts_if exists<Version>(@aptos_framework);
-        aborts_if exists<SetVersionCapability>(@aptos_framework);
-        ensures exists<Version>(@aptos_framework);
-        ensures exists<SetVersionCapability>(@aptos_framework);
-        ensures global<Version>(@aptos_framework) == Version { major: initial_version };
-        ensures global<SetVersionCapability>(@aptos_framework) == SetVersionCapability {};
+        aborts_if signer::address_of(topo_framework) != @topo_framework;
+        aborts_if exists<Version>(@topo_framework);
+        aborts_if exists<SetVersionCapability>(@topo_framework);
+        ensures exists<Version>(@topo_framework);
+        ensures exists<SetVersionCapability>(@topo_framework);
+        ensures global<Version>(@topo_framework) == Version { major: initial_version };
+        ensures global<SetVersionCapability>(@topo_framework) == SetVersionCapability {};
     }
 
     spec set_for_next_epoch(account: &signer, major: u64) {
         aborts_if !exists<SetVersionCapability>(signer::address_of(account));
-        aborts_if !exists<Version>(@aptos_framework);
-        aborts_if global<Version>(@aptos_framework).major >= major;
-        aborts_if !exists<config_buffer::PendingConfigs>(@aptos_framework);
+        aborts_if !exists<Version>(@topo_framework);
+        aborts_if global<Version>(@topo_framework).major >= major;
+        aborts_if !exists<config_buffer::PendingConfigs>(@topo_framework);
     }
 
     spec on_new_epoch(framework: &signer) {
-        requires @aptos_framework == std::signer::address_of(framework);
+        requires @topo_framework == std::signer::address_of(framework);
         include config_buffer::OnNewEpochRequirement<Version>;
         aborts_if false;
     }

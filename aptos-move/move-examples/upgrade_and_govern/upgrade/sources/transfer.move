@@ -2,8 +2,8 @@
 /// Mock coin transfer module that invokes governance parameters.
 module upgrade_and_govern::transfer {
 
-    use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::coin;
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin;
     use upgrade_and_govern::parameters;
 
     public entry fun transfer_octas(

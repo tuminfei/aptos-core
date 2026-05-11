@@ -9,14 +9,14 @@ module aptos_experimental::confidential_asset {
     use aptos_std::ristretto255::Self;
     use aptos_std::ristretto255_bulletproofs::Self as bulletproofs;
     use aptos_std::string_utils;
-    use aptos_framework::chain_id;
-    use aptos_framework::coin;
-    use aptos_framework::event;
-    use aptos_framework::dispatchable_fungible_asset;
-    use aptos_framework::fungible_asset::{Metadata};
-    use aptos_framework::object::{Self, ExtendRef, Object};
-    use aptos_framework::primary_fungible_store;
-    use aptos_framework::system_addresses;
+    use topo_framework::chain_id;
+    use topo_framework::coin;
+    use topo_framework::event;
+    use topo_framework::dispatchable_fungible_asset;
+    use topo_framework::fungible_asset::{Metadata};
+    use topo_framework::object::{Self, ExtendRef, Object};
+    use topo_framework::primary_fungible_store;
+    use topo_framework::system_addresses;
 
     use aptos_experimental::confidential_balance;
     use aptos_experimental::confidential_proof::{
@@ -480,8 +480,8 @@ module aptos_experimental::confidential_asset {
     //
 
     /// Enables the allow list, restricting confidential transfers to tokens on the allow list.
-    public fun enable_allow_list(aptos_framework: &signer) acquires FAController {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public fun enable_allow_list(topo_framework: &signer) acquires FAController {
+        system_addresses::assert_aptos_framework(topo_framework);
 
         let fa_controller = borrow_global_mut<FAController>(@aptos_experimental);
 
@@ -494,8 +494,8 @@ module aptos_experimental::confidential_asset {
     }
 
     /// Disables the allow list, allowing confidential transfers for all tokens.
-    public fun disable_allow_list(aptos_framework: &signer) acquires FAController {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public fun disable_allow_list(topo_framework: &signer) acquires FAController {
+        system_addresses::assert_aptos_framework(topo_framework);
 
         let fa_controller = borrow_global_mut<FAController>(@aptos_experimental);
 
@@ -509,9 +509,9 @@ module aptos_experimental::confidential_asset {
 
     /// Enables confidential transfers for the specified token.
     public fun enable_token(
-        aptos_framework: &signer, token: Object<Metadata>
+        topo_framework: &signer, token: Object<Metadata>
     ) acquires FAConfig, FAController {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
 
         let fa_config = borrow_global_mut<FAConfig>(ensure_fa_config_exists(token));
 
@@ -522,9 +522,9 @@ module aptos_experimental::confidential_asset {
 
     /// Disables confidential transfers for the specified token.
     public fun disable_token(
-        aptos_framework: &signer, token: Object<Metadata>
+        topo_framework: &signer, token: Object<Metadata>
     ) acquires FAConfig, FAController {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
 
         let fa_config = borrow_global_mut<FAConfig>(ensure_fa_config_exists(token));
 
@@ -537,9 +537,9 @@ module aptos_experimental::confidential_asset {
     ///
     /// NOTE: Ensures that new_auditor_ek is a valid Ristretto255 point
     public fun set_auditor(
-        aptos_framework: &signer, token: Object<Metadata>, new_auditor_ek: vector<u8>
+        topo_framework: &signer, token: Object<Metadata>, new_auditor_ek: vector<u8>
     ) acquires FAConfig, FAController {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
 
         let fa_config = borrow_global_mut<FAConfig>(ensure_fa_config_exists(token));
 

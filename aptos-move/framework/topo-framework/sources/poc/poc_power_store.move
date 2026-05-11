@@ -29,19 +29,19 @@
 /// 3. During period 0: operator stages period-1 power (effective_period=1)
 /// 4. Epoch 61 starts → period transitions to 1 → reads now return period-1 power
 /// 5. If a user's power wasn't updated for period 1, their period-0 value is read with 1-period decay applied
-module aptos_framework::poc_power_store {
+module topo_framework::poc_power_store {
     use std::error;
     use std::signer;
 
     use aptos_std::table;
     use aptos_std::table::Table;
 
-    use aptos_framework::event;
-    use aptos_framework::system_addresses;
+    use topo_framework::event;
+    use topo_framework::system_addresses;
 
-    friend aptos_framework::genesis;
-    friend aptos_framework::stake;
-    friend aptos_framework::staking_registry;
+    friend topo_framework::genesis;
+    friend topo_framework::stake;
+    friend topo_framework::staking_registry;
 
     // Basis points denominator: 10000 bps = 100%
     const BPS_DENOMINATOR: u64 = 10000;
@@ -69,10 +69,10 @@ module aptos_framework::poc_power_store {
 
     // ========== Core Resources ==========
 
-    /// Global power store, stored under @aptos_framework.
+    /// Global power store, stored under @topo_framework.
     ///
     /// Invariants:
-    /// - Only `operator` or @aptos_framework may call `stage_batch_update`
+    /// - Only `operator` or @topo_framework may call `stage_batch_update`
     /// - Each user has at most two PowerVersion slots (older + newer)
     struct PowerStore has key {
         /// The single trusted address allowed to upload power updates
@@ -83,7 +83,7 @@ module aptos_framework::poc_power_store {
         retention_bps_per_period: u64,
     }
 
-    /// Global power-period clock, stored under @aptos_framework.
+    /// Global power-period clock, stored under @topo_framework.
     ///
     /// Invariants:
     /// - `current_period` only advances forward, never backward
@@ -152,9 +152,9 @@ module aptos_framework::poc_power_store {
 
     // ========== Initialization ==========
 
-    friend fun initialize(aptos_framework: &signer, operator: address) {
+    friend fun initialize(topo_framework: &signer, operator: address) {
         initialize_power_store_internal(
-            aptos_framework,
+            topo_framework,
             operator,
             DEFAULT_RETENTION_BPS_PER_PERIOD,
             DEFAULT_POWER_PERIOD_IN_EPOCHS,
@@ -162,12 +162,12 @@ module aptos_framework::poc_power_store {
     }
 
     friend fun initialize_with_power_period(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         operator: address,
         power_period_in_epochs: u64,
     ) {
         initialize_power_store_internal(
-            aptos_framework,
+            topo_framework,
             operator,
             DEFAULT_RETENTION_BPS_PER_PERIOD,
             power_period_in_epochs,
@@ -175,11 +175,11 @@ module aptos_framework::poc_power_store {
     }
 
     public entry fun initialize_power_store(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         operator: address,
     ) {
         initialize_power_store_internal(
-            aptos_framework,
+            topo_framework,
             operator,
             DEFAULT_RETENTION_BPS_PER_PERIOD,
             DEFAULT_POWER_PERIOD_IN_EPOCHS,
@@ -187,12 +187,12 @@ module aptos_framework::poc_power_store {
     }
 
     public entry fun initialize_power_store_with_period(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         operator: address,
         power_period_in_epochs: u64,
     ) {
         initialize_power_store_internal(
-            aptos_framework,
+            topo_framework,
             operator,
             DEFAULT_RETENTION_BPS_PER_PERIOD,
             power_period_in_epochs,
@@ -200,13 +200,13 @@ module aptos_framework::poc_power_store {
     }
 
     public entry fun set_retention_bps_per_period(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         retention_bps_per_period: u64,
     ) acquires PowerStore {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_store_exists();
         assert_valid_retention_bps(retention_bps_per_period);
-        borrow_global_mut<PowerStore>(@aptos_framework).retention_bps_per_period =
+        borrow_global_mut<PowerStore>(@topo_framework).retention_bps_per_period =
             retention_bps_per_period;
     }
 
@@ -216,25 +216,25 @@ module aptos_framework::poc_power_store {
     /// parameter change from reinterpreting historical epochs and making
     /// `current_period` jump by more than one at the next epoch boundary.
     public entry fun set_power_period_in_epochs(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         power_period_in_epochs: u64,
     ) acquires PeriodClock {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_store_exists();
         assert_clock_exists();
         assert_valid_power_period(power_period_in_epochs);
-        borrow_global_mut<PeriodClock>(@aptos_framework).power_period_in_epochs =
+        borrow_global_mut<PeriodClock>(@topo_framework).power_period_in_epochs =
             power_period_in_epochs;
     }
 
     public entry fun set_operator(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         new_operator: address,
     ) acquires PowerStore {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_store_exists();
 
-        let store = borrow_global_mut<PowerStore>(@aptos_framework);
+        let store = borrow_global_mut<PowerStore>(@topo_framework);
         let old_operator = store.operator;
         if (old_operator == new_operator) {
             return
@@ -257,7 +257,7 @@ module aptos_framework::poc_power_store {
     ///   `effective_period = current_period + 1` (i.e., target_period).
     ///
     /// Constraints:
-    /// - Only the designated `operator` or @aptos_framework may call this.
+    /// - Only the designated `operator` or @topo_framework may call this.
     /// - `target_period` must equal `current_period + 1`; staging further ahead is not allowed
     ///   to prevent the operator from pre-loading multiple future periods at once.
     /// - `users` and `powers` must have the same length.
@@ -277,8 +277,8 @@ module aptos_framework::poc_power_store {
             error::invalid_argument(EINVALID_BATCH_LENGTH),
         );
 
-        let clock = borrow_global<PeriodClock>(@aptos_framework);
-        let store = borrow_global_mut<PowerStore>(@aptos_framework);
+        let clock = borrow_global<PeriodClock>(@topo_framework);
+        let store = borrow_global_mut<PowerStore>(@topo_framework);
         assert_power_update_authority(store, signer::address_of(operator));
         assert!(
             target_period == clock.current_period + 1,
@@ -309,16 +309,16 @@ module aptos_framework::poc_power_store {
     /// last_epoch == 0 && current_period == 0 (i.e., during genesis initialization).
     /// Used to seed initial validator power values before the first epoch begins.
     public entry fun set_genesis_committed_power(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         user: address,
         power: u64,
     ) acquires PowerStore, PeriodClock {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_store_exists();
         assert_clock_exists();
 
-        let clock = borrow_global<PeriodClock>(@aptos_framework);
-        let store = borrow_global_mut<PowerStore>(@aptos_framework);
+        let clock = borrow_global<PeriodClock>(@topo_framework);
+        let store = borrow_global_mut<PowerStore>(@topo_framework);
         assert!(
             clock.last_epoch == 0 && clock.current_period == 0,
             error::invalid_state(EGENESIS_COMMIT_ONLY),
@@ -343,11 +343,11 @@ module aptos_framework::poc_power_store {
     ///   next 60 committed epochs    → period 1
     ///   next 60 committed epochs    → period 2
     friend fun commit_next_period_if_boundary() acquires PeriodClock {
-        if (!exists<PeriodClock>(@aptos_framework)) {
+        if (!exists<PeriodClock>(@topo_framework)) {
             return
         };
 
-        let clock = borrow_global_mut<PeriodClock>(@aptos_framework);
+        let clock = borrow_global_mut<PeriodClock>(@topo_framework);
         clock.last_epoch += 1;
         if (clock.epochs_until_next_power_period == 0) {
             let previous_period = clock.current_period;
@@ -372,11 +372,11 @@ module aptos_framework::poc_power_store {
 
     #[view]
     public fun get_user_committed_power(user: address): u64 acquires PowerStore, PeriodClock {
-        if (!exists<PowerStore>(@aptos_framework) || !exists<PeriodClock>(@aptos_framework)) {
+        if (!exists<PowerStore>(@topo_framework) || !exists<PeriodClock>(@topo_framework)) {
             return 0
         };
-        let clock = borrow_global<PeriodClock>(@aptos_framework);
-        let store = borrow_global<PowerStore>(@aptos_framework);
+        let clock = borrow_global<PeriodClock>(@topo_framework);
+        let store = borrow_global<PowerStore>(@topo_framework);
         get_user_power_for_period_internal(store, user, clock.current_period)
     }
 
@@ -384,12 +384,12 @@ module aptos_framework::poc_power_store {
     public fun get_user_committed_power_for_next_epoch(
         user: address,
     ): u64 acquires PowerStore, PeriodClock {
-        if (!exists<PowerStore>(@aptos_framework) || !exists<PeriodClock>(@aptos_framework)) {
+        if (!exists<PowerStore>(@topo_framework) || !exists<PeriodClock>(@topo_framework)) {
             return 0
         };
 
-        let store = borrow_global<PowerStore>(@aptos_framework);
-        let clock = borrow_global<PeriodClock>(@aptos_framework);
+        let store = borrow_global<PowerStore>(@topo_framework);
+        let clock = borrow_global<PeriodClock>(@topo_framework);
         let target_period = if (clock.epochs_until_next_power_period == 0) {
                 clock.current_period + 1
             } else {
@@ -403,10 +403,10 @@ module aptos_framework::poc_power_store {
         user: address,
         target_period: u64,
     ): u64 acquires PowerStore {
-        if (!exists<PowerStore>(@aptos_framework)) {
+        if (!exists<PowerStore>(@topo_framework)) {
             return 0
         };
-        let store = borrow_global<PowerStore>(@aptos_framework);
+        let store = borrow_global<PowerStore>(@topo_framework);
         get_user_power_for_period_internal(store, user, target_period)
     }
 
@@ -415,11 +415,11 @@ module aptos_framework::poc_power_store {
         users: vector<address>,
     ): vector<u64> acquires PowerStore, PeriodClock {
         let powers = vector[];
-        if (!exists<PowerStore>(@aptos_framework) || !exists<PeriodClock>(@aptos_framework)) {
+        if (!exists<PowerStore>(@topo_framework) || !exists<PeriodClock>(@topo_framework)) {
             return powers
         };
-        let clock = borrow_global<PeriodClock>(@aptos_framework);
-        let store = borrow_global<PowerStore>(@aptos_framework);
+        let clock = borrow_global<PeriodClock>(@topo_framework);
+        let store = borrow_global<PowerStore>(@topo_framework);
         let len = users.length();
         let i = 0;
         while (i < len) {
@@ -439,10 +439,10 @@ module aptos_framework::poc_power_store {
         target_period: u64,
     ): vector<u64> acquires PowerStore {
         let powers = vector[];
-        if (!exists<PowerStore>(@aptos_framework)) {
+        if (!exists<PowerStore>(@topo_framework)) {
             return powers
         };
-        let store = borrow_global<PowerStore>(@aptos_framework);
+        let store = borrow_global<PowerStore>(@topo_framework);
         let len = users.length();
         let i = 0;
         while (i < len) {
@@ -460,11 +460,11 @@ module aptos_framework::poc_power_store {
     public fun get_user_power_version(
         user: address,
     ): (u64, u64, u64, u64, u64) acquires PowerStore, PeriodClock {
-        if (!exists<PowerStore>(@aptos_framework) || !exists<PeriodClock>(@aptos_framework)) {
+        if (!exists<PowerStore>(@topo_framework) || !exists<PeriodClock>(@topo_framework)) {
             return (0, 0, 0, 0, 0)
         };
-        let clock = borrow_global<PeriodClock>(@aptos_framework);
-        let store = borrow_global<PowerStore>(@aptos_framework);
+        let clock = borrow_global<PeriodClock>(@topo_framework);
+        let store = borrow_global<PowerStore>(@topo_framework);
         build_user_power_version(store, user, clock.current_period)
     }
 
@@ -485,7 +485,7 @@ module aptos_framework::poc_power_store {
         let newer_effective_periods = vector[];
         let newer_powers = vector[];
         let committed_powers = vector[];
-        if (!exists<PowerStore>(@aptos_framework) || !exists<PeriodClock>(@aptos_framework)) {
+        if (!exists<PowerStore>(@topo_framework) || !exists<PeriodClock>(@topo_framework)) {
             return (
                 returned_users,
                 older_effective_periods,
@@ -495,8 +495,8 @@ module aptos_framework::poc_power_store {
                 committed_powers,
             )
         };
-        let clock = borrow_global<PeriodClock>(@aptos_framework);
-        let store = borrow_global<PowerStore>(@aptos_framework);
+        let clock = borrow_global<PeriodClock>(@topo_framework);
+        let store = borrow_global<PowerStore>(@topo_framework);
         let len = users.length();
         let i = 0;
         while (i < len) {
@@ -533,56 +533,56 @@ module aptos_framework::poc_power_store {
 
     #[view]
     public fun get_operator(): address acquires PowerStore {
-        if (!exists<PowerStore>(@aptos_framework)) {
+        if (!exists<PowerStore>(@topo_framework)) {
             return @0x0
         };
-        borrow_global<PowerStore>(@aptos_framework).operator
+        borrow_global<PowerStore>(@topo_framework).operator
     }
 
     #[view]
     public fun get_current_period(): u64 acquires PeriodClock {
-        if (!exists<PeriodClock>(@aptos_framework)) {
+        if (!exists<PeriodClock>(@topo_framework)) {
             0
         } else {
-            borrow_global<PeriodClock>(@aptos_framework).current_period
+            borrow_global<PeriodClock>(@topo_framework).current_period
         }
     }
 
     #[view]
     public fun get_power_period_in_epochs(): u64 acquires PeriodClock {
-        if (!exists<PeriodClock>(@aptos_framework)) {
+        if (!exists<PeriodClock>(@topo_framework)) {
             0
         } else {
-            borrow_global<PeriodClock>(@aptos_framework).power_period_in_epochs
+            borrow_global<PeriodClock>(@topo_framework).power_period_in_epochs
         }
     }
 
     #[view]
     public fun get_retention_bps_per_period(): u64 acquires PowerStore {
-        if (!exists<PowerStore>(@aptos_framework)) {
+        if (!exists<PowerStore>(@topo_framework)) {
             0
         } else {
-            borrow_global<PowerStore>(@aptos_framework).retention_bps_per_period
+            borrow_global<PowerStore>(@topo_framework).retention_bps_per_period
         }
     }
 
     // ========== Internal Helpers ==========
 
     fun initialize_power_store_internal(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         operator: address,
         retention_bps_per_period: u64,
         power_period_in_epochs: u64,
     ) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_valid_retention_bps(retention_bps_per_period);
         assert_valid_power_period(power_period_in_epochs);
-        move_to(aptos_framework, PowerStore {
+        move_to(topo_framework, PowerStore {
             operator,
             users: table::new(),
             retention_bps_per_period,
         });
-        move_to(aptos_framework, PeriodClock {
+        move_to(topo_framework, PeriodClock {
             power_period_in_epochs,
             last_epoch: 0,
             current_period: 0,
@@ -592,14 +592,14 @@ module aptos_framework::poc_power_store {
 
     fun assert_store_exists() {
         assert!(
-            exists<PowerStore>(@aptos_framework),
+            exists<PowerStore>(@topo_framework),
             error::not_found(ESTORE_NOT_INITIALIZED),
         );
     }
 
     fun assert_clock_exists() {
         assert!(
-            exists<PeriodClock>(@aptos_framework),
+            exists<PeriodClock>(@topo_framework),
             error::not_found(ESTORE_NOT_INITIALIZED),
         );
     }
@@ -808,7 +808,7 @@ module aptos_framework::poc_power_store {
 
     // ========== Tests ==========
 
-    #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB, user2 = @0xC)]
+    #[test(framework = @topo_framework, operator = @0xA, user1 = @0xB, user2 = @0xC)]
     public entry fun test_stage_update_commits_on_boundary(
         framework: signer,
         operator: signer,
@@ -841,7 +841,7 @@ module aptos_framework::poc_power_store {
         assert!(get_user_committed_power(signer::address_of(&user2)) == 30, 9);
     }
 
-    #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB)]
+    #[test(framework = @topo_framework, operator = @0xA, user1 = @0xB)]
     public entry fun test_retention_carries_forward_without_pending_updates(
         framework: signer,
         operator: signer,
@@ -860,7 +860,7 @@ module aptos_framework::poc_power_store {
         assert!(get_user_committed_power(signer::address_of(&user1)) == 98, 3);
     }
 
-    #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB)]
+    #[test(framework = @topo_framework, operator = @0xA, user1 = @0xB)]
     public entry fun test_stage_update_overwrites_pending_value(
         framework: signer,
         operator: signer,
@@ -888,7 +888,7 @@ module aptos_framework::poc_power_store {
         assert!(get_user_committed_power(signer::address_of(&user1)) == 55, 1);
     }
 
-    #[test(framework = @aptos_framework, operator = @0xA, new_operator = @0xD, user1 = @0xB)]
+    #[test(framework = @topo_framework, operator = @0xA, new_operator = @0xD, user1 = @0xB)]
     public entry fun test_framework_can_stage_after_operator_change(
         framework: signer,
         operator: signer,
@@ -909,7 +909,7 @@ module aptos_framework::poc_power_store {
         assert!(get_user_power_for_period(signer::address_of(&user1), 1) == 80, 0);
     }
 
-    #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB)]
+    #[test(framework = @topo_framework, operator = @0xA, user1 = @0xB)]
     public entry fun test_stage_update_keeps_current_period_stable_on_long_period(
         framework: signer,
         operator: signer,
@@ -945,7 +945,7 @@ module aptos_framework::poc_power_store {
         assert!(get_user_committed_power(signer::address_of(&user1)) == 90, 7);
     }
 
-    #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB)]
+    #[test(framework = @topo_framework, operator = @0xA, user1 = @0xB)]
     public entry fun test_zero_power_update_clears_future_period(
         framework: signer,
         operator: signer,
@@ -970,7 +970,7 @@ module aptos_framework::poc_power_store {
         assert!(get_user_committed_power(signer::address_of(&user1)) == 0, 3);
     }
 
-    #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB)]
+    #[test(framework = @topo_framework, operator = @0xA, user1 = @0xB)]
     public entry fun test_shortening_power_period_does_not_jump_current_period(
         framework: signer,
         operator: signer,
@@ -1002,7 +1002,7 @@ module aptos_framework::poc_power_store {
         assert!(get_user_committed_power(signer::address_of(&user1)) == 90, 5);
     }
 
-    #[test(framework = @aptos_framework, operator = @0xA, user1 = @0xB)]
+    #[test(framework = @topo_framework, operator = @0xA, user1 = @0xB)]
     public entry fun test_lengthening_power_period_does_not_delay_ready_boundary(
         framework: signer,
         operator: signer,

@@ -11,7 +11,7 @@ module topo_token_objects::topo_token {
     use std::option::{Self, Option};
     use std::string::String;
     use std::signer;
-    use aptos_framework::object::{Self, ConstructorRef, Object};
+    use topo_framework::object::{Self, ConstructorRef, Object};
     use topo_token_objects::collection;
     use topo_token_objects::property_map;
     use topo_token_objects::royalty;
@@ -30,7 +30,7 @@ module topo_token_objects::topo_token {
     /// The property map being mutated is not mutable
     const EPROPERTIES_NOT_MUTABLE: u64 = 6;
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Storage state for managing the no-code Collection.
     struct TopoCollection has key {
         /// Used to mutate collection fields
@@ -55,7 +55,7 @@ module topo_token_objects::topo_token {
         tokens_freezable_by_creator: bool,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Storage state for managing the no-code Token.
     struct TopoToken has key {
         /// Used to burn.
@@ -672,7 +672,7 @@ module topo_token_objects::topo_token {
     #[test_only]
     use std::string;
     #[test_only]
-    use aptos_framework::account;
+    use topo_framework::account;
 
     #[test(creator = @0x123)]
     fun test_create_and_transfer(creator: &signer) acquires TopoCollection, TopoToken {

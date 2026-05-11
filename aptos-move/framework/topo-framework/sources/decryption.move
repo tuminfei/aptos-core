@@ -1,15 +1,15 @@
 /// This module provides a decryption key unique to every block. This resource
 /// is updated in every block prologue. The decryption key is the key used to
 /// decrypt the encrypted transactions in the block.
-module aptos_framework::decryption {
+module topo_framework::decryption {
     use std::option;
     use std::option::Option;
 
-    use aptos_framework::config_buffer;
-    use aptos_framework::system_addresses;
+    use topo_framework::config_buffer;
+    use topo_framework::system_addresses;
 
-    friend aptos_framework::block;
-    friend aptos_framework::reconfiguration_with_dkg;
+    friend topo_framework::block;
+    friend topo_framework::reconfiguration_with_dkg;
 
     /// Decryption key unique to every block.
     /// This resource is updated in every block prologue.
@@ -28,13 +28,13 @@ module aptos_framework::decryption {
     /// Called during genesis initialization.
     public fun initialize(framework: &signer) {
         system_addresses::assert_aptos_framework(framework);
-        if (!exists<PerBlockDecryptionKey>(@aptos_framework)) {
+        if (!exists<PerBlockDecryptionKey>(@topo_framework)) {
             move_to(
                 framework,
                 PerBlockDecryptionKey { epoch: 0, round: 0, decryption_key: option::none() }
             );
         };
-        if (!exists<PerEpochEncryptionKey>(@aptos_framework)) {
+        if (!exists<PerEpochEncryptionKey>(@topo_framework)) {
             move_to(
                 framework,
                 PerEpochEncryptionKey { epoch: 0, encryption_key: option::none() }
@@ -50,9 +50,9 @@ module aptos_framework::decryption {
         decryption_key_for_new_block: Option<vector<u8>>
     ) acquires PerBlockDecryptionKey {
         system_addresses::assert_vm(vm);
-        if (exists<PerBlockDecryptionKey>(@aptos_framework)) {
+        if (exists<PerBlockDecryptionKey>(@topo_framework)) {
             let decryption_key =
-                borrow_global_mut<PerBlockDecryptionKey>(@aptos_framework);
+                borrow_global_mut<PerBlockDecryptionKey>(@topo_framework);
             decryption_key.epoch = epoch;
             decryption_key.round = round;
             decryption_key.decryption_key = decryption_key_for_new_block;
@@ -72,8 +72,8 @@ module aptos_framework::decryption {
         system_addresses::assert_aptos_framework(framework);
         if (config_buffer::does_exist<PerEpochEncryptionKey>()) {
             let new_key = config_buffer::extract_v2<PerEpochEncryptionKey>();
-            if (exists<PerEpochEncryptionKey>(@aptos_framework)) {
-                *borrow_global_mut<PerEpochEncryptionKey>(@aptos_framework) = new_key;
+            if (exists<PerEpochEncryptionKey>(@topo_framework)) {
+                *borrow_global_mut<PerEpochEncryptionKey>(@topo_framework) = new_key;
             } else {
                 move_to(framework, new_key);
             }

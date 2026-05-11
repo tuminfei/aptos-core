@@ -15,14 +15,14 @@ module coin_listing {
     use std::string::{Self, String};
     use aptos_std::math64;
 
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::object::{Self, ConstructorRef, Object, ObjectCore};
-    use aptos_framework::timestamp;
+    use topo_framework::coin::{Self, Coin};
+    use topo_framework::object::{Self, ConstructorRef, Object, ObjectCore};
+    use topo_framework::timestamp;
 
     use marketplace::events;
     use marketplace::fee_schedule::{Self, FeeSchedule};
     use marketplace::listing::{Self, Listing};
-    use aptos_framework::topo_account;
+    use topo_framework::topo_account;
 
     #[test_only]
     friend marketplace::listing_tests;
@@ -44,14 +44,14 @@ module coin_listing {
     const FIXED_PRICE_TYPE: vector<u8> = b"fixed price";
     const AUCTION_TYPE: vector<u8> = b"auction";
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Fixed-price market place listing.
     struct FixedPriceListing<phantom CoinType> has key {
         /// The price to purchase the item up for listing.
         price: u64,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// An auction-based listing with optional buy it now semantics.
     struct AuctionListing<phantom CoinType> has key {
         /// Starting bid price.
@@ -622,10 +622,10 @@ module coin_listing {
 module listing_tests {
     use std::option;
 
-    use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::coin;
-    use aptos_framework::object::{Self, Object};
-    use aptos_framework::timestamp;
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin;
+    use topo_framework::object::{Self, Object};
+    use topo_framework::timestamp;
 
     use aptos_token::token as tokenv1;
 
@@ -638,13 +638,13 @@ module listing_tests {
     use marketplace::test_utils;
 
     fun test_fixed_price(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (marketplace_addr, seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (token, fee_schedule, listing) = fixed_price_listing(marketplace, seller);
 
@@ -663,15 +663,15 @@ module listing_tests {
         assert!(coin::balance<TopoCoin>(purchaser_addr) == 9500, 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_fixed_price_high_royalty(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (marketplace_addr, seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
         // TODO: add test that separates seller and creator
         let (_collection, additional_token) = mint_tokenv2_with_collection_royalty(seller, 100, 100);
         let (token, fee_schedule, listing) = fixed_price_listing_with_token(marketplace, seller, additional_token);
@@ -692,15 +692,15 @@ module listing_tests {
         assert!(coin::balance<TopoCoin>(purchaser_addr) == 9500, 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_fixed_price_end(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (marketplace_addr, seller_addr, _purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (token, _fee_schedule, listing) = fixed_price_listing(marketplace, seller);
 
@@ -711,15 +711,15 @@ module listing_tests {
         assert!(object::owner(token) == seller_addr, 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_auction_purchase(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (marketplace_addr, seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (token, fee_schedule, listing) = auction_listing(marketplace, seller);
         assert!(coin::balance<TopoCoin>(marketplace_addr) == 1, 0);
@@ -743,15 +743,15 @@ module listing_tests {
         assert!(coin::balance<TopoCoin>(purchaser_addr) == 9500, 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_auction_bid_then_purchase(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (marketplace_addr, seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (token, _fee_schedule, listing) = auction_listing(marketplace, seller);
         assert!(coin::balance<TopoCoin>(marketplace_addr) == 1, 0);
@@ -778,15 +778,15 @@ module listing_tests {
         assert!(coin::balance<TopoCoin>(purchaser_addr) == 9498, 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_auction_bidding(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (marketplace_addr, seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (token, _fee_schedule, listing) = auction_listing(marketplace, seller);
         assert!(coin::balance<TopoCoin>(marketplace_addr) == 1, 0);
@@ -810,43 +810,43 @@ module listing_tests {
 
         // End the auction as out of time
         test_utils::increment_timestamp(150);
-        coin_listing::complete_auction<TopoCoin>(aptos_framework, listing);
+        coin_listing::complete_auction<TopoCoin>(topo_framework, listing);
         assert!(object::owner(token) == purchaser_addr, 0);
         assert!(coin::balance<TopoCoin>(marketplace_addr) == 6, 0);
         assert!(coin::balance<TopoCoin>(seller_addr) == 10146, 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_ended_auction_no_bid(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (marketplace_addr, seller_addr, _purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (token, _fee_schedule, listing) = auction_listing(marketplace, seller);
         assert!(coin::balance<TopoCoin>(marketplace_addr) == 1, 0);
         assert!(coin::balance<TopoCoin>(seller_addr) == 9999, 0);
 
         test_utils::increment_timestamp(200);
-        coin_listing::complete_auction<TopoCoin>(aptos_framework, listing);
+        coin_listing::complete_auction<TopoCoin>(topo_framework, listing);
 
         assert!(object::owner(token) == seller_addr, 0);
         assert!(coin::balance<TopoCoin>(marketplace_addr) == 1, 0);
         assert!(coin::balance<TopoCoin>(seller_addr) == 9999, 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x30002, location = marketplace::listing)]
     fun test_not_started_fixed_price(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let token = test_utils::mint_tokenv2(seller);
         let fee_schedule = test_utils::fee_schedule(marketplace);
@@ -861,15 +861,15 @@ module listing_tests {
         coin_listing::purchase<TopoCoin>(purchaser, listing);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x30002, location = marketplace::listing)]
     fun test_not_started_auction(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let token = test_utils::mint_tokenv2(seller);
         let fee_schedule = test_utils::fee_schedule(marketplace);
@@ -888,45 +888,45 @@ module listing_tests {
         coin_listing::bid<TopoCoin>(purchaser, listing, 1000);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x30005, location = marketplace::coin_listing)]
     fun test_ended_auction_bid(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (_token, _fee_schedule, listing) = auction_listing(marketplace, seller);
         test_utils::increment_timestamp(200);
         coin_listing::bid<TopoCoin>(purchaser, listing, 1000);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x30005, location = marketplace::coin_listing)]
     fun test_ended_auction_purchase(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (_token, _fee_schedule, listing) = auction_listing(marketplace, seller);
         test_utils::increment_timestamp(200);
         coin_listing::purchase<TopoCoin>(purchaser, listing);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
-    #[expected_failure(abort_code = 0x10004, location = aptos_framework::fungible_asset)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[expected_failure(abort_code = 0x10004, location = topo_framework::fungible_asset)]
     fun test_not_enough_coin_fixed_price(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let token = test_utils::mint_tokenv2(seller);
         let fee_schedule = test_utils::fee_schedule(marketplace);
@@ -941,44 +941,44 @@ module listing_tests {
         coin_listing::purchase<TopoCoin>(purchaser, listing);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
-    #[expected_failure(abort_code = 0x10004, location = aptos_framework::fungible_asset)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[expected_failure(abort_code = 0x10004, location = topo_framework::fungible_asset)]
     fun test_not_enough_coin_auction_bid(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (_token, _fee_schedule, listing) = auction_listing(marketplace, seller);
         coin_listing::bid<TopoCoin>(purchaser, listing, 100000);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x10003, location = marketplace::coin_listing)]
     fun test_bid_too_low(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (_token, _fee_schedule, listing) = auction_listing(marketplace, seller);
         coin_listing::bid<TopoCoin>(purchaser, listing, 100);
         coin_listing::bid<TopoCoin>(purchaser, listing, 125);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
-    #[expected_failure(abort_code = 0x10004, location = aptos_framework::fungible_asset)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[expected_failure(abort_code = 0x10004, location = topo_framework::fungible_asset)]
     fun test_not_enough_coin_auction_purchase(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let token = test_utils::mint_tokenv2(seller);
         let fee_schedule = test_utils::fee_schedule(marketplace);
@@ -997,29 +997,29 @@ module listing_tests {
         coin_listing::purchase<TopoCoin>(purchaser, listing);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x60001, location = marketplace::coin_listing)]
     fun test_auction_view_on_fixed_price(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (_token, _fee_schedule, listing) = fixed_price_listing(marketplace, seller);
         coin_listing::auction_end_time<TopoCoin>(listing);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x10002, location = marketplace::coin_listing)]
     fun test_purchase_on_auction_without_buy_it_now(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let token = test_utils::mint_tokenv2(seller);
         let fee_schedule = test_utils::fee_schedule(marketplace);
@@ -1038,15 +1038,15 @@ module listing_tests {
         coin_listing::purchase<TopoCoin>(purchaser, listing);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x50006, location = marketplace::coin_listing)]
     fun test_bad_fixed_price_end(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (_token, _fee_schedule, listing) = fixed_price_listing(marketplace, seller);
         coin_listing::end_fixed_price<TopoCoin>(purchaser, listing);
@@ -1101,15 +1101,15 @@ module listing_tests {
 
     // TokenV1
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_fixed_price_for_token_v1(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (_marketplace_addr, _seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
         tokenv1::opt_in_direct_transfer(purchaser, true);
 
         let (token_id, _fee_schedule, listing) = fixed_price_listing_for_tokenv1(marketplace, seller);
@@ -1117,15 +1117,15 @@ module listing_tests {
         assert!(tokenv1::balance_of(purchaser_addr, token_id) == 1, 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_fixed_price_for_token_v1_high_royalty(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (_marketplace_addr, _seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
         tokenv1::opt_in_direct_transfer(purchaser, true);
         let _token = mint_tokenv1(seller);
         let token_id = mint_tokenv1_additional_royalty(seller, 100, 100);
@@ -1136,15 +1136,15 @@ module listing_tests {
         // TODO balance checks
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_fixed_price_for_token_v1_bad_royalty(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (_marketplace_addr, _seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
         tokenv1::opt_in_direct_transfer(purchaser, true);
         let _token = mint_tokenv1(seller);
         let token_id = mint_tokenv1_additional_royalty(seller, 0, 0);
@@ -1156,15 +1156,15 @@ module listing_tests {
         // TODO balance checks
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_auction_purchase_for_tokenv1(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (_marketplace_addr, _seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
         tokenv1::opt_in_direct_transfer(purchaser, true);
 
         let (token_id, _fee_schedule, listing) = auction_listing_for_tokenv1(marketplace, seller);
@@ -1172,36 +1172,36 @@ module listing_tests {
         assert!(tokenv1::balance_of(purchaser_addr, token_id) == 1, 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_auction_purchase_for_tokenv1_without_direct_transfer(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (_marketplace_addr, _seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (token_id, _fee_schedule, listing) = auction_listing_for_tokenv1(marketplace, seller);
         coin_listing::purchase<TopoCoin>(purchaser, listing);
         assert!(tokenv1::balance_of(purchaser_addr, token_id) == 1, 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_auction_win_for_tokenv1_without_direct_transfer_and_non_winner_completer(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (_marketplace_addr, _seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let (token_id, _fee_schedule, listing) = auction_listing_for_tokenv1(marketplace, seller);
         coin_listing::bid<TopoCoin>(purchaser, listing, 100);
         test_utils::increment_timestamp(1000);
         let token_object = listing::listed_object(listing);
-        coin_listing::complete_auction<TopoCoin>(aptos_framework, listing);
+        coin_listing::complete_auction<TopoCoin>(topo_framework, listing);
         listing::extract_tokenv1(purchaser, object::convert(token_object));
         assert!(tokenv1::balance_of(purchaser_addr, token_id) == 1, 0);
     }

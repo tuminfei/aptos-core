@@ -2,7 +2,7 @@
 module dispatching::sample_callback {
     use std::option;
 
-    use aptos_framework::object::Object;
+    use topo_framework::object::Object;
 
     use dispatching::storage;
 

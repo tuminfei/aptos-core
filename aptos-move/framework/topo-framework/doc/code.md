@@ -649,7 +649,7 @@ strengthened but not weakened.
 Initialize package metadata for Genesis.
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>)
 </code></pre>
 
 
@@ -658,9 +658,9 @@ Initialize package metadata for Genesis.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>)
 <b>acquires</b> <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(package_owner);
     <b>if</b> (!<b>exists</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(addr)) {
         <b>move_to</b>(package_owner, <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> { packages: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[metadata] })
@@ -1178,13 +1178,13 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `initialize`
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>)
 </code></pre>
 
 
 
 
-<pre><code><b>let</b> aptos_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<pre><code><b>let</b> aptos_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 <b>let</b> owner_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(package_owner);
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(aptos_addr);
 <b>ensures</b> <b>exists</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(owner_addr);

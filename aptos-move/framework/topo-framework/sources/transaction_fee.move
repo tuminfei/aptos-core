@@ -1,18 +1,18 @@
 // This module provides an interface to burn or collect and redistribute transaction fees.
-module aptos_framework::transaction_fee {
-    use aptos_framework::coin::{Self, AggregatableCoin, BurnCapability, MintCapability};
-    use aptos_framework::topo_account;
-    use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::fungible_asset::BurnRef;
-    use aptos_framework::system_addresses;
+module topo_framework::transaction_fee {
+    use topo_framework::coin::{Self, AggregatableCoin, BurnCapability, MintCapability};
+    use topo_framework::topo_account;
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::fungible_asset::BurnRef;
+    use topo_framework::system_addresses;
     use std::error;
     use std::option::Option;
-    use aptos_framework::event;
+    use topo_framework::event;
 
-    friend aptos_framework::block;
-    friend aptos_framework::genesis;
-    friend aptos_framework::reconfiguration;
-    friend aptos_framework::transaction_validation;
+    friend topo_framework::block;
+    friend topo_framework::genesis;
+    friend topo_framework::reconfiguration;
+    friend topo_framework::transaction_validation;
 
     /// Gas fees are already being collected and the struct holding
     /// information about collected amounts is already published.
@@ -78,7 +78,7 @@ module aptos_framework::transaction_fee {
         account: address, fee: u64
     ) {
         let burn_ref =
-            &borrow_global<AptosFABurnCapabilities>(@aptos_framework).burn_ref;
+            &borrow_global<AptosFABurnCapabilities>(@topo_framework).burn_ref;
         topo_account::burn_from_fungible_store_for_gas(burn_ref, account, fee);
     }
 
@@ -86,27 +86,27 @@ module aptos_framework::transaction_fee {
     public(friend) fun mint_and_refund(
         account: address, refund: u64
     ) acquires TopoCoinMintCapability {
-        let mint_cap = &borrow_global<TopoCoinMintCapability>(@aptos_framework).mint_cap;
+        let mint_cap = &borrow_global<TopoCoinMintCapability>(@topo_framework).mint_cap;
         let refund_coin = coin::mint(refund, mint_cap);
         coin::deposit_for_gas_fee(account, refund_coin);
     }
 
     /// Only called during genesis.
     public(friend) fun store_topo_coin_burn_cap(
-        aptos_framework: &signer, burn_cap: BurnCapability<TopoCoin>
+        topo_framework: &signer, burn_cap: BurnCapability<TopoCoin>
     ) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
 
         let burn_ref = coin::convert_and_take_paired_burn_ref(burn_cap);
-        move_to(aptos_framework, AptosFABurnCapabilities { burn_ref });
+        move_to(topo_framework, AptosFABurnCapabilities { burn_ref });
     }
 
     /// Only called during genesis.
     public(friend) fun store_topo_coin_mint_cap(
-        aptos_framework: &signer, mint_cap: MintCapability<TopoCoin>
+        topo_framework: &signer, mint_cap: MintCapability<TopoCoin>
     ) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        move_to(aptos_framework, TopoCoinMintCapability { mint_cap })
+        system_addresses::assert_aptos_framework(topo_framework);
+        move_to(topo_framework, TopoCoinMintCapability { mint_cap })
     }
 
     // Called by the VM after epilogue.

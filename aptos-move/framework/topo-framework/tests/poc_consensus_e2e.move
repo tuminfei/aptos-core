@@ -1,11 +1,11 @@
 #[test_only]
-module aptos_framework::poc_consensus_e2e {
+module topo_framework::poc_consensus_e2e {
     use std::signer;
 
-    use aptos_framework::poc_test_utils;
-    use aptos_framework::stake;
-    use aptos_framework::staking_registry;
-    use aptos_framework::timestamp;
+    use topo_framework::poc_test_utils;
+    use topo_framework::stake;
+    use topo_framework::staking_registry;
+    use topo_framework::timestamp;
 
     const EVALIDATOR_SHOULD_BE_PENDING_ACTIVE: u64 = 1;
     const EVALIDATOR_SHOULD_BE_ACTIVE: u64 = 2;
@@ -27,13 +27,13 @@ module aptos_framework::poc_consensus_e2e {
     const ESCALED_BACKING_SHOULD_LIMIT_POWER: u64 = 18;
 
     // Validate the public validator lifecycle from creation to active membership.
-    #[test(aptos_framework = @aptos_framework, validator = @0x100)]
+    #[test(topo_framework = @topo_framework, validator = @0x100)]
     fun test_validator_join_lifecycle(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        poc_test_utils::create_validator(aptos_framework, validator, 100);
+        poc_test_utils::setup_poc_env(topo_framework);
+        poc_test_utils::create_validator(topo_framework, validator, 100);
 
         let validator_address = signer::address_of(validator);
         poc_test_utils::assert_validator_state(
@@ -68,15 +68,15 @@ module aptos_framework::poc_consensus_e2e {
 
     // Validate that the registry starts with the genesis bootstrap exchange rate and that
     // the framework account can tune the deposit-to-power backing ratio after initialization.
-    #[test(aptos_framework = @aptos_framework)]
-    fun test_octas_per_million_power_is_mutable_by_framework(aptos_framework: &signer) {
-        poc_test_utils::setup_poc_env(aptos_framework);
+    #[test(topo_framework = @topo_framework)]
+    fun test_octas_per_million_power_is_mutable_by_framework(topo_framework: &signer) {
+        poc_test_utils::setup_poc_env(topo_framework);
         assert!(
             staking_registry::get_octas_per_million_power() == 1_000_000,
             EDEFAULT_OCTAS_PER_MILLION_POWER,
         );
 
-        staking_registry::set_octas_per_million_power(aptos_framework, 100_000);
+        staking_registry::set_octas_per_million_power(topo_framework, 100_000);
         assert!(
             staking_registry::get_octas_per_million_power() == 100_000,
             EUPDATED_OCTAS_PER_MILLION_POWER,
@@ -84,22 +84,22 @@ module aptos_framework::poc_consensus_e2e {
     }
 
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator = @0x107,
         delegator = @0x207
     )]
     fun test_zero_octas_per_million_power_disables_deposit_backing(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         delegator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        staking_registry::set_octas_per_million_power(aptos_framework, 0);
-        poc_test_utils::create_validator(aptos_framework, validator, 100);
+        poc_test_utils::setup_poc_env(topo_framework);
+        staking_registry::set_octas_per_million_power(topo_framework, 0);
+        poc_test_utils::create_validator(topo_framework, validator, 100);
 
         let validator_address = signer::address_of(validator);
         let delegator_address = signer::address_of(delegator);
-        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 1_000);
+        poc_test_utils::seed_genesis_power(topo_framework, delegator_address, 1_000);
         stake::mint_and_add_stake(delegator, 1);
         staking_registry::delegate(delegator, validator_address);
         stake::join_validator_set(validator, validator_address);
@@ -112,22 +112,22 @@ module aptos_framework::poc_consensus_e2e {
     }
 
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator = @0x108,
         delegator = @0x208
     )]
     fun test_octas_per_million_power_scales_deposit_cover(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         delegator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        staking_registry::set_octas_per_million_power(aptos_framework, 100_000_000);
-        poc_test_utils::create_validator(aptos_framework, validator, 100);
+        poc_test_utils::setup_poc_env(topo_framework);
+        staking_registry::set_octas_per_million_power(topo_framework, 100_000_000);
+        poc_test_utils::create_validator(topo_framework, validator, 100);
 
         let validator_address = signer::address_of(validator);
         let delegator_address = signer::address_of(delegator);
-        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 2_000);
+        poc_test_utils::seed_genesis_power(topo_framework, delegator_address, 2_000);
         stake::mint_and_add_stake(delegator, 100_000);
         staking_registry::delegate(delegator, validator_address);
         stake::join_validator_set(validator, validator_address);
@@ -141,21 +141,21 @@ module aptos_framework::poc_consensus_e2e {
 
     // Validate the full delegator lifecycle against the production staking registry.
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator = @0x101,
         delegator = @0x201
     )]
     fun test_delegator_full_lifecycle_e2e(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         delegator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        poc_test_utils::create_validator(aptos_framework, validator, 100);
+        poc_test_utils::setup_poc_env(topo_framework);
+        poc_test_utils::create_validator(topo_framework, validator, 100);
 
         let validator_address = signer::address_of(validator);
         let delegator_address = signer::address_of(delegator);
-        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 120);
+        poc_test_utils::seed_genesis_power(topo_framework, delegator_address, 120);
         stake::mint_and_add_stake(delegator, 120);
         staking_registry::delegate(delegator, validator_address);
         stake::join_validator_set(validator, validator_address);
@@ -201,21 +201,21 @@ module aptos_framework::poc_consensus_e2e {
     // Validate that cooldown prevents immediate re-delegation and that the same
     // delegator can re-enter a validator pool once the cooldown has elapsed.
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator = @0x102,
         delegator = @0x202
     )]
     fun test_redelegate_after_cooldown_e2e(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         delegator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        poc_test_utils::create_validator(aptos_framework, validator, 100);
+        poc_test_utils::setup_poc_env(topo_framework);
+        poc_test_utils::create_validator(topo_framework, validator, 100);
 
         let validator_address = signer::address_of(validator);
         let delegator_address = signer::address_of(delegator);
-        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 100);
+        poc_test_utils::seed_genesis_power(topo_framework, delegator_address, 100);
         stake::mint_and_add_stake(delegator, 100);
         staking_registry::delegate(delegator, validator_address);
         stake::join_validator_set(validator, validator_address);
@@ -243,22 +243,22 @@ module aptos_framework::poc_consensus_e2e {
     // Validate that multiple validators can join and leave through the public PoC path,
     // and that validator-set membership is rebuilt correctly across epoch boundaries.
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator_1 = @0x103,
         validator_2 = @0x104,
         validator_3 = @0x105
     )]
     fun test_multiple_validators_join_leave_e2e(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator_1: &signer,
         validator_2: &signer,
         validator_3: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
+        poc_test_utils::setup_poc_env(topo_framework);
 
-        poc_test_utils::create_validator(aptos_framework, validator_1, 100);
-        poc_test_utils::create_validator(aptos_framework, validator_2, 100);
-        poc_test_utils::create_validator(aptos_framework, validator_3, 100);
+        poc_test_utils::create_validator(topo_framework, validator_1, 100);
+        poc_test_utils::create_validator(topo_framework, validator_2, 100);
+        poc_test_utils::create_validator(topo_framework, validator_3, 100);
 
         let validator_1_address = signer::address_of(validator_1);
         let validator_2_address = signer::address_of(validator_2);
@@ -320,22 +320,22 @@ module aptos_framework::poc_consensus_e2e {
 
     // The staking registry must reject delegation while a cooldown is still active.
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator = @0x106,
         delegator = @0x206
     )]
-    #[expected_failure(abort_code = 0x30006, location = aptos_framework::staking_registry)]
+    #[expected_failure(abort_code = 0x30006, location = topo_framework::staking_registry)]
     fun test_redelegate_before_cooldown_expires_should_fail(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         delegator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        poc_test_utils::create_validator(aptos_framework, validator, 100);
+        poc_test_utils::setup_poc_env(topo_framework);
+        poc_test_utils::create_validator(topo_framework, validator, 100);
 
         let validator_address = signer::address_of(validator);
         let delegator_address = signer::address_of(delegator);
-        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 100);
+        poc_test_utils::seed_genesis_power(topo_framework, delegator_address, 100);
         stake::mint_and_add_stake(delegator, 100);
         staking_registry::delegate(delegator, validator_address);
         stake::join_validator_set(validator, validator_address);
@@ -346,22 +346,22 @@ module aptos_framework::poc_consensus_e2e {
     }
 
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator = @0x109,
         delegator = @0x209
     )]
-    #[expected_failure(abort_code = 0x10010, location = aptos_framework::staking_registry)]
+    #[expected_failure(abort_code = 0x10010, location = topo_framework::staking_registry)]
     fun test_delegate_rejects_pool_power_above_maximum_stake(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         delegator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        poc_test_utils::create_validator(aptos_framework, validator, 9_950);
+        poc_test_utils::setup_poc_env(topo_framework);
+        poc_test_utils::create_validator(topo_framework, validator, 9_950);
 
         let validator_address = signer::address_of(validator);
         let delegator_address = signer::address_of(delegator);
-        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 100);
+        poc_test_utils::seed_genesis_power(topo_framework, delegator_address, 100);
         stake::mint_and_add_stake(delegator, 100);
         stake::join_validator_set(validator, validator_address);
         stake::end_epoch();

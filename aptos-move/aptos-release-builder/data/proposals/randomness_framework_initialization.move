@@ -1,11 +1,11 @@
 // Initialize on-chain randomness resources.
 script {
-    use aptos_framework::topo_governance;
-    use aptos_framework::config_buffer;
-    use aptos_framework::dkg;
-    use aptos_framework::randomness;
-    use aptos_framework::randomness_config;
-    use aptos_framework::reconfiguration_state;
+    use topo_framework::topo_governance;
+    use topo_framework::config_buffer;
+    use topo_framework::dkg;
+    use topo_framework::randomness;
+    use topo_framework::randomness_config;
+    use topo_framework::reconfiguration_state;
 
     fun main(proposal_id: u64) {
         let framework = topo_governance::resolve_multi_step_proposal(

@@ -64,8 +64,8 @@ fn generate_script(gas_schedule: &GasScheduleV2) -> Result<String> {
     emitln!(writer, "script {");
     writer.indent();
 
-    emitln!(writer, "use aptos_framework::topo_governance;");
-    emitln!(writer, "use aptos_framework::gas_schedule;");
+    emitln!(writer, "use topo_framework::topo_governance;");
+    emitln!(writer, "use topo_framework::gas_schedule;");
     emitln!(writer);
 
     emitln!(writer, "fun main(proposal_id: u64) {");

@@ -28,7 +28,7 @@ pub fn generate_consensus_upgrade_proposal(
         is_testnet,
         next_execution_hash,
         is_multi_step,
-        &["aptos_framework::consensus_config"],
+        &["topo_framework::consensus_config"],
         |writer| {
             let consensus_config_blob = bcs::to_bytes(consensus_config).unwrap();
             assert!(consensus_config_blob.len() < 65536);

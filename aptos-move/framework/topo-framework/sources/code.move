@@ -1,21 +1,21 @@
 /// This module supports functionality related to code management.
-module aptos_framework::code {
+module topo_framework::code {
     use std::string::String;
     use std::error;
     use std::signer;
     use std::vector;
     use std::features;
 
-    use aptos_framework::util;
-    use aptos_framework::system_addresses;
+    use topo_framework::util;
+    use topo_framework::system_addresses;
     use aptos_std::copyable_any::Any;
     use std::option::Option;
     use std::string;
-    use aptos_framework::event;
-    use aptos_framework::object::{Self, Object};
-    use aptos_framework::permissioned_signer;
+    use topo_framework::event;
+    use topo_framework::object::{Self, Object};
+    use topo_framework::permissioned_signer;
 
-    friend aptos_framework::object_code_deployment;
+    friend topo_framework::object_code_deployment;
 
     // ----------------------------------------------------------------------
     // Code Publishing
@@ -152,9 +152,9 @@ module aptos_framework::code {
     }
 
     /// Initialize package metadata for Genesis.
-    fun initialize(aptos_framework: &signer, package_owner: &signer, metadata: PackageMetadata)
+    fun initialize(topo_framework: &signer, package_owner: &signer, metadata: PackageMetadata)
     acquires PackageRegistry {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         let addr = signer::address_of(package_owner);
         if (!exists<PackageRegistry>(addr)) {
             move_to(package_owner, PackageRegistry { packages: vector[metadata] })

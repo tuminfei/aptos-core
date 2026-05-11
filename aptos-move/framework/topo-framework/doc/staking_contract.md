@@ -3774,17 +3774,17 @@ a staking_contract exists for the staker/operator pair.
     <b>let</b> <a href="staking_contract.md#0x1_staking_contract">staking_contract</a> = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(store.staking_contracts, operator);
     <b>let</b> pool_address = <a href="staking_contract.md#0x1_staking_contract">staking_contract</a>.owner_cap.pool_address;
     <b>aborts_if</b> !<a href="stake.md#0x1_stake_stake_pool_exists">stake::stake_pool_exists</a>(pool_address);
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
-    <b>let</b> config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@topo_framework);
+    <b>let</b> config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@topo_framework);
     <b>let</b> stake_pool = <b>global</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(pool_address);
     <b>let</b> old_locked_until_secs = stake_pool.locked_until_secs;
-    <b>let</b> seconds = <b>global</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework).microseconds
+    <b>let</b> seconds = <b>global</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework).microseconds
         / <a href="timestamp.md#0x1_timestamp_MICRO_CONVERSION_FACTOR">timestamp::MICRO_CONVERSION_FACTOR</a>;
     <b>let</b> new_locked_until_secs = seconds + config.recurring_lockup_duration_secs;
     <b>aborts_if</b> seconds + config.recurring_lockup_duration_secs &gt; MAX_U64;
     <b>aborts_if</b> old_locked_until_secs &gt; new_locked_until_secs
         || old_locked_until_secs == new_locked_until_secs;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
     <b>let</b> <b>post</b> post_store = <b>global</b>&lt;<a href="staking_contract.md#0x1_staking_contract_Store">Store</a>&gt;(staker);
     <b>let</b> <b>post</b> post_staking_contract = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_get">simple_map::spec_get</a>(
         post_store.staking_contracts, operator
@@ -3810,8 +3810,8 @@ a staking_contract exists for the staker/operator pair.
     commission_percentage: u64;
     contract_creation_seed: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
     <b>aborts_if</b> commission_percentage &gt; 100;
-    <b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
-    <b>let</b> config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@topo_framework);
+    <b>let</b> config = <b>global</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingConfig">staking_config::StakingConfig</a>&gt;(@topo_framework);
     <b>let</b> min_stake_required = config.minimum_stake;
     <b>aborts_if</b> amount &lt; min_stake_required;
     <b>let</b> staker_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(staker);
@@ -3837,14 +3837,14 @@ a staking_contract exists for the staker/operator pair.
 
 
 <pre><code><b>schema</b> <a href="staking_contract.md#0x1_staking_contract_PreconditionsInCreateContract">PreconditionsInCreateContract</a> {
-    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">stake::ValidatorPerformance</a>&gt;(@aptos_framework);
-    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">stake::ValidatorSet</a>&gt;(@aptos_framework);
-    <b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@aptos_framework)
+    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorPerformance">stake::ValidatorPerformance</a>&gt;(@topo_framework);
+    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorSet">stake::ValidatorSet</a>&gt;(@topo_framework);
+    <b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@topo_framework)
         || !std::features::spec_periodical_reward_rate_decrease_enabled();
-    <b>requires</b> <b>exists</b>&lt;aptos_framework::timestamp::CurrentTimeMicroseconds&gt;(
-        @aptos_framework
+    <b>requires</b> <b>exists</b>&lt;topo_framework::timestamp::CurrentTimeMicroseconds&gt;(
+        @topo_framework
     );
-    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_TopoCoinCapabilities">stake::TopoCoinCapabilities</a>&gt;(@aptos_framework);
+    <b>requires</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_TopoCoinCapabilities">stake::TopoCoinCapabilities</a>&gt;(@topo_framework);
 }
 </code></pre>
 
@@ -3869,8 +3869,8 @@ a staking_contract exists for the staker/operator pair.
         && len(<a href="../../aptos-stdlib/../move-stdlib/doc/bcs.md#0x1_bcs_to_bytes">bcs::to_bytes</a>(resource_addr)) != 32;
     <b>aborts_if</b> len(<a href="account.md#0x1_account_ZERO_AUTH_KEY">account::ZERO_AUTH_KEY</a>) != 32;
     <b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_ValidatorConfig">stake::ValidatorConfig</a>&gt;(resource_addr);
-    <b>let</b> allowed = <b>global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">stake::AllowedValidators</a>&gt;(@aptos_framework);
-    <b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">stake::AllowedValidators</a>&gt;(@aptos_framework)
+    <b>let</b> allowed = <b>global</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">stake::AllowedValidators</a>&gt;(@topo_framework);
+    <b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_AllowedValidators">stake::AllowedValidators</a>&gt;(@topo_framework)
         && !contains(allowed.accounts, resource_addr);
     <b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(resource_addr);
     <b>aborts_if</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_OwnerCapability">stake::OwnerCapability</a>&gt;(resource_addr);

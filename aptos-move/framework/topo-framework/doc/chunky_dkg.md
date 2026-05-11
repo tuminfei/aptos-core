@@ -221,7 +221,7 @@ The completed and in-progress Chunky DKG sessions.
 Called in genesis to initialize on-chain states.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg.md#0x1_chunky_dkg_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg.md#0x1_chunky_dkg_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -230,11 +230,11 @@ Called in genesis to initialize on-chain states.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg.md#0x1_chunky_dkg_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <b>if</b> (!<b>exists</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@aptos_framework)) {
+<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg.md#0x1_chunky_dkg_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
+    <b>if</b> (!<b>exists</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@topo_framework)) {
         <b>move_to</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(
-            aptos_framework,
+            topo_framework,
             <a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a> {
                 last_completed: std::option::none(),
                 in_progress: std::option::none()
@@ -270,7 +270,7 @@ Mark on-chain Chunky DKG state as in-progress. Notify validators to start Chunky
     dealer_validator_set: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;ValidatorConsensusInfo&gt;,
     target_validator_set: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;ValidatorConsensusInfo&gt;
 ) <b>acquires</b> <a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a> {
-    <b>let</b> chunky_dkg_state = <b>borrow_global_mut</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@aptos_framework);
+    <b>let</b> chunky_dkg_state = <b>borrow_global_mut</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@topo_framework);
     <b>let</b> new_session_metadata = <a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGSessionMetadata">ChunkyDKGSessionMetadata</a> {
         dealer_epoch,
         <a href="chunky_dkg_config.md#0x1_chunky_dkg_config">chunky_dkg_config</a>,
@@ -315,7 +315,7 @@ Abort if Chunky DKG is not in progress.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chunky_dkg.md#0x1_chunky_dkg_finish">finish</a>(aggregated_subtranscript: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;) <b>acquires</b> <a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a> {
-    <b>let</b> chunky_dkg_state = <b>borrow_global_mut</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@aptos_framework);
+    <b>let</b> chunky_dkg_state = <b>borrow_global_mut</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@topo_framework);
     <b>assert</b>!(
         chunky_dkg_state.in_progress.is_some(),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="chunky_dkg.md#0x1_chunky_dkg_ECHUNKY_DKG_NOT_IN_PROGRESS">ECHUNKY_DKG_NOT_IN_PROGRESS</a>)
@@ -349,8 +349,8 @@ Delete the currently incomplete session, if it exists.
 
 <pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg.md#0x1_chunky_dkg_try_clear_incomplete_session">try_clear_incomplete_session</a>(fx: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(fx);
-    <b>if</b> (<b>exists</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@aptos_framework)) {
-        <b>let</b> chunky_dkg_state = <b>borrow_global_mut</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@aptos_framework);
+    <b>if</b> (<b>exists</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@topo_framework)) {
+        <b>let</b> chunky_dkg_state = <b>borrow_global_mut</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@topo_framework);
         chunky_dkg_state.in_progress = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>();
     }
 }
@@ -377,8 +377,8 @@ Return the incomplete Chunky DKG session state, if it exists.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg.md#0x1_chunky_dkg_incomplete_session">incomplete_session</a>(): Option&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGSessionState">ChunkyDKGSessionState</a>&gt; <b>acquires</b> <a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a> {
-    <b>if</b> (<b>exists</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@aptos_framework)) {
-        <b>borrow_global</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@aptos_framework).in_progress
+    <b>if</b> (<b>exists</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@topo_framework)) {
+        <b>borrow_global</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@topo_framework).in_progress
     } <b>else</b> {
         <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
     }
@@ -424,14 +424,14 @@ Return the dealer epoch of a <code><a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyD
 ### Function `initialize`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg.md#0x1_chunky_dkg_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg.md#0x1_chunky_dkg_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
 
 
-<pre><code><b>let</b> aptos_framework_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
-<b>aborts_if</b> aptos_framework_addr != @aptos_framework;
+<pre><code><b>let</b> aptos_framework_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<b>aborts_if</b> aptos_framework_addr != @topo_framework;
 </code></pre>
 
 
@@ -447,8 +447,8 @@ Return the dealer epoch of a <code><a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyD
 
 
 
-<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@aptos_framework);
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@topo_framework);
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 </code></pre>
 
 
@@ -464,8 +464,8 @@ Return the dealer epoch of a <code><a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyD
 
 
 
-<pre><code><b>requires</b> <b>exists</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@aptos_framework);
-<b>requires</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(<b>global</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@aptos_framework).in_progress);
+<pre><code><b>requires</b> <b>exists</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@topo_framework);
+<b>requires</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(<b>global</b>&lt;<a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyDKGState">ChunkyDKGState</a>&gt;(@topo_framework).in_progress);
 <b>aborts_if</b> <b>false</b>;
 </code></pre>
 
@@ -483,7 +483,7 @@ Return the dealer epoch of a <code><a href="chunky_dkg.md#0x1_chunky_dkg_ChunkyD
 
 
 <pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(fx);
-<b>aborts_if</b> addr != @aptos_framework;
+<b>aborts_if</b> addr != @topo_framework;
 </code></pre>
 
 

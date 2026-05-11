@@ -28,7 +28,7 @@ pub fn generate_execution_config_upgrade_proposal(
         is_testnet,
         next_execution_hash,
         is_multi_step,
-        &["aptos_framework::execution_config"],
+        &["topo_framework::execution_config"],
         |writer| {
             let execution_config_blob = bcs::to_bytes(execution_config).unwrap();
             assert!(execution_config_blob.len() < 65536);

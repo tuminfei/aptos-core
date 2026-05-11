@@ -14,13 +14,13 @@
 
 module drand::lottery {
     use std::signer;
-    use aptos_framework::account;
+    use topo_framework::account;
     use std::vector;
     use std::option::{Self, Option};
-    use aptos_framework::coin;
+    use topo_framework::coin;
     use std::error;
-    use aptos_framework::timestamp;
-    use aptos_framework::topo_coin::TopoCoin;
+    use topo_framework::timestamp;
+    use topo_framework::topo_coin::TopoCoin;
     use drand::drand;
     //use aptos_std::debug;
 

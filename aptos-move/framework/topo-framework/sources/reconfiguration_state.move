@@ -1,16 +1,16 @@
 /// Reconfiguration meta-state resources and util functions.
 ///
 /// WARNING: `reconfiguration_state::initialize()` is required before `RECONFIGURE_WITH_DKG` can be enabled.
-module aptos_framework::reconfiguration_state {
+module topo_framework::reconfiguration_state {
     use std::error;
     use aptos_std::copyable_any;
     use aptos_std::copyable_any::Any;
-    use aptos_framework::system_addresses;
-    use aptos_framework::timestamp;
+    use topo_framework::system_addresses;
+    use topo_framework::timestamp;
 
-    friend aptos_framework::reconfiguration;
-    friend aptos_framework::reconfiguration_with_dkg;
-    friend aptos_framework::stake;
+    friend topo_framework::reconfiguration;
+    friend topo_framework::reconfiguration_with_dkg;
+    friend topo_framework::stake;
 
     const ERECONFIG_NOT_IN_PROGRESS: u64 = 1;
 
@@ -32,12 +32,12 @@ module aptos_framework::reconfiguration_state {
     }
 
     public fun is_initialized(): bool {
-        exists<State>(@aptos_framework)
+        exists<State>(@topo_framework)
     }
 
     public fun initialize(fx: &signer) {
         system_addresses::assert_aptos_framework(fx);
-        if (!exists<State>(@aptos_framework)) {
+        if (!exists<State>(@topo_framework)) {
             move_to(fx, State {
                 variant: copyable_any::pack(StateInactive {})
             })
@@ -50,11 +50,11 @@ module aptos_framework::reconfiguration_state {
 
     /// Return whether the reconfiguration state is marked "in progress".
     public(friend) fun is_in_progress(): bool acquires State {
-        if (!exists<State>(@aptos_framework)) {
+        if (!exists<State>(@topo_framework)) {
             return false
         };
 
-        let state = borrow_global<State>(@aptos_framework);
+        let state = borrow_global<State>(@topo_framework);
         let variant_type_name = *state.variant.type_name().bytes();
         variant_type_name == b"0x1::reconfiguration_state::StateActive"
     }
@@ -64,8 +64,8 @@ module aptos_framework::reconfiguration_state {
     ///
     /// Also record the current time as the reconfiguration start time. (Some module, e.g., `stake.move`, needs this info).
     public(friend) fun on_reconfig_start() acquires State {
-        if (exists<State>(@aptos_framework)) {
-            let state = borrow_global_mut<State>(@aptos_framework);
+        if (exists<State>(@topo_framework)) {
+            let state = borrow_global_mut<State>(@topo_framework);
             let variant_type_name = *state.variant.type_name().bytes();
             if (variant_type_name == b"0x1::reconfiguration_state::StateInactive") {
                 state.variant = copyable_any::pack(StateActive {
@@ -78,7 +78,7 @@ module aptos_framework::reconfiguration_state {
     /// Get the unix time when the currently in-progress reconfiguration started.
     /// Abort if the reconfiguration state is not "in progress".
     public(friend) fun start_time_secs(): u64 acquires State {
-        let state = borrow_global<State>(@aptos_framework);
+        let state = borrow_global<State>(@topo_framework);
         let variant_type_name = *state.variant.type_name().bytes();
         if (variant_type_name == b"0x1::reconfiguration_state::StateActive") {
             let active = state.variant.unpack<StateActive>();
@@ -91,8 +91,8 @@ module aptos_framework::reconfiguration_state {
     /// Called at the end of every reconfiguration to mark the state as "stopped".
     /// Abort if the current state is not "in progress".
     public(friend) fun on_reconfig_finish() acquires State {
-        if (exists<State>(@aptos_framework)) {
-            let state = borrow_global_mut<State>(@aptos_framework);
+        if (exists<State>(@topo_framework)) {
+            let state = borrow_global_mut<State>(@topo_framework);
             let variant_type_name = *state.variant.type_name().bytes();
             if (variant_type_name == b"0x1::reconfiguration_state::StateActive") {
                 state.variant = copyable_any::pack(StateInactive {});
@@ -102,7 +102,7 @@ module aptos_framework::reconfiguration_state {
         }
     }
 
-    #[test(fx = @aptos_framework)]
+    #[test(fx = @topo_framework)]
     fun basic(fx: &signer) acquires State {
         // Setip.
         timestamp::set_time_has_started_for_testing(fx);

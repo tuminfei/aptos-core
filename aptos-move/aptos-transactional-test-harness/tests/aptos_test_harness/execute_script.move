@@ -4,8 +4,8 @@
 
 //# run --script --signers Alice  --args @Bob 100
 script {
-    use aptos_framework::coin;
-    use aptos_framework::topo_coin::TopoCoin;
+    use topo_framework::coin;
+    use topo_framework::topo_coin::TopoCoin;
 
     fun main(sender: &signer, receiver: address, amount: u64) {
         coin::transfer<TopoCoin>(sender, receiver, amount);

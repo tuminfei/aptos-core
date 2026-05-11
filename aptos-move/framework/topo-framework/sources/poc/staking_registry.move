@@ -44,7 +44,7 @@
 ///         → PENDING_INACTIVE (leave_validator_set) → INACTIVE (on_new_epoch)
 ///
 /// Only ACTIVE and PENDING_INACTIVE validators contribute to effective power reads.
-module aptos_framework::staking_registry {
+module topo_framework::staking_registry {
     use std::error;
     use std::signer;
 
@@ -52,20 +52,20 @@ module aptos_framework::staking_registry {
     use aptos_std::smart_table::{Self, SmartTable};
     use aptos_std::table::{Self, Table};
 
-    use aptos_framework::coin::{Self, Coin, MintCapability};
-    use aptos_framework::poc_power_store;
-    use aptos_framework::staking_config;
-    use aptos_framework::system_addresses;
-    use aptos_framework::timestamp;
-    use aptos_framework::topo_coin::TopoCoin;
+    use topo_framework::coin::{Self, Coin, MintCapability};
+    use topo_framework::poc_power_store;
+    use topo_framework::staking_config;
+    use topo_framework::system_addresses;
+    use topo_framework::timestamp;
+    use topo_framework::topo_coin::TopoCoin;
 
     #[test_only]
-    use aptos_framework::account;
+    use topo_framework::account;
     #[test_only]
-    use aptos_framework::topo_coin;
-    friend aptos_framework::genesis;
-    friend aptos_framework::stake;
-    friend aptos_framework::topo_governance;
+    use topo_framework::topo_coin;
+    friend topo_framework::genesis;
+    friend topo_framework::stake;
+    friend topo_framework::topo_governance;
 
     // ========== Error Codes ==========
     /// Target address is not a registered validator pool
@@ -130,7 +130,7 @@ module aptos_framework::staking_registry {
         mint_cap: MintCapability<TopoCoin>,
     }
 
-    /// The global staking registry, stored under @aptos_framework.
+    /// The global staking registry, stored under @topo_framework.
     ///
     /// Contains all validator pools, all user stake records, and the global config.
     /// The `mint_cap` is used to mint new TOPO coins as epoch rewards and fee distributions.
@@ -199,7 +199,7 @@ module aptos_framework::staking_registry {
 
     #[view]
     public fun registry_exists(): bool {
-        exists<StakingRegistry>(@aptos_framework)
+        exists<StakingRegistry>(@topo_framework)
     }
 
     /// Park the TopoCoin MintCapability before the registry is fully initialized.
@@ -209,16 +209,16 @@ module aptos_framework::staking_registry {
     /// This two-step approach avoids a circular dependency: the registry needs the mint cap,
     /// but the mint cap is created before the registry config parameters are known.
     friend fun store_topo_coin_mint_cap(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         mint_cap: MintCapability<TopoCoin>,
     ) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert!(
-            !exists<PendingMintCapability>(@aptos_framework)
-                && !exists<StakingRegistry>(@aptos_framework),
+            !exists<PendingMintCapability>(@topo_framework)
+                && !exists<StakingRegistry>(@topo_framework),
             error::already_exists(EALREADY_INITIALIZED),
         );
-        move_to(aptos_framework, PendingMintCapability { mint_cap });
+        move_to(topo_framework, PendingMintCapability { mint_cap });
     }
 
     /// Initialize the StakingRegistry with configuration parameters.
@@ -227,13 +227,13 @@ module aptos_framework::staking_registry {
     /// Idempotent: if the registry already exists, returns immediately without error.
     /// Called by `genesis::ensure_poc_staking_initialized`.
     friend fun initialize(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         octas_per_million_power: u64,
         max_delegators_per_validator: u64,
         cooldown_secs: u64,
     ) acquires PendingMintCapability {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        if (exists<StakingRegistry>(@aptos_framework)) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        if (exists<StakingRegistry>(@topo_framework)) {
             return
         };
 
@@ -242,12 +242,12 @@ module aptos_framework::staking_registry {
             error::invalid_argument(EINVALID_CONFIG),
         );
         assert!(
-            exists<PendingMintCapability>(@aptos_framework),
+            exists<PendingMintCapability>(@topo_framework),
             error::not_found(EMINT_CAP_NOT_STORED),
         );
 
-        let PendingMintCapability { mint_cap } = move_from<PendingMintCapability>(@aptos_framework);
-        move_to(aptos_framework, StakingRegistry {
+        let PendingMintCapability { mint_cap } = move_from<PendingMintCapability>(@topo_framework);
+        move_to(topo_framework, StakingRegistry {
             validators: table::new(),
             users: table::new(),
             total_staked_power: 0,
@@ -271,15 +271,15 @@ module aptos_framework::staking_registry {
     /// Setting force_exit_power_bps = 8000 means users are ejected when power < 80% of min_active_power,
     /// providing a hysteresis band to prevent thrashing at the boundary.
     public entry fun set_active_power_thresholds(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         min_active_power: u64,
         force_exit_power_bps: u64,
     ) acquires StakingRegistry {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_registry_exists();
         assert_valid_active_power_config(min_active_power, force_exit_power_bps);
 
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         registry.config.min_active_power = min_active_power;
         registry.config.force_exit_power_bps = force_exit_power_bps;
     }
@@ -289,14 +289,14 @@ module aptos_framework::staking_registry {
     /// Keeps the existing force-exit BPS unchanged. Only the framework account may change
     /// this parameter.
     public entry fun set_min_active_power(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         min_active_power: u64,
     ) acquires StakingRegistry {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_registry_exists();
         assert!(min_active_power > 0, error::invalid_argument(EINVALID_CONFIG));
 
-        borrow_global_mut<StakingRegistry>(@aptos_framework).config.min_active_power =
+        borrow_global_mut<StakingRegistry>(@topo_framework).config.min_active_power =
             min_active_power;
     }
 
@@ -306,17 +306,17 @@ module aptos_framework::staking_registry {
     /// `(min_active_power * force_exit_power_bps / 10000)` are force-undelegated
     /// at epoch boundaries. Keeps the existing min_active_power unchanged.
     public entry fun set_force_exit_power_bps(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         force_exit_power_bps: u64,
     ) acquires StakingRegistry {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_registry_exists();
         assert!(
             force_exit_power_bps > 0 && force_exit_power_bps <= BPS_DENOMINATOR,
             error::invalid_argument(EINVALID_CONFIG),
         );
 
-        borrow_global_mut<StakingRegistry>(@aptos_framework).config.force_exit_power_bps =
+        borrow_global_mut<StakingRegistry>(@topo_framework).config.force_exit_power_bps =
             force_exit_power_bps;
     }
 
@@ -328,24 +328,24 @@ module aptos_framework::staking_registry {
     /// deposit; raising it can reduce effective power and may cause low-coverage delegators
     /// to be force-undelegated at the next epoch boundary.
     public entry fun set_octas_per_million_power(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         octas_per_million_power: u64,
     ) acquires StakingRegistry {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_registry_exists();
 
-        borrow_global_mut<StakingRegistry>(@aptos_framework).config.octas_per_million_power =
+        borrow_global_mut<StakingRegistry>(@topo_framework).config.octas_per_million_power =
             octas_per_million_power;
     }
 
     public entry fun set_cooldown_secs(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         cooldown_secs: u64,
     ) acquires StakingRegistry {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert_registry_exists();
 
-        borrow_global_mut<StakingRegistry>(@aptos_framework).config.cooldown_secs =
+        borrow_global_mut<StakingRegistry>(@topo_framework).config.cooldown_secs =
             cooldown_secs;
     }
 
@@ -355,15 +355,15 @@ module aptos_framework::staking_registry {
     /// This prevents a user from undelegating, voting, and re-delegating within a single
     /// governance proposal window — which would allow double-influence attacks.
     friend fun ensure_min_cooldown_secs(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         min_cooldown_secs: u64,
     ) acquires StakingRegistry {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return
         };
 
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         if (registry.config.cooldown_secs < min_cooldown_secs) {
             registry.config.cooldown_secs = min_cooldown_secs;
         };
@@ -379,7 +379,7 @@ module aptos_framework::staking_registry {
         stake_amount: u64,
     ): u64 acquires StakingRegistry {
         assert_registry_exists();
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         let wide_power =
             (stake_amount as u128) * (registry.config.genesis_stake_power_multiplier as u128);
         assert!(wide_power <= MAX_U64, error::invalid_argument(EINVALID_CONFIG));
@@ -434,7 +434,7 @@ module aptos_framework::staking_registry {
         assert!(amount > 0, error::invalid_argument(EZERO_DEPOSIT));
 
         let user_address = signer::address_of(user);
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         ensure_user_record(registry, user_address);
 
         let coins = coin::withdraw<TopoCoin>(user, amount);
@@ -507,11 +507,11 @@ module aptos_framework::staking_registry {
     /// Currently delegated users with a positive registry deposit have their final
     /// effective power floored to 1 so active stake cannot decay to zero.
     public fun get_effective_power(user: address): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return 0
         };
 
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.users.contains(user)) {
             return 0
         };
@@ -537,11 +537,11 @@ module aptos_framework::staking_registry {
     public fun get_validator_joining_power(
         validator_address: address,
     ): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return 0
         };
 
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return 0
         };
@@ -558,11 +558,11 @@ module aptos_framework::staking_registry {
     public fun get_validator_total_power(
         validator_address: address,
     ): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return 0
         };
 
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return 0
         };
@@ -586,11 +586,11 @@ module aptos_framework::staking_registry {
         validator_address: address,
         extra_deposit_octas_by_user: &SimpleMap<address, u64>,
     ): (vector<address>, vector<u64>, u64) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return (vector[], vector[], 0)
         };
 
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return (vector[], vector[], 0)
         };
@@ -628,11 +628,11 @@ module aptos_framework::staking_registry {
         validator_address: address,
         extra_deposit_octas_by_user: &SimpleMap<address, u64>,
     ): (vector<address>, vector<u64>, u64) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return (vector[], vector[], 0)
         };
 
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return (vector[], vector[], 0)
         };
@@ -663,17 +663,17 @@ module aptos_framework::staking_registry {
 
     #[view]
     public fun get_total_staked_power(): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             0
         } else {
-            borrow_global<StakingRegistry>(@aptos_framework).total_staked_power
+            borrow_global<StakingRegistry>(@topo_framework).total_staked_power
         }
     }
 
     #[view]
     public fun validator_exists(validator_address: address): bool acquires StakingRegistry {
-        exists<StakingRegistry>(@aptos_framework)
-            && borrow_global<StakingRegistry>(@aptos_framework).validators.contains(validator_address)
+        exists<StakingRegistry>(@topo_framework)
+            && borrow_global<StakingRegistry>(@topo_framework).validators.contains(validator_address)
     }
 
     #[view]
@@ -681,10 +681,10 @@ module aptos_framework::staking_registry {
         validators: vector<address>,
     ): vector<bool> acquires StakingRegistry {
         let exists_flags = vector[];
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return exists_flags
         };
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         let len = validators.length();
         let i = 0;
         while (i < len) {
@@ -698,10 +698,10 @@ module aptos_framework::staking_registry {
     public fun get_validator_view(
         validator_address: address,
     ): (address, address, u64, u64, u64, u64, u64) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return empty_validator_view(validator_address)
         };
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         build_validator_view(registry, validator_address)
     }
 
@@ -724,7 +724,7 @@ module aptos_framework::staking_registry {
         let delegator_counts = vector[];
         let joining_powers = vector[];
         let total_powers = vector[];
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return (
                 validator_addresses,
                 owner_addresses,
@@ -735,7 +735,7 @@ module aptos_framework::staking_registry {
                 total_powers,
             )
         };
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         let len = validators.length();
         let i = 0;
         while (i < len) {
@@ -772,10 +772,10 @@ module aptos_framework::staking_registry {
     public fun get_user_stake_view(
         user: address,
     ): (address, u64, address, u64, u64, u64) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return empty_user_stake_view(user)
         };
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         build_user_stake_view(registry, user)
     }
 
@@ -784,10 +784,10 @@ module aptos_framework::staking_registry {
         users: vector<address>,
     ): vector<bool> acquires StakingRegistry {
         let exists_flags = vector[];
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return exists_flags
         };
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         let len = users.length();
         let i = 0;
         while (i < len) {
@@ -814,7 +814,7 @@ module aptos_framework::staking_registry {
         let cooldown_until_secs_values = vector[];
         let committed_powers = vector[];
         let effective_powers = vector[];
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return (
                 returned_users,
                 deposit_octas_values,
@@ -824,7 +824,7 @@ module aptos_framework::staking_registry {
                 effective_powers,
             )
         };
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         let len = users.length();
         let i = 0;
         while (i < len) {
@@ -858,10 +858,10 @@ module aptos_framework::staking_registry {
     public fun get_validator_delegator_count(
         validator_address: address,
     ): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return 0
         };
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return 0
         };
@@ -874,10 +874,10 @@ module aptos_framework::staking_registry {
         offset: u64,
         limit: u64,
     ): vector<address> acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return vector[]
         };
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return vector[]
         };
@@ -895,10 +895,10 @@ module aptos_framework::staking_registry {
         let deposit_octas_values = vector[];
         let committed_powers = vector[];
         let effective_powers = vector[];
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return (delegators, deposit_octas_values, committed_powers, effective_powers)
         };
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return (delegators, deposit_octas_values, committed_powers, effective_powers)
         };
@@ -923,11 +923,11 @@ module aptos_framework::staking_registry {
     public fun get_user_stake_info(
         user: address,
     ): (u64, address, u64) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return (0, @0x0, 0)
         };
 
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.users.contains(user)) {
             return (0, @0x0, 0)
         };
@@ -940,11 +940,11 @@ module aptos_framework::staking_registry {
     public fun get_validator_owner(
         validator_address: address,
     ): address acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return @0x0
         };
 
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return @0x0
         };
@@ -956,11 +956,11 @@ module aptos_framework::staking_registry {
     public fun get_validator_commission_bps(
         validator_address: address,
     ): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return 0
         };
 
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return 0
         };
@@ -969,45 +969,45 @@ module aptos_framework::staking_registry {
     }
 
     friend fun set_total_staked_power(total_staked_power: u64) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return
         };
-        borrow_global_mut<StakingRegistry>(@aptos_framework).total_staked_power = total_staked_power;
+        borrow_global_mut<StakingRegistry>(@topo_framework).total_staked_power = total_staked_power;
     }
 
     #[view]
     public fun get_cooldown_secs(): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             0
         } else {
-            borrow_global<StakingRegistry>(@aptos_framework).config.cooldown_secs
+            borrow_global<StakingRegistry>(@topo_framework).config.cooldown_secs
         }
     }
 
     #[view]
     public fun get_octas_per_million_power(): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             0
         } else {
-            borrow_global<StakingRegistry>(@aptos_framework).config.octas_per_million_power
+            borrow_global<StakingRegistry>(@topo_framework).config.octas_per_million_power
         }
     }
 
     #[view]
     public fun get_min_active_power(): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             0
         } else {
-            borrow_global<StakingRegistry>(@aptos_framework).config.min_active_power
+            borrow_global<StakingRegistry>(@topo_framework).config.min_active_power
         }
     }
 
     #[view]
     public fun get_force_exit_power_bps(): u64 acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             0
         } else {
-            borrow_global<StakingRegistry>(@aptos_framework).config.force_exit_power_bps
+            borrow_global<StakingRegistry>(@topo_framework).config.force_exit_power_bps
         }
     }
 
@@ -1051,11 +1051,11 @@ module aptos_framework::staking_registry {
     friend fun force_undelegate_below_threshold(
         validator_address: address,
     ) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return
         };
 
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return
         };
@@ -1090,11 +1090,11 @@ module aptos_framework::staking_registry {
         commission_bps: u64,
     ) acquires StakingRegistry {
         assert_valid_commission(commission_bps);
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return
         };
 
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return
         };
@@ -1129,11 +1129,11 @@ module aptos_framework::staking_registry {
         rewards_rate: u64,
         rewards_rate_denominator: u64,
     ) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return
         };
 
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return
         };
@@ -1169,7 +1169,7 @@ module aptos_framework::staking_registry {
         let commission = (((epoch_reward as u128) * (commission_bps as u128)) / 10000) as u64;
         let distributable = epoch_reward - commission;
 
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         let mint_cap = &registry.mint_cap;
         let users = &mut registry.users;
 
@@ -1211,11 +1211,11 @@ module aptos_framework::staking_registry {
         validator_address: address,
         fee_amount_octa: u64,
     ) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework) || fee_amount_octa == 0) {
+        if (!exists<StakingRegistry>(@topo_framework) || fee_amount_octa == 0) {
             return
         };
 
-        let registry = borrow_global<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return
         };
@@ -1239,7 +1239,7 @@ module aptos_framework::staking_registry {
         let commission = (((fee_amount_octa as u128) * (commission_bps as u128)) / 10000) as u64;
         let distributable = fee_amount_octa - commission;
 
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         let mint_cap = &registry.mint_cap;
         let users = &mut registry.users;
 
@@ -1272,7 +1272,7 @@ module aptos_framework::staking_registry {
         commission_bps: u64,
     ) acquires StakingRegistry {
         assert_valid_commission(commission_bps);
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         assert!(
             !registry.validators.contains(validator_address),
             error::already_exists(EALREADY_VALIDATOR),
@@ -1304,7 +1304,7 @@ module aptos_framework::staking_registry {
         user_address: address,
         validator_address: address,
     ) acquires StakingRegistry {
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         assert!(
             registry.validators.contains(validator_address),
             error::invalid_argument(ENOT_VALIDATOR),
@@ -1349,7 +1349,7 @@ module aptos_framework::staking_registry {
     fun undelegate_internal(
         user_address: address,
     ) acquires StakingRegistry {
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         assert!(registry.users.contains(user_address), error::not_found(EUSER_NOT_FOUND));
 
         let delegated_to = registry.users.borrow(user_address).delegated_to;
@@ -1365,7 +1365,7 @@ module aptos_framework::staking_registry {
 
     fun assert_registry_exists() {
         assert!(
-            exists<StakingRegistry>(@aptos_framework),
+            exists<StakingRegistry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
     }
@@ -1388,7 +1388,7 @@ module aptos_framework::staking_registry {
     fun extract_withdrawable_deposit(
         user_address: address,
     ): Coin<TopoCoin> acquires StakingRegistry {
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         assert!(registry.users.contains(user_address), error::not_found(EUSER_NOT_FOUND));
 
         let info = registry.users.borrow(user_address);
@@ -1485,11 +1485,11 @@ module aptos_framework::staking_registry {
         validator_address: address,
         status: u64,
     ) acquires StakingRegistry {
-        if (!exists<StakingRegistry>(@aptos_framework)) {
+        if (!exists<StakingRegistry>(@topo_framework)) {
             return
         };
 
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         if (!registry.validators.contains(validator_address)) {
             return
         };
@@ -1899,21 +1899,21 @@ module aptos_framework::staking_registry {
 
     #[test_only]
     fun setup_overflow_power_pool(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: address,
         delegator_1: address,
         delegator_2: address,
     ) acquires PendingMintCapability, StakingRegistry {
-        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
+        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(topo_framework);
         coin::destroy_burn_cap(burn_cap);
-        store_topo_coin_mint_cap(aptos_framework, mint_cap);
-        initialize(aptos_framework, 0, 10, 1);
+        store_topo_coin_mint_cap(topo_framework, mint_cap);
+        initialize(topo_framework, 0, 10, 1);
 
-        poc_power_store::initialize_power_store_with_period(aptos_framework, @aptos_framework, 60);
-        poc_power_store::set_genesis_committed_power(aptos_framework, delegator_1, MAX_U64 as u64);
-        poc_power_store::set_genesis_committed_power(aptos_framework, delegator_2, MAX_U64 as u64);
+        poc_power_store::initialize_power_store_with_period(topo_framework, @topo_framework, 60);
+        poc_power_store::set_genesis_committed_power(topo_framework, delegator_1, MAX_U64 as u64);
+        poc_power_store::set_genesis_committed_power(topo_framework, delegator_2, MAX_U64 as u64);
 
-        let registry = borrow_global_mut<StakingRegistry>(@aptos_framework);
+        let registry = borrow_global_mut<StakingRegistry>(@topo_framework);
         ensure_user_record(registry, delegator_1);
         ensure_user_record(registry, delegator_2);
         registry.validators.add(validator, ValidatorPool {
@@ -1929,16 +1929,16 @@ module aptos_framework::staking_registry {
         info_2.delegated_to = validator;
     }
 
-    #[test(aptos_framework = @aptos_framework)]
+    #[test(topo_framework = @topo_framework)]
     fun test_saturating_u128_to_u64() {
         assert!(saturating_u128_to_u64(0) == 0, 0);
         assert!(saturating_u128_to_u64(MAX_U64) == (MAX_U64 as u64), 1);
         assert!(saturating_u128_to_u64(MAX_U64 + 1) == (MAX_U64 as u64), 2);
     }
 
-    #[test(aptos_framework = @aptos_framework)]
+    #[test(topo_framework = @topo_framework)]
     fun test_validator_total_power_saturates_above_u64_max(
-        aptos_framework: &signer,
+        topo_framework: &signer,
     ) acquires PendingMintCapability, StakingRegistry {
         let validator = @0x701;
         let delegator_1 = @0x702;
@@ -1947,7 +1947,7 @@ module aptos_framework::staking_registry {
         account::create_account_for_test(delegator_1);
         account::create_account_for_test(delegator_2);
 
-        setup_overflow_power_pool(aptos_framework, validator, delegator_1, delegator_2);
+        setup_overflow_power_pool(topo_framework, validator, delegator_1, delegator_2);
 
         assert!(get_validator_total_power(validator) == (MAX_U64 as u64), 0);
         let current_extra_deposits = simple_map::create<address, u64>();

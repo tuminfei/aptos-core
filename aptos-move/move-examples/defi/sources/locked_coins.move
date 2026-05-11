@@ -14,9 +14,9 @@
  * 4. Once the lockup has expired, the recipient can call claim to get the unlocked tokens.
  **/
 module defi::locked_coins {
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::event;
-    use aptos_framework::timestamp;
+    use topo_framework::coin::{Self, Coin};
+    use topo_framework::event;
+    use topo_framework::timestamp;
     use aptos_std::table::{Self, Table};
     use std::error;
     use std::signer;
@@ -266,18 +266,18 @@ module defi::locked_coins {
     }
 
     #[test_only]
-    use aptos_framework::account;
+    use topo_framework::account;
     #[test_only]
-    use aptos_framework::coin::BurnCapability;
+    use topo_framework::coin::BurnCapability;
     #[test_only]
-    use aptos_framework::topo_coin::{Self, TopoCoin};
+    use topo_framework::topo_coin::{Self, TopoCoin};
     #[test_only]
-    use aptos_framework::topo_account;
+    use topo_framework::topo_account;
 
     #[test_only]
-    fun setup(aptos_framework: &signer, sponsor: &signer): BurnCapability<TopoCoin> {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
-        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
+    fun setup(topo_framework: &signer, sponsor: &signer): BurnCapability<TopoCoin> {
+        timestamp::set_time_has_started_for_testing(topo_framework);
+        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(topo_framework);
 
         account::create_account_for_test(signer::address_of(sponsor));
         coin::register<TopoCoin>(sponsor);
@@ -288,10 +288,10 @@ module defi::locked_coins {
         burn_cap
     }
 
-    #[test(aptos_framework = @0x1, sponsor = @0x123, recipient = @0x234)]
+    #[test(topo_framework = @0x1, sponsor = @0x123, recipient = @0x234)]
     public entry fun test_recipient_can_claim_coins(
-        aptos_framework: &signer, sponsor: &signer, recipient: &signer) acquires Locks {
-        let burn_cap = setup(aptos_framework, sponsor);
+        topo_framework: &signer, sponsor: &signer, recipient: &signer) acquires Locks {
+        let burn_cap = setup(topo_framework, sponsor);
         let recipient_addr = signer::address_of(recipient);
         topo_account::create_account(recipient_addr);
         let sponsor_address = signer::address_of(sponsor);
@@ -305,11 +305,11 @@ module defi::locked_coins {
         coin::destroy_burn_cap(burn_cap);
     }
 
-    #[test(aptos_framework = @0x1, sponsor = @0x123, recipient = @0x234)]
+    #[test(topo_framework = @0x1, sponsor = @0x123, recipient = @0x234)]
     #[expected_failure(abort_code = 0x30002, location = Self)]
     public entry fun test_recipient_cannot_claim_coins_if_lockup_has_not_expired(
-        aptos_framework: &signer, sponsor: &signer, recipient: &signer) acquires Locks {
-        let burn_cap = setup(aptos_framework, sponsor);
+        topo_framework: &signer, sponsor: &signer, recipient: &signer) acquires Locks {
+        let burn_cap = setup(topo_framework, sponsor);
         let recipient_addr = signer::address_of(recipient);
         topo_account::create_account(recipient_addr);
         let sponsor_address = signer::address_of(sponsor);
@@ -320,11 +320,11 @@ module defi::locked_coins {
         coin::destroy_burn_cap(burn_cap);
     }
 
-    #[test(aptos_framework = @0x1, sponsor = @0x123, recipient = @0x234)]
+    #[test(topo_framework = @0x1, sponsor = @0x123, recipient = @0x234)]
     #[expected_failure(abort_code = 0x60001, location = Self)]
     public entry fun test_recipient_cannot_claim_twice(
-        aptos_framework: &signer, sponsor: &signer, recipient: &signer) acquires Locks {
-        let burn_cap = setup(aptos_framework, sponsor);
+        topo_framework: &signer, sponsor: &signer, recipient: &signer) acquires Locks {
+        let burn_cap = setup(topo_framework, sponsor);
         let recipient_addr = signer::address_of(recipient);
         topo_account::create_account(recipient_addr);
         let sponsor_address = signer::address_of(sponsor);
@@ -336,10 +336,10 @@ module defi::locked_coins {
         coin::destroy_burn_cap(burn_cap);
     }
 
-    #[test(aptos_framework = @0x1, sponsor = @0x123, recipient = @0x234)]
+    #[test(topo_framework = @0x1, sponsor = @0x123, recipient = @0x234)]
     public entry fun test_sponsor_can_update_lockup(
-        aptos_framework: &signer, sponsor: &signer, recipient: &signer) acquires Locks {
-        let burn_cap = setup(aptos_framework, sponsor);
+        topo_framework: &signer, sponsor: &signer, recipient: &signer) acquires Locks {
+        let burn_cap = setup(topo_framework, sponsor);
         let recipient_addr = signer::address_of(recipient);
         topo_account::create_account(recipient_addr);
         let sponsor_address = signer::address_of(sponsor);
@@ -358,10 +358,10 @@ module defi::locked_coins {
         coin::destroy_burn_cap(burn_cap);
     }
 
-    #[test(aptos_framework = @0x1, sponsor = @0x123, recipient_1 = @0x234, recipient_2 = @0x345)]
+    #[test(topo_framework = @0x1, sponsor = @0x123, recipient_1 = @0x234, recipient_2 = @0x345)]
     public entry fun test_sponsor_can_batch_update_lockup(
-        aptos_framework: &signer, sponsor: &signer, recipient_1: &signer, recipient_2: &signer) acquires Locks {
-        let burn_cap = setup(aptos_framework, sponsor);
+        topo_framework: &signer, sponsor: &signer, recipient_1: &signer, recipient_2: &signer) acquires Locks {
+        let burn_cap = setup(topo_framework, sponsor);
         let sponsor_addr = signer::address_of(sponsor);
         let recipient_1_addr = signer::address_of(recipient_1);
         let recipient_2_addr = signer::address_of(recipient_2);
@@ -389,10 +389,10 @@ module defi::locked_coins {
         coin::destroy_burn_cap(burn_cap);
     }
 
-    #[test(aptos_framework = @0x1, sponsor = @0x123, recipient = @0x234, withdrawal = @0x345)]
+    #[test(topo_framework = @0x1, sponsor = @0x123, recipient = @0x234, withdrawal = @0x345)]
     public entry fun test_sponsor_can_cancel_lockup(
-        aptos_framework: &signer, sponsor: &signer, recipient: &signer, withdrawal: &signer) acquires Locks {
-        let burn_cap = setup(aptos_framework, sponsor);
+        topo_framework: &signer, sponsor: &signer, recipient: &signer, withdrawal: &signer) acquires Locks {
+        let burn_cap = setup(topo_framework, sponsor);
         let recipient_addr = signer::address_of(recipient);
         let withdrawal_addr = signer::address_of(withdrawal);
         topo_account::create_account(withdrawal_addr);
@@ -413,15 +413,15 @@ module defi::locked_coins {
         coin::destroy_burn_cap(burn_cap);
     }
 
-    #[test(aptos_framework = @0x1, sponsor = @0x123, recipient_1 = @0x234, recipient_2 = @0x345, withdrawal = @0x456)]
+    #[test(topo_framework = @0x1, sponsor = @0x123, recipient_1 = @0x234, recipient_2 = @0x345, withdrawal = @0x456)]
     public entry fun test_sponsor_can_batch_cancel_lockup(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         sponsor: &signer,
         recipient_1: &signer,
         recipient_2: &signer,
         withdrawal: &signer,
     ) acquires Locks {
-        let burn_cap = setup(aptos_framework, sponsor);
+        let burn_cap = setup(topo_framework, sponsor);
         let recipient_1_addr = signer::address_of(recipient_1);
         let recipient_2_addr = signer::address_of(recipient_2);
         let withdrawal_addr = signer::address_of(withdrawal);
@@ -445,15 +445,15 @@ module defi::locked_coins {
         coin::destroy_burn_cap(burn_cap);
     }
 
-    #[test(aptos_framework = @0x1, sponsor = @0x123, recipient = @0x234, withdrawal = @0x456)]
+    #[test(topo_framework = @0x1, sponsor = @0x123, recipient = @0x234, withdrawal = @0x456)]
     #[expected_failure(abort_code = 0x30005, location = Self)]
     public entry fun test_cannot_change_withdrawal_address_if_active_locks_exist(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         sponsor: &signer,
         recipient: &signer,
         withdrawal: &signer,
     ) acquires Locks {
-        let burn_cap = setup(aptos_framework, sponsor);
+        let burn_cap = setup(topo_framework, sponsor);
         let recipient_addr = signer::address_of(recipient);
         let withdrawal_addr = signer::address_of(withdrawal);
         topo_account::create_account(recipient_addr);
@@ -465,14 +465,14 @@ module defi::locked_coins {
         coin::destroy_burn_cap(burn_cap);
     }
 
-    #[test(aptos_framework = @0x1, sponsor = @0x123, recipient = @0x234, withdrawal = @0x456)]
+    #[test(topo_framework = @0x1, sponsor = @0x123, recipient = @0x234, withdrawal = @0x456)]
     public entry fun test_can_change_withdrawal_address_if_no_active_locks_exist(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         sponsor: &signer,
         recipient: &signer,
         withdrawal: &signer,
     ) acquires Locks {
-        let burn_cap = setup(aptos_framework, sponsor);
+        let burn_cap = setup(topo_framework, sponsor);
         let recipient_addr = signer::address_of(recipient);
         let withdrawal_addr = signer::address_of(withdrawal);
         topo_account::create_account(recipient_addr);

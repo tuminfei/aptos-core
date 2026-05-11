@@ -8,7 +8,7 @@
 /// track proposal creation and proposal ids.
 /// 2. Voters can vote on a proposal. Their voting power is derived from the backing stake pool. A stake pool can vote
 /// on a proposal multiple times as long as the total voting power of these votes doesn't exceed its total voting power.
-module aptos_framework::topo_governance {
+module topo_framework::topo_governance {
     use std::error;
     use std::option;
     use std::signer;
@@ -20,22 +20,22 @@ module aptos_framework::topo_governance {
     use aptos_std::smart_table::{Self, SmartTable};
     use aptos_std::table::{Self, Table};
 
-    use aptos_framework::account::{Self, SignerCapability, create_signer_with_capability};
-    use aptos_framework::poc_power_store;
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::governance_proposal::{Self, GovernanceProposal};
-    use aptos_framework::stake;
-    use aptos_framework::staking_registry;
-    use aptos_framework::staking_config;
-    use aptos_framework::system_addresses;
-    use aptos_framework::topo_coin;
-    use aptos_framework::chunky_dkg_config;
-    use aptos_framework::consensus_config;
-    use aptos_framework::permissioned_signer;
-    use aptos_framework::randomness_config;
-    use aptos_framework::reconfiguration_with_dkg;
-    use aptos_framework::timestamp;
-    use aptos_framework::voting;
+    use topo_framework::account::{Self, SignerCapability, create_signer_with_capability};
+    use topo_framework::poc_power_store;
+    use topo_framework::event::{Self, EventHandle};
+    use topo_framework::governance_proposal::{Self, GovernanceProposal};
+    use topo_framework::stake;
+    use topo_framework::staking_registry;
+    use topo_framework::staking_config;
+    use topo_framework::system_addresses;
+    use topo_framework::topo_coin;
+    use topo_framework::chunky_dkg_config;
+    use topo_framework::consensus_config;
+    use topo_framework::permissioned_signer;
+    use topo_framework::randomness_config;
+    use topo_framework::reconfiguration_with_dkg;
+    use topo_framework::timestamp;
+    use topo_framework::voting;
 
     #[test_only]
     use std::vector;
@@ -182,51 +182,51 @@ module aptos_framework::topo_governance {
     /// Can be called during genesis or by the governance itself.
     /// Stores the signer capability for a given address.
     public fun store_signer_cap(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         signer_address: address,
         signer_cap: SignerCapability,
     ) acquires GovernanceResponsbility {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         system_addresses::assert_framework_reserved(signer_address);
 
-        if (!exists<GovernanceResponsbility>(@aptos_framework)) {
+        if (!exists<GovernanceResponsbility>(@topo_framework)) {
             move_to(
-                aptos_framework,
+                topo_framework,
                 GovernanceResponsbility { signer_caps: simple_map::create<address, SignerCapability>() }
             );
         };
 
-        let signer_caps = &mut borrow_global_mut<GovernanceResponsbility>(@aptos_framework).signer_caps;
+        let signer_caps = &mut borrow_global_mut<GovernanceResponsbility>(@topo_framework).signer_caps;
         signer_caps.add(signer_address, signer_cap);
     }
 
     /// Initializes the state for Aptos Governance. Can only be called during Genesis with a signer
-    /// for the aptos_framework (0x1) account.
+    /// for the topo_framework (0x1) account.
     /// This function is private because it's called directly from the vm.
     fun initialize(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         min_voting_threshold: u128,
         required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
 
-        voting::register<GovernanceProposal>(aptos_framework);
-        initialize_partial_voting(aptos_framework);
-        move_to(aptos_framework, GovernanceConfig {
+        voting::register<GovernanceProposal>(topo_framework);
+        initialize_partial_voting(topo_framework);
+        move_to(topo_framework, GovernanceConfig {
             voting_duration_secs,
             min_voting_threshold,
             required_proposer_stake,
         });
-        move_to(aptos_framework, GovernanceEvents {
-            create_proposal_events: account::new_event_handle<CreateProposalEvent>(aptos_framework),
-            update_config_events: account::new_event_handle<UpdateConfigEvent>(aptos_framework),
-            vote_events: account::new_event_handle<VoteEvent>(aptos_framework),
+        move_to(topo_framework, GovernanceEvents {
+            create_proposal_events: account::new_event_handle<CreateProposalEvent>(topo_framework),
+            update_config_events: account::new_event_handle<UpdateConfigEvent>(topo_framework),
+            vote_events: account::new_event_handle<VoteEvent>(topo_framework),
         });
-        move_to(aptos_framework, VotingRecords {
+        move_to(topo_framework, VotingRecords {
             votes: table::new(),
         });
-        move_to(aptos_framework, ApprovedExecutionHashes {
+        move_to(topo_framework, ApprovedExecutionHashes {
             hashes: simple_map::create<u64, vector<u8>>(),
         })
     }
@@ -234,18 +234,18 @@ module aptos_framework::topo_governance {
     /// Update the governance configurations. This can only be called as part of resolving a proposal in this same
     /// TopoGovernance.
     public fun update_governance_config(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         min_voting_threshold: u128,
         required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) acquires GovernanceConfig {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
 
-        let governance_config = borrow_global_mut<GovernanceConfig>(@aptos_framework);
+        let governance_config = borrow_global_mut<GovernanceConfig>(@topo_framework);
         governance_config.voting_duration_secs = voting_duration_secs;
         governance_config.min_voting_threshold = min_voting_threshold;
         governance_config.required_proposer_stake = required_proposer_stake;
-        staking_registry::ensure_min_cooldown_secs(aptos_framework, voting_duration_secs);
+        staking_registry::ensure_min_cooldown_secs(topo_framework, voting_duration_secs);
 
         event::emit(
             UpdateConfig {
@@ -257,35 +257,35 @@ module aptos_framework::topo_governance {
     }
 
     /// Initializes the state for Aptos Governance partial voting. Can only be called through Aptos governance
-    /// proposals with a signer for the aptos_framework (0x1) account.
+    /// proposals with a signer for the topo_framework (0x1) account.
     public fun initialize_partial_voting(
-        aptos_framework: &signer,
+        topo_framework: &signer,
     ) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
 
-        move_to(aptos_framework, VotingRecordsV2 {
+        move_to(topo_framework, VotingRecordsV2 {
             votes: smart_table::new(),
         });
     }
 
     #[view]
     public fun get_voting_duration_secs(): u64 acquires GovernanceConfig {
-        borrow_global<GovernanceConfig>(@aptos_framework).voting_duration_secs
+        borrow_global<GovernanceConfig>(@topo_framework).voting_duration_secs
     }
 
     #[view]
     public fun has_governance_config(): bool {
-        exists<GovernanceConfig>(@aptos_framework)
+        exists<GovernanceConfig>(@topo_framework)
     }
 
     #[view]
     public fun get_min_voting_threshold(): u128 acquires GovernanceConfig {
-        borrow_global<GovernanceConfig>(@aptos_framework).min_voting_threshold
+        borrow_global<GovernanceConfig>(@topo_framework).min_voting_threshold
     }
 
     #[view]
     public fun get_required_proposer_stake(): u64 acquires GovernanceConfig {
-        borrow_global<GovernanceConfig>(@aptos_framework).required_proposer_stake
+        borrow_global<GovernanceConfig>(@topo_framework).required_proposer_stake
     }
 
     #[view]
@@ -297,7 +297,7 @@ module aptos_framework::topo_governance {
         };
         // If a stake pool has already voted on a proposal before partial governance voting is enabled,
         // there is a record in VotingRecords.
-        let voting_records = borrow_global<VotingRecords>(@aptos_framework);
+        let voting_records = borrow_global<VotingRecords>(@topo_framework);
         voting_records.votes.contains(record_key)
     }
 
@@ -311,7 +311,7 @@ module aptos_framework::topo_governance {
         assert_voting_initialization();
 
         let proposal_expiration = voting::get_proposal_expiration_secs<GovernanceProposal>(
-            @aptos_framework,
+            @topo_framework,
             proposal_id
         );
         if (is_proposal_expired(proposal_expiration)) {
@@ -329,7 +329,7 @@ module aptos_framework::topo_governance {
             proposal_id,
         };
         let used_voting_power =
-            *VotingRecordsV2[@aptos_framework].votes.borrow_with_default(record_key, &0);
+            *VotingRecordsV2[@topo_framework].votes.borrow_with_default(record_key, &0);
         if (used_voting_power >= total_voting_power) {
             0
         } else {
@@ -340,7 +340,7 @@ module aptos_framework::topo_governance {
     public fun assert_proposal_expiration(voter: address, proposal_id: u64) {
         assert_voting_initialization();
         let proposal_expiration = voting::get_proposal_expiration_secs<GovernanceProposal>(
-            @aptos_framework,
+            @topo_framework,
             proposal_id
         );
         assert!(
@@ -389,7 +389,7 @@ module aptos_framework::topo_governance {
         check_governance_permission(proposer);
         let proposer_address = signer::address_of(proposer);
 
-        let governance_config = borrow_global<GovernanceConfig>(@aptos_framework);
+        let governance_config = borrow_global<GovernanceConfig>(@topo_framework);
         let stake_balance = staking_registry::get_effective_power(proposer_address);
         assert!(
             stake_balance >= governance_config.required_proposer_stake,
@@ -410,7 +410,7 @@ module aptos_framework::topo_governance {
 
         let proposal_id = voting::create_proposal_v2(
             proposer_address,
-            @aptos_framework,
+            @topo_framework,
             governance_proposal::create_proposal(),
             execution_hash,
             governance_config.min_voting_threshold,
@@ -474,7 +474,7 @@ module aptos_framework::topo_governance {
 
         voting::vote<GovernanceProposal>(
             &governance_proposal::create_empty_proposal(),
-            @aptos_framework,
+            @topo_framework,
             proposal_id,
             voting_power,
             should_pass,
@@ -484,7 +484,7 @@ module aptos_framework::topo_governance {
             voter: voting_subject,
             proposal_id,
         };
-        let used_voting_power = VotingRecordsV2[@aptos_framework].votes.borrow_mut_with_default(record_key, 0);
+        let used_voting_power = VotingRecordsV2[@topo_framework].votes.borrow_mut_with_default(record_key, 0);
         // This calculation should never overflow because the used voting cannot exceed the total voting power of this stake pool.
         *used_voting_power += voting_power;
 
@@ -497,7 +497,7 @@ module aptos_framework::topo_governance {
             },
         );
 
-        let proposal_state = voting::get_proposal_state<GovernanceProposal>(@aptos_framework, proposal_id);
+        let proposal_state = voting::get_proposal_state<GovernanceProposal>(@topo_framework, proposal_id);
         if (proposal_state == PROPOSAL_STATE_SUCCEEDED) {
             add_approved_script_hash(proposal_id);
         }
@@ -511,13 +511,13 @@ module aptos_framework::topo_governance {
     /// This is needed to bypass the mempool transaction size limit for approved governance proposal transactions that
     /// are too large (e.g. module upgrades).
     public fun add_approved_script_hash(proposal_id: u64) acquires ApprovedExecutionHashes {
-        let approved_hashes = borrow_global_mut<ApprovedExecutionHashes>(@aptos_framework);
+        let approved_hashes = borrow_global_mut<ApprovedExecutionHashes>(@topo_framework);
 
         // Ensure the proposal can be resolved.
-        let proposal_state = voting::get_proposal_state<GovernanceProposal>(@aptos_framework, proposal_id);
+        let proposal_state = voting::get_proposal_state<GovernanceProposal>(@topo_framework, proposal_id);
         assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, error::invalid_argument(EPROPOSAL_NOT_RESOLVABLE_YET));
 
-        let execution_hash = voting::get_execution_hash<GovernanceProposal>(@aptos_framework, proposal_id);
+        let execution_hash = voting::get_execution_hash<GovernanceProposal>(@topo_framework, proposal_id);
 
         // If this is a multi-step proposal, the proposal id will already exist in the ApprovedExecutionHashes map.
         // We will update execution hash in ApprovedExecutionHashes to be the next_execution_hash.
@@ -535,7 +535,7 @@ module aptos_framework::topo_governance {
         proposal_id: u64,
         signer_address: address
     ): signer acquires ApprovedExecutionHashes, GovernanceResponsbility {
-        voting::resolve<GovernanceProposal>(@aptos_framework, proposal_id);
+        voting::resolve<GovernanceProposal>(@topo_framework, proposal_id);
         remove_approved_hash(proposal_id);
         get_signer(signer_address)
     }
@@ -546,7 +546,7 @@ module aptos_framework::topo_governance {
         signer_address: address,
         next_execution_hash: vector<u8>
     ): signer acquires GovernanceResponsbility, ApprovedExecutionHashes {
-        voting::resolve_proposal_v2<GovernanceProposal>(@aptos_framework, proposal_id, next_execution_hash);
+        voting::resolve_proposal_v2<GovernanceProposal>(@topo_framework, proposal_id, next_execution_hash);
         // If the current step is the last step of this multi-step proposal,
         // we will remove the execution hash from the ApprovedExecutionHashes map.
         if (next_execution_hash.length() == 0) {
@@ -563,11 +563,11 @@ module aptos_framework::topo_governance {
     /// Remove an approved proposal's execution script hash.
     public fun remove_approved_hash(proposal_id: u64) acquires ApprovedExecutionHashes {
         assert!(
-            voting::is_resolved<GovernanceProposal>(@aptos_framework, proposal_id),
+            voting::is_resolved<GovernanceProposal>(@topo_framework, proposal_id),
             error::invalid_argument(EPROPOSAL_NOT_RESOLVED_YET),
         );
 
-        let approved_hashes = &mut borrow_global_mut<ApprovedExecutionHashes>(@aptos_framework).hashes;
+        let approved_hashes = &mut borrow_global_mut<ApprovedExecutionHashes>(@topo_framework).hashes;
         if (approved_hashes.contains_key(&proposal_id)) {
             approved_hashes.remove(&proposal_id);
         };
@@ -582,8 +582,8 @@ module aptos_framework::topo_governance {
     ///
     /// This behavior affects when an update of an on-chain config (e.g. `ConsensusConfig`, `Features`) takes effect,
     /// since such updates are applied whenever we enter an new epoch.
-    public entry fun reconfigure(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public entry fun reconfigure(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
         if (consensus_config::validator_txn_enabled() && randomness_config::enabled()) {
             if (chunky_dkg_config::enabled()) {
                 reconfiguration_with_dkg::try_start_with_chunky_dkg();
@@ -591,7 +591,7 @@ module aptos_framework::topo_governance {
                 reconfiguration_with_dkg::try_start();
             }
         } else {
-            reconfiguration_with_dkg::finish(aptos_framework);
+            reconfiguration_with_dkg::finish(topo_framework);
         }
     }
 
@@ -601,15 +601,15 @@ module aptos_framework::topo_governance {
     ///
     /// WARNING: currently only used by tests. In most cases you should use `reconfigure()` instead.
     /// TODO: migrate these tests to be aware of async reconfiguration.
-    public entry fun force_end_epoch(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        reconfiguration_with_dkg::finish(aptos_framework);
+    public entry fun force_end_epoch(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        reconfiguration_with_dkg::finish(topo_framework);
     }
 
     /// `force_end_epoch()` equivalent but only called in testnet,
     /// where the core resources account exists and has been granted power to mint Aptos coins.
-    public entry fun force_end_epoch_test_only(aptos_framework: &signer) acquires GovernanceResponsbility {
-        let core_signer = get_signer_testnet_only(aptos_framework, @0x1);
+    public entry fun force_end_epoch_test_only(topo_framework: &signer) acquires GovernanceResponsbility {
+        let core_signer = get_signer_testnet_only(topo_framework, @0x1);
         system_addresses::assert_aptos_framework(&core_signer);
         reconfiguration_with_dkg::finish(&core_signer);
     }
@@ -642,10 +642,10 @@ module aptos_framework::topo_governance {
     }
 
     /// Update feature flags and also trigger reconfiguration.
-    public fun toggle_features(aptos_framework: &signer, enable: vector<u64>, disable: vector<u64>) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        features::change_feature_flags_for_next_epoch(aptos_framework, enable, disable);
-        reconfigure(aptos_framework);
+    public fun toggle_features(topo_framework: &signer, enable: vector<u64>, disable: vector<u64>) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        features::change_feature_flags_for_next_epoch(topo_framework, enable, disable);
+        reconfigure(topo_framework);
     }
 
     /// Only called in testnet where the core resources account exists and has been granted power to mint Aptos coins.
@@ -659,7 +659,7 @@ module aptos_framework::topo_governance {
 
     /// Return a signer for making changes to 0x1 as part of on-chain governance proposal process.
     fun get_signer(signer_address: address): signer acquires GovernanceResponsbility {
-        let governance_responsibility = borrow_global<GovernanceResponsbility>(@aptos_framework);
+        let governance_responsibility = borrow_global<GovernanceResponsbility>(@topo_framework);
         let signer_cap = governance_responsibility.signer_caps.borrow(&signer_address);
         create_signer_with_capability(signer_cap)
     }
@@ -678,7 +678,7 @@ module aptos_framework::topo_governance {
     }
 
     fun assert_voting_initialization() {
-        assert!(exists<VotingRecordsV2>(@aptos_framework), error::invalid_state(EPARTIAL_VOTING_NOT_INITIALIZED));
+        assert!(exists<VotingRecordsV2>(@topo_framework), error::invalid_state(EPARTIAL_VOTING_NOT_INITIALIZED));
     }
 
     #[test_only]
@@ -707,88 +707,88 @@ module aptos_framework::topo_governance {
 
     #[test_only]
     fun test_resolving_proposal_generic(
-        aptos_framework: signer,
+        topo_framework: signer,
         use_generic_resolve_function: bool,
         execution_hash: vector<u8>,
     ) acquires ApprovedExecutionHashes, GovernanceResponsbility {
         // Once expiration time has passed, the proposal should be considered resolve now as there are more yes votes
         // than no.
         timestamp::update_global_time_for_test(100001000000);
-        let proposal_state = voting::get_proposal_state<GovernanceProposal>(signer::address_of(&aptos_framework), 0);
+        let proposal_state = voting::get_proposal_state<GovernanceProposal>(signer::address_of(&topo_framework), 0);
         assert!(proposal_state == PROPOSAL_STATE_SUCCEEDED, proposal_state);
 
         // Add approved script hash.
         add_approved_script_hash(0);
-        let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
+        let approved_hashes = borrow_global<ApprovedExecutionHashes>(@topo_framework).hashes;
         assert!(*approved_hashes.borrow(&0) == execution_hash, 0);
 
         // Resolve the proposal.
         let account =
             if (use_generic_resolve_function) {
-                resolve_multi_step_proposal(0, @aptos_framework, vector::empty<u8>())
+                resolve_multi_step_proposal(0, @topo_framework, vector::empty<u8>())
             } else {
-                resolve(0, @aptos_framework)
+                resolve(0, @topo_framework)
             };
-        assert!(signer::address_of(&account) == @aptos_framework, 1);
-        assert!(voting::is_resolved<GovernanceProposal>(@aptos_framework, 0), 2);
-        let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
+        assert!(signer::address_of(&account) == @topo_framework, 1);
+        assert!(voting::is_resolved<GovernanceProposal>(@topo_framework, 0), 2);
+        let approved_hashes = borrow_global<ApprovedExecutionHashes>(@topo_framework).hashes;
         assert!(!approved_hashes.contains_key(&0), 3);
     }
 
-    #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    #[test(topo_framework = @topo_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
     public entry fun test_voting(
-        aptos_framework: signer,
+        topo_framework: signer,
         proposer: signer,
         yes_voter: signer,
         no_voter: signer,
     ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceResponsbility, VotingRecords, VotingRecordsV2 {
-        setup_voting_with_initialized_stake(&aptos_framework, &proposer, &yes_voter, &no_voter);
+        setup_voting_with_initialized_stake(&topo_framework, &proposer, &yes_voter, &no_voter);
         let execution_hash = vector[1];
         create_proposal_for_test(&proposer, false);
         vote(&yes_voter, 0, true);
         vote(&no_voter, 0, false);
-        test_resolving_proposal_generic(aptos_framework, false, execution_hash);
+        test_resolving_proposal_generic(topo_framework, false, execution_hash);
     }
 
-    #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    #[test(topo_framework = @topo_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
     public entry fun test_voting_multi_step(
-        aptos_framework: signer,
+        topo_framework: signer,
         proposer: signer,
         yes_voter: signer,
         no_voter: signer,
     ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceResponsbility, VotingRecords, VotingRecordsV2 {
-        setup_voting_with_initialized_stake(&aptos_framework, &proposer, &yes_voter, &no_voter);
+        setup_voting_with_initialized_stake(&topo_framework, &proposer, &yes_voter, &no_voter);
         let execution_hash = vector[1];
         create_proposal_for_test(&proposer, true);
         vote(&yes_voter, 0, true);
         vote(&no_voter, 0, false);
-        test_resolving_proposal_generic(aptos_framework, true, execution_hash);
+        test_resolving_proposal_generic(topo_framework, true, execution_hash);
     }
 
-    #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
-    #[expected_failure(abort_code = 0x5000a, location = aptos_framework::voting)]
+    #[test(topo_framework = @topo_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    #[expected_failure(abort_code = 0x5000a, location = topo_framework::voting)]
     public entry fun test_voting_multi_step_cannot_use_single_step_resolve(
-        aptos_framework: signer,
+        topo_framework: signer,
         proposer: signer,
         yes_voter: signer,
         no_voter: signer,
     ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceResponsbility, VotingRecords, VotingRecordsV2 {
-        setup_voting_with_initialized_stake(&aptos_framework, &proposer, &yes_voter, &no_voter);
+        setup_voting_with_initialized_stake(&topo_framework, &proposer, &yes_voter, &no_voter);
         let execution_hash = vector[1];
         create_proposal_for_test(&proposer, true);
         vote(&yes_voter, 0, true);
         vote(&no_voter, 0, false);
-        test_resolving_proposal_generic(aptos_framework, false, execution_hash);
+        test_resolving_proposal_generic(topo_framework, false, execution_hash);
     }
 
-    #[test(aptos_framework = @aptos_framework, proposer = @0x123, voter_1 = @0x234, voter_2 = @345)]
+    #[test(topo_framework = @topo_framework, proposer = @0x123, voter_1 = @0x234, voter_2 = @345)]
     public entry fun test_stake_pool_can_vote_only_with_its_own_voting_power(
-        aptos_framework: signer,
+        topo_framework: signer,
         proposer: signer,
         voter_1: signer,
         voter_2: signer,
     ) acquires ApprovedExecutionHashes, GovernanceConfig, GovernanceResponsbility, VotingRecords, VotingRecordsV2 {
-        setup_voting_with_initialized_stake(&aptos_framework, &proposer, &voter_1, &voter_2);
+        setup_voting_with_initialized_stake(&topo_framework, &proposer, &voter_1, &voter_2);
         let execution_hash = vector[1];
         let proposer_addr = signer::address_of(&proposer);
         let voter_1_addr = signer::address_of(&voter_1);
@@ -804,50 +804,50 @@ module aptos_framework::topo_governance {
         assert!(get_remaining_voting_power(voter_1_addr, 0) == 0, 1);
         assert!(get_remaining_voting_power(voter_2_addr, 0) == 10, 2);
 
-        test_resolving_proposal_generic(aptos_framework, true, execution_hash);
+        test_resolving_proposal_generic(topo_framework, true, execution_hash);
     }
 
     #[test_only]
     fun setup_voting_with_initialized_stake(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         proposer: &signer,
         yes_voter: &signer,
         no_voter: &signer,
     ) acquires GovernanceResponsbility {
-        use aptos_framework::account;
+        use topo_framework::account;
 
-        timestamp::set_time_has_started_for_testing(aptos_framework);
-        account::create_account_for_test(signer::address_of(aptos_framework));
+        timestamp::set_time_has_started_for_testing(topo_framework);
+        account::create_account_for_test(signer::address_of(topo_framework));
         account::create_account_for_test(signer::address_of(proposer));
         account::create_account_for_test(signer::address_of(yes_voter));
         account::create_account_for_test(signer::address_of(no_voter));
 
         // Initialize the governance.
-        stake::initialize_for_test_custom(aptos_framework, 0, 1000, 2000, true, 0, 1, 1000);
-        initialize(aptos_framework, 10, 100, 1000);
+        stake::initialize_for_test_custom(topo_framework, 0, 1000, 2000, true, 0, 1, 1000);
+        initialize(topo_framework, 10, 100, 1000);
         store_signer_cap(
-            aptos_framework,
-            @aptos_framework,
-            account::create_test_signer_cap(@aptos_framework),
+            topo_framework,
+            @topo_framework,
+            account::create_test_signer_cap(@topo_framework),
         );
 
         let (_sk_1, pk_1, pop_1) = stake::generate_identity();
         let (_sk_2, pk_2, pop_2) = stake::generate_identity();
         let (_sk_3, pk_3, pop_3) = stake::generate_identity();
-        stake::initialize_test_validator(aptos_framework, &pk_1, &pop_1, proposer, 100, true, false);
-        stake::initialize_test_validator(aptos_framework, &pk_2, &pop_2, yes_voter, 20, true, false);
-        stake::initialize_test_validator(aptos_framework, &pk_3, &pop_3, no_voter, 10, true, false);
+        stake::initialize_test_validator(topo_framework, &pk_1, &pop_1, proposer, 100, true, false);
+        stake::initialize_test_validator(topo_framework, &pk_2, &pop_2, yes_voter, 20, true, false);
+        stake::initialize_test_validator(topo_framework, &pk_3, &pop_3, no_voter, 10, true, false);
         stake::end_epoch();
     }
 
-    #[test(aptos_framework = @aptos_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
+    #[test(topo_framework = @topo_framework, proposer = @0x123, yes_voter = @0x234, no_voter = @345)]
     public entry fun test_replace_execution_hash(
-        aptos_framework: signer,
+        topo_framework: signer,
         proposer: signer,
         yes_voter: signer,
         no_voter: signer,
     ) acquires GovernanceResponsbility, GovernanceConfig, ApprovedExecutionHashes, VotingRecords, VotingRecordsV2 {
-        setup_voting_with_initialized_stake(&aptos_framework, &proposer, &yes_voter, &no_voter);
+        setup_voting_with_initialized_stake(&topo_framework, &proposer, &yes_voter, &no_voter);
 
         create_proposal_for_test(&proposer, true);
         vote(&yes_voter, 0, true);
@@ -863,7 +863,7 @@ module aptos_framework::topo_governance {
         execution_hash.push_back(1);
         next_execution_hash.push_back(10);
 
-        voting::resolve_proposal_v2<GovernanceProposal>(@aptos_framework, 0, next_execution_hash);
+        voting::resolve_proposal_v2<GovernanceProposal>(@topo_framework, 0, next_execution_hash);
 
         if (next_execution_hash.length() == 0) {
             remove_approved_hash(0);
@@ -871,19 +871,19 @@ module aptos_framework::topo_governance {
             add_approved_script_hash(0)
         };
 
-        let approved_hashes = borrow_global<ApprovedExecutionHashes>(@aptos_framework).hashes;
+        let approved_hashes = borrow_global<ApprovedExecutionHashes>(@topo_framework).hashes;
         assert!(*approved_hashes.borrow(&0) == vector[10u8, ], 1);
     }
 
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         proposer = @0x123,
         yes_voter = @0x234,
         no_voter = @0x345,
         delegator = @0x456
     )]
     public entry fun test_update_governance_config_raises_cooldown_floor(
-        aptos_framework: signer,
+        topo_framework: signer,
         proposer: signer,
         yes_voter: signer,
         no_voter: signer,
@@ -891,47 +891,47 @@ module aptos_framework::topo_governance {
     ) acquires GovernanceResponsbility, GovernanceConfig {
         let _unused_delegator = delegator;
 
-        setup_voting_with_initialized_stake(&aptos_framework, &proposer, &yes_voter, &no_voter);
+        setup_voting_with_initialized_stake(&topo_framework, &proposer, &yes_voter, &no_voter);
 
-        update_governance_config(&aptos_framework, 10, 100, 5000);
+        update_governance_config(&topo_framework, 10, 100, 5000);
         assert!(staking_registry::get_cooldown_secs() == 5000, 0);
 
-        staking_config::update_recurring_lockup_duration_secs(&aptos_framework, 6000);
-        staking_registry::ensure_min_cooldown_secs(&aptos_framework, 6000);
+        staking_config::update_recurring_lockup_duration_secs(&topo_framework, 6000);
+        staking_registry::ensure_min_cooldown_secs(&topo_framework, 6000);
         assert!(staking_registry::get_cooldown_secs() == 6000, 1);
 
-        update_governance_config(&aptos_framework, 10, 100, 3000);
+        update_governance_config(&topo_framework, 10, 100, 3000);
         assert!(staking_registry::get_cooldown_secs() == 6000, 2);
     }
 
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         proposer = @0x123,
         yes_voter = @0x234,
         no_voter = @0x345,
         delegator = @0x456
     )]
     public entry fun test_create_proposal_uses_live_total_voting_power(
-        aptos_framework: signer,
+        topo_framework: signer,
         proposer: signer,
         yes_voter: signer,
         no_voter: signer,
         delegator: signer,
     ) acquires GovernanceResponsbility, GovernanceConfig {
-        setup_voting_with_initialized_stake(&aptos_framework, &proposer, &yes_voter, &no_voter);
+        setup_voting_with_initialized_stake(&topo_framework, &proposer, &yes_voter, &no_voter);
 
         let proposer_address = signer::address_of(&proposer);
         let delegator_address = signer::address_of(&delegator);
-        aptos_framework::account::create_account_for_test(delegator_address);
-        let target_period = aptos_framework::poc_power_store::get_current_period() + 1;
-        aptos_framework::poc_power_store::stage_batch_update(
-            &aptos_framework,
+        topo_framework::account::create_account_for_test(delegator_address);
+        let target_period = topo_framework::poc_power_store::get_current_period() + 1;
+        topo_framework::poc_power_store::stage_batch_update(
+            &topo_framework,
             target_period,
             vector[delegator_address],
             vector[40u64],
         );
         stake::mint_and_add_stake(&delegator, 40);
-        while (aptos_framework::poc_power_store::get_current_period() < target_period) {
+        while (topo_framework::poc_power_store::get_current_period() < target_period) {
             stake::end_epoch();
         };
         staking_registry::delegate(&delegator, proposer_address);
@@ -940,21 +940,21 @@ module aptos_framework::topo_governance {
         let live_total = stake::get_current_epoch_governance_voting_power();
         assert!(live_total > stale_total, 0);
 
-        update_governance_config(&aptos_framework, 10, 1, 1000);
+        update_governance_config(&topo_framework, 10, 1, 1000);
         create_proposal_for_test(&proposer, true);
         let threshold =
-            voting::get_early_resolution_vote_threshold<GovernanceProposal>(@aptos_framework, 0);
+            voting::get_early_resolution_vote_threshold<GovernanceProposal>(@topo_framework, 0);
         assert!(threshold.is_some(), 1);
         assert!(*threshold.borrow() == (live_total as u128) / 2 + 1, 2);
     }
 
     #[verify_only]
     public fun initialize_for_verification(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         min_voting_threshold: u128,
         required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
-        initialize(aptos_framework, min_voting_threshold, required_proposer_stake, voting_duration_secs);
+        initialize(topo_framework, min_voting_threshold, required_proposer_stake, voting_duration_secs);
     }
 }

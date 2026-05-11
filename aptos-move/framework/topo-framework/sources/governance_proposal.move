@@ -1,8 +1,8 @@
 /// Define the GovernanceProposal that will be used as part of on-chain governance by TopoGovernance.
 ///
 /// This is separate from the TopoGovernance module to avoid circular dependency between TopoGovernance and Stake.
-module aptos_framework::governance_proposal {
-    friend aptos_framework::topo_governance;
+module topo_framework::governance_proposal {
+    friend topo_framework::topo_governance;
 
     struct GovernanceProposal has store, drop {}
 

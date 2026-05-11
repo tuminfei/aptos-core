@@ -1,12 +1,12 @@
-module aptos_framework::common_account_abstractions_utils {
-    use aptos_framework::auth_data::AbstractionAuthData;
+module topo_framework::common_account_abstractions_utils {
+    use topo_framework::auth_data::AbstractionAuthData;
     use std::chain_id;
     use std::string_utils;
     use std::transaction_context::{Self, EntryFunctionPayload};
 
-    friend aptos_framework::ethereum_derivable_account;
-    friend aptos_framework::solana_derivable_account;
-    friend aptos_framework::sui_derivable_account;
+    friend topo_framework::ethereum_derivable_account;
+    friend topo_framework::solana_derivable_account;
+    friend topo_framework::sui_derivable_account;
 
     /// Entry function payload is missing.
     const EMISSING_ENTRY_FUNCTION_PAYLOAD: u64 = 1;

@@ -112,10 +112,10 @@ module mint_nft::create_nft_with_resource_and_admin_accounts {
     use std::signer;
     use std::string::String;
     use aptos_token::token::TokenDataId;
-    use aptos_framework::account::SignerCapability;
-    use aptos_framework::resource_account;
-    use aptos_framework::account;
-    use aptos_framework::timestamp;
+    use topo_framework::account::SignerCapability;
+    use topo_framework::resource_account;
+    use topo_framework::account;
+    use topo_framework::timestamp;
 
     // This struct stores an NFT collection's relevant information
     struct ModuleData has key {

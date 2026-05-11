@@ -47,9 +47,9 @@ module aptos_experimental::large_packages {
     use std::signer;
     use aptos_std::smart_table::{Self, SmartTable};
 
-    use aptos_framework::code::{Self, PackageRegistry};
-    use aptos_framework::object::{Object};
-    use aptos_framework::object_code_deployment;
+    use topo_framework::code::{Self, PackageRegistry};
+    use topo_framework::object::{Object};
+    use topo_framework::object_code_deployment;
 
     /// code_indices and code_chunks should be the same length.
     const ECODE_MISMATCH: u64 = 1;

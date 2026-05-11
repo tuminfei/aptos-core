@@ -6,7 +6,7 @@
 Provides a common place for exporting <code><a href="create_signer.md#0x1_create_signer">create_signer</a></code> across the Aptos Framework.
 
 To use create_signer, add the module below, such that:
-<code><b>friend</b> aptos_framework::friend_wants_create_signer</code>
+<code><b>friend</b> topo_framework::friend_wants_create_signer</code>
 where <code>friend_wants_create_signer</code> is the module that needs <code><a href="create_signer.md#0x1_create_signer">create_signer</a></code>.
 
 Note, that this is only available within the Aptos Framework.

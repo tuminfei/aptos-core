@@ -1,4 +1,4 @@
-spec aptos_framework::transaction_validation {
+spec topo_framework::transaction_validation {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: The sender of a transaction should have sufficient coin balance to pay the transaction fee.
@@ -40,17 +40,17 @@ spec aptos_framework::transaction_validation {
         pragma aborts_if_is_partial;
     }
 
-    /// Ensure caller is `aptos_framework`.
+    /// Ensure caller is `topo_framework`.
     /// Aborts if TransactionValidation already exists.
     spec initialize(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         script_prologue_name: vector<u8>,
         module_prologue_name: vector<u8>,
         multi_agent_prologue_name: vector<u8>,
         user_epilogue_name: vector<u8>,
     ) {
         use std::signer;
-        let addr = signer::address_of(aptos_framework);
+        let addr = signer::address_of(topo_framework);
         aborts_if !system_addresses::is_aptos_framework_address(addr);
         aborts_if exists<TransactionValidation>(addr);
 
@@ -60,8 +60,8 @@ spec aptos_framework::transaction_validation {
     /// Create a schema to reuse some code.
     /// Give some constraints that may abort according to the conditions.
     spec schema PrologueCommonAbortsIf {
-        use aptos_framework::timestamp::{CurrentTimeMicroseconds};
-        use aptos_framework::chain_id::{ChainId};
+        use topo_framework::timestamp::{CurrentTimeMicroseconds};
+        use topo_framework::chain_id::{ChainId};
         sender: &signer;
         gas_payer: &signer;
         replay_protector: ReplayProtector;
@@ -71,10 +71,10 @@ spec aptos_framework::transaction_validation {
         txn_expiration_time: u64;
         chain_id: u8;
 
-        aborts_if !exists<CurrentTimeMicroseconds>(@aptos_framework);
+        aborts_if !exists<CurrentTimeMicroseconds>(@topo_framework);
         aborts_if !(timestamp::now_seconds() < txn_expiration_time);
 
-        aborts_if !exists<ChainId>(@aptos_framework);
+        aborts_if !exists<ChainId>(@topo_framework);
         aborts_if !(chain_id::get() == chain_id);
         let transaction_sender = signer::address_of(sender);
         let gas_payer_addr = signer::address_of(gas_payer);
@@ -446,12 +446,12 @@ spec aptos_framework::transaction_validation {
     spec schema EpilogueGasPayerAbortsIf {
         use std::option;
         use aptos_std::type_info;
-        use aptos_framework::account::{Account};
-        use aptos_framework::topo_coin::{TopoCoin};
-        use aptos_framework::coin;
-        use aptos_framework::coin::{CoinStore, CoinInfo};
-        use aptos_framework::optional_aggregator;
-        use aptos_framework::transaction_fee::{TopoCoinCapabilities, TopoCoinMintCapability};
+        use topo_framework::account::{Account};
+        use topo_framework::topo_coin::{TopoCoin};
+        use topo_framework::coin;
+        use topo_framework::coin::{CoinStore, CoinInfo};
+        use topo_framework::optional_aggregator;
+        use topo_framework::transaction_fee::{TopoCoinCapabilities, TopoCoinMintCapability};
 
         account: signer;
         gas_payer: address;
@@ -493,7 +493,7 @@ spec aptos_framework::transaction_validation {
         let post post_topo_supply = option::borrow(post_maybe_topo_supply);
         let post post_topo_supply_value = optional_aggregator::optional_aggregator_value(post_topo_supply);
 
-        aborts_if amount_to_burn > 0 && !exists<TopoCoinCapabilities>(@aptos_framework);
+        aborts_if amount_to_burn > 0 && !exists<TopoCoinCapabilities>(@topo_framework);
         aborts_if amount_to_burn > 0 && !exists<CoinInfo<TopoCoin>>(topo_addr);
         aborts_if amount_to_burn > 0 && total_supply_enabled && topo_supply_value < amount_to_burn;
         ensures total_supply_enabled ==> topo_supply_value - amount_to_burn == post_topo_supply_value;
@@ -504,7 +504,7 @@ spec aptos_framework::transaction_validation {
         let post post_total_supply = coin::supply<TopoCoin>;
 
         aborts_if amount_to_mint > 0 && !exists<CoinStore<TopoCoin>>(addr);
-        aborts_if amount_to_mint > 0 && !exists<TopoCoinMintCapability>(@aptos_framework);
+        aborts_if amount_to_mint > 0 && !exists<TopoCoinMintCapability>(@topo_framework);
         aborts_if amount_to_mint > 0 && total_supply + amount_to_mint > MAX_U128;
         ensures amount_to_mint > 0 ==> post_total_supply == total_supply + amount_to_mint;
 

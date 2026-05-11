@@ -22,9 +22,9 @@ module aptos_experimental::veiled_coin_tests {
     use aptos_std::ristretto255_pedersen as pedersen;
 
     #[test_only]
-    use aptos_framework::account;
+    use topo_framework::account;
     #[test_only]
-    use aptos_framework::coin;
+    use topo_framework::coin;
 
     #[test_only]
     use aptos_experimental::veiled_coin;
@@ -83,7 +83,7 @@ module aptos_experimental::veiled_coin_tests {
             &aptos_fx,
             veiled_coin::cast_u32_to_u64_amount(sender_amount + recipient_amount)
         );
-        println(b"Created fake money inside @aptos_framework");
+        println(b"Created fake money inside @topo_framework");
 
         // Transfer some coins from the framework to the sender
         coin::transfer<coin::FakeMoney>(
@@ -141,7 +141,7 @@ module aptos_experimental::veiled_coin_tests {
     #[
         test(
             veiled_coin = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             sender = @0xc0ffee,
             recipient = @0x1337
         )
@@ -155,8 +155,8 @@ module aptos_experimental::veiled_coin_tests {
         println(b"Starting veil_test()...");
         println(b"@veiled_coin:");
         print(&@aptos_experimental);
-        println(b"@aptos_framework:");
-        print(&@aptos_framework);
+        println(b"@topo_framework:");
+        print(&@topo_framework);
 
         // Split 500 and 500 between `sender` and `recipient`
         set_up_for_veiled_coin_test(
@@ -270,7 +270,7 @@ module aptos_experimental::veiled_coin_tests {
     }
 
     #[test(
-        veiled_coin = @aptos_experimental, aptos_fx = @aptos_framework, sender = @0x1337
+        veiled_coin = @aptos_experimental, aptos_fx = @topo_framework, sender = @0x1337
     )]
     fun unveil_test(
         veiled_coin: signer, aptos_fx: signer, sender: signer
@@ -278,8 +278,8 @@ module aptos_experimental::veiled_coin_tests {
         println(b"Starting unveil_test()...");
         println(b"@veiled_coin:");
         print(&@aptos_experimental);
-        println(b"@aptos_framework:");
-        print(&@aptos_framework);
+        println(b"@topo_framework:");
+        print(&@topo_framework);
 
         // Create a `sender` account with 500 `FakeCoin`'s
         set_up_for_veiled_coin_test(&veiled_coin, aptos_fx, &sender, &sender, 500, 0);
@@ -380,7 +380,7 @@ module aptos_experimental::veiled_coin_tests {
     #[
         test(
             veiled_coin = @aptos_experimental,
-            aptos_fx = @aptos_framework,
+            aptos_fx = @topo_framework,
             sender = @0xc0ffee,
             recipient = @0x1337
         )

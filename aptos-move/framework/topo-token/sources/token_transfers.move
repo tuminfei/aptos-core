@@ -5,8 +5,8 @@ module topo_token::token_transfers {
     use std::error;
     use aptos_std::table::{Self, Table};
     use topo_token::token::{Self, Token, TokenId};
-    use aptos_framework::account;
-    use aptos_framework::event::{Self, EventHandle};
+    use topo_framework::account;
+    use topo_framework::event::{Self, EventHandle};
 
     //
     // Errors.
@@ -216,7 +216,7 @@ module topo_token::token_transfers {
 
         let creator_addr = signer::address_of(&creator);
         let owner_addr = signer::address_of(&owner);
-        aptos_framework::account::create_account_for_test(owner_addr);
+        topo_framework::account::create_account_for_test(owner_addr);
         offer(&creator, owner_addr, token_id, 1);
         claim(&owner, creator_addr, token_id);
 
@@ -235,9 +235,9 @@ module topo_token::token_transfers {
 
         let creator_addr = signer::address_of(&creator);
         let owner0_addr = signer::address_of(&owner0);
-        aptos_framework::account::create_account_for_test(owner0_addr);
+        topo_framework::account::create_account_for_test(owner0_addr);
         let owner1_addr = signer::address_of(&owner1);
-        aptos_framework::account::create_account_for_test(owner1_addr);
+        topo_framework::account::create_account_for_test(owner1_addr);
 
         offer(&creator, owner0_addr, token_id, 1);
         offer(&creator, owner1_addr, token_id, 1);
@@ -262,7 +262,7 @@ module topo_token::token_transfers {
 
         let collection_name = string::utf8(b"Hello, World");
         let collection_mutation_setting = vector<bool>[false, false, false];
-        aptos_framework::account::create_account_for_test(signer::address_of(creator));
+        topo_framework::account::create_account_for_test(signer::address_of(creator));
 
         token::create_collection(
             creator,

@@ -9,7 +9,7 @@
 ///   This is typically done by implementing `C::set()` to update the config resource directly.
 ///
 /// NOTE: on-chain config `0x1::state::ValidatorSet` implemented its own buffer.
-module aptos_framework::config_buffer {
+module topo_framework::config_buffer {
     use std::error;
     use std::string::String;
     use aptos_std::any;
@@ -17,20 +17,20 @@ module aptos_framework::config_buffer {
     use aptos_std::simple_map;
     use aptos_std::simple_map::SimpleMap;
     use aptos_std::type_info;
-    use aptos_framework::system_addresses;
+    use topo_framework::system_addresses;
 
-    friend aptos_framework::chunky_dkg_config;
-    friend aptos_framework::consensus_config;
-    friend aptos_framework::decryption;
-    friend aptos_framework::execution_config;
-    friend aptos_framework::gas_schedule;
-    friend aptos_framework::jwks;
-    friend aptos_framework::jwk_consensus_config;
-    friend aptos_framework::keyless_account;
-    friend aptos_framework::randomness_api_v0_config;
-    friend aptos_framework::randomness_config;
-    friend aptos_framework::randomness_config_seqnum;
-    friend aptos_framework::version;
+    friend topo_framework::chunky_dkg_config;
+    friend topo_framework::consensus_config;
+    friend topo_framework::decryption;
+    friend topo_framework::execution_config;
+    friend topo_framework::gas_schedule;
+    friend topo_framework::jwks;
+    friend topo_framework::jwk_consensus_config;
+    friend topo_framework::keyless_account;
+    friend topo_framework::randomness_api_v0_config;
+    friend topo_framework::randomness_config;
+    friend topo_framework::randomness_config_seqnum;
+    friend topo_framework::version;
 
     /// Config buffer operations failed with permission denied.
     const ESTD_SIGNER_NEEDED: u64 = 1;
@@ -42,10 +42,10 @@ module aptos_framework::config_buffer {
         configs: SimpleMap<String, Any>,
     }
 
-    public fun initialize(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        if (!exists<PendingConfigs>(@aptos_framework)) {
-            move_to(aptos_framework, PendingConfigs {
+    public fun initialize(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        if (!exists<PendingConfigs>(@topo_framework)) {
+            move_to(topo_framework, PendingConfigs {
                 configs: simple_map::new(),
             })
         }
@@ -53,8 +53,8 @@ module aptos_framework::config_buffer {
 
     /// Check whether there is a pending config payload for `T`.
     public fun does_exist<T: store>(): bool acquires PendingConfigs {
-        if (exists<PendingConfigs>(@aptos_framework)) {
-            let config = borrow_global<PendingConfigs>(@aptos_framework);
+        if (exists<PendingConfigs>(@topo_framework)) {
+            let config = borrow_global<PendingConfigs>(@topo_framework);
             config.configs.contains_key(&type_info::type_name<T>())
         } else {
             false
@@ -65,7 +65,7 @@ module aptos_framework::config_buffer {
     ///
     /// Typically used in `X::set_for_next_epoch()` where X is an on-chain config.
     public(friend) fun upsert<T: drop + store>(config: T) acquires PendingConfigs {
-        let configs = borrow_global_mut<PendingConfigs>(@aptos_framework);
+        let configs = borrow_global_mut<PendingConfigs>(@topo_framework);
         let key = type_info::type_name<T>();
         let value = any::pack(config);
         configs.configs.upsert(key, value);
@@ -82,7 +82,7 @@ module aptos_framework::config_buffer {
     ///
     /// Typically used in `X::on_new_epoch()` where X is an on-chaon config.
     public(friend) fun extract_v2<T: store>(): T acquires PendingConfigs {
-        let configs = borrow_global_mut<PendingConfigs>(@aptos_framework);
+        let configs = borrow_global_mut<PendingConfigs>(@topo_framework);
         let key = type_info::type_name<T>();
         let (_, value_packed) = configs.configs.remove(&key);
         value_packed.unpack()

@@ -1,4 +1,4 @@
-module aptos_framework::account_abstraction {
+module topo_framework::account_abstraction {
     use std::bcs;
     use std::hash;
     use aptos_std::from_bcs;
@@ -9,22 +9,22 @@ module aptos_framework::account_abstraction {
     use std::string::{Self, String};
     use aptos_std::ordered_map::{Self, OrderedMap};
     use aptos_std::big_ordered_map::{Self, BigOrderedMap};
-    use aptos_framework::create_signer;
-    use aptos_framework::event;
-    use aptos_framework::features;
-    use aptos_framework::function_info::{Self, FunctionInfo};
-    use aptos_framework::object;
-    use aptos_framework::auth_data::AbstractionAuthData;
-    use aptos_framework::system_addresses;
-    use aptos_framework::permissioned_signer::is_permissioned_signer;
+    use topo_framework::create_signer;
+    use topo_framework::event;
+    use topo_framework::features;
+    use topo_framework::function_info::{Self, FunctionInfo};
+    use topo_framework::object;
+    use topo_framework::auth_data::AbstractionAuthData;
+    use topo_framework::system_addresses;
+    use topo_framework::permissioned_signer::is_permissioned_signer;
     #[test_only]
-    use aptos_framework::account::create_account_for_test;
+    use topo_framework::account::create_account_for_test;
     #[test_only]
-    use aptos_framework::auth_data;
+    use topo_framework::auth_data;
 
-    friend aptos_framework::transaction_validation;
+    friend topo_framework::transaction_validation;
     #[test_only]
-    friend aptos_framework::account_abstraction_tests;
+    friend topo_framework::account_abstraction_tests;
 
     const EDISPATCHABLE_AUTHENTICATOR_IS_NOT_USED: u64 = 1;
     const EFUNCTION_INFO_EXISTENCE: u64 = 2;
@@ -55,7 +55,7 @@ module aptos_framework::account_abstraction {
         account: address,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// The dispatchable authenticator that defines how to authenticates this account in the specified module.
     /// An integral part of Account Abstraction.
     enum DispatchableAuthenticator has key, copy, drop {
@@ -178,24 +178,24 @@ module aptos_framework::account_abstraction {
     /// Note: This is  public entry function, as it requires framework signer, and that can
     /// only be obtained as a part of the governance script.
     public entry fun register_derivable_authentication_function(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         module_address: address,
         module_name: String,
         function_name: String,
     ) acquires DerivableDispatchableAuthenticator {
         assert!(features::is_derivable_account_abstraction_enabled(), error::invalid_state(EDERIVABLE_ACCOUNT_ABSTRACTION_NOT_ENABLED));
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
 
-        DerivableDispatchableAuthenticator[@aptos_framework].auth_functions.add(
+        DerivableDispatchableAuthenticator[@topo_framework].auth_functions.add(
             function_info::new_function_info_from_address(module_address, module_name, function_name),
             DerivableRegisterValue::Empty,
         );
     }
 
-    public entry fun initialize(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public entry fun initialize(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
         move_to(
-            aptos_framework,
+            topo_framework,
             DerivableDispatchableAuthenticator::V1 { auth_functions: big_ordered_map::new_with_config(0, 0, false) }
         );
     }
@@ -212,7 +212,7 @@ module aptos_framework::account_abstraction {
         let addr = signer::address_of(account);
         let resource_addr = resource_addr(addr);
         let dispatcher_auth_function_info = function_info::new_function_info_from_address(
-            @aptos_framework,
+            @topo_framework,
             string::utf8(b"account_abstraction"),
             string::utf8(b"dispatchable_authenticate"),
         );
@@ -267,8 +267,8 @@ module aptos_framework::account_abstraction {
     }
 
     inline fun dispatchable_derivable_authenticator_internal(): &BigOrderedMap<FunctionInfo, DerivableRegisterValue> {
-        assert!(exists<DerivableDispatchableAuthenticator>(@aptos_framework), error::not_found(EDERIVABLE_AA_NOT_INITIALIZED));
-        &DerivableDispatchableAuthenticator[@aptos_framework].auth_functions
+        assert!(exists<DerivableDispatchableAuthenticator>(@topo_framework), error::not_found(EDERIVABLE_AA_NOT_INITIALIZED));
+        &DerivableDispatchableAuthenticator[@topo_framework].auth_functions
    }
 
     fun authenticate(
@@ -317,7 +317,7 @@ module aptos_framework::account_abstraction {
         assert!(!using_dispatchable_authenticator(bob_addr));
         add_authentication_function(
             bob,
-            @aptos_framework,
+            @topo_framework,
             string::utf8(b"account_abstraction_tests"),
             string::utf8(b"test_auth")
         );
@@ -336,12 +336,12 @@ module aptos_framework::account_abstraction {
         assert!(!using_dispatchable_authenticator(bob_addr), 0);
         add_authentication_function(
             &bob,
-            @aptos_framework,
+            @topo_framework,
             string::utf8(b"account_abstraction_tests"),
             string::utf8(b"invalid_authenticate")
         );
         let function_info = function_info::new_function_info_from_address(
-            @aptos_framework,
+            @topo_framework,
             string::utf8(b"account_abstraction_tests"),
             string::utf8(b"invalid_authenticate")
         );

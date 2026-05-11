@@ -1,6 +1,6 @@
 /// This engine module dispatches calls.
 module dispatching::engine {
-    use aptos_framework::dispatchable_fungible_asset;
+    use topo_framework::dispatchable_fungible_asset;
     use dispatching::storage;
 
     /// The dispatch call knows both storage and indirectly the callback, thus the separate module.

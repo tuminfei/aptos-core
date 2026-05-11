@@ -450,7 +450,7 @@ Removing permissions from permissioned signer.
 Only called during genesis to initialize system resources for this module.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, script_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, module_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, multi_agent_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, user_epilogue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, script_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, module_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, multi_agent_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, user_epilogue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -460,17 +460,17 @@ Only called during genesis to initialize system resources for this module.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_initialize">initialize</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     script_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     // module_prologue_name is deprecated and not used.
     module_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     multi_agent_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     user_epilogue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
 ) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
-    <b>move_to</b>(aptos_framework, <a href="transaction_validation.md#0x1_transaction_validation_TransactionValidation">TransactionValidation</a> {
-        module_addr: @aptos_framework,
+    <b>move_to</b>(topo_framework, <a href="transaction_validation.md#0x1_transaction_validation_TransactionValidation">TransactionValidation</a> {
+        module_addr: @topo_framework,
         module_name: b"<a href="transaction_validation.md#0x1_transaction_validation">transaction_validation</a>",
         script_prologue_name,
         // module_prologue_name is deprecated and not used.
@@ -1741,15 +1741,15 @@ If there is no fee_payer, fee_payer = sender
 ### Function `initialize`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, script_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, module_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, multi_agent_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, user_epilogue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, script_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, module_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, multi_agent_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, user_epilogue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
-Ensure caller is <code>aptos_framework</code>.
+Ensure caller is <code>topo_framework</code>.
 Aborts if TransactionValidation already exists.
 
 
-<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(aptos_framework);
+<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(addr);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="transaction_validation.md#0x1_transaction_validation_TransactionValidation">TransactionValidation</a>&gt;(addr);
 <b>ensures</b> <b>exists</b>&lt;<a href="transaction_validation.md#0x1_transaction_validation_TransactionValidation">TransactionValidation</a>&gt;(addr);
@@ -1772,9 +1772,9 @@ Give some constraints that may abort according to the conditions.
     txn_max_gas_units: u64;
     txn_expiration_time: u64;
     <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8;
-    <b>aborts_if</b> !<b>exists</b>&lt;CurrentTimeMicroseconds&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;CurrentTimeMicroseconds&gt;(@topo_framework);
     <b>aborts_if</b> !(<a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() &lt; txn_expiration_time);
-    <b>aborts_if</b> !<b>exists</b>&lt;ChainId&gt;(@aptos_framework);
+    <b>aborts_if</b> !<b>exists</b>&lt;ChainId&gt;(@topo_framework);
     <b>aborts_if</b> !(<a href="chain_id.md#0x1_chain_id_get">chain_id::get</a>() == <a href="chain_id.md#0x1_chain_id">chain_id</a>);
     <b>let</b> transaction_sender = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(sender);
     <b>let</b> gas_payer_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(gas_payer);
@@ -2206,7 +2206,7 @@ Skip transaction_fee::burn_fee verification.
     <b>let</b> <b>post</b> post_maybe_topo_supply = <b>global</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(topo_addr).supply;
     <b>let</b> <b>post</b> post_topo_supply = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(post_maybe_topo_supply);
     <b>let</b> <b>post</b> post_topo_supply_value = <a href="optional_aggregator.md#0x1_optional_aggregator_optional_aggregator_value">optional_aggregator::optional_aggregator_value</a>(post_topo_supply);
-    <b>aborts_if</b> amount_to_burn &gt; 0 && !<b>exists</b>&lt;TopoCoinCapabilities&gt;(@aptos_framework);
+    <b>aborts_if</b> amount_to_burn &gt; 0 && !<b>exists</b>&lt;TopoCoinCapabilities&gt;(@topo_framework);
     <b>aborts_if</b> amount_to_burn &gt; 0 && !<b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(topo_addr);
     <b>aborts_if</b> amount_to_burn &gt; 0 && total_supply_enabled && topo_supply_value &lt; amount_to_burn;
     <b>ensures</b> total_supply_enabled ==&gt; topo_supply_value - amount_to_burn == post_topo_supply_value;
@@ -2214,7 +2214,7 @@ Skip transaction_fee::burn_fee verification.
     <b>let</b> total_supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;TopoCoin&gt;;
     <b>let</b> <b>post</b> post_total_supply = <a href="coin.md#0x1_coin_supply">coin::supply</a>&lt;TopoCoin&gt;;
     <b>aborts_if</b> amount_to_mint &gt; 0 && !<b>exists</b>&lt;CoinStore&lt;TopoCoin&gt;&gt;(addr);
-    <b>aborts_if</b> amount_to_mint &gt; 0 && !<b>exists</b>&lt;TopoCoinMintCapability&gt;(@aptos_framework);
+    <b>aborts_if</b> amount_to_mint &gt; 0 && !<b>exists</b>&lt;TopoCoinMintCapability&gt;(@topo_framework);
     <b>aborts_if</b> amount_to_mint &gt; 0 && total_supply + amount_to_mint &gt; MAX_U128;
     <b>ensures</b> amount_to_mint &gt; 0 ==&gt; post_total_supply == total_supply + amount_to_mint;
     <b>let</b> aptos_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;().account_address;

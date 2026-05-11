@@ -94,8 +94,8 @@ TODO: update all the tests that reference this function, then disable this funct
 
     <b>assert</b>!(config.length() &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="execution_config.md#0x1_execution_config_EINVALID_CONFIG">EINVALID_CONFIG</a>));
 
-    <b>if</b> (<b>exists</b>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;(@aptos_framework)) {
-        <b>let</b> config_ref = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;(@aptos_framework).config;
+    <b>if</b> (<b>exists</b>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;(@topo_framework)) {
+        <b>let</b> config_ref = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;(@topo_framework).config;
         *config_ref = config;
     } <b>else</b> {
         <b>move_to</b>(<a href="account.md#0x1_account">account</a>, <a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a> { config });
@@ -116,8 +116,8 @@ TODO: update all the tests that reference this function, then disable this funct
 This can be called by on-chain governance to update on-chain execution configs for the next epoch.
 Example usage:
 ```
-aptos_framework::execution_config::set_for_next_epoch(&framework_signer, some_config_bytes);
-aptos_framework::topo_governance::reconfigure(&framework_signer);
+topo_framework::execution_config::set_for_next_epoch(&framework_signer, some_config_bytes);
+topo_framework::topo_governance::reconfigure(&framework_signer);
 ```
 
 
@@ -161,8 +161,8 @@ Only used in reconfigurations to apply the pending <code><a href="execution_conf
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
     <b>if</b> (<a href="config_buffer.md#0x1_config_buffer_does_exist">config_buffer::does_exist</a>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;()) {
         <b>let</b> config = <a href="config_buffer.md#0x1_config_buffer_extract_v2">config_buffer::extract_v2</a>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;();
-        <b>if</b> (<b>exists</b>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;(@aptos_framework)) {
-            *<b>borrow_global_mut</b>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;(@aptos_framework) = config;
+        <b>if</b> (<b>exists</b>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;(@topo_framework)) {
+            *<b>borrow_global_mut</b>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;(@topo_framework) = config;
         } <b>else</b> {
             <b>move_to</b>(framework, config);
         };
@@ -202,13 +202,13 @@ When setting now time must be later than last_reconfiguration_time.
 <pre><code><b>pragma</b> verify_duration_estimate = 600;
 <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
 <b>requires</b> <a href="chain_status.md#0x1_chain_status_is_genesis">chain_status::is_genesis</a>();
-<b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@aptos_framework);
+<b>requires</b> <b>exists</b>&lt;<a href="staking_config.md#0x1_staking_config_StakingRewardsConfig">staking_config::StakingRewardsConfig</a>&gt;(@topo_framework);
 <b>requires</b> len(config) &gt; 0;
 <b>include</b> <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_periodical_reward_rate_decrease_enabled">features::spec_periodical_reward_rate_decrease_enabled</a>() ==&gt; <a href="staking_config.md#0x1_staking_config_StakingRewardsConfigEnabledRequirement">staking_config::StakingRewardsConfigEnabledRequirement</a>;
 <b>include</b> <a href="topo_coin.md#0x1_topo_coin_ExistsTopoCoin">topo_coin::ExistsTopoCoin</a>;
 <b>requires</b> <a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(addr);
 <b>requires</b> <a href="timestamp.md#0x1_timestamp_spec_now_microseconds">timestamp::spec_now_microseconds</a>() &gt;= <a href="reconfiguration.md#0x1_reconfiguration_last_reconfiguration_time">reconfiguration::last_reconfiguration_time</a>();
-<b>ensures</b> <b>exists</b>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;(@aptos_framework);
+<b>ensures</b> <b>exists</b>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;(@topo_framework);
 </code></pre>
 
 
@@ -240,7 +240,7 @@ When setting now time must be later than last_reconfiguration_time.
 
 
 
-<pre><code><b>requires</b> @aptos_framework == std::signer::address_of(framework);
+<pre><code><b>requires</b> @topo_framework == std::signer::address_of(framework);
 <b>include</b> <a href="config_buffer.md#0x1_config_buffer_OnNewEpochRequirement">config_buffer::OnNewEpochRequirement</a>&lt;<a href="execution_config.md#0x1_execution_config_ExecutionConfig">ExecutionConfig</a>&gt;;
 <b>aborts_if</b> <b>false</b>;
 </code></pre>

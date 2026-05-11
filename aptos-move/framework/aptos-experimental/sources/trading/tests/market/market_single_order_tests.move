@@ -5,7 +5,7 @@ module aptos_experimental::market_single_order_tests {
     use std::signer;
     use std::string::String;
     use std::vector;
-    use aptos_framework::timestamp;
+    use topo_framework::timestamp;
     use aptos_trading::order_book_types::{
         OrderId,
         price_move_up_condition,
@@ -430,7 +430,7 @@ module aptos_experimental::market_single_order_tests {
 
     #[
         test(
-            aptos_framework = @0x1,
+            topo_framework = @0x1,
             admin = @0x1,
             market_signer = @0x123,
             maker1 = @0x456,
@@ -438,14 +438,14 @@ module aptos_experimental::market_single_order_tests {
         )
     ]
     public fun test_self_matching_allowed(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         admin: &signer,
         market_signer: &signer,
         maker1: &signer,
         maker2: &signer
     ) {
         test_self_matching_allowed_helper(
-            aptos_framework,
+            topo_framework,
             admin,
             market_signer,
             maker1,
@@ -528,15 +528,15 @@ module aptos_experimental::market_single_order_tests {
     }
 
     #[test(
-        aptos_framework = @0x1, admin = @0x1, market_signer = @0x123, maker1 = @0x456
+        topo_framework = @0x1, admin = @0x1, market_signer = @0x123, maker1 = @0x456
     )]
     public fun test_duplicate_client_order_id_not_allowed(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         admin: &signer,
         market_signer: &signer,
         maker1: &signer
     ) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+        timestamp::set_time_has_started_for_testing(topo_framework);
         let market = setup_market(admin, market_signer);
         let event_store = event_utils::new_event_store();
 
@@ -575,15 +575,15 @@ module aptos_experimental::market_single_order_tests {
     }
 
     #[test(
-        aptos_framework = @0x1, admin = @0x1, market_signer = @0x123, maker1 = @0x456
+        topo_framework = @0x1, admin = @0x1, market_signer = @0x123, maker1 = @0x456
     )]
     public fun test_metadata_update(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         admin: &signer,
         market_signer: &signer,
         maker1: &signer
     ) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+        timestamp::set_time_has_started_for_testing(topo_framework);
         let market = setup_market(admin, market_signer);
         let event_store = event_utils::new_event_store();
 

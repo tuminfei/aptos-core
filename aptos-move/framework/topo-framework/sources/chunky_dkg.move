@@ -1,15 +1,15 @@
 /// Chunky DKG on-chain states and helper functions.
-module aptos_framework::chunky_dkg {
+module topo_framework::chunky_dkg {
     use std::error;
     use std::option;
     use std::option::Option;
-    use aptos_framework::event::emit;
-    use aptos_framework::chunky_dkg_config::ChunkyDKGConfig;
-    use aptos_framework::system_addresses;
-    use aptos_framework::timestamp;
-    use aptos_framework::validator_consensus_info::ValidatorConsensusInfo;
-    friend aptos_framework::block;
-    friend aptos_framework::reconfiguration_with_dkg;
+    use topo_framework::event::emit;
+    use topo_framework::chunky_dkg_config::ChunkyDKGConfig;
+    use topo_framework::system_addresses;
+    use topo_framework::timestamp;
+    use topo_framework::validator_consensus_info::ValidatorConsensusInfo;
+    friend topo_framework::block;
+    friend topo_framework::reconfiguration_with_dkg;
 
     const ECHUNKY_DKG_IN_PROGRESS: u64 = 1;
     const ECHUNKY_DKG_NOT_IN_PROGRESS: u64 = 2;
@@ -43,11 +43,11 @@ module aptos_framework::chunky_dkg {
     }
 
     /// Called in genesis to initialize on-chain states.
-    public fun initialize(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        if (!exists<ChunkyDKGState>(@aptos_framework)) {
+    public fun initialize(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        if (!exists<ChunkyDKGState>(@topo_framework)) {
             move_to<ChunkyDKGState>(
-                aptos_framework,
+                topo_framework,
                 ChunkyDKGState {
                     last_completed: std::option::none(),
                     in_progress: std::option::none()
@@ -63,7 +63,7 @@ module aptos_framework::chunky_dkg {
         dealer_validator_set: vector<ValidatorConsensusInfo>,
         target_validator_set: vector<ValidatorConsensusInfo>
     ) acquires ChunkyDKGState {
-        let chunky_dkg_state = borrow_global_mut<ChunkyDKGState>(@aptos_framework);
+        let chunky_dkg_state = borrow_global_mut<ChunkyDKGState>(@topo_framework);
         let new_session_metadata = ChunkyDKGSessionMetadata {
             dealer_epoch,
             chunky_dkg_config,
@@ -88,7 +88,7 @@ module aptos_framework::chunky_dkg {
     ///
     /// Abort if Chunky DKG is not in progress.
     public(friend) fun finish(aggregated_subtranscript: vector<u8>) acquires ChunkyDKGState {
-        let chunky_dkg_state = borrow_global_mut<ChunkyDKGState>(@aptos_framework);
+        let chunky_dkg_state = borrow_global_mut<ChunkyDKGState>(@topo_framework);
         assert!(
             chunky_dkg_state.in_progress.is_some(),
             error::invalid_state(ECHUNKY_DKG_NOT_IN_PROGRESS)
@@ -102,16 +102,16 @@ module aptos_framework::chunky_dkg {
     /// Delete the currently incomplete session, if it exists.
     public fun try_clear_incomplete_session(fx: &signer) acquires ChunkyDKGState {
         system_addresses::assert_aptos_framework(fx);
-        if (exists<ChunkyDKGState>(@aptos_framework)) {
-            let chunky_dkg_state = borrow_global_mut<ChunkyDKGState>(@aptos_framework);
+        if (exists<ChunkyDKGState>(@topo_framework)) {
+            let chunky_dkg_state = borrow_global_mut<ChunkyDKGState>(@topo_framework);
             chunky_dkg_state.in_progress = option::none();
         }
     }
 
     /// Return the incomplete Chunky DKG session state, if it exists.
     public fun incomplete_session(): Option<ChunkyDKGSessionState> acquires ChunkyDKGState {
-        if (exists<ChunkyDKGState>(@aptos_framework)) {
-            borrow_global<ChunkyDKGState>(@aptos_framework).in_progress
+        if (exists<ChunkyDKGState>(@topo_framework)) {
+            borrow_global<ChunkyDKGState>(@topo_framework).in_progress
         } else {
             option::none()
         }

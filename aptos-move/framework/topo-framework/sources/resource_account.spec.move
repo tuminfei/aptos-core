@@ -1,4 +1,4 @@
-spec aptos_framework::resource_account {
+spec topo_framework::resource_account {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: The length of the authentication key must be 32 bytes.
@@ -68,7 +68,7 @@ spec aptos_framework::resource_account {
         seed: vector<u8>,
         optional_auth_key: vector<u8>,
     ) {
-        use aptos_framework::create_signer;
+        use topo_framework::create_signer;
         let source_addr = signer::address_of(origin);
         let resource_addr = account::spec_create_resource_address(source_addr, seed);
         let resource = create_signer::spec_create_signer(resource_addr);
@@ -81,7 +81,7 @@ spec aptos_framework::resource_account {
         optional_auth_key: vector<u8>,
         fund_amount: u64,
     ) {
-        use aptos_framework::topo_account;
+        use topo_framework::topo_account;
         // TODO(fa_migration)
         pragma verify = false;
         let source_addr = signer::address_of(origin);
@@ -95,7 +95,7 @@ spec aptos_framework::resource_account {
         // TODO(fa_migration)
         //aborts_if !coin::spec_is_account_registered<TopoCoin>(resource_addr) && coin_store_resource.frozen;
         /// [high-level-req-3]
-        ensures exists<aptos_framework::coin::CoinStore<TopoCoin>>(resource_addr);
+        ensures exists<topo_framework::coin::CoinStore<TopoCoin>>(resource_addr);
     }
 
     spec create_resource_account_and_publish_package(
@@ -127,11 +127,11 @@ spec aptos_framework::resource_account {
         ensures exists<Container>(signer::address_of(origin));
         /// [high-level-req-5]
         ensures vector::length(optional_auth_key) != 0 ==>
-            global<aptos_framework::account::Account>(resource_addr).authentication_key == optional_auth_key;
+            global<topo_framework::account::Account>(resource_addr).authentication_key == optional_auth_key;
     }
 
     spec schema RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIf {
-        use aptos_framework::account::{Account};
+        use topo_framework::account::{Account};
         origin: signer;
         resource_addr: address;
         optional_auth_key: vector<u8>;

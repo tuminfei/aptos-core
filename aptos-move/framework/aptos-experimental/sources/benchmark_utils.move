@@ -1,6 +1,6 @@
 module aptos_experimental::benchmark_utils {
-    use aptos_framework::account;
-    use aptos_framework::topo_account;
+    use topo_framework::account;
+    use topo_framework::topo_account;
 
     /// Entry function that creates account resource, and funds the account.
     /// This makes sure that transactions later don't need to create an account,

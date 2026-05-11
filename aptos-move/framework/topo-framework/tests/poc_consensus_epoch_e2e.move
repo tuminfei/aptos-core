@@ -1,12 +1,12 @@
 #[test_only]
-module aptos_framework::poc_consensus_epoch_e2e {
+module topo_framework::poc_consensus_epoch_e2e {
     use std::features;
     use std::signer;
 
-    use aptos_framework::poc_test_utils;
-    use aptos_framework::stake;
-    use aptos_framework::staking_config;
-    use aptos_framework::staking_registry;
+    use topo_framework::poc_test_utils;
+    use topo_framework::stake;
+    use topo_framework::staking_config;
+    use topo_framework::staking_registry;
 
     const EDEPOSIT_DID_NOT_INCREASE: u64 = 1;
     const EDELEGATOR_SHOULD_STILL_BE_BOUND: u64 = 2;
@@ -34,25 +34,25 @@ module aptos_framework::poc_consensus_epoch_e2e {
     // Rewards for the current epoch must use the current committed power snapshot, while
     // force-undelegation at the period boundary must use the staged next-period power.
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator = @0x300,
         delegator = @0x301
     )]
     fun test_rewards_use_old_power_before_force_undelegate(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         delegator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        poc_test_utils::create_validator(aptos_framework, validator, 100);
+        poc_test_utils::setup_poc_env(topo_framework);
+        poc_test_utils::create_validator(topo_framework, validator, 100);
 
         let validator_address = signer::address_of(validator);
         let delegator_address = signer::address_of(delegator);
-        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 100);
+        poc_test_utils::seed_genesis_power(topo_framework, delegator_address, 100);
         stake::mint_and_add_stake(delegator, 100);
         staking_registry::delegate(delegator, validator_address);
-        poc_test_utils::stage_next_period_power(aptos_framework, delegator_address, 79);
-        staking_registry::set_active_power_thresholds(aptos_framework, 100, 8000);
+        poc_test_utils::stage_next_period_power(topo_framework, delegator_address, 79);
+        staking_registry::set_active_power_thresholds(topo_framework, 100, 8000);
         stake::join_validator_set(validator, validator_address);
         stake::end_epoch();
         poc_test_utils::assert_validator_state(
@@ -80,25 +80,25 @@ module aptos_framework::poc_consensus_epoch_e2e {
     // A validator leaving the set remains reward-eligible for its final epoch because
     // `pending_inactive` pools are processed before removal.
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator = @0x302,
         keeper = @0x309,
         delegator = @0x303
     )]
     fun test_pending_inactive_gets_last_epoch_reward(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         keeper: &signer,
         delegator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        poc_test_utils::create_validator(aptos_framework, validator, 100);
-        poc_test_utils::create_validator(aptos_framework, keeper, 100);
+        poc_test_utils::setup_poc_env(topo_framework);
+        poc_test_utils::create_validator(topo_framework, validator, 100);
+        poc_test_utils::create_validator(topo_framework, keeper, 100);
 
         let validator_address = signer::address_of(validator);
         let keeper_address = signer::address_of(keeper);
         let delegator_address = signer::address_of(delegator);
-        poc_test_utils::seed_genesis_power(aptos_framework, delegator_address, 100);
+        poc_test_utils::seed_genesis_power(topo_framework, delegator_address, 100);
         stake::mint_and_add_stake(delegator, 100);
         staking_registry::delegate(delegator, validator_address);
         stake::join_validator_set(validator, validator_address);
@@ -128,22 +128,22 @@ module aptos_framework::poc_consensus_epoch_e2e {
 
     // The next-epoch simulator must include epoch rewards when it computes the predicted
     // validator voting power exposed to Rust via `next_validator_consensus_infos`.
-    #[test(aptos_framework = @aptos_framework, validator = @0x304)]
+    #[test(topo_framework = @topo_framework, validator = @0x304)]
     fun test_next_validator_consensus_infos_includes_reward_adjusted_power(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
+        poc_test_utils::setup_poc_env(topo_framework);
         let validator_address = signer::address_of(validator);
 
-        poc_test_utils::create_validator(aptos_framework, validator, 100);
-        poc_test_utils::seed_genesis_power(aptos_framework, validator_address, 120);
+        poc_test_utils::create_validator(topo_framework, validator, 100);
+        poc_test_utils::seed_genesis_power(topo_framework, validator_address, 120);
         stake::join_validator_set(validator, validator_address);
         stake::end_epoch();
 
-        staking_config::update_rewards_rate(aptos_framework, 25, 100);
+        staking_config::update_rewards_rate(topo_framework, 25, 100);
         stake::set_validator_performance_for_test(0, 1, 0);
-        staking_config::update_required_stake(aptos_framework, 110, 10000);
+        staking_config::update_required_stake(topo_framework, 110, 10000);
 
         poc_test_utils::assert_next_voting_power(
             validator_address,
@@ -158,19 +158,19 @@ module aptos_framework::poc_consensus_epoch_e2e {
         );
     }
 
-    #[test(aptos_framework = @aptos_framework, validator = @0x31a)]
+    #[test(topo_framework = @topo_framework, validator = @0x31a)]
     fun test_participating_staker_effective_power_floors_to_one(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
+        poc_test_utils::setup_poc_env(topo_framework);
         let validator_address = signer::address_of(validator);
 
-        poc_test_utils::create_validator(aptos_framework, validator, 100);
+        poc_test_utils::create_validator(topo_framework, validator, 100);
         stake::join_validator_set(validator, validator_address);
         stake::end_epoch();
 
-        poc_test_utils::stage_next_period_power(aptos_framework, validator_address, 0);
+        poc_test_utils::stage_next_period_power(topo_framework, validator_address, 0);
         poc_test_utils::advance_epochs(59);
         poc_test_utils::assert_next_voting_power(
             validator_address,
@@ -195,18 +195,18 @@ module aptos_framework::poc_consensus_epoch_e2e {
     // removed from the next validator set at the epoch boundary when another validator
     // still satisfies the threshold, so the liveness fallback does not trigger.
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator_low = @0x305,
         validator_high = @0x308
     )]
     fun test_validator_below_minimum_stake_gets_dropped(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator_low: &signer,
         validator_high: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        poc_test_utils::create_validator(aptos_framework, validator_low, 100);
-        poc_test_utils::create_validator(aptos_framework, validator_high, 200);
+        poc_test_utils::setup_poc_env(topo_framework);
+        poc_test_utils::create_validator(topo_framework, validator_low, 100);
+        poc_test_utils::create_validator(topo_framework, validator_high, 200);
 
         let low_address = signer::address_of(validator_low);
         let high_address = signer::address_of(validator_high);
@@ -214,7 +214,7 @@ module aptos_framework::poc_consensus_epoch_e2e {
         stake::join_validator_set(validator_high, high_address);
         stake::end_epoch();
 
-        staking_config::update_required_stake(aptos_framework, 150, 10000);
+        staking_config::update_required_stake(topo_framework, 150, 10000);
         poc_test_utils::assert_next_set_size(1, ENEXT_SET_SIZE_MISMATCH);
         poc_test_utils::assert_next_voting_power(high_address, 200, EHIGH_POWER_VALIDATOR_MISSING);
         stake::end_epoch();
@@ -229,21 +229,21 @@ module aptos_framework::poc_consensus_epoch_e2e {
         );
     }
 
-    #[test(aptos_framework = @aptos_framework, validator = @0x30a)]
+    #[test(topo_framework = @topo_framework, validator = @0x30a)]
     fun test_validator_power_is_capped_at_maximum_stake_on_epoch_recompute(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        staking_config::update_voting_power_increase_limit(aptos_framework, 50);
+        poc_test_utils::setup_poc_env(topo_framework);
+        staking_config::update_voting_power_increase_limit(topo_framework, 50);
         let validator_address = signer::address_of(validator);
 
-        poc_test_utils::create_validator(aptos_framework, validator, 9_900);
-        poc_test_utils::seed_genesis_power(aptos_framework, validator_address, 20_000);
+        poc_test_utils::create_validator(topo_framework, validator, 9_900);
+        poc_test_utils::seed_genesis_power(topo_framework, validator_address, 20_000);
         stake::join_validator_set(validator, validator_address);
         stake::end_epoch();
 
-        staking_config::update_rewards_rate(aptos_framework, 1, 1);
+        staking_config::update_rewards_rate(topo_framework, 1, 1);
         stake::set_validator_performance_for_test(0, 1, 0);
 
         poc_test_utils::assert_next_voting_power(
@@ -259,21 +259,21 @@ module aptos_framework::poc_consensus_epoch_e2e {
         );
     }
 
-    #[test(aptos_framework = @aptos_framework, validator = @0x30d)]
+    #[test(topo_framework = @topo_framework, validator = @0x30d)]
     fun test_epoch_rewards_are_capped_at_maximum_stake(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        staking_config::update_voting_power_increase_limit(aptos_framework, 50);
+        poc_test_utils::setup_poc_env(topo_framework);
+        staking_config::update_voting_power_increase_limit(topo_framework, 50);
         let validator_address = signer::address_of(validator);
 
-        poc_test_utils::create_validator(aptos_framework, validator, 10_000);
-        poc_test_utils::seed_genesis_power(aptos_framework, validator_address, 20_000);
+        poc_test_utils::create_validator(topo_framework, validator, 10_000);
+        poc_test_utils::seed_genesis_power(topo_framework, validator_address, 20_000);
         stake::join_validator_set(validator, validator_address);
         stake::end_epoch();
 
-        staking_config::update_rewards_rate(aptos_framework, 1, 1);
+        staking_config::update_rewards_rate(topo_framework, 1, 1);
         stake::set_validator_performance_for_test(0, 1, 0);
         let (deposit_before_epoch, _, _) =
             staking_registry::get_user_stake_info(validator_address);
@@ -288,21 +288,21 @@ module aptos_framework::poc_consensus_epoch_e2e {
         );
     }
 
-    #[test(aptos_framework = @aptos_framework, validator = @0x30b)]
+    #[test(topo_framework = @topo_framework, validator = @0x30b)]
     fun test_active_validator_power_increase_is_capped_on_epoch_recompute(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
+        poc_test_utils::setup_poc_env(topo_framework);
         let validator_address = signer::address_of(validator);
 
-        poc_test_utils::create_validator(aptos_framework, validator, 1_000);
-        poc_test_utils::seed_genesis_power(aptos_framework, validator_address, 5_000);
+        poc_test_utils::create_validator(topo_framework, validator, 1_000);
+        poc_test_utils::seed_genesis_power(topo_framework, validator_address, 5_000);
         stake::join_validator_set(validator, validator_address);
         stake::end_epoch();
 
-        staking_config::update_voting_power_increase_limit(aptos_framework, 50);
-        staking_config::update_rewards_rate(aptos_framework, 1, 1);
+        staking_config::update_voting_power_increase_limit(topo_framework, 50);
+        staking_config::update_rewards_rate(topo_framework, 1, 1);
         stake::set_validator_performance_for_test(0, 1, 0);
 
         poc_test_utils::assert_next_voting_power(
@@ -320,15 +320,15 @@ module aptos_framework::poc_consensus_epoch_e2e {
 
     // If every validator would be removed by the minimum-stake filter, the framework must
     // keep the previous active set and emit the liveness fallback event.
-    #[test(aptos_framework = @aptos_framework, validator = @0x306)]
+    #[test(topo_framework = @topo_framework, validator = @0x306)]
     fun test_empty_next_set_falls_back_to_previous_validator_set(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        poc_test_utils::create_active_validator(aptos_framework, validator, 100);
+        poc_test_utils::setup_poc_env(topo_framework);
+        poc_test_utils::create_active_validator(topo_framework, validator, 100);
 
-        staking_config::update_required_stake(aptos_framework, 1000, 10000);
+        staking_config::update_required_stake(topo_framework, 1000, 10000);
         let validator_address = signer::address_of(validator);
 
         stake::end_epoch();
@@ -348,17 +348,17 @@ module aptos_framework::poc_consensus_epoch_e2e {
     // If force-undelegation removes every delegator at a power-period boundary, the
     // liveness fallback must preserve the last positive voting-power snapshot instead
     // of emitting a non-empty validator set with total_voting_power == 0.
-    #[test(aptos_framework = @aptos_framework, validator = @0x30c)]
+    #[test(topo_framework = @topo_framework, validator = @0x30c)]
     fun test_liveness_fallback_preserves_positive_power_when_registry_power_zero(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
+        poc_test_utils::setup_poc_env(topo_framework);
         let validator_address = signer::address_of(validator);
 
-        poc_test_utils::create_active_validator(aptos_framework, validator, 100);
-        staking_registry::set_active_power_thresholds(aptos_framework, 100, 10000);
-        poc_test_utils::stage_next_period_power(aptos_framework, validator_address, 0);
+        poc_test_utils::create_active_validator(topo_framework, validator, 100);
+        staking_registry::set_active_power_thresholds(topo_framework, 100, 10000);
+        poc_test_utils::stage_next_period_power(topo_framework, validator_address, 0);
 
         // Land on the last epoch before period 1 becomes active. The simulator should
         // already mirror the next epoch's force-undelegation and fallback result.
@@ -385,16 +385,16 @@ module aptos_framework::poc_consensus_epoch_e2e {
 
     // The VM fee-recording path exposed through the test-only seam must feed the same
     // fee distribution pipeline that `on_new_epoch` uses in production.
-    #[test(aptos_framework = @aptos_framework, validator = @0x307, vm = @vm_reserved)]
+    #[test(topo_framework = @topo_framework, validator = @0x307, vm = @vm_reserved)]
     fun test_record_fee_for_test_distributes_transaction_fees(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         vm: &signer,
     ) {
-        poc_test_utils::setup_poc_env(aptos_framework);
-        poc_test_utils::create_active_validator(aptos_framework, validator, 100);
+        poc_test_utils::setup_poc_env(topo_framework);
+        poc_test_utils::create_active_validator(topo_framework, validator, 100);
         features::change_feature_flags_for_testing(
-            aptos_framework,
+            topo_framework,
             vector[features::get_distribute_transaction_fee_feature()],
             vector[],
         );

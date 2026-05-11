@@ -1,23 +1,23 @@
 /// This module defines structs and methods to initialize the gas schedule, which dictates how much
 /// it costs to execute Move on the network.
-module aptos_framework::gas_schedule {
+module topo_framework::gas_schedule {
     use std::bcs;
     use std::error;
     use std::string::String;
     use aptos_std::aptos_hash;
-    use aptos_framework::chain_status;
-    use aptos_framework::config_buffer;
+    use topo_framework::chain_status;
+    use topo_framework::config_buffer;
 
-    use aptos_framework::reconfiguration;
-    use aptos_framework::system_addresses;
-    use aptos_framework::util::from_bytes;
-    use aptos_framework::storage_gas::StorageGasConfig;
-    use aptos_framework::storage_gas;
+    use topo_framework::reconfiguration;
+    use topo_framework::system_addresses;
+    use topo_framework::util::from_bytes;
+    use topo_framework::storage_gas::StorageGasConfig;
+    use topo_framework::storage_gas;
     #[test_only]
     use std::bcs::to_bytes;
 
-    friend aptos_framework::genesis;
-    friend aptos_framework::reconfiguration_with_dkg;
+    friend topo_framework::genesis;
+    friend topo_framework::reconfiguration_with_dkg;
 
     /// The provided gas schedule bytes are empty or invalid
     const EINVALID_GAS_SCHEDULE: u64 = 1;
@@ -39,13 +39,13 @@ module aptos_framework::gas_schedule {
     }
 
     /// Only called during genesis.
-    public(friend) fun initialize(aptos_framework: &signer, gas_schedule_blob: vector<u8>) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public(friend) fun initialize(topo_framework: &signer, gas_schedule_blob: vector<u8>) {
+        system_addresses::assert_aptos_framework(topo_framework);
         assert!(!gas_schedule_blob.is_empty(), error::invalid_argument(EINVALID_GAS_SCHEDULE));
 
         // TODO(Gas): check if gas schedule is consistent
         let gas_schedule: GasScheduleV2 = from_bytes(gas_schedule_blob);
-        move_to<GasScheduleV2>(aptos_framework, gas_schedule);
+        move_to<GasScheduleV2>(topo_framework, gas_schedule);
     }
 
     /// Deprecated by `set_for_next_epoch()`.
@@ -53,13 +53,13 @@ module aptos_framework::gas_schedule {
     /// WARNING: calling this while randomness is enabled will trigger a new epoch without randomness!
     ///
     /// TODO: update all the tests that reference this function, then disable this function.
-    public fun set_gas_schedule(aptos_framework: &signer, gas_schedule_blob: vector<u8>) acquires GasSchedule, GasScheduleV2 {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public fun set_gas_schedule(topo_framework: &signer, gas_schedule_blob: vector<u8>) acquires GasSchedule, GasScheduleV2 {
+        system_addresses::assert_aptos_framework(topo_framework);
         assert!(!gas_schedule_blob.is_empty(), error::invalid_argument(EINVALID_GAS_SCHEDULE));
         chain_status::assert_genesis();
 
-        if (exists<GasScheduleV2>(@aptos_framework)) {
-            let gas_schedule = borrow_global_mut<GasScheduleV2>(@aptos_framework);
+        if (exists<GasScheduleV2>(@topo_framework)) {
+            let gas_schedule = borrow_global_mut<GasScheduleV2>(@topo_framework);
             let new_gas_schedule: GasScheduleV2 = from_bytes(gas_schedule_blob);
             assert!(new_gas_schedule.feature_version >= gas_schedule.feature_version,
                 error::invalid_argument(EINVALID_GAS_FEATURE_VERSION));
@@ -67,12 +67,12 @@ module aptos_framework::gas_schedule {
             *gas_schedule = new_gas_schedule;
         }
         else {
-            if (exists<GasSchedule>(@aptos_framework)) {
-                _ = move_from<GasSchedule>(@aptos_framework);
+            if (exists<GasSchedule>(@topo_framework)) {
+                _ = move_from<GasSchedule>(@topo_framework);
             };
             let new_gas_schedule: GasScheduleV2 = from_bytes(gas_schedule_blob);
             // TODO(Gas): check if gas schedule is consistent
-            move_to<GasScheduleV2>(aptos_framework, new_gas_schedule);
+            move_to<GasScheduleV2>(topo_framework, new_gas_schedule);
         };
 
         // Need to trigger reconfiguration so validator nodes can sync on the updated gas schedule.
@@ -84,15 +84,15 @@ module aptos_framework::gas_schedule {
     ///
     /// Example usage:
     /// ```
-    /// aptos_framework::gas_schedule::set_for_next_epoch(&framework_signer, some_gas_schedule_blob);
-    /// aptos_framework::topo_governance::reconfigure(&framework_signer);
+    /// topo_framework::gas_schedule::set_for_next_epoch(&framework_signer, some_gas_schedule_blob);
+    /// topo_framework::topo_governance::reconfigure(&framework_signer);
     /// ```
-    public fun set_for_next_epoch(aptos_framework: &signer, gas_schedule_blob: vector<u8>) acquires GasScheduleV2 {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public fun set_for_next_epoch(topo_framework: &signer, gas_schedule_blob: vector<u8>) acquires GasScheduleV2 {
+        system_addresses::assert_aptos_framework(topo_framework);
         assert!(!gas_schedule_blob.is_empty(), error::invalid_argument(EINVALID_GAS_SCHEDULE));
         let new_gas_schedule: GasScheduleV2 = from_bytes(gas_schedule_blob);
-        if (exists<GasScheduleV2>(@aptos_framework)) {
-            let cur_gas_schedule = borrow_global<GasScheduleV2>(@aptos_framework);
+        if (exists<GasScheduleV2>(@topo_framework)) {
+            let cur_gas_schedule = borrow_global<GasScheduleV2>(@topo_framework);
             assert!(
                 new_gas_schedule.feature_version >= cur_gas_schedule.feature_version,
                 error::invalid_argument(EINVALID_GAS_FEATURE_VERSION)
@@ -105,16 +105,16 @@ module aptos_framework::gas_schedule {
     /// Abort if the version of the given schedule is lower than the current version.
     /// Require a hash of the old gas schedule to be provided and will abort if the hashes mismatch.
     public fun set_for_next_epoch_check_hash(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         old_gas_schedule_hash: vector<u8>,
         new_gas_schedule_blob: vector<u8>
     ) acquires GasScheduleV2 {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         assert!(!new_gas_schedule_blob.is_empty(), error::invalid_argument(EINVALID_GAS_SCHEDULE));
 
         let new_gas_schedule: GasScheduleV2 = from_bytes(new_gas_schedule_blob);
-        if (exists<GasScheduleV2>(@aptos_framework)) {
-            let cur_gas_schedule = borrow_global<GasScheduleV2>(@aptos_framework);
+        if (exists<GasScheduleV2>(@topo_framework)) {
+            let cur_gas_schedule = borrow_global<GasScheduleV2>(@topo_framework);
             assert!(
                 new_gas_schedule.feature_version >= cur_gas_schedule.feature_version,
                 error::invalid_argument(EINVALID_GAS_FEATURE_VERSION)
@@ -135,23 +135,23 @@ module aptos_framework::gas_schedule {
         system_addresses::assert_aptos_framework(framework);
         if (config_buffer::does_exist<GasScheduleV2>()) {
             let new_gas_schedule = config_buffer::extract_v2<GasScheduleV2>();
-            if (exists<GasScheduleV2>(@aptos_framework)) {
-                *borrow_global_mut<GasScheduleV2>(@aptos_framework) = new_gas_schedule;
+            if (exists<GasScheduleV2>(@topo_framework)) {
+                *borrow_global_mut<GasScheduleV2>(@topo_framework) = new_gas_schedule;
             } else {
                 move_to(framework, new_gas_schedule);
             }
         }
     }
 
-    public fun set_storage_gas_config(aptos_framework: &signer, config: StorageGasConfig) {
-        storage_gas::set_config(aptos_framework, config);
+    public fun set_storage_gas_config(topo_framework: &signer, config: StorageGasConfig) {
+        storage_gas::set_config(topo_framework, config);
         // Need to trigger reconfiguration so the VM is guaranteed to load the new gas fee starting from the next
         // transaction.
         reconfiguration::reconfigure();
     }
 
-    public fun set_storage_gas_config_for_next_epoch(aptos_framework: &signer, config: StorageGasConfig) {
-        storage_gas::set_config(aptos_framework, config);
+    public fun set_storage_gas_config_for_next_epoch(topo_framework: &signer, config: StorageGasConfig) {
+        storage_gas::set_config(topo_framework, config);
     }
 
     #[test(fx = @0x1)]

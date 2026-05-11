@@ -5,7 +5,7 @@ spec topo_token::token_event_store {
     }
 
     spec schema TokenEventStoreAbortsIf {
-        use aptos_framework::account::{Account};
+        use topo_framework::account::{Account};
         creator: &signer;
         let addr = signer::address_of(creator);
         let account = global<Account>(addr);

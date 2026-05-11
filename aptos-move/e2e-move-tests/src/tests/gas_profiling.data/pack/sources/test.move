@@ -1,10 +1,10 @@
 /// Test module for gas profiling that exercises:
-/// - Dependencies (this module + aptos_framework::event)
+/// - Dependencies (this module + topo_framework::event)
 /// - Events
 /// - Storage writes and deletions (refunds)
 module 0xCAFE::gas_profiling_test {
     use std::signer;
-    use aptos_framework::event;
+    use topo_framework::event;
 
     struct Small has key { value: u64 }
     struct Large has key { a: u64, b: u64, c: u64, d: u64 }

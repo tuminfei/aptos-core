@@ -16,12 +16,12 @@
 /// The fungible asset wrapper for a coin has the same name, symbol and decimals as the original coin. This allows for
 /// easier accounting and tracking of the deposited/withdrawn coins.
 module swap::coin_wrapper {
-    use aptos_framework::account::{Self, SignerCapability};
-    use aptos_framework::topo_account;
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::fungible_asset::{Self, BurnRef, FungibleAsset, Metadata, MintRef};
-    use aptos_framework::object::{Self, Object};
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::account::{Self, SignerCapability};
+    use topo_framework::topo_account;
+    use topo_framework::coin::{Self, Coin};
+    use topo_framework::fungible_asset::{Self, BurnRef, FungibleAsset, Metadata, MintRef};
+    use topo_framework::object::{Self, Object};
+    use topo_framework::primary_fungible_store;
     use aptos_std::smart_table::{Self, SmartTable};
     use aptos_std::string_utils;
     use aptos_std::type_info;

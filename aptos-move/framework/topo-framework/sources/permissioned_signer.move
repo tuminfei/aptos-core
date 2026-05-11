@@ -13,17 +13,17 @@
 ///
 /// After introducing the core functionality, examples are provided for withdraw limit on accounts, and
 /// for blind signing.
-module aptos_framework::permissioned_signer {
+module topo_framework::permissioned_signer {
     use std::features;
     use std::signer;
     use std::error;
     use std::vector;
     use std::option::{Option, Self};
     use aptos_std::copyable_any::{Self, Any};
-    use aptos_framework::big_ordered_map::{Self, BigOrderedMap};
-    use aptos_framework::create_signer::create_signer;
-    use aptos_framework::transaction_context::generate_auid_address;
-    use aptos_framework::timestamp;
+    use topo_framework::big_ordered_map::{Self, BigOrderedMap};
+    use topo_framework::create_signer::create_signer;
+    use topo_framework::transaction_context::generate_auid_address;
+    use topo_framework::timestamp;
 
     /// Trying to grant permission using non-master signer.
     const ENOT_MASTER_SIGNER: u64 = 1;
@@ -648,8 +648,8 @@ module aptos_framework::permissioned_signer {
     fun signer_address_roundtrip(
         creator: &signer
     ) acquires PermissionStorage, GrantedPermissionHandles {
-        let aptos_framework = create_signer(@0x1);
-        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        let topo_framework = create_signer(@0x1);
+        timestamp::set_time_has_started_for_testing(&topo_framework);
 
         let handle = create_permissioned_handle(creator);
         let perm_signer = signer_from_permissioned_handle(&handle);
@@ -684,8 +684,8 @@ module aptos_framework::permissioned_signer {
     fun signer_serialization(
         creator: &signer
     ) acquires PermissionStorage {
-        let aptos_framework = create_signer(@0x1);
-        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        let topo_framework = create_signer(@0x1);
+        timestamp::set_time_has_started_for_testing(&topo_framework);
 
         let handle = create_permissioned_handle(creator);
         let perm_signer = signer_from_permissioned_handle(&handle);

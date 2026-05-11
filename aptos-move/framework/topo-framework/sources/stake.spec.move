@@ -1,4 +1,4 @@
-spec aptos_framework::stake {
+spec topo_framework::stake {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: The validator set resource stores consensus information for each validator. The consensus scheme
@@ -44,15 +44,15 @@ spec aptos_framework::stake {
         pragma verify = true;
         pragma aborts_if_is_partial;
         // The validator set should satisfy its desired invariant.
-        invariant [suspendable] exists<ValidatorSet>(@aptos_framework) ==>
+        invariant [suspendable] exists<ValidatorSet>(@topo_framework) ==>
             validator_set_is_valid();
         // After genesis, `TopoCoinCapabilities`, `ValidatorPerformance` and `ValidatorSet` exist.
         invariant [suspendable] chain_status::is_operating() ==>
-            exists<TopoCoinCapabilities>(@aptos_framework);
+            exists<TopoCoinCapabilities>(@topo_framework);
         invariant [suspendable] chain_status::is_operating() ==>
-            exists<ValidatorPerformance>(@aptos_framework);
+            exists<ValidatorPerformance>(@topo_framework);
         invariant [suspendable] chain_status::is_operating() ==>
-            exists<ValidatorSet>(@aptos_framework);
+            exists<ValidatorSet>(@topo_framework);
 
         // property 2: The owner of a validator remains immutable.
         apply ValidatorOwnerNoChange to *;
@@ -77,10 +77,10 @@ spec aptos_framework::stake {
     spec schema ValidatorNotChangeDuringReconfig {
         ensures (
             reconfiguration_state::spec_is_in_progress()
-                && old(exists<ValidatorSet>(@aptos_framework))
+                && old(exists<ValidatorSet>(@topo_framework))
         ) ==>
-            old(global<ValidatorSet>(@aptos_framework))
-                == global<ValidatorSet>(@aptos_framework);
+            old(global<ValidatorSet>(@topo_framework))
+                == global<ValidatorSet>(@topo_framework);
     }
 
     spec schema StakePoolNotChangeDuringReconfig {
@@ -120,7 +120,7 @@ spec aptos_framework::stake {
 
     // A desired invariant for the validator set.
     spec fun validator_set_is_valid(): bool {
-        let validator_set = global<ValidatorSet>(@aptos_framework);
+        let validator_set = global<ValidatorSet>(@topo_framework);
         validator_set_is_valid_impl(validator_set)
     }
 
@@ -154,9 +154,9 @@ spec aptos_framework::stake {
         aborts_if !option::is_some(pubkey_from_pop);
         let addr = signer::address_of(account);
         let post_addr = signer::address_of(account);
-        let allowed = global<AllowedValidators>(@aptos_framework);
+        let allowed = global<AllowedValidators>(@topo_framework);
         aborts_if exists<ValidatorConfig>(addr);
-        aborts_if exists<AllowedValidators>(@aptos_framework)
+        aborts_if exists<AllowedValidators>(@topo_framework)
             && !vector::spec_contains(allowed.accounts, addr);
         aborts_if stake_pool_exists(addr);
         aborts_if exists<OwnerCapability>(addr);
@@ -177,9 +177,9 @@ spec aptos_framework::stake {
     }
 
     // `Validator` is initialized once.
-    spec initialize(aptos_framework: &signer) {
+    spec initialize(topo_framework: &signer) {
         pragma disable_invariants_in_body;
-        let aptos_addr = signer::address_of(aptos_framework);
+        let aptos_addr = signer::address_of(topo_framework);
         aborts_if !system_addresses::is_aptos_framework_address(aptos_addr);
         aborts_if exists<ValidatorSet>(aptos_addr);
         aborts_if exists<ValidatorPerformance>(aptos_addr);
@@ -196,13 +196,13 @@ spec aptos_framework::stake {
         aborts_if !staking_config::get_allow_validator_set_change(staking_config::get());
         aborts_if !exists<StakePool>(pool_address);
         aborts_if !exists<ValidatorConfig>(pool_address);
-        aborts_if !exists<StakingConfig>(@aptos_framework);
-        aborts_if !exists<ValidatorSet>(@aptos_framework);
+        aborts_if !exists<StakingConfig>(@topo_framework);
+        aborts_if !exists<ValidatorSet>(@topo_framework);
         aborts_if reconfiguration_state::spec_is_in_progress();
 
         let stake_pool = global<StakePool>(pool_address);
-        let validator_set = global<ValidatorSet>(@aptos_framework);
-        let post p_validator_set = global<ValidatorSet>(@aptos_framework);
+        let validator_set = global<ValidatorSet>(@topo_framework);
+        let post p_validator_set = global<ValidatorSet>(@topo_framework);
         aborts_if signer::address_of(operator) != stake_pool.operator_address;
         aborts_if option::is_some(
             spec_find_validator(validator_set.active_validators, pool_address)
@@ -258,19 +258,19 @@ spec aptos_framework::stake {
         let config = staking_config::get();
         aborts_if !staking_config::get_allow_validator_set_change(config);
         aborts_if !exists<StakePool>(pool_address);
-        aborts_if !exists<ValidatorSet>(@aptos_framework);
-        aborts_if !exists<staking_config::StakingConfig>(@aptos_framework);
+        aborts_if !exists<ValidatorSet>(@topo_framework);
+        aborts_if !exists<staking_config::StakingConfig>(@topo_framework);
         let stake_pool = global<StakePool>(pool_address);
         aborts_if signer::address_of(operator) != stake_pool.operator_address;
 
-        let validator_set = global<ValidatorSet>(@aptos_framework);
+        let validator_set = global<ValidatorSet>(@topo_framework);
         let validator_find_bool = option::is_some(
             spec_find_validator(validator_set.pending_active, pool_address)
         );
         let active_validators = validator_set.active_validators;
         let pending_active = validator_set.pending_active;
 
-        let post post_validator_set = global<ValidatorSet>(@aptos_framework);
+        let post post_validator_set = global<ValidatorSet>(@topo_framework);
         let post post_active_validators = post_validator_set.active_validators;
         let pending_inactive_validators = validator_set.pending_inactive;
         let post post_pending_inactive_validators = post_validator_set.pending_inactive;
@@ -287,7 +287,7 @@ spec aptos_framework::stake {
         aborts_if validator_find_bool
             && vector::length(validator_set.pending_active)
                 <= option::borrow(spec_find_validator(pending_active, pool_address));
-        let post p_validator_set = global<ValidatorSet>(@aptos_framework);
+        let post p_validator_set = global<ValidatorSet>(@topo_framework);
         // Voting power is now derived from staking_registry, not StakePool coin balances.
         ensures !validator_find_bool ==>
             !option::is_some(
@@ -314,7 +314,7 @@ spec aptos_framework::stake {
 
     // Only active validator can update locked_until_secs.
     spec increase_lockup_with_cap(owner_cap: &OwnerCapability) {
-        let config = global<staking_config::StakingConfig>(@aptos_framework);
+        let config = global<staking_config::StakingConfig>(@topo_framework);
         let pool_address = owner_cap.pool_address;
         let pre_stake_pool = global<StakePool>(pool_address);
         let post stake_pool = global<StakePool>(pool_address);
@@ -326,8 +326,8 @@ spec aptos_framework::stake {
         aborts_if !exists<StakePool>(pool_address);
         aborts_if pre_stake_pool.locked_until_secs >= lockup + now_seconds;
         aborts_if lockup + now_seconds > MAX_U64;
-        aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
-        aborts_if !exists<staking_config::StakingConfig>(@aptos_framework);
+        aborts_if !exists<timestamp::CurrentTimeMicroseconds>(@topo_framework);
+        aborts_if !exists<staking_config::StakingConfig>(@topo_framework);
 
         ensures stake_pool.locked_until_secs == lockup + now_seconds;
     }
@@ -395,7 +395,7 @@ spec aptos_framework::stake {
         include ResourceRequirement;
         include GetReconfigStartTimeRequirement;
         include staking_config::StakingRewardsConfigRequirement;
-        include aptos_framework::topo_coin::ExistsTopoCoin;
+        include topo_framework::topo_coin::ExistsTopoCoin;
         // This function should never abort.
         /// [high-level-req-4]
         aborts_if false;
@@ -407,8 +407,8 @@ spec aptos_framework::stake {
         // This function should never abort.
         aborts_if false;
 
-        let validator_perf = global<ValidatorPerformance>(@aptos_framework);
-        let post post_validator_perf = global<ValidatorPerformance>(@aptos_framework);
+        let validator_perf = global<ValidatorPerformance>(@topo_framework);
+        let post post_validator_perf = global<ValidatorPerformance>(@topo_framework);
         let validator_len = len(validator_perf.validators);
         ensures (
             option::is_some(ghost_proposer_idx)
@@ -481,7 +481,7 @@ spec aptos_framework::stake {
     }
 
     spec schema AbortsIfSignerPermissionStake {
-        use aptos_framework::permissioned_signer;
+        use topo_framework::permissioned_signer;
         s: signer;
         let perm = StakeManagementPermission {};
         aborts_if !permissioned_signer::spec_check_permission_exists(s, perm);
@@ -504,12 +504,12 @@ spec aptos_framework::stake {
     }
 
     spec schema GetReconfigStartTimeRequirement {
-        requires exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
+        requires exists<timestamp::CurrentTimeMicroseconds>(@topo_framework);
         include reconfiguration_state::StartTimeSecsRequirement;
     }
 
     spec fun spec_get_reconfig_start_time_secs(): u64 {
-        if (exists<reconfiguration_state::State>(@aptos_framework)) {
+        if (exists<reconfiguration_state::State>(@topo_framework)) {
             reconfiguration_state::spec_start_time_secs()
         } else {
             timestamp::spec_now_seconds()
@@ -580,8 +580,8 @@ spec aptos_framework::stake {
 
     spec remove_validators {
         requires chain_status::is_operating();
-        let validator_set = global<ValidatorSet>(@aptos_framework);
-        let post post_validator_set = global<ValidatorSet>(@aptos_framework);
+        let validator_set = global<ValidatorSet>(@topo_framework);
+        let post post_validator_set = global<ValidatorSet>(@topo_framework);
         let active_validators = validator_set.active_validators;
         let post post_active_validators = post_validator_set.active_validators;
         let pending_inactive_validators = validator_set.pending_inactive;
@@ -599,8 +599,8 @@ spec aptos_framework::stake {
     }
 
     spec get_validator_state {
-        aborts_if !exists<ValidatorSet>(@aptos_framework);
-        let validator_set = global<ValidatorSet>(@aptos_framework);
+        aborts_if !exists<ValidatorSet>(@topo_framework);
+        let validator_set = global<ValidatorSet>(@topo_framework);
         ensures result == VALIDATOR_STATUS_PENDING_ACTIVE ==>
             spec_contains(validator_set.pending_active, pool_address);
         ensures result == VALIDATOR_STATUS_ACTIVE ==>
@@ -642,10 +642,10 @@ spec aptos_framework::stake {
 
     spec update_voting_power_increase(increase_amount: u64) {
         requires !reconfiguration_state::spec_is_in_progress();
-        aborts_if !exists<ValidatorSet>(@aptos_framework);
-        aborts_if !exists<staking_config::StakingConfig>(@aptos_framework);
+        aborts_if !exists<ValidatorSet>(@topo_framework);
+        aborts_if !exists<staking_config::StakingConfig>(@topo_framework);
 
-        let aptos = @aptos_framework;
+        let aptos = @topo_framework;
         let pre_validator_set = global<ValidatorSet>(aptos);
         let post validator_set = global<ValidatorSet>(aptos);
         let staking_config = global<staking_config::StakingConfig>(aptos);
@@ -670,8 +670,8 @@ spec aptos_framework::stake {
         aborts_if !stake_pool_exists(pool_address);
     }
 
-    spec configure_allowed_validators(aptos_framework: &signer, accounts: vector<address>) {
-        let aptos_framework_address = signer::address_of(aptos_framework);
+    spec configure_allowed_validators(topo_framework: &signer, accounts: vector<address>) {
+        let aptos_framework_address = signer::address_of(topo_framework);
         aborts_if !system_addresses::is_aptos_framework_address(aptos_framework_address);
         let post allowed = global<AllowedValidators>(aptos_framework_address);
         // Make sure that the accounts of AllowedValidators are always the passed parameter.
@@ -683,7 +683,7 @@ spec aptos_framework::stake {
     }
 
     spec validator_consensus_infos_from_validator_set(validator_set: &ValidatorSet): vector<
-        aptos_framework::validator_consensus_info::ValidatorConsensusInfo> {
+        topo_framework::validator_consensus_info::ValidatorConsensusInfo> {
         aborts_if false;
         invariant spec_validator_indices_are_valid_config(
             validator_set.active_validators,
@@ -702,9 +702,9 @@ spec aptos_framework::stake {
     // ---------------------------------
 
     spec fun spec_is_allowed(account: address): bool {
-        if (!exists<AllowedValidators>(@aptos_framework)) { true }
+        if (!exists<AllowedValidators>(@topo_framework)) { true }
         else {
-            let allowed = global<AllowedValidators>(@aptos_framework);
+            let allowed = global<AllowedValidators>(@topo_framework);
             contains(allowed.accounts, account)
         }
     }
@@ -753,7 +753,7 @@ spec aptos_framework::stake {
 
     // The upper bound of validator indices.
     spec fun spec_validator_index_upper_bound(): u64 {
-        len(global<ValidatorPerformance>(@aptos_framework).validators)
+        len(global<ValidatorPerformance>(@topo_framework).validators)
     }
 
     spec fun spec_has_stake_pool(a: address): bool {
@@ -778,7 +778,7 @@ spec aptos_framework::stake {
     }
 
     spec fun spec_is_current_epoch_validator(pool_address: address): bool {
-        let validator_set = global<ValidatorSet>(@aptos_framework);
+        let validator_set = global<ValidatorSet>(@topo_framework);
         !spec_contains(validator_set.pending_active, pool_address)
             && (
                 spec_contains(validator_set.active_validators, pool_address)
@@ -789,13 +789,13 @@ spec aptos_framework::stake {
     // These resources are required to successfully execute `on_new_epoch`, which cannot
     // be discharged by the global invariants because `on_new_epoch` is called in genesis.
     spec schema ResourceRequirement {
-        requires exists<TopoCoinCapabilities>(@aptos_framework);
-        requires exists<ValidatorPerformance>(@aptos_framework);
-        requires exists<ValidatorSet>(@aptos_framework);
-        requires exists<StakingConfig>(@aptos_framework);
-        requires exists<StakingRewardsConfig>(@aptos_framework)
+        requires exists<TopoCoinCapabilities>(@topo_framework);
+        requires exists<ValidatorPerformance>(@topo_framework);
+        requires exists<ValidatorSet>(@topo_framework);
+        requires exists<StakingConfig>(@topo_framework);
+        requires exists<StakingRewardsConfig>(@topo_framework)
             || !features::spec_periodical_reward_rate_decrease_enabled();
-        requires exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
+        requires exists<timestamp::CurrentTimeMicroseconds>(@topo_framework);
     }
 
     // Adding helper function in staking_config leads to an unexpected error
@@ -803,7 +803,7 @@ spec aptos_framework::stake {
     spec fun spec_get_reward_rate_1(config: StakingConfig): num {
         if (features::spec_periodical_reward_rate_decrease_enabled()) {
             let epoch_rewards_rate =
-                global<staking_config::StakingRewardsConfig>(@aptos_framework).rewards_rate;
+                global<staking_config::StakingRewardsConfig>(@topo_framework).rewards_rate;
             if (epoch_rewards_rate.value == 0) { 0 }
             else {
                 let denominator_0 =
@@ -830,7 +830,7 @@ spec aptos_framework::stake {
     spec fun spec_get_reward_rate_2(config: StakingConfig): num {
         if (features::spec_periodical_reward_rate_decrease_enabled()) {
             let epoch_rewards_rate =
-                global<staking_config::StakingRewardsConfig>(@aptos_framework).rewards_rate;
+                global<staking_config::StakingRewardsConfig>(@topo_framework).rewards_rate;
             if (epoch_rewards_rate.value == 0) { 1 }
             else {
                 let denominator_0 =

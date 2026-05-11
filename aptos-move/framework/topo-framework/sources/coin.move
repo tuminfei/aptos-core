@@ -1,20 +1,20 @@
 /// This module provides the foundation for typesafe Coins.
-module aptos_framework::coin {
+module topo_framework::coin {
     use std::error;
     use std::option::{Self, Option};
     use std::signer;
     use std::string::{Self, String};
     use aptos_std::table::{Self, Table};
 
-    use aptos_framework::account;
-    use aptos_framework::aggregator::Aggregator;
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::guid;
-    use aptos_framework::optional_aggregator::{Self, OptionalAggregator};
-    use aptos_framework::permissioned_signer;
-    use aptos_framework::system_addresses;
+    use topo_framework::account;
+    use topo_framework::aggregator::Aggregator;
+    use topo_framework::event::{Self, EventHandle};
+    use topo_framework::guid;
+    use topo_framework::optional_aggregator::{Self, OptionalAggregator};
+    use topo_framework::permissioned_signer;
+    use topo_framework::system_addresses;
 
-    use aptos_framework::fungible_asset::{
+    use topo_framework::fungible_asset::{
         Self,
         FungibleAsset,
         Metadata,
@@ -22,14 +22,14 @@ module aptos_framework::coin {
         TransferRef,
         BurnRef
     };
-    use aptos_framework::object::{Self, Object};
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::object::{Self, Object};
+    use topo_framework::primary_fungible_store;
     use aptos_std::type_info::{Self, TypeInfo};
-    use aptos_framework::create_signer;
+    use topo_framework::create_signer;
 
-    friend aptos_framework::topo_coin;
-    friend aptos_framework::genesis;
-    friend aptos_framework::transaction_fee;
+    friend topo_framework::topo_coin;
+    friend topo_framework::genesis;
+    friend topo_framework::transaction_fee;
 
     //
     // Errors.
@@ -255,13 +255,13 @@ module aptos_framework::coin {
         coin_to_fungible_asset_map: Table<TypeInfo, Object<Metadata>>
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// The paired coin type info stored in fungible asset metadata object.
     struct PairedCoinType has key {
         type: TypeInfo
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// The refs of the paired fungible asset.
     struct PairedFungibleAssetRefs has key {
         mint_ref_opt: Option<MintRef>,
@@ -287,9 +287,9 @@ module aptos_framework::coin {
     #[view]
     /// Get the paired fungible asset metadata object of a coin type. If not exist, return option::none().
     public fun paired_metadata<CoinType>(): Option<Object<Metadata>> acquires CoinConversionMap {
-        if (exists<CoinConversionMap>(@aptos_framework)) {
+        if (exists<CoinConversionMap>(@topo_framework)) {
             let map =
-                &borrow_global<CoinConversionMap>(@aptos_framework).coin_to_fungible_asset_map;
+                &borrow_global<CoinConversionMap>(@topo_framework).coin_to_fungible_asset_map;
             let type = type_info::type_of<CoinType>();
             if (map.contains(type)) {
                 return option::some(*map.borrow(type))
@@ -298,11 +298,11 @@ module aptos_framework::coin {
         option::none()
     }
 
-    public entry fun create_coin_conversion_map(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        if (!exists<CoinConversionMap>(@aptos_framework)) {
+    public entry fun create_coin_conversion_map(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        if (!exists<CoinConversionMap>(@topo_framework)) {
             move_to(
-                aptos_framework,
+                topo_framework,
                 CoinConversionMap { coin_to_fungible_asset_map: table::new() }
             )
         };
@@ -310,9 +310,9 @@ module aptos_framework::coin {
 
     /// Create TOPO pairing by passing `TopoCoin`.
     public entry fun create_pairing<CoinType>(
-        aptos_framework: &signer
+        topo_framework: &signer
     ) acquires CoinConversionMap, CoinInfo {
-        system_addresses::assert_aptos_framework(aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         create_and_return_paired_metadata_if_not_exist<CoinType>(true);
     }
 
@@ -324,10 +324,10 @@ module aptos_framework::coin {
         allow_topo_creation: bool
     ): Object<Metadata> {
         assert!(
-            exists<CoinConversionMap>(@aptos_framework),
+            exists<CoinConversionMap>(@topo_framework),
             error::not_found(ECOIN_CONVERSION_MAP_NOT_FOUND)
         );
-        let map = borrow_global_mut<CoinConversionMap>(@aptos_framework);
+        let map = borrow_global_mut<CoinConversionMap>(@topo_framework);
         let type = type_info::type_of<CoinType>();
         if (!map.coin_to_fungible_asset_map.contains(type)) {
             let is_topo = is_topo<CoinType>();
@@ -338,7 +338,7 @@ module aptos_framework::coin {
             let metadata_object_cref =
                 if (is_topo) {
                     object::create_sticky_object_at_address(
-                        @aptos_framework, @aptos_fungible_asset
+                        @topo_framework, @aptos_fungible_asset
                     )
                 } else {
                     object::create_named_object(
@@ -1178,8 +1178,8 @@ module aptos_framework::coin {
         if (maybe_supply.is_some()) {
             let supply = maybe_supply.borrow_mut();
             spec {
-                use aptos_framework::optional_aggregator;
-                use aptos_framework::aggregator;
+                use topo_framework::optional_aggregator;
+                use topo_framework::aggregator;
                 assume optional_aggregator::is_parallelizable(supply) ==>
                     (
                         aggregator::spec_aggregator_get_val(
@@ -1220,7 +1220,7 @@ module aptos_framework::coin {
     }
 
     #[test_only]
-    use aptos_framework::aggregator;
+    use topo_framework::aggregator;
 
     #[test_only]
     struct FakeMoney {}
@@ -1243,7 +1243,7 @@ module aptos_framework::coin {
     fun initialize_fake_money(
         account: &signer, decimals: u8, monitor_supply: bool
     ): (BurnCapability<FakeMoney>, FreezeCapability<FakeMoney>, MintCapability<FakeMoney>) acquires CoinInfo, CoinConversionMap {
-        use aptos_framework::aggregator_factory;
+        use topo_framework::aggregator_factory;
         aggregator_factory::initialize_aggregator_factory_for_test(account);
         initialize<FakeMoney>(
             account,
@@ -1357,10 +1357,10 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(source = @0x2, framework = @aptos_framework)]
+    #[test(source = @0x2, framework = @topo_framework)]
     #[expected_failure(abort_code = 0x10001, location = Self)]
     public fun fail_initialize(source: signer, framework: signer) acquires CoinInfo, CoinConversionMap {
-        use aptos_framework::aggregator_factory;
+        use topo_framework::aggregator_factory;
         aggregator_factory::initialize_aggregator_factory_for_test(&framework);
         let (burn_cap, freeze_cap, mint_cap) =
             initialize<FakeMoney>(
@@ -1496,7 +1496,7 @@ module aptos_framework::coin {
     }
 
     #[test(account = @0x1)]
-    #[expected_failure(abort_code = 0x50003, location = aptos_framework::fungible_asset)]
+    #[expected_failure(abort_code = 0x50003, location = topo_framework::fungible_asset)]
     public entry fun withdraw_frozen(
         account: signer
     ) acquires CoinInfo, CoinConversionMap, PairedCoinType, PairedFungibleAssetRefs {
@@ -1519,7 +1519,7 @@ module aptos_framework::coin {
     }
 
     #[test(account = @0x1)]
-    #[expected_failure(abort_code = 0x50003, location = aptos_framework::fungible_asset)]
+    #[expected_failure(abort_code = 0x50003, location = topo_framework::fungible_asset)]
     public entry fun deposit_frozen(
         account: signer
     ) acquires CoinInfo, CoinConversionMap, PairedFungibleAssetRefs {
@@ -1572,12 +1572,12 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(framework = @aptos_framework, other = @0x123)]
-    #[expected_failure(abort_code = 0x50003, location = aptos_framework::system_addresses)]
+    #[test(framework = @topo_framework, other = @0x123)]
+    #[expected_failure(abort_code = 0x50003, location = topo_framework::system_addresses)]
     fun test_supply_initialize_fails(
         framework: signer, other: signer
     ) acquires CoinInfo, CoinConversionMap {
-        use aptos_framework::aggregator_factory;
+        use topo_framework::aggregator_factory;
         aggregator_factory::initialize_aggregator_factory_for_test(&framework);
         initialize_with_aggregator(&other);
     }
@@ -1597,9 +1597,9 @@ module aptos_framework::coin {
         migrate_to_fungible_store<String>(&other);
     }
 
-    #[test(framework = @aptos_framework)]
+    #[test(framework = @topo_framework)]
     fun test_supply_initialize(framework: signer) acquires CoinInfo, CoinConversionMap {
-        use aptos_framework::aggregator_factory;
+        use topo_framework::aggregator_factory;
         aggregator_factory::initialize_aggregator_factory_for_test(&framework);
         initialize_with_aggregator(&framework);
 
@@ -1620,10 +1620,10 @@ module aptos_framework::coin {
     /// Maximum possible coin supply.
     const MAX_U128: u128 = 340282366920938463463374607431768211455;
 
-    #[test(framework = @aptos_framework)]
-    #[expected_failure(abort_code = 0x20001, location = aptos_framework::aggregator)]
+    #[test(framework = @topo_framework)]
+    #[expected_failure(abort_code = 0x20001, location = topo_framework::aggregator)]
     fun test_supply_overflow(framework: signer) acquires CoinInfo, CoinConversionMap {
-        use aptos_framework::aggregator_factory;
+        use topo_framework::aggregator_factory;
         aggregator_factory::initialize_aggregator_factory_for_test(&framework);
         initialize_with_aggregator(&framework);
 
@@ -1644,7 +1644,7 @@ module aptos_framework::coin {
         aggregator::destroy(value);
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     fun test_conversion_basic(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, CoinStore, PairedCoinType, PairedFungibleAssetRefs {
@@ -1719,7 +1719,7 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     fun test_deposit(account: &signer) acquires CoinConversionMap, CoinInfo, CoinStore {
         let account_addr = signer::address_of(account);
         account::create_account_for_test(account_addr);
@@ -1740,7 +1740,7 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     fun test_withdraw(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, CoinStore, PairedCoinType {
@@ -1777,7 +1777,7 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     fun test_supply(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, PairedCoinType, PairedFungibleAssetRefs {
@@ -1834,7 +1834,7 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework, aaron = @0xaa10, bob = @0xb0b)]
+    #[test(account = @topo_framework, aaron = @0xaa10, bob = @0xb0b)]
     fun test_force_deposit(
         account: &signer, aaron: &signer, bob: &signer
     ) acquires CoinConversionMap, CoinInfo, CoinStore, PairedFungibleAssetRefs {
@@ -1912,7 +1912,7 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework, bob = @0xb0b)]
+    #[test(account = @topo_framework, bob = @0xb0b)]
     fun test_is_account_registered(
         account: &signer, bob: &signer
     ) acquires CoinConversionMap, CoinInfo {
@@ -1931,7 +1931,7 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     fun test_migration_with_existing_primary_fungible_store(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, CoinStore, PairedCoinType {
@@ -1957,12 +1957,12 @@ module aptos_framework::coin {
     }
 
     #[deprecated]
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// The flag the existence of which indicates the primary fungible store is created by the migration from CoinStore.
     struct MigrationFlag has key {}
 
-    #[test(account = @aptos_framework)]
-    #[expected_failure(abort_code = 0x50024, location = aptos_framework::fungible_asset)]
+    #[test(account = @topo_framework)]
+    #[expected_failure(abort_code = 0x50024, location = topo_framework::fungible_asset)]
     fun test_withdraw_with_permissioned_signer_no_migration(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, PairedCoinType {
@@ -1992,8 +1992,8 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework)]
-    #[expected_failure(abort_code = 0x50024, location = aptos_framework::fungible_asset)]
+    #[test(account = @topo_framework)]
+    #[expected_failure(abort_code = 0x50024, location = topo_framework::fungible_asset)]
     fun test_withdraw_with_permissioned_signer(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, PairedCoinType {
@@ -2023,8 +2023,8 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework)]
-    #[expected_failure(abort_code = 0x50024, location = aptos_framework::fungible_asset)]
+    #[test(account = @topo_framework)]
+    #[expected_failure(abort_code = 0x50024, location = topo_framework::fungible_asset)]
     fun test_withdraw_with_permissioned_signer_no_capacity(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, PairedCoinType {
@@ -2053,7 +2053,7 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     fun test_e2e_withdraw_with_permissioned_signer_and_migration(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, CoinStore, PairedCoinType {
@@ -2104,8 +2104,8 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework)]
-    #[expected_failure(abort_code = 0x50024, location = aptos_framework::fungible_asset)]
+    #[test(account = @topo_framework)]
+    #[expected_failure(abort_code = 0x50024, location = topo_framework::fungible_asset)]
     fun test_e2e_withdraw_with_permissioned_signer_no_permission_1(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, PairedCoinType {
@@ -2136,8 +2136,8 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework)]
-    #[expected_failure(abort_code = 0x50024, location = aptos_framework::fungible_asset)]
+    #[test(account = @topo_framework)]
+    #[expected_failure(abort_code = 0x50024, location = topo_framework::fungible_asset)]
     fun test_e2e_withdraw_with_permissioned_signer_no_permission_2(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, PairedCoinType {
@@ -2180,8 +2180,8 @@ module aptos_framework::coin {
         );
     }
 
-    #[test(account = @aptos_framework)]
-    #[expected_failure(abort_code = 0x50024, location = aptos_framework::fungible_asset)]
+    #[test(account = @topo_framework)]
+    #[expected_failure(abort_code = 0x50024, location = topo_framework::fungible_asset)]
     fun test_e2e_withdraw_with_permissioned_signer_no_permission_3(
         account: &signer
     ) acquires CoinConversionMap, CoinInfo, PairedCoinType {

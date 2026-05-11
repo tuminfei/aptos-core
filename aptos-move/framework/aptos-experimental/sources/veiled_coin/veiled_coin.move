@@ -6,7 +6,7 @@
 ///
 /// ## How to use veiled coins
 ///
-/// This module allows users to "register" a veiled account for any pre-existing `aptos_framework::Coin` type `T` via
+/// This module allows users to "register" a veiled account for any pre-existing `topo_framework::Coin` type `T` via
 /// the `register` entry function. For this, an encryption public key will need to be given as input, under which
 /// the registered user's veiled balance will be encrypted.
 ///
@@ -118,9 +118,9 @@ module aptos_experimental::veiled_coin {
     #[test_only]
     use aptos_std::ristretto255::Scalar;
 
-    use aptos_framework::account;
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::event;
+    use topo_framework::account;
+    use topo_framework::coin::{Self, Coin};
+    use topo_framework::event;
 
     use aptos_experimental::helpers;
     use aptos_experimental::sigma_protos;
@@ -506,7 +506,7 @@ module aptos_experimental::veiled_coin {
     }
 
     /// Returns the maximum # of bits used to represent a veiled coin amount. Might differ than the 64 bits used to
-    /// represent normal `aptos_framework::coin::Coin` values.
+    /// represent normal `topo_framework::coin::Coin` values.
     public fun get_max_bits_in_veiled_coin_value(): u64 {
         MAX_BITS_IN_VEILED_COIN_VALUE
     }

@@ -2,11 +2,11 @@
 /// genesis (`Self::assert_operating`). These are essentially distinct states of the system. Specifically,
 /// if `Self::assert_operating` succeeds, assumptions about invariants over the global state can be made
 /// which reflect that the system has been successfully initialized.
-module aptos_framework::chain_status {
-    use aptos_framework::system_addresses;
+module topo_framework::chain_status {
+    use topo_framework::system_addresses;
     use std::error;
 
-    friend aptos_framework::genesis;
+    friend topo_framework::genesis;
 
     /// Marker to publish at the end of genesis.
     struct GenesisEndMarker has key {}
@@ -17,15 +17,15 @@ module aptos_framework::chain_status {
     const ENOT_GENESIS: u64 = 2;
 
     /// Marks that genesis has finished.
-    public(friend) fun set_genesis_end(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        move_to(aptos_framework, GenesisEndMarker {});
+    public(friend) fun set_genesis_end(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        move_to(topo_framework, GenesisEndMarker {});
     }
 
     #[view]
     /// Helper function to determine if Aptos is in genesis state.
     public fun is_genesis(): bool {
-        !exists<GenesisEndMarker>(@aptos_framework)
+        !exists<GenesisEndMarker>(@topo_framework)
     }
 
     #[view]
@@ -33,7 +33,7 @@ module aptos_framework::chain_status {
     /// the same as `!is_genesis()` and is provided for convenience.
     /// Testing `is_operating()` is more frequent than `is_genesis()`.
     public fun is_operating(): bool {
-        exists<GenesisEndMarker>(@aptos_framework)
+        exists<GenesisEndMarker>(@topo_framework)
     }
 
     /// Helper function to assert operating (not genesis) state.

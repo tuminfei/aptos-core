@@ -1222,7 +1222,7 @@ Same as <code>create_object</code> except the object to be created will be undel
 
 ## Function `create_sticky_object_at_address`
 
-Create a sticky object at a specific address. Only used by aptos_framework::coin.
+Create a sticky object at a specific address. Only used by topo_framework::coin.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="object.md#0x1_object_create_sticky_object_at_address">create_sticky_object_at_address</a>(owner_address: <b>address</b>, object_address: <b>address</b>): <a href="object.md#0x1_object_ConstructorRef">object::ConstructorRef</a>
@@ -3522,7 +3522,7 @@ Grant a transfer permission to the permissioned signer using TransferRef.
 
 
 <pre><code><b>fun</b> <a href="object.md#0x1_object_spec_generate_signer_for_extending">spec_generate_signer_for_extending</a>(ref: &<a href="object.md#0x1_object_ExtendRef">ExtendRef</a>): <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a> {
-   aptos_framework::create_signer::spec_create_signer(ref.self)
+   topo_framework::create_signer::spec_create_signer(ref.self)
 }
 </code></pre>
 

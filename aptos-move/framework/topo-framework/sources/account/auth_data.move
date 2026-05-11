@@ -1,4 +1,4 @@
-module aptos_framework::auth_data {
+module topo_framework::auth_data {
     use std::error;
 
     const ENOT_REGULAR_AUTH_DATA: u64 = 1;

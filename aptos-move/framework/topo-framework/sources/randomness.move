@@ -5,19 +5,19 @@
 /// and (2) the randomness cannot be biased in any way by validators, developers or users.
 ///
 /// Security holds under the same proof-of-stake assumption that secures the Aptos network.
-module aptos_framework::randomness {
+module topo_framework::randomness {
     use std::hash;
     use std::option;
     use std::option::Option;
-    use aptos_framework::event;
-    use aptos_framework::system_addresses;
-    use aptos_framework::transaction_context;
+    use topo_framework::event;
+    use topo_framework::system_addresses;
+    use topo_framework::transaction_context;
     #[test_only]
     use aptos_std::debug;
     #[test_only]
     use aptos_std::table_with_length;
 
-    friend aptos_framework::block;
+    friend topo_framework::block;
 
     const DST: vector<u8> = b"APTOS_RANDOMNESS";
 
@@ -44,7 +44,7 @@ module aptos_framework::randomness {
     /// Must be called in tests to initialize the `PerBlockRandomness` resource.
     public fun initialize(framework: &signer) {
         system_addresses::assert_aptos_framework(framework);
-        if (!exists<PerBlockRandomness>(@aptos_framework)) {
+        if (!exists<PerBlockRandomness>(@topo_framework)) {
             move_to(
                 framework,
                 PerBlockRandomness { epoch: 0, round: 0, seed: option::none() }
@@ -66,8 +66,8 @@ module aptos_framework::randomness {
         seed_for_new_block: Option<vector<u8>>
     ) acquires PerBlockRandomness {
         system_addresses::assert_vm(vm);
-        if (exists<PerBlockRandomness>(@aptos_framework)) {
-            let randomness = borrow_global_mut<PerBlockRandomness>(@aptos_framework);
+        if (exists<PerBlockRandomness>(@topo_framework)) {
+            let randomness = borrow_global_mut<PerBlockRandomness>(@topo_framework);
             randomness.epoch = epoch;
             randomness.round = round;
             randomness.seed = seed_for_new_block;
@@ -80,7 +80,7 @@ module aptos_framework::randomness {
         assert!(is_unbiasable(), E_API_USE_IS_BIASIBLE);
 
         let input = DST;
-        let randomness = borrow_global<PerBlockRandomness>(@aptos_framework);
+        let randomness = borrow_global<PerBlockRandomness>(@topo_framework);
         let seed = *randomness.seed.borrow();
 
         input.append(seed);
@@ -348,7 +348,7 @@ module aptos_framework::randomness {
     #[test_only]
     public fun set_seed(seed: vector<u8>) acquires PerBlockRandomness {
         assert!(seed.length() == 32, 0);
-        let randomness = borrow_global_mut<PerBlockRandomness>(@aptos_framework);
+        let randomness = borrow_global_mut<PerBlockRandomness>(@topo_framework);
         randomness.seed = option::some(seed);
     }
 
@@ -462,7 +462,7 @@ module aptos_framework::randomness {
         );
     }
 
-    #[test(fx = @aptos_framework)]
+    #[test(fx = @topo_framework)]
     fun randomness_smoke_test(fx: signer) acquires PerBlockRandomness {
         initialize(&fx);
         set_seed(x"0000000000000000000000000000000000000000000000000000000000000000");
@@ -478,7 +478,7 @@ module aptos_framework::randomness {
         assert!(events.length() == count, 0);
     }
 
-    #[test(fx = @aptos_framework)]
+    #[test(fx = @topo_framework)]
     fun test_emit_events(fx: signer) acquires PerBlockRandomness {
         initialize_for_testing(&fx);
 
@@ -542,7 +542,7 @@ module aptos_framework::randomness {
         assert_event_count_equals(c);
     }
 
-    #[test(fx = @aptos_framework)]
+    #[test(fx = @topo_framework)]
     fun test_bytes(fx: signer) acquires PerBlockRandomness {
         initialize_for_testing(&fx);
 
@@ -600,7 +600,7 @@ module aptos_framework::randomness {
         true
     }
 
-    #[test(fx = @aptos_framework)]
+    #[test(fx = @topo_framework)]
     fun test_permutation(fx: signer) acquires PerBlockRandomness {
         initialize_for_testing(&fx);
 

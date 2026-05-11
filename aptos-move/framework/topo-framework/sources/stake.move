@@ -45,7 +45,7 @@
 /// A validator's voting_power in ValidatorSet = staking_registry::get_validator_total_power(pool_address)
 /// = sum of effective_power for all delegators in the pool
 /// = sum of min(poc_power_i, deposit_i * 1,000,000 / octas_per_million_power) for each delegator i
-module aptos_framework::stake {
+module topo_framework::stake {
     use std::error;
     use std::features;
     use std::option::{Self, Option};
@@ -54,25 +54,25 @@ module aptos_framework::stake {
     use aptos_std::bls12381;
     use aptos_std::big_ordered_map::{Self, BigOrderedMap};
     use aptos_std::simple_map::{Self, SimpleMap};
-    use aptos_framework::aggregator_v2::{Self, Aggregator};
-    use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::account;
-    use aptos_framework::coin::{Self, Coin, MintCapability};
-    use aptos_framework::event;
-    use aptos_framework::poc_power_store;
-    use aptos_framework::timestamp;
-    use aptos_framework::system_addresses;
-    use aptos_framework::staking_registry;
-    use aptos_framework::staking_config::{Self, StakingConfig, StakingRewardsConfig};
-    use aptos_framework::validator_consensus_info::ValidatorConsensusInfo;
-    use aptos_framework::chain_status;
-    use aptos_framework::permissioned_signer;
+    use topo_framework::aggregator_v2::{Self, Aggregator};
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::account;
+    use topo_framework::coin::{Self, Coin, MintCapability};
+    use topo_framework::event;
+    use topo_framework::poc_power_store;
+    use topo_framework::timestamp;
+    use topo_framework::system_addresses;
+    use topo_framework::staking_registry;
+    use topo_framework::staking_config::{Self, StakingConfig, StakingRewardsConfig};
+    use topo_framework::validator_consensus_info::ValidatorConsensusInfo;
+    use topo_framework::chain_status;
+    use topo_framework::permissioned_signer;
 
-    friend aptos_framework::block;
-    friend aptos_framework::genesis;
-    friend aptos_framework::reconfiguration;
-    friend aptos_framework::reconfiguration_with_dkg;
-    friend aptos_framework::transaction_fee;
+    friend topo_framework::block;
+    friend topo_framework::genesis;
+    friend topo_framework::reconfiguration;
+    friend topo_framework::reconfiguration_with_dkg;
+    friend topo_framework::transaction_fee;
 
     /// Validator Config not published.
     const EVALIDATOR_CONFIG: u64 = 1;
@@ -194,7 +194,7 @@ module aptos_framework::stake {
         config: ValidatorConfig
     }
 
-    /// The canonical validator set, stored at @aptos_framework.
+    /// The canonical validator set, stored at @topo_framework.
     ///
     /// State machine:
     ///   join_validator_set  → pending_active
@@ -366,7 +366,7 @@ module aptos_framework::stake {
     #[view]
     /// Returns the validator's state.
     public fun get_validator_state(pool_address: address): u64 acquires ValidatorSet {
-        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global<ValidatorSet>(@topo_framework);
         if (find_validator(&validator_set.pending_active, pool_address).is_some()) {
             VALIDATOR_STATUS_PENDING_ACTIVE
         } else if (find_validator(&validator_set.active_validators, pool_address).is_some()) {
@@ -420,7 +420,7 @@ module aptos_framework::stake {
         validator_index: u64
     ): (u64, u64) acquires ValidatorPerformance {
         let validator_performances =
-            &borrow_global<ValidatorPerformance>(@aptos_framework).validators;
+            &borrow_global<ValidatorPerformance>(@topo_framework).validators;
         let validator_performance = validator_performances.borrow(validator_index);
         (
             validator_performance.successful_proposals,
@@ -452,7 +452,7 @@ module aptos_framework::stake {
     public fun get_pending_transaction_fee(): vector<u64> acquires PendingTransactionFee {
         let result = vector::empty();
         let fee_table =
-            &borrow_global<PendingTransactionFee>(@aptos_framework).pending_fee_by_validator;
+            &borrow_global<PendingTransactionFee>(@topo_framework).pending_fee_by_validator;
         let num_validators = fee_table.compute_length();
         let i = 0;
         while (i < num_validators) {
@@ -466,19 +466,19 @@ module aptos_framework::stake {
     #[view]
     /// Return the number of active validators in the current epoch.
     public fun get_active_validator_count(): u64 acquires ValidatorSet {
-        borrow_global<ValidatorSet>(@aptos_framework).active_validators.length()
+        borrow_global<ValidatorSet>(@topo_framework).active_validators.length()
     }
 
     #[view]
     /// Return the number of validators waiting to become active next epoch.
     public fun get_pending_active_validator_count(): u64 acquires ValidatorSet {
-        borrow_global<ValidatorSet>(@aptos_framework).pending_active.length()
+        borrow_global<ValidatorSet>(@topo_framework).pending_active.length()
     }
 
     #[view]
     /// Return the number of validators still active this epoch but leaving next epoch.
     public fun get_pending_inactive_validator_count(): u64 acquires ValidatorSet {
-        borrow_global<ValidatorSet>(@aptos_framework).pending_inactive.length()
+        borrow_global<ValidatorSet>(@topo_framework).pending_inactive.length()
     }
 
     #[view]
@@ -487,7 +487,7 @@ module aptos_framework::stake {
         offset: u64,
         limit: u64
     ): vector<address> acquires ValidatorSet {
-        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global<ValidatorSet>(@topo_framework);
         get_validator_addresses(&validator_set.active_validators, offset, limit)
     }
 
@@ -497,7 +497,7 @@ module aptos_framework::stake {
         offset: u64,
         limit: u64
     ): vector<address> acquires ValidatorSet {
-        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global<ValidatorSet>(@topo_framework);
         get_validator_addresses(&validator_set.pending_active, offset, limit)
     }
 
@@ -507,7 +507,7 @@ module aptos_framework::stake {
         offset: u64,
         limit: u64
     ): vector<address> acquires ValidatorSet {
-        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global<ValidatorSet>(@topo_framework);
         get_validator_addresses(&validator_set.pending_inactive, offset, limit)
     }
 
@@ -518,7 +518,7 @@ module aptos_framework::stake {
         offset: u64,
         limit: u64
     ): vector<address> acquires ValidatorSet {
-        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global<ValidatorSet>(@topo_framework);
         let addresses = vector[];
         let total = validator_set.active_validators.length()
             + validator_set.pending_inactive.length();
@@ -539,11 +539,11 @@ module aptos_framework::stake {
     }
 
     /// Initialize validator set to the core resource account.
-    public(friend) fun initialize(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public(friend) fun initialize(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
 
         move_to(
-            aptos_framework,
+            topo_framework,
             ValidatorSet {
                 consensus_scheme: 0,
                 active_validators: vector::empty(),
@@ -554,25 +554,25 @@ module aptos_framework::stake {
             }
         );
 
-        move_to(aptos_framework, ValidatorPerformance { validators: vector::empty() });
+        move_to(topo_framework, ValidatorPerformance { validators: vector::empty() });
     }
 
     /// This is only called during Genesis, which is where MintCapability<TopoCoin> can be created.
     /// Beyond genesis, no one can create TopoCoin mint/burn capabilities.
     public(friend) fun store_topo_coin_mint_cap(
-        aptos_framework: &signer, mint_cap: MintCapability<TopoCoin>
+        topo_framework: &signer, mint_cap: MintCapability<TopoCoin>
     ) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        move_to(aptos_framework, TopoCoinCapabilities { mint_cap })
+        system_addresses::assert_aptos_framework(topo_framework);
+        move_to(topo_framework, TopoCoinCapabilities { mint_cap })
     }
 
     /// Allow on chain governance to remove validators from the validator set.
     public fun remove_validators(
-        aptos_framework: &signer, validators: &vector<address>
+        topo_framework: &signer, validators: &vector<address>
     ) acquires ValidatorSet {
         assert_reconfig_not_in_progress();
-        system_addresses::assert_aptos_framework(aptos_framework);
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@topo_framework);
         let active_validators = &mut validator_set.active_validators;
         let pending_inactive = &mut validator_set.pending_inactive;
         spec {
@@ -613,7 +613,7 @@ module aptos_framework::stake {
     public fun initialize_pending_transaction_fee(framework: &signer) {
         system_addresses::assert_aptos_framework(framework);
 
-        if (!exists<PendingTransactionFee>(@aptos_framework)) {
+        if (!exists<PendingTransactionFee>(@topo_framework)) {
             move_to(
                 framework,
                 PendingTransactionFee {
@@ -644,8 +644,8 @@ module aptos_framework::stake {
     ) acquires TransactionFeeConfig {
         system_addresses::assert_aptos_framework(framework);
 
-        if (exists<TransactionFeeConfig>(@aptos_framework)) {
-            *borrow_global_mut<TransactionFeeConfig>(@aptos_framework) = config;
+        if (exists<TransactionFeeConfig>(@topo_framework)) {
+            *borrow_global_mut<TransactionFeeConfig>(@topo_framework) = config;
         } else {
             move_to(framework, config);
         }
@@ -664,7 +664,7 @@ module aptos_framework::stake {
         );
 
         let num_validators_to_distribute = fee_distribution_validator_indices.length();
-        let pending_fee = borrow_global_mut<PendingTransactionFee>(@aptos_framework);
+        let pending_fee = borrow_global_mut<PendingTransactionFee>(@topo_framework);
         let i = 0;
         while (i < num_validators_to_distribute) {
             let validator_index = fee_distribution_validator_indices[i];
@@ -1020,7 +1020,7 @@ module aptos_framework::stake {
         );
 
         // Validate the current validator set size has not exceeded the limit.
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@topo_framework);
         validator_set.pending_active.push_back(
             generate_validator_info(pool_address, *validator_config)
         );
@@ -1061,7 +1061,7 @@ module aptos_framework::stake {
             error::unauthenticated(ENOT_OPERATOR)
         );
 
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@topo_framework);
         // If the validator is still pending_active, directly kick the validator out.
         let maybe_pending_active_index =
             find_validator(&validator_set.pending_active, pool_address);
@@ -1117,7 +1117,7 @@ module aptos_framework::stake {
     ) acquires ValidatorPerformance {
         // Validator set cannot change until the end of the epoch, so the validator index in arguments should
         // match with those of the validators in ValidatorPerformance resource.
-        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@topo_framework);
         let validator_len = validator_perf.validators.length();
 
         spec {
@@ -1210,9 +1210,9 @@ module aptos_framework::stake {
     ///   - Rebuild PendingTransactionFee aggregator map for the new active set
     ///   - Optionally update rewards rate (periodical_reward_rate_decrease feature)
     public(friend) fun on_new_epoch() acquires PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet {
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@topo_framework);
         let config = staking_config::get();
-        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@topo_framework);
 
         let (rewards_rate, rewards_rate_denominator) =
             staking_config::get_reward_rate(&config);
@@ -1509,9 +1509,9 @@ module aptos_framework::stake {
             validator_index += 1;
         };
 
-        if (exists<PendingTransactionFee>(@aptos_framework)) {
+        if (exists<PendingTransactionFee>(@topo_framework)) {
             let pending_fee_by_validator =
-                &mut borrow_global_mut<PendingTransactionFee>(@aptos_framework).pending_fee_by_validator;
+                &mut borrow_global_mut<PendingTransactionFee>(@topo_framework).pending_fee_by_validator;
             assert!(
                 pending_fee_by_validator.is_empty(),
                 error::internal(ETRANSACTION_FEE_NOT_FULLY_DISTRIBUTED)
@@ -1529,16 +1529,16 @@ module aptos_framework::stake {
 
     /// Return the `ValidatorConsensusInfo` of each current validator, sorted by current validator index.
     public fun cur_validator_consensus_infos(): vector<ValidatorConsensusInfo> acquires ValidatorSet {
-        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global<ValidatorSet>(@topo_framework);
         validator_consensus_infos_from_validator_set(validator_set)
     }
 
     public fun get_current_epoch_governance_voting_power(): u64 acquires ValidatorSet {
-        if (!exists<ValidatorSet>(@aptos_framework)) {
+        if (!exists<ValidatorSet>(@topo_framework)) {
             return 0
         };
 
-        let cur_validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let cur_validator_set = borrow_global<ValidatorSet>(@topo_framework);
         let (_, maximum_stake) = staking_config::get_required_stake(&staking_config::get());
         let total_power = 0u128;
         cur_validator_set.active_validators.for_each_ref(|validator| {
@@ -1568,9 +1568,9 @@ module aptos_framework::stake {
     }
 
     fun simulate_next_epoch_validator_set(): ValidatorSet acquires PendingTransactionFee, TransactionFeeConfig, ValidatorSet, ValidatorPerformance, ValidatorConfig {
-        let cur_validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let cur_validator_set = borrow_global<ValidatorSet>(@topo_framework);
         let config = staking_config::get();
-        let validator_perf = borrow_global<ValidatorPerformance>(@aptos_framework);
+        let validator_perf = borrow_global<ValidatorPerformance>(@topo_framework);
         let simulated_deposit_deltas = simple_map::create<address, u64>();
         let (minimum_stake, maximum_stake) = staking_config::get_required_stake(&config);
         let voting_power_increase_limit =
@@ -1966,20 +1966,20 @@ module aptos_framework::stake {
     fun get_pending_transaction_fee_for_validator(
         validator_index: u64
     ): u64 acquires PendingTransactionFee, TransactionFeeConfig {
-        if (!exists<PendingTransactionFee>(@aptos_framework)) {
+        if (!exists<PendingTransactionFee>(@topo_framework)) {
             return 0
         };
 
         let fee_limit =
-            if (exists<TransactionFeeConfig>(@aptos_framework)) {
+            if (exists<TransactionFeeConfig>(@topo_framework)) {
                 let TransactionFeeConfig::V0 { max_fee_octa_allowed_per_epoch_per_pool } =
-                    borrow_global<TransactionFeeConfig>(@aptos_framework);
+                    borrow_global<TransactionFeeConfig>(@topo_framework);
                 *max_fee_octa_allowed_per_epoch_per_pool
             } else {
                 MAX_U64 as u64
             };
         let pending_fee_by_validator =
-            &borrow_global<PendingTransactionFee>(@aptos_framework).pending_fee_by_validator;
+            &borrow_global<PendingTransactionFee>(@topo_framework).pending_fee_by_validator;
         if (!pending_fee_by_validator.contains(&validator_index)) {
             return 0
         };
@@ -2121,20 +2121,20 @@ module aptos_framework::stake {
     fun collect_transaction_fee_for_validator(
         validator_index: u64
     ): u64 acquires PendingTransactionFee, TransactionFeeConfig {
-        if (!exists<PendingTransactionFee>(@aptos_framework)) {
+        if (!exists<PendingTransactionFee>(@topo_framework)) {
             return 0
         };
 
         let fee_limit =
-            if (exists<TransactionFeeConfig>(@aptos_framework)) {
+            if (exists<TransactionFeeConfig>(@topo_framework)) {
                 let TransactionFeeConfig::V0 { max_fee_octa_allowed_per_epoch_per_pool } =
-                    borrow_global<TransactionFeeConfig>(@aptos_framework);
+                    borrow_global<TransactionFeeConfig>(@topo_framework);
                 *max_fee_octa_allowed_per_epoch_per_pool
             } else {
                 MAX_U64 as u64
             };
         let pending_fee_by_validator =
-            &mut borrow_global_mut<PendingTransactionFee>(@aptos_framework).pending_fee_by_validator;
+            &mut borrow_global_mut<PendingTransactionFee>(@topo_framework).pending_fee_by_validator;
         if (!pending_fee_by_validator.contains(&validator_index)) {
             return 0
         };
@@ -2324,7 +2324,7 @@ module aptos_framework::stake {
     }
 
     fun update_voting_power_increase(increase_amount: u64) acquires ValidatorSet {
-        let validator_set = borrow_global_mut<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global_mut<ValidatorSet>(@topo_framework);
         let voting_power_increase_limit =
             (
                 staking_config::get_voting_power_increase_limit(&staking_config::get()) as u128
@@ -2357,12 +2357,12 @@ module aptos_framework::stake {
     }
 
     public fun configure_allowed_validators(
-        aptos_framework: &signer, accounts: vector<address>
+        topo_framework: &signer, accounts: vector<address>
     ) acquires AllowedValidators {
-        let aptos_framework_address = signer::address_of(aptos_framework);
-        system_addresses::assert_aptos_framework(aptos_framework);
+        let aptos_framework_address = signer::address_of(topo_framework);
+        system_addresses::assert_aptos_framework(topo_framework);
         if (!exists<AllowedValidators>(aptos_framework_address)) {
-            move_to(aptos_framework, AllowedValidators { accounts });
+            move_to(topo_framework, AllowedValidators { accounts });
         } else {
             let allowed = borrow_global_mut<AllowedValidators>(aptos_framework_address);
             allowed.accounts = accounts;
@@ -2370,9 +2370,9 @@ module aptos_framework::stake {
     }
 
     fun is_allowed(account: address): bool acquires AllowedValidators {
-        if (!exists<AllowedValidators>(@aptos_framework)) { true }
+        if (!exists<AllowedValidators>(@topo_framework)) { true }
         else {
-            let allowed = borrow_global<AllowedValidators>(@aptos_framework);
+            let allowed = borrow_global<AllowedValidators>(@topo_framework);
             allowed.accounts.contains(&account)
         }
     }
@@ -2392,10 +2392,10 @@ module aptos_framework::stake {
     }
 
     #[test_only]
-    use aptos_framework::topo_coin;
+    use topo_framework::topo_coin;
     use aptos_std::bls12381::proof_of_possession_from_bytes;
-    use aptos_framework::reconfiguration_state;
-    use aptos_framework::validator_consensus_info;
+    use topo_framework::reconfiguration_state;
+    use topo_framework::validator_consensus_info;
     #[test_only]
     const EPOCH_DURATION: u64 = 60;
 
@@ -2403,10 +2403,10 @@ module aptos_framework::stake {
     const LOCKUP_CYCLE_SECONDS: u64 = 3600;
 
     #[test_only]
-    public fun initialize_for_test(aptos_framework: &signer) acquires TopoCoinCapabilities {
-        reconfiguration_state::initialize(aptos_framework);
+    public fun initialize_for_test(topo_framework: &signer) acquires TopoCoinCapabilities {
+        reconfiguration_state::initialize(topo_framework);
         initialize_for_test_custom(
-            aptos_framework,
+            topo_framework,
             100,
             10000,
             LOCKUP_CYCLE_SECONDS,
@@ -2417,7 +2417,7 @@ module aptos_framework::stake {
         );
         // In the test environment, the periodical_reward_rate_decrease feature is initially turned off.
         features::change_feature_flags_for_testing(
-            aptos_framework,
+            topo_framework,
             vector[],
             vector[features::get_periodical_reward_rate_decrease_feature()]
         );
@@ -2426,7 +2426,7 @@ module aptos_framework::stake {
     // Convenient function for setting up all required stake initializations.
     #[test_only]
     public fun initialize_for_test_custom(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         minimum_stake: u64,
         maximum_stake: u64,
         recurring_lockup_secs: u64,
@@ -2435,13 +2435,13 @@ module aptos_framework::stake {
         rewards_rate_denominator: u64,
         voting_power_increase_limit: u64
     ) acquires TopoCoinCapabilities {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
-        reconfiguration_state::initialize(aptos_framework);
-        if (!exists<ValidatorSet>(@aptos_framework)) {
-            initialize(aptos_framework);
+        timestamp::set_time_has_started_for_testing(topo_framework);
+        reconfiguration_state::initialize(topo_framework);
+        if (!exists<ValidatorSet>(@topo_framework)) {
+            initialize(topo_framework);
         };
         staking_config::initialize_for_test(
-            aptos_framework,
+            topo_framework,
             minimum_stake,
             maximum_stake,
             recurring_lockup_secs,
@@ -2451,19 +2451,19 @@ module aptos_framework::stake {
             voting_power_increase_limit
         );
 
-        if (!exists<TopoCoinCapabilities>(@aptos_framework)) {
-            let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
-            store_topo_coin_mint_cap(aptos_framework, mint_cap);
+        if (!exists<TopoCoinCapabilities>(@topo_framework)) {
+            let (burn_cap, mint_cap) = topo_coin::initialize_for_test(topo_framework);
+            store_topo_coin_mint_cap(topo_framework, mint_cap);
             coin::destroy_burn_cap<TopoCoin>(burn_cap);
         };
 
         if (!staking_registry::registry_exists()) {
             staking_registry::store_topo_coin_mint_cap(
-                aptos_framework,
-                borrow_global<TopoCoinCapabilities>(@aptos_framework).mint_cap,
+                topo_framework,
+                borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap,
             );
             staking_registry::initialize(
-                aptos_framework,
+                topo_framework,
                 1000000,
                 1000,
                 recurring_lockup_secs,
@@ -2471,12 +2471,12 @@ module aptos_framework::stake {
         };
 
         if (poc_power_store::get_operator() == @0x0) {
-            poc_power_store::initialize_power_store(aptos_framework, @aptos_framework);
+            poc_power_store::initialize_power_store(topo_framework, @topo_framework);
         };
 
         // In the test environment, the periodical_reward_rate_decrease feature is initially turned off.
         features::change_feature_flags_for_testing(
-            aptos_framework,
+            topo_framework,
             vector[],
             vector[features::get_periodical_reward_rate_decrease_feature()]
         );
@@ -2487,7 +2487,7 @@ module aptos_framework::stake {
         account: &signer, amount: u64
     ) acquires TopoCoinCapabilities {
         coin::register<TopoCoin>(account);
-        let mint_cap = &borrow_global<TopoCoinCapabilities>(@aptos_framework).mint_cap;
+        let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
         coin::deposit(signer::address_of(account), coin::mint(amount, mint_cap));
         staking_registry::deposit(account, amount);
         let account_address = signer::address_of(account);
@@ -2499,7 +2499,7 @@ module aptos_framework::stake {
 
     #[test_only]
     public fun initialize_test_validator(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         public_key: &bls12381::PublicKey,
         proof_of_possession: &bls12381::ProofOfPossession,
         validator: &signer,
@@ -2524,7 +2524,7 @@ module aptos_framework::stake {
             let genesis_power =
                 staking_registry::calculate_genesis_power_from_stake(amount);
             poc_power_store::set_genesis_committed_power(
-                aptos_framework,
+                topo_framework,
                 validator_address,
                 genesis_power,
             );
@@ -2551,14 +2551,14 @@ module aptos_framework::stake {
 
     #[
         test(
-            aptos_framework = @0x1,
+            topo_framework = @0x1,
             validator_1 = @0x123,
             validator_2 = @0x234,
             validator_3 = @0x345
         )
     ]
     public entry fun test_multiple_validators_join_and_leave(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator_1: &signer,
         validator_2: &signer,
         validator_3: &signer
@@ -2568,7 +2568,7 @@ module aptos_framework::stake {
         let validator_3_address = signer::address_of(validator_3);
 
         initialize_for_test_custom(
-            aptos_framework,
+            topo_framework,
             100,
             10000,
             LOCKUP_CYCLE_SECONDS,
@@ -2581,9 +2581,9 @@ module aptos_framework::stake {
         let pk_1_bytes = bls12381::public_key_to_bytes(&pk_1);
         let (_sk_2, pk_2, pop_2) = generate_identity();
         let (_sk_3, pk_3, pop_3) = generate_identity();
-        initialize_test_validator(aptos_framework, &pk_1, &pop_1, validator_1, 100, false, false);
-        initialize_test_validator(aptos_framework, &pk_2, &pop_2, validator_2, 100, false, false);
-        initialize_test_validator(aptos_framework, &pk_3, &pop_3, validator_3, 100, false, false);
+        initialize_test_validator(topo_framework, &pk_1, &pop_1, validator_1, 100, false, false);
+        initialize_test_validator(topo_framework, &pk_2, &pop_2, validator_2, 100, false, false);
+        initialize_test_validator(topo_framework, &pk_3, &pop_3, validator_3, 100, false, false);
 
         // Validator 1 and 2 join the validator set.
         join_validator_set(validator_2, validator_2_address);
@@ -2593,7 +2593,7 @@ module aptos_framework::stake {
         assert!(get_validator_state(validator_2_address) == VALIDATOR_STATUS_ACTIVE, 1);
 
         // Validator indices is the reverse order of the joining order.
-        let validator_set = borrow_global<ValidatorSet>(@aptos_framework);
+        let validator_set = borrow_global<ValidatorSet>(@topo_framework);
         let validator_config_1 = validator_set.active_validators.borrow(0);
         assert!(validator_config_1.addr == validator_1_address, 2);
         assert!(validator_config_1.config.validator_index == 0, 3);
@@ -2620,7 +2620,7 @@ module aptos_framework::stake {
             6
         );
         assert!(
-            borrow_global<ValidatorSet>(@aptos_framework).pending_inactive.borrow(0).addr ==
+            borrow_global<ValidatorSet>(@topo_framework).pending_inactive.borrow(0).addr ==
             validator_2_address,
             0
         );
@@ -2630,12 +2630,12 @@ module aptos_framework::stake {
             7
         );
         assert!(
-            borrow_global<ValidatorSet>(@aptos_framework).pending_active.borrow(0).addr
+            borrow_global<ValidatorSet>(@topo_framework).pending_active.borrow(0).addr
                 == validator_3_address,
             0
         );
         assert!(
-            borrow_global<ValidatorSet>(@aptos_framework).active_validators.borrow(0).config
+            borrow_global<ValidatorSet>(@topo_framework).active_validators.borrow(0).config
             .consensus_pubkey == pk_1_bytes,
             0
         );
@@ -2651,7 +2651,7 @@ module aptos_framework::stake {
         assert!(get_validator_state(validator_3_address) == VALIDATOR_STATUS_ACTIVE, 10);
         assert!(get_validator_index(validator_3_address) == 1, 13);
         assert!(
-            borrow_global<ValidatorSet>(@aptos_framework).active_validators.borrow(0).config
+            borrow_global<ValidatorSet>(@topo_framework).active_validators.borrow(0).config
             .consensus_pubkey == pk_1b_bytes,
             0
         );
@@ -2660,8 +2660,8 @@ module aptos_framework::stake {
 
     #[
         test(
-            aptos_framework = @aptos_framework,
-            validator_1 = @aptos_framework,
+            topo_framework = @topo_framework,
+            validator_1 = @topo_framework,
             validator_2 = @0x2,
             validator_3 = @0x3,
             validator_4 = @0x4,
@@ -2669,7 +2669,7 @@ module aptos_framework::stake {
         )
     ]
     public entry fun test_staking_validator_index(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator_1: &signer,
         validator_2: &signer,
         validator_3: &signer,
@@ -2682,9 +2682,9 @@ module aptos_framework::stake {
         let v4_addr = signer::address_of(validator_4);
         let v5_addr = signer::address_of(validator_5);
 
-        initialize_for_test(aptos_framework);
+        initialize_for_test(topo_framework);
         // This test focuses on validator index churn, not power decay across periods.
-        poc_power_store::set_retention_bps_per_period(aptos_framework, 10000);
+        poc_power_store::set_retention_bps_per_period(topo_framework, 10000);
 
         let (_sk_1, pk_1, pop_1) = generate_identity();
         let (_sk_2, pk_2, pop_2) = generate_identity();
@@ -2692,11 +2692,11 @@ module aptos_framework::stake {
         let (_sk_4, pk_4, pop_4) = generate_identity();
         let (_sk_5, pk_5, pop_5) = generate_identity();
 
-        initialize_test_validator(aptos_framework, &pk_1, &pop_1, validator_1, 100, false, false);
-        initialize_test_validator(aptos_framework, &pk_2, &pop_2, validator_2, 100, false, false);
-        initialize_test_validator(aptos_framework, &pk_3, &pop_3, validator_3, 100, false, false);
-        initialize_test_validator(aptos_framework, &pk_4, &pop_4, validator_4, 100, false, false);
-        initialize_test_validator(aptos_framework, &pk_5, &pop_5, validator_5, 100, false, false);
+        initialize_test_validator(topo_framework, &pk_1, &pop_1, validator_1, 100, false, false);
+        initialize_test_validator(topo_framework, &pk_2, &pop_2, validator_2, 100, false, false);
+        initialize_test_validator(topo_framework, &pk_3, &pop_3, validator_3, 100, false, false);
+        initialize_test_validator(topo_framework, &pk_4, &pop_4, validator_4, 100, false, false);
+        initialize_test_validator(topo_framework, &pk_5, &pop_5, validator_5, 100, false, false);
 
         join_validator_set(validator_3, v3_addr);
         end_epoch();
@@ -2736,18 +2736,18 @@ module aptos_framework::stake {
     }
 
     #[test(
-        vm = @0x0, aptos_framework = @0x1, validator_0 = @0x123, validator_1 = @0x234
+        vm = @0x0, topo_framework = @0x1, validator_0 = @0x123, validator_1 = @0x234
     )]
     public entry fun test_transaction_fee(
         vm: &signer,
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator_0: &signer,
         validator_1: &signer
     ) acquires AllowedValidators, TopoCoinCapabilities, PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet {
-        initialize_for_test(aptos_framework);
-        initialize_pending_transaction_fee(aptos_framework);
+        initialize_for_test(topo_framework);
+        initialize_pending_transaction_fee(topo_framework);
         features::change_feature_flags_for_testing(
-            aptos_framework,
+            topo_framework,
             vector[features::get_distribute_transaction_fee_feature()],
             vector[]
         );
@@ -2755,18 +2755,18 @@ module aptos_framework::stake {
         let address_1 = signer::address_of(validator_1);
         let (_sk_0, pk_0, pop_0) = generate_identity();
         let (_sk_1, pk_1, pop_1) = generate_identity();
-        initialize_test_validator(aptos_framework, &pk_0, &pop_0, validator_0, 100, true, false);
-        initialize_test_validator(aptos_framework, &pk_1, &pop_1, validator_1, 100, true, true);
+        initialize_test_validator(topo_framework, &pk_0, &pop_0, validator_0, 100, true, false);
+        initialize_test_validator(topo_framework, &pk_1, &pop_1, validator_1, 100, true, true);
         assert!(
-            borrow_global<ValidatorSet>(@aptos_framework).active_validators.length()
+            borrow_global<ValidatorSet>(@topo_framework).active_validators.length()
                 == 2,
             0
         );
 
         let validator_to_remove = signer::address_of(validator_0);
-        remove_validators(aptos_framework, &vector[validator_to_remove]);
+        remove_validators(topo_framework, &vector[validator_to_remove]);
         assert!(
-            borrow_global<ValidatorSet>(@aptos_framework).active_validators.length()
+            borrow_global<ValidatorSet>(@topo_framework).active_validators.length()
                 == 1,
             0
         );
@@ -2775,7 +2775,7 @@ module aptos_framework::stake {
 
         {
             let fee_table =
-                &borrow_global<PendingTransactionFee>(@aptos_framework).pending_fee_by_validator;
+                &borrow_global<PendingTransactionFee>(@topo_framework).pending_fee_by_validator;
             assert!(fee_table.contains(&0), 0);
             assert!(fee_table.contains(&1), 0);
         };
@@ -2799,7 +2799,7 @@ module aptos_framework::stake {
 
         {
             let fee_table =
-                &borrow_global<PendingTransactionFee>(@aptos_framework).pending_fee_by_validator;
+                &borrow_global<PendingTransactionFee>(@topo_framework).pending_fee_by_validator;
             assert!(
                 fee_table.borrow(&get_validator_index(address_0)).read() == 11,
                 0
@@ -2825,7 +2825,7 @@ module aptos_framework::stake {
         };
 
         let fee_table =
-            &borrow_global<PendingTransactionFee>(@aptos_framework).pending_fee_by_validator;
+            &borrow_global<PendingTransactionFee>(@topo_framework).pending_fee_by_validator;
         // validator 1 is at index 0 now.
         assert!(fee_table.contains(&0), 0);
         assert!(!fee_table.contains(&1), 0);
@@ -2845,7 +2845,7 @@ module aptos_framework::stake {
     #[test_only]
     public fun end_epoch() acquires PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet {
         // Set the number of blocks to 1, to give out rewards to non-failing validators.
-        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@topo_framework);
         validator_perf.validators.for_each_mut(|validator| {
             let validator: &mut IndividualValidatorPerformance = validator;
             if (validator.successful_proposals + validator.failed_proposals < 1) {
@@ -2875,7 +2875,7 @@ module aptos_framework::stake {
         successful_proposals: u64,
         failed_proposals: u64,
     ) acquires ValidatorPerformance {
-        let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+        let validator_perf = borrow_global_mut<ValidatorPerformance>(@topo_framework);
         let perf = validator_perf.validators.borrow_mut(validator_index);
         perf.successful_proposals = successful_proposals;
         perf.failed_proposals = failed_proposals;
@@ -2932,20 +2932,20 @@ module aptos_framework::stake {
         )
     }
 
-    #[test(aptos_framework = @aptos_framework, validator = @0x123)]
+    #[test(topo_framework = @topo_framework, validator = @0x123)]
     public entry fun test_validator_set_liveness_fallback(
-        aptos_framework: &signer, validator: &signer
+        topo_framework: &signer, validator: &signer
     ) acquires ValidatorSet, AllowedValidators, TopoCoinCapabilities, PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance {
         // Initialize with a minimum stake requirement (100)
-        initialize_for_test(aptos_framework);
+        initialize_for_test(topo_framework);
         let (_sk, pk, pop) = generate_identity();
 
-        initialize_test_validator(aptos_framework, &pk, &pop, validator, 100, true, true);
-        staking_config::update_required_stake(aptos_framework, 1000, 10000);
+        initialize_test_validator(topo_framework, &pk, &pop, validator, 100, true, true);
+        staking_config::update_required_stake(topo_framework, 1000, 10000);
         end_epoch();
 
         // Verify that ValidatorSetLivenessFallback event was emitted
-        let validator_set = &ValidatorSet[@aptos_framework];
+        let validator_set = &ValidatorSet[@topo_framework];
         let (minimum_stake, _) =
             staking_config::get_required_stake(&staking_config::get());
         let expected_total_voting_power = validator_set.total_voting_power;
@@ -2959,13 +2959,13 @@ module aptos_framework::stake {
         assert!(event::was_event_emitted(&expected_event), 0);
     }
 
-    #[test(aptos_framework = @aptos_framework, validator = @0x123)]
+    #[test(topo_framework = @topo_framework, validator = @0x123)]
     public entry fun test_next_validator_consensus_infos_includes_epoch_rewards(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
     ) acquires ValidatorSet, AllowedValidators, TopoCoinCapabilities, PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance {
         initialize_for_test_custom(
-            aptos_framework,
+            topo_framework,
             100,
             10000,
             LOCKUP_CYCLE_SECONDS,
@@ -2974,28 +2974,28 @@ module aptos_framework::stake {
             100,
             1000000,
         );
-        poc_power_store::set_retention_bps_per_period(aptos_framework, 10000);
+        poc_power_store::set_retention_bps_per_period(topo_framework, 10000);
 
         let validator_address = signer::address_of(validator);
         let (_sk, pk, pop) = generate_identity();
-        initialize_test_validator(aptos_framework, &pk, &pop, validator, 100, true, false);
+        initialize_test_validator(topo_framework, &pk, &pop, validator, 100, true, false);
         // Keep the committed power above the current deposit cover so the next-epoch
         // simulation must include rewards to raise voting power from 100 to 120.
         poc_power_store::set_genesis_committed_power(
-            aptos_framework,
+            topo_framework,
             validator_address,
             120,
         );
         end_epoch();
-        staking_config::update_rewards_rate(aptos_framework, 25, 100);
+        staking_config::update_rewards_rate(topo_framework, 25, 100);
         {
-            let validator_perf = borrow_global_mut<ValidatorPerformance>(@aptos_framework);
+            let validator_perf = borrow_global_mut<ValidatorPerformance>(@topo_framework);
             let perf = validator_perf.validators.borrow_mut(0);
             perf.successful_proposals = 1;
             perf.failed_proposals = 0;
         };
 
-        staking_config::update_required_stake(aptos_framework, 110, 10000);
+        staking_config::update_required_stake(topo_framework, 110, 10000);
 
         let next_infos = next_validator_consensus_infos();
         assert!(next_infos.length() == 1, 0);
@@ -3013,23 +3013,23 @@ module aptos_framework::stake {
     }
 
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator = @0x123,
         delegator = @0x456
     )]
-    #[expected_failure(abort_code = 0x1000f, location = aptos_framework::staking_registry)]
+    #[expected_failure(abort_code = 0x1000f, location = topo_framework::staking_registry)]
     public entry fun test_delegate_rejects_below_min_active_power(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         delegator: &signer,
     ) acquires AllowedValidators, TopoCoinCapabilities, PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet {
-        initialize_for_test(aptos_framework);
+        initialize_for_test(topo_framework);
 
         let validator_address = signer::address_of(validator);
         let delegator_address = signer::address_of(delegator);
         let (_validator_sk, validator_pk, validator_pop) = generate_identity();
         initialize_test_validator(
-            aptos_framework,
+            topo_framework,
             &validator_pk,
             &validator_pop,
             validator,
@@ -3038,10 +3038,10 @@ module aptos_framework::stake {
             false,
         );
 
-        staking_registry::set_active_power_thresholds(aptos_framework, 100, 8000);
+        staking_registry::set_active_power_thresholds(topo_framework, 100, 8000);
         account::create_account_for_test(delegator_address);
         poc_power_store::set_genesis_committed_power(
-            aptos_framework,
+            topo_framework,
             delegator_address,
             99,
         );
@@ -3051,22 +3051,22 @@ module aptos_framework::stake {
     }
 
     #[test(
-        aptos_framework = @aptos_framework,
+        topo_framework = @topo_framework,
         validator = @0x123,
         delegator = @0x456
     )]
     public entry fun test_force_undelegate_below_maintain_threshold(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         validator: &signer,
         delegator: &signer,
     ) acquires AllowedValidators, TopoCoinCapabilities, PendingTransactionFee, StakePool, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet {
-        initialize_for_test(aptos_framework);
+        initialize_for_test(topo_framework);
 
         let validator_address = signer::address_of(validator);
         let delegator_address = signer::address_of(delegator);
         let (_validator_sk, validator_pk, validator_pop) = generate_identity();
         initialize_test_validator(
-            aptos_framework,
+            topo_framework,
             &validator_pk,
             &validator_pop,
             validator,
@@ -3077,17 +3077,17 @@ module aptos_framework::stake {
 
         account::create_account_for_test(delegator_address);
         poc_power_store::set_genesis_committed_power(
-            aptos_framework,
+            topo_framework,
             delegator_address,
             100,
         );
         mint_and_add_stake(delegator, 100);
         staking_registry::delegate(delegator, validator_address);
-        staking_registry::set_active_power_thresholds(aptos_framework, 100, 8000);
+        staking_registry::set_active_power_thresholds(topo_framework, 100, 8000);
 
         let target_period = poc_power_store::get_current_period() + 1;
         poc_power_store::stage_batch_update(
-            aptos_framework,
+            topo_framework,
             target_period,
             vector[delegator_address],
             vector[79u64],

@@ -141,7 +141,7 @@ impl NetworkConfig {
 
         std::fs::write(fas_script_path.as_path(), format!(r#"
         script {{
-            use aptos_framework::topo_governance;
+            use topo_framework::topo_governance;
 
             fun main(core_resources: &signer) {{
                 let core_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);

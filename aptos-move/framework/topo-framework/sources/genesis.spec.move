@@ -1,4 +1,4 @@
-spec aptos_framework::genesis {
+spec topo_framework::genesis {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: All the core resources and modules should be created during genesis and owned by the Aptos framework
@@ -77,35 +77,35 @@ spec aptos_framework::genesis {
 
         // property 1: All the core resources and modules should be created during genesis and owned by the Aptos framework account.
         /// [high-level-req-1]
-        ensures exists<topo_governance::GovernanceResponsbility>(@aptos_framework);
-        ensures exists<consensus_config::ConsensusConfig>(@aptos_framework);
-        ensures exists<execution_config::ExecutionConfig>(@aptos_framework);
-        ensures exists<version::Version>(@aptos_framework);
-        ensures exists<stake::ValidatorSet>(@aptos_framework);
-        ensures exists<stake::ValidatorPerformance>(@aptos_framework);
-        ensures exists<storage_gas::StorageGasConfig>(@aptos_framework);
-        ensures exists<storage_gas::StorageGas>(@aptos_framework);
-        ensures exists<gas_schedule::GasScheduleV2>(@aptos_framework);
-        ensures exists<aggregator_factory::AggregatorFactory>(@aptos_framework);
-        ensures exists<coin::SupplyConfig>(@aptos_framework);
-        ensures exists<chain_id::ChainId>(@aptos_framework);
-        ensures exists<reconfiguration::Configuration>(@aptos_framework);
-        ensures exists<block::BlockResource>(@aptos_framework);
-        ensures exists<state_storage::StateStorageUsage>(@aptos_framework);
-        ensures exists<timestamp::CurrentTimeMicroseconds>(@aptos_framework);
-        ensures exists<account::Account>(@aptos_framework);
-        ensures exists<version::SetVersionCapability>(@aptos_framework);
-        ensures exists<staking_config::StakingConfig>(@aptos_framework);
+        ensures exists<topo_governance::GovernanceResponsbility>(@topo_framework);
+        ensures exists<consensus_config::ConsensusConfig>(@topo_framework);
+        ensures exists<execution_config::ExecutionConfig>(@topo_framework);
+        ensures exists<version::Version>(@topo_framework);
+        ensures exists<stake::ValidatorSet>(@topo_framework);
+        ensures exists<stake::ValidatorPerformance>(@topo_framework);
+        ensures exists<storage_gas::StorageGasConfig>(@topo_framework);
+        ensures exists<storage_gas::StorageGas>(@topo_framework);
+        ensures exists<gas_schedule::GasScheduleV2>(@topo_framework);
+        ensures exists<aggregator_factory::AggregatorFactory>(@topo_framework);
+        ensures exists<coin::SupplyConfig>(@topo_framework);
+        ensures exists<chain_id::ChainId>(@topo_framework);
+        ensures exists<reconfiguration::Configuration>(@topo_framework);
+        ensures exists<block::BlockResource>(@topo_framework);
+        ensures exists<state_storage::StateStorageUsage>(@topo_framework);
+        ensures exists<timestamp::CurrentTimeMicroseconds>(@topo_framework);
+        ensures exists<account::Account>(@topo_framework);
+        ensures exists<version::SetVersionCapability>(@topo_framework);
+        ensures exists<staking_config::StakingConfig>(@topo_framework);
     }
 
     spec initialize_topo_coin {
         // property 3: The Aptos coin should be initialized during genesis and only the Aptos framework account should
         // own the mint and burn capabilities for the TOPO token.
         /// [high-level-req-3]
-        requires !exists<stake::TopoCoinCapabilities>(@aptos_framework);
-        ensures exists<stake::TopoCoinCapabilities>(@aptos_framework);
-        requires exists<transaction_fee::TopoCoinCapabilities>(@aptos_framework);
-        ensures exists<transaction_fee::TopoCoinCapabilities>(@aptos_framework);
+        requires !exists<stake::TopoCoinCapabilities>(@topo_framework);
+        ensures exists<stake::TopoCoinCapabilities>(@topo_framework);
+        requires exists<transaction_fee::TopoCoinCapabilities>(@topo_framework);
+        ensures exists<transaction_fee::TopoCoinCapabilities>(@topo_framework);
     }
 
     spec initialize_validator {
@@ -147,27 +147,27 @@ spec aptos_framework::genesis {
         pragma delegate_invariants_to_caller;
         // property 4: An initial set of validators should exist before the end of genesis.
         /// [high-level-req-4]
-        requires len(global<stake::ValidatorSet>(@aptos_framework).active_validators) >= 1;
+        requires len(global<stake::ValidatorSet>(@topo_framework).active_validators) >= 1;
         // property 5: The end of genesis should be marked on chain.
         /// [high-level-req-5]
-        let addr = std::signer::address_of(aptos_framework);
-        aborts_if addr != @aptos_framework;
-        aborts_if exists<chain_status::GenesisEndMarker>(@aptos_framework);
-        ensures global<chain_status::GenesisEndMarker>(@aptos_framework) == chain_status::GenesisEndMarker {};
+        let addr = std::signer::address_of(topo_framework);
+        aborts_if addr != @topo_framework;
+        aborts_if exists<chain_status::GenesisEndMarker>(@topo_framework);
+        ensures global<chain_status::GenesisEndMarker>(@topo_framework) == chain_status::GenesisEndMarker {};
     }
 
     spec schema InitalizeRequires {
         execution_config: vector<u8>;
-        requires !exists<account::Account>(@aptos_framework);
+        requires !exists<account::Account>(@topo_framework);
         requires chain_status::is_operating();
         requires len(execution_config) > 0;
-        requires exists<staking_config::StakingRewardsConfig>(@aptos_framework);
-        requires exists<coin::CoinInfo<TopoCoin>>(@aptos_framework);
+        requires exists<staking_config::StakingRewardsConfig>(@topo_framework);
+        requires exists<coin::CoinInfo<TopoCoin>>(@topo_framework);
         include CompareTimeRequires;
     }
 
     spec schema CompareTimeRequires {
-        let staking_rewards_config = global<staking_config::StakingRewardsConfig>(@aptos_framework);
+        let staking_rewards_config = global<staking_config::StakingRewardsConfig>(@topo_framework);
         requires staking_rewards_config.last_rewards_rate_period_start_in_secs <= timestamp::spec_now_seconds();
     }
 }

@@ -14,22 +14,22 @@
 /// TODO:
 /// * There is no means to borrow an object or a reference to an object. We are exploring how to
 ///   make it so that a reference to a global object can be returned from a function.
-module aptos_framework::object {
+module topo_framework::object {
     use std::bcs;
     use std::error;
     use std::hash;
     use std::signer;
     use aptos_std::from_bcs;
 
-    use aptos_framework::account;
-    use aptos_framework::transaction_context;
-    use aptos_framework::create_signer::create_signer;
-    use aptos_framework::event;
-    use aptos_framework::guid;
-    use aptos_framework::permissioned_signer;
+    use topo_framework::account;
+    use topo_framework::transaction_context;
+    use topo_framework::create_signer::create_signer;
+    use topo_framework::event;
+    use topo_framework::guid;
+    use topo_framework::permissioned_signer;
 
-    friend aptos_framework::coin;
-    friend aptos_framework::primary_fungible_store;
+    friend topo_framework::coin;
+    friend topo_framework::primary_fungible_store;
 
     /// An object already exists at this address
     const EOBJECT_EXISTS: u64 = 1;
@@ -93,7 +93,7 @@ module aptos_framework::object {
     /// Address where unwanted objects can be forcefully transferred to.
     const BURN_ADDRESS: address = @0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// The core of the object model that defines ownership, transferability, and events.
     struct ObjectCore has key {
         /// Used by guid to guarantee globally unique objects and create event streams
@@ -107,14 +107,14 @@ module aptos_framework::object {
         transfer_events: event::EventHandle<TransferEvent>,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// This is added to objects that are burnt (ownership transferred to BURN_ADDRESS).
     struct TombStone has key {
         /// Track the previous owner before the object is burnt so they can reclaim later if so desired.
         original_owner: address,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// The existence of this renders all `TransferRef`s irrelevant. The object cannot be moved.
     struct Untransferable has key {}
 
@@ -276,7 +276,7 @@ module aptos_framework::object {
         create_object_internal(owner_address, unique_address, false)
     }
 
-    /// Create a sticky object at a specific address. Only used by aptos_framework::coin.
+    /// Create a sticky object at a specific address. Only used by topo_framework::coin.
     public(friend) fun create_sticky_object_at_address(
         owner_address: address,
         object_address: address,
@@ -754,14 +754,14 @@ module aptos_framework::object {
     }
 
     #[test_only]
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     struct Hero has key {
         equip_events: event::EventHandle<HeroEquipEvent>,
         weapon: Option<Object<Weapon>>,
     }
 
     #[test_only]
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     struct Weapon has key {}
 
     #[test_only]
@@ -881,8 +881,8 @@ module aptos_framework::object {
 
     #[test(fx = @std)]
     fun test_correct_auid() {
-        let auid1 = aptos_framework::transaction_context::generate_auid_address();
-        let bytes = aptos_framework::transaction_context::get_transaction_hash();
+        let auid1 = topo_framework::transaction_context::generate_auid_address();
+        let bytes = topo_framework::transaction_context::get_transaction_hash();
         bytes.push_back(1);
         bytes.push_back(0);
         bytes.push_back(0);
@@ -892,13 +892,13 @@ module aptos_framework::object {
         bytes.push_back(0);
         bytes.push_back(0);
         bytes.push_back(DERIVE_AUID_ADDRESS_SCHEME);
-        let auid2 = aptos_framework::from_bcs::to_address(std::hash::sha3_256(bytes));
+        let auid2 = topo_framework::from_bcs::to_address(std::hash::sha3_256(bytes));
         assert!(auid1 == auid2, 0);
     }
 
     #[test]
     fun test_correct_derived_object_address() {
-        use aptos_framework::object;
+        use topo_framework::object;
 
         let source = @0x12345;
         let derive_from = @0x7890;
@@ -1141,14 +1141,14 @@ module aptos_framework::object {
     }
 
     #[test_only]
-    use aptos_framework::timestamp;
+    use topo_framework::timestamp;
 
     #[test(creator = @0x123)]
     fun test_transfer_permission_e2e(
         creator: &signer,
     ) acquires ObjectCore {
-        let aptos_framework = account::create_signer_for_test(@0x1);
-        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        let topo_framework = account::create_signer_for_test(@0x1);
+        timestamp::set_time_has_started_for_testing(&topo_framework);
 
         let (_, hero) = create_hero(creator);
         let (_, weapon) = create_weapon(creator);
@@ -1169,8 +1169,8 @@ module aptos_framework::object {
     fun test_transfer_no_permission(
         creator: &signer,
     ) acquires ObjectCore {
-        let aptos_framework = account::create_signer_for_test(@0x1);
-        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        let topo_framework = account::create_signer_for_test(@0x1);
+        timestamp::set_time_has_started_for_testing(&topo_framework);
 
         let (_, hero) = create_hero(creator);
         let (_, weapon) = create_weapon(creator);
@@ -1188,8 +1188,8 @@ module aptos_framework::object {
     fun test_create_and_transfer(
         creator: &signer,
     ) acquires ObjectCore {
-        let aptos_framework = account::create_signer_for_test(@0x1);
-        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        let topo_framework = account::create_signer_for_test(@0x1);
+        timestamp::set_time_has_started_for_testing(&topo_framework);
 
         let (_, hero) = create_hero(creator);
         let (weapon_ref, weapon) = create_weapon(creator);

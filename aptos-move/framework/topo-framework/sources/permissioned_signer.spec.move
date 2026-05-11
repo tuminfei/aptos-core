@@ -1,4 +1,4 @@
-spec aptos_framework::permissioned_signer {
+spec topo_framework::permissioned_signer {
 
     spec module {
         pragma verify = true;
@@ -57,7 +57,7 @@ spec aptos_framework::permissioned_signer {
     }
 
     spec create_permissioned_handle(master: &signer): PermissionedHandle {
-        use aptos_framework::transaction_context;
+        use topo_framework::transaction_context;
         pragma opaque;
         aborts_if [abstract] spec_is_permissioned_signer(master);
         let permissions_storage_addr = transaction_context::spec_generate_unique_address();
@@ -68,7 +68,7 @@ spec aptos_framework::permissioned_signer {
     }
 
     spec create_storable_permissioned_handle(master: &signer, expiration_time: u64): StorablePermissionedHandle {
-        use aptos_framework::transaction_context;
+        use topo_framework::transaction_context;
         pragma opaque;
         aborts_if [abstract] spec_is_permissioned_signer(master);
         let permissions_storage_addr = transaction_context::spec_generate_unique_address();

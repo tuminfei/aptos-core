@@ -6,8 +6,8 @@
 // source digest: 4DFFCA3EE6359F91D67870AF6000124A19F85DC4064AC4292E8F24DE133340A4
 script {
     use std::vector;
-    use aptos_framework::topo_governance;
-    use aptos_framework::code;
+    use topo_framework::topo_governance;
+    use topo_framework::code;
 
     fun main(proposal_id: u64){
         let framework_signer = topo_governance::resolve_multi_step_proposal(

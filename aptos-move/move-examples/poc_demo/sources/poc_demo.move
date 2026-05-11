@@ -6,14 +6,14 @@ module poc_demo::poc_demo {
 
     use aptos_std::smart_table::{Self, SmartTable};
 
-    use aptos_framework::account::{Self, SignerCapability};
-    use aptos_framework::event;
-    use aptos_framework::fungible_asset::{Self, Metadata, MintRef};
-    use aptos_framework::object;
+    use topo_framework::account::{Self, SignerCapability};
+    use topo_framework::event;
+    use topo_framework::fungible_asset::{Self, Metadata, MintRef};
+    use topo_framework::object;
     use poc_framework::poc_contribution;
     use poc_framework::poc_registry;
-    use aptos_framework::primary_fungible_store;
-    use aptos_framework::topo_account;
+    use topo_framework::primary_fungible_store;
+    use topo_framework::topo_account;
 
     const EAPP_ALREADY_INITIALIZED: u64 = 1;
     const EAPP_NOT_FOUND: u64 = 2;

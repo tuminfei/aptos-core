@@ -1,11 +1,11 @@
-module aptos_framework::state_storage {
+module topo_framework::state_storage {
 
-    use aptos_framework::system_addresses;
+    use topo_framework::system_addresses;
     use std::error;
 
-    friend aptos_framework::block;
-    friend aptos_framework::genesis;
-    friend aptos_framework::storage_gas;
+    friend topo_framework::block;
+    friend topo_framework::genesis;
+    friend topo_framework::storage_gas;
 
     const ESTATE_STORAGE_USAGE: u64 = 0;
 
@@ -21,13 +21,13 @@ module aptos_framework::state_storage {
         usage: Usage,
     }
 
-    public(friend) fun initialize(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
+    public(friend) fun initialize(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
         assert!(
-            !exists<StateStorageUsage>(@aptos_framework),
+            !exists<StateStorageUsage>(@topo_framework),
             error::already_exists(ESTATE_STORAGE_USAGE)
         );
-        move_to(aptos_framework, StateStorageUsage {
+        move_to(topo_framework, StateStorageUsage {
             epoch: 0,
             usage: Usage {
                 items: 0,
@@ -38,10 +38,10 @@ module aptos_framework::state_storage {
 
     public(friend) fun on_new_block(epoch: u64) acquires StateStorageUsage {
         assert!(
-            exists<StateStorageUsage>(@aptos_framework),
+            exists<StateStorageUsage>(@topo_framework),
             error::not_found(ESTATE_STORAGE_USAGE)
         );
-        let usage = borrow_global_mut<StateStorageUsage>(@aptos_framework);
+        let usage = borrow_global_mut<StateStorageUsage>(@topo_framework);
         if (epoch != usage.epoch) {
             usage.epoch = epoch;
             usage.usage = get_state_storage_usage_only_at_epoch_beginning();
@@ -50,10 +50,10 @@ module aptos_framework::state_storage {
 
     public(friend) fun current_items_and_bytes(): (u64, u64) acquires StateStorageUsage {
         assert!(
-            exists<StateStorageUsage>(@aptos_framework),
+            exists<StateStorageUsage>(@topo_framework),
             error::not_found(ESTATE_STORAGE_USAGE)
         );
-        let usage = borrow_global<StateStorageUsage>(@aptos_framework);
+        let usage = borrow_global<StateStorageUsage>(@topo_framework);
         (usage.usage.items, usage.usage.bytes)
     }
 
@@ -66,10 +66,10 @@ module aptos_framework::state_storage {
     #[test_only]
     public fun set_for_test(epoch: u64, items: u64, bytes: u64) acquires StateStorageUsage {
         assert!(
-            exists<StateStorageUsage>(@aptos_framework),
+            exists<StateStorageUsage>(@topo_framework),
             error::not_found(ESTATE_STORAGE_USAGE)
         );
-        let usage = borrow_global_mut<StateStorageUsage>(@aptos_framework);
+        let usage = borrow_global_mut<StateStorageUsage>(@topo_framework);
         usage.epoch = epoch;
         usage.usage = Usage {
             items,
@@ -78,7 +78,7 @@ module aptos_framework::state_storage {
     }
 
     // ======================== deprecated ============================
-    friend aptos_framework::reconfiguration;
+    friend topo_framework::reconfiguration;
 
     struct GasParameter has key, store {
         usage: Usage,

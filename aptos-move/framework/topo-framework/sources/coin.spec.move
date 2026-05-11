@@ -1,4 +1,4 @@
-spec aptos_framework::coin {
+spec topo_framework::coin {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: Only the owner of a coin may mint, burn or freeze coins.
@@ -114,7 +114,7 @@ spec aptos_framework::coin {
     }
 
     spec AggregatableCoin {
-        use aptos_framework::aggregator;
+        use topo_framework::aggregator;
         invariant aggregator::spec_get_limit(value) == MAX_U64;
     }
 
@@ -138,7 +138,7 @@ spec aptos_framework::coin {
         ensures [abstract] result == type_info::type_of<CoinType>().account_address;
     }
 
-    /// Can only be updated by `@aptos_framework`.
+    /// Can only be updated by `@topo_framework`.
     spec allow_supply_upgrades(_aptos_framework: &signer, _allowed: bool) {
         aborts_if true;
     }
@@ -165,9 +165,9 @@ spec aptos_framework::coin {
     }
 
     spec fun spec_paired_metadata<CoinType>(): Option<Object<Metadata>> {
-        if (exists<CoinConversionMap>(@aptos_framework)) {
+        if (exists<CoinConversionMap>(@topo_framework)) {
             let map =
-                global<CoinConversionMap>(@aptos_framework).coin_to_fungible_asset_map;
+                global<CoinConversionMap>(@topo_framework).coin_to_fungible_asset_map;
             if (table::spec_contains(map, type_info::type_of<CoinType>())) {
                 let metadata = table::spec_get(map, type_info::type_of<CoinType>());
                 option::spec_some(metadata)
@@ -189,7 +189,7 @@ spec aptos_framework::coin {
     }
 
     spec schema CoinSubAbortsIf<CoinType> {
-        use aptos_framework::optional_aggregator;
+        use topo_framework::optional_aggregator;
         amount: u64;
         let addr = type_info::type_of<CoinType>().account_address;
         let maybe_supply = global<CoinInfo<CoinType>>(addr).supply;
@@ -199,7 +199,7 @@ spec aptos_framework::coin {
     }
 
     spec schema CoinAddAbortsIf<CoinType> {
-        use aptos_framework::optional_aggregator;
+        use topo_framework::optional_aggregator;
         amount: u64;
         let addr = type_info::type_of<CoinType>().account_address;
         let maybe_supply = global<CoinInfo<CoinType>>(addr).supply;
@@ -390,7 +390,7 @@ spec aptos_framework::coin {
         ensures !coin_store.frozen;
     }
 
-    /// The creator of `CoinType` must be `@aptos_framework`.
+    /// The creator of `CoinType` must be `@topo_framework`.
     /// `SupplyConfig` allow upgrade.
     spec upgrade_supply<CoinType>(_account: &signer) {
         aborts_if true;
@@ -406,7 +406,7 @@ spec aptos_framework::coin {
         aborts_if string::length(symbol) > MAX_COIN_SYMBOL_LENGTH;
     }
 
-    // `account` must be `@aptos_framework`.
+    // `account` must be `@topo_framework`.
     spec initialize_with_parallelizable_supply<CoinType>(
         account: &signer,
         name: string::String,
@@ -414,11 +414,11 @@ spec aptos_framework::coin {
         decimals: u8,
         monitor_supply: bool
     ): (BurnCapability<CoinType>, FreezeCapability<CoinType>, MintCapability<CoinType>) {
-        use aptos_framework::aggregator_factory;
+        use topo_framework::aggregator_factory;
         let addr = signer::address_of(account);
-        aborts_if addr != @aptos_framework;
+        aborts_if addr != @topo_framework;
         aborts_if monitor_supply
-            && !exists<aggregator_factory::AggregatorFactory>(@aptos_framework);
+            && !exists<aggregator_factory::AggregatorFactory>(@topo_framework);
         include InitializeInternalSchema<CoinType> {
             name: name.bytes,
             symbol: symbol.bytes
@@ -448,7 +448,7 @@ spec aptos_framework::coin {
         monitor_supply: bool,
         parallelizable: bool
     ): (BurnCapability<CoinType>, FreezeCapability<CoinType>, MintCapability<CoinType>) {
-        use aptos_framework::aggregator_factory;
+        use topo_framework::aggregator_factory;
         include InitializeInternalSchema<CoinType> {
             name: name.bytes,
             symbol: symbol.bytes
@@ -461,7 +461,7 @@ spec aptos_framework::coin {
         modifies global<CoinInfo<CoinType>>(account_addr);
         aborts_if monitor_supply
             && parallelizable
-            && !exists<aggregator_factory::AggregatorFactory>(@aptos_framework);
+            && !exists<aggregator_factory::AggregatorFactory>(@topo_framework);
         /// [managed_coin::high-level-req-2]
         ensures exists<CoinInfo<CoinType>>(account_addr)
             && coin_info.name == name

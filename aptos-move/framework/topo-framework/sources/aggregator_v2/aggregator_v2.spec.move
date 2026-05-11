@@ -1,4 +1,4 @@
-spec aptos_framework::aggregator_v2 {
+spec topo_framework::aggregator_v2 {
 
     spec Aggregator {
         pragma intrinsic;

@@ -1,12 +1,12 @@
-module aptos_framework::nonce_validation {
+module topo_framework::nonce_validation {
     use aptos_std::table::{Self, Table};
     use aptos_std::timestamp;
     use aptos_std::big_ordered_map::{Self, BigOrderedMap};
     use aptos_std::aptos_hash::sip_hash_from_value;
     use aptos_std::error;
-    use aptos_framework::system_addresses;
-    friend aptos_framework::genesis;
-    friend aptos_framework::transaction_validation;
+    use topo_framework::system_addresses;
+    friend topo_framework::genesis;
+    friend topo_framework::transaction_validation;
 
 
     const NUM_BUCKETS: u64 = 50000;
@@ -74,19 +74,19 @@ module aptos_framework::nonce_validation {
         nonce: u64,
     }
 
-    public(friend) fun initialize(aptos_framework: &signer) {
-        initialize_nonce_table(aptos_framework);
+    public(friend) fun initialize(topo_framework: &signer) {
+        initialize_nonce_table(topo_framework);
     }
 
-    public entry fun initialize_nonce_table(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        if (!exists<NonceHistory>(@aptos_framework)) {
+    public entry fun initialize_nonce_table(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        if (!exists<NonceHistory>(@topo_framework)) {
             let table = table::new();
             let nonce_history = NonceHistory {
                 nonce_table: table,
                 next_key: 0,
             };
-            move_to<NonceHistory>(aptos_framework, nonce_history);
+            move_to<NonceHistory>(topo_framework, nonce_history);
         };
     }
 
@@ -109,8 +109,8 @@ module aptos_framework::nonce_validation {
 
     // This method is used to prefill the nonce_table with empty buckets one by one.
     public entry fun add_nonce_buckets(count: u64) acquires NonceHistory {
-        assert!(exists<NonceHistory>(@aptos_framework), error::invalid_state(E_NONCE_HISTORY_DOES_NOT_EXIST));
-        let nonce_history = &mut NonceHistory[@aptos_framework];
+        assert!(exists<NonceHistory>(@topo_framework), error::invalid_state(E_NONCE_HISTORY_DOES_NOT_EXIST));
+        let nonce_history = &mut NonceHistory[@topo_framework];
         for (i in 0..count) {
             if (nonce_history.next_key <= NUM_BUCKETS) {
                 if (!nonce_history.nonce_table.contains(nonce_history.next_key)) {
@@ -131,10 +131,10 @@ module aptos_framework::nonce_validation {
         nonce: u64,
         txn_expiration_time: u64,
     ): bool acquires NonceHistory {
-        assert!(exists<NonceHistory>(@aptos_framework), error::invalid_state(E_NONCE_HISTORY_DOES_NOT_EXIST));
+        assert!(exists<NonceHistory>(@topo_framework), error::invalid_state(E_NONCE_HISTORY_DOES_NOT_EXIST));
         // Check if the transaction expiration time is too far in the future.
         assert!(txn_expiration_time <= timestamp::now_seconds() + NONCE_REPLAY_PROTECTION_OVERLAP_INTERVAL_SECONDS, error::invalid_argument(ETRANSACTION_EXPIRATION_TOO_FAR_IN_FUTURE));
-        let nonce_history = &mut NonceHistory[@aptos_framework];
+        let nonce_history = &mut NonceHistory[@topo_framework];
         let nonce_key = NonceKey {
             sender_address,
             nonce,
@@ -210,13 +210,13 @@ module aptos_framework::nonce_validation {
         sender_address: address,
         nonce: u64,
     ): bool acquires NonceHistory {
-        assert!(exists<NonceHistory>(@aptos_framework), error::invalid_state(E_NONCE_HISTORY_DOES_NOT_EXIST));
+        assert!(exists<NonceHistory>(@topo_framework), error::invalid_state(E_NONCE_HISTORY_DOES_NOT_EXIST));
         let nonce_key = NonceKey {
             sender_address,
             nonce,
         };
         let bucket_index = sip_hash_from_value(&nonce_key) % NUM_BUCKETS;
-        let nonce_history = &NonceHistory[@aptos_framework];
+        let nonce_history = &NonceHistory[@topo_framework];
         if (nonce_history.nonce_table.contains(bucket_index)) {
             let bucket = nonce_history.nonce_table.borrow(bucket_index);
             let existing_exp_time = bucket.nonce_to_exp_time_map.get(&nonce_key);
@@ -231,7 +231,7 @@ module aptos_framework::nonce_validation {
         true
     }
 
-    #[test(fx = @aptos_framework)]
+    #[test(fx = @topo_framework)]
     public entry fun nonce_history_test(fx: signer) acquires NonceHistory {
         initialize_nonce_table(&fx);
         timestamp::set_time_has_started_for_testing(&fx);

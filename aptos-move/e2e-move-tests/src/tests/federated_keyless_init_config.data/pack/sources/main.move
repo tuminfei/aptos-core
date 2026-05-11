@@ -1,10 +1,10 @@
 script {
-    use aptos_framework::topo_governance;
-    use aptos_framework::jwks;
-    use aptos_framework::keyless_account;
+    use topo_framework::topo_governance;
+    use topo_framework::jwks;
+    use topo_framework::keyless_account;
 
     fun main(core_resources: &signer, max_exp_horizon_secs: u64) {
-        let fx = topo_governance::get_signer_testnet_only(core_resources, @aptos_framework);
+        let fx = topo_governance::get_signer_testnet_only(core_resources, @topo_framework);
 
         keyless_account::update_max_exp_horizon_for_next_epoch(&fx, max_exp_horizon_secs);
 

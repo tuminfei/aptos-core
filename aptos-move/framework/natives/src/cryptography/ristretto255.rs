@@ -3,7 +3,7 @@
 
 use crate::cryptography::{ristretto255_point, ristretto255_scalar};
 use aptos_gas_algebra::GasExpression;
-use aptos_gas_schedule::{gas_params::natives::aptos_framework::*, NativeGasParameters};
+use aptos_gas_schedule::{gas_params::natives::topo_framework::*, NativeGasParameters};
 use aptos_native_interface::{
     safely_assert_eq, safely_pop_arg, safely_pop_vec_arg, RawSafeNative, SafeNativeBuilder,
     SafeNativeError, SafeNativeResult,

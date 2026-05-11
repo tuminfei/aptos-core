@@ -5904,8 +5904,8 @@ Make sure the account has sufficient tokens to withdraw.
 
 
 
-<pre><code><b>let</b> now_seconds = <b>global</b>&lt;<a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework).microseconds;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<pre><code><b>let</b> now_seconds = <b>global</b>&lt;<a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework).microseconds;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 <b>aborts_if</b> now_seconds / <a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_MICRO_CONVERSION_FACTOR">timestamp::MICRO_CONVERSION_FACTOR</a> &gt; withdraw_proof.expiration_sec;
 <b>include</b> <a href="token.md#0x3_token_WithdrawWithEventInternalAbortsIf">WithdrawWithEventInternalAbortsIf</a>{
 account_addr: withdraw_proof.token_owner,
@@ -5926,8 +5926,8 @@ amount: withdraw_proof.amount};
 
 
 
-<pre><code><b>let</b> now_seconds = <b>global</b>&lt;<a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework).microseconds;
-<b>aborts_if</b> !<b>exists</b>&lt;<a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@aptos_framework);
+<pre><code><b>let</b> now_seconds = <b>global</b>&lt;<a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework).microseconds;
+<b>aborts_if</b> !<b>exists</b>&lt;<a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_CurrentTimeMicroseconds">timestamp::CurrentTimeMicroseconds</a>&gt;(@topo_framework);
 <b>aborts_if</b> now_seconds / <a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_MICRO_CONVERSION_FACTOR">timestamp::MICRO_CONVERSION_FACTOR</a> &gt; withdraw_proof.expiration_sec;
 <b>aborts_if</b> withdraw_amount &gt; withdraw_proof.amount;
 <b>include</b> <a href="token.md#0x3_token_WithdrawWithEventInternalAbortsIf">WithdrawWithEventInternalAbortsIf</a>{

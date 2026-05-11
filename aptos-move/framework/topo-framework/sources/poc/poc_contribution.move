@@ -58,17 +58,17 @@
 /// - Transfer succeeds but validation fails → transfer takes effect, no event emitted
 /// - Transfer succeeds and validation passes → transfer takes effect, `ContributionEvent` emitted
 /// - Strict validation fails → transaction aborts before transfer
-module aptos_framework::poc_contribution {
+module topo_framework::poc_contribution {
     use std::error;
     use std::signer;
 
-    use aptos_framework::event;
-    use aptos_framework::fungible_asset::Metadata;
-    use aptos_framework::object;
-    use aptos_framework::object::Object;
-    use aptos_framework::poc_power_store;
-    use aptos_framework::poc_registry;
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::event;
+    use topo_framework::fungible_asset::Metadata;
+    use topo_framework::object;
+    use topo_framework::object::Object;
+    use topo_framework::poc_power_store;
+    use topo_framework::poc_registry;
+    use topo_framework::primary_fungible_store;
 
     // ========== Error Codes ==========
     /// Equity amount must be greater than zero
@@ -280,14 +280,14 @@ module aptos_framework::poc_contribution {
     #[test_only]
     use std::string;
     #[test_only]
-    use aptos_framework::fungible_asset::{
+    use topo_framework::fungible_asset::{
         Self,
         Metadata as TestMetadata,
         MintRef,
         TestToken,
     };
     #[test_only]
-    use aptos_framework::timestamp;
+    use topo_framework::timestamp;
 
     #[test_only]
     fun setup_test_app(
@@ -322,7 +322,7 @@ module aptos_framework::poc_contribution {
         (metadata, mint_ref)
     }
 
-    #[test(framework = @aptos_framework, app_admin = @0xcafe, contributor = @0xface)]
+    #[test(framework = @topo_framework, app_admin = @0xcafe, contributor = @0xface)]
     fun test_strict_contribution_transfers_and_emits(
         framework: &signer,
         app_admin: &signer,
@@ -359,7 +359,7 @@ module aptos_framework::poc_contribution {
         );
     }
 
-    #[test(framework = @aptos_framework, app_admin = @0xcafe, contributor = @0xface)]
+    #[test(framework = @topo_framework, app_admin = @0xcafe, contributor = @0xface)]
     #[expected_failure(abort_code = 0x50002, location = Self)]
     fun test_strict_contribution_aborts_when_not_whitelisted(
         framework: &signer,
@@ -379,7 +379,7 @@ module aptos_framework::poc_contribution {
     }
 
     #[test(
-        framework = @aptos_framework,
+        framework = @topo_framework,
         app_admin = @0xcafe,
         custody = @0xbeef,
         contributor = @0xface
@@ -403,7 +403,7 @@ module aptos_framework::poc_contribution {
         );
     }
 
-    #[test(framework = @aptos_framework, app_admin = @0xcafe, contributor = @0xface)]
+    #[test(framework = @topo_framework, app_admin = @0xcafe, contributor = @0xface)]
     fun test_legacy_contribution_still_transfers_without_event_when_not_whitelisted(
         framework: &signer,
         app_admin: &signer,

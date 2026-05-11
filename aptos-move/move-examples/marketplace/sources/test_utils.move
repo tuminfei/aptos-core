@@ -4,11 +4,11 @@ module marketplace::test_utils {
     use std::string;
     use std::vector;
 
-    use aptos_framework::account;
-    use aptos_framework::topo_coin::{Self, TopoCoin};
-    use aptos_framework::coin;
-    use aptos_framework::object::{Self, Object};
-    use aptos_framework::timestamp;
+    use topo_framework::account;
+    use topo_framework::topo_coin::{Self, TopoCoin};
+    use topo_framework::coin;
+    use topo_framework::object::{Self, Object};
+    use topo_framework::timestamp;
 
     use aptos_token::token as tokenv1;
     use aptos_token_objects::token::Token;
@@ -18,13 +18,13 @@ module marketplace::test_utils {
     use marketplace::fee_schedule::{Self, FeeSchedule};
 
     public inline fun setup(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ): (address, address, address) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
-        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
+        timestamp::set_time_has_started_for_testing(topo_framework);
+        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(topo_framework);
 
         let marketplace_addr = signer::address_of(marketplace);
         account::create_account_for_test(marketplace_addr);

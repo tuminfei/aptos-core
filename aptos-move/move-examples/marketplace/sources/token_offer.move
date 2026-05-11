@@ -11,9 +11,9 @@ module token_offer {
     use std::signer;
     use std::string::String;
 
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::object::{Self, DeleteRef, Object};
-    use aptos_framework::timestamp;
+    use topo_framework::coin::{Self, Coin};
+    use topo_framework::object::{Self, DeleteRef, Object};
+    use topo_framework::timestamp;
 
     use aptos_token::token as tokenv1;
 
@@ -24,7 +24,7 @@ module token_offer {
     use marketplace::fee_schedule::{Self, FeeSchedule};
     use marketplace::listing::{Self, TokenV1Container};
     use aptos_token::token::TokenId;
-    use aptos_framework::topo_account;
+    use topo_framework::topo_account;
 
     /// No token offer defined.
     const ENO_TOKEN_OFFER: u64 = 1;
@@ -39,7 +39,7 @@ module token_offer {
 
     // Core data structures
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Create a timed offer to buy a token. The token and
     /// assets used to buy are stored in other resources within the object.
     struct TokenOffer has key {
@@ -49,13 +49,13 @@ module token_offer {
         delete_ref: DeleteRef,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Stores coins for a token offer.
     struct CoinOffer<phantom CoinType> has key {
         coins: Coin<CoinType>,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Stores the metadata associated with a tokenv1 token offer.
     struct TokenOfferTokenV1 has copy, drop, key {
         creator_address: address,
@@ -64,7 +64,7 @@ module token_offer {
         property_version: u64,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Stores the metadata associated with a tokenv2 token offer.
     struct TokenOfferTokenV2 has copy, drop, key {
         token: Object<TokenV2>,
@@ -510,10 +510,10 @@ module token_offer {
 
 #[test_only]
 module token_offer_tests {
-    use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::coin;
-    use aptos_framework::object;
-    use aptos_framework::timestamp;
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin;
+    use topo_framework::object;
+    use topo_framework::timestamp;
 
     use aptos_token::token as tokenv1;
 
@@ -522,15 +522,15 @@ module token_offer_tests {
     use marketplace::test_utils;
     use std::option;
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_token_v2(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (marketplace_addr, seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
         let token = test_utils::mint_tokenv2(seller);
         assert!(object::is_owner(token, seller_addr), 0);
         let token_offer = token_offer::init_for_tokenv2<TopoCoin>(
@@ -555,15 +555,15 @@ module token_offer_tests {
         assert!(object::is_owner(token, purchaser_addr), 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_token_v1_direct_deposit(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (marketplace_addr, seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
         tokenv1::opt_in_direct_transfer(purchaser, true);
         tokenv1::opt_in_direct_transfer(seller, true);
 
@@ -596,15 +596,15 @@ module token_offer_tests {
         assert!(!token_offer::exists_at(token_offer), 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     fun test_token_v1_indirect(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (_marketplace_addr, seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let token_id = test_utils::mint_tokenv1(seller);
         assert!(tokenv1::balance_of(seller_addr, token_id) == 1, 0);
@@ -634,15 +634,15 @@ module token_offer_tests {
         assert!(!token_offer::exists_at(token_offer), 0);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x50003, location = marketplace::token_offer)]
     fun test_token_v2_has_none(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
         let token = test_utils::mint_tokenv2(seller);
         let token_offer = token_offer::init_for_tokenv2<TopoCoin>(
             purchaser,
@@ -654,15 +654,15 @@ module token_offer_tests {
         token_offer::sell_tokenv2<TopoCoin>(marketplace, token_offer);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x10005, location = aptos_token::token)]
     fun test_token_v1_has_none(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
         let token_id = test_utils::mint_tokenv1(seller);
         let (creator_addr, collection_name, token_name, property_version) =
             tokenv1::get_token_id_fields(&token_id);
@@ -686,15 +686,15 @@ module token_offer_tests {
         );
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x30006, location = marketplace::token_offer)]
     fun test_token_v2_expired(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
         let token = test_utils::mint_tokenv2(seller);
         let token_offer = token_offer::init_for_tokenv2<TopoCoin>(
             purchaser,
@@ -707,15 +707,15 @@ module token_offer_tests {
         token_offer::sell_tokenv2<TopoCoin>(seller, token_offer);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x60001, location = marketplace::token_offer)]
     fun test_token_v2_exhausted(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
         let token = test_utils::mint_tokenv2(seller);
         let token_offer = token_offer::init_for_tokenv2<TopoCoin>(
             purchaser,
@@ -728,15 +728,15 @@ module token_offer_tests {
         token_offer::sell_tokenv2<TopoCoin>(purchaser, token_offer);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x50003, location = marketplace::token_offer)]
     fun test_token_v2_other_token(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
-        test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+        test_utils::setup(topo_framework, marketplace, seller, purchaser);
         let _token = test_utils::mint_tokenv2(seller);
         let token_2 = test_utils::mint_tokenv2_additional(seller);
 
@@ -750,16 +750,16 @@ module token_offer_tests {
         token_offer::sell_tokenv2<TopoCoin>(marketplace, token_offer);
     }
 
-    #[test(aptos_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
+    #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
     #[expected_failure(abort_code = 0x10005, location = aptos_token::token)]
     fun test_token_v1_other_token(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ) {
         let (_marketplace_addr, _seller_addr, purchaser_addr) =
-            test_utils::setup(aptos_framework, marketplace, seller, purchaser);
+            test_utils::setup(topo_framework, marketplace, seller, purchaser);
 
         let token_id_1 = test_utils::mint_tokenv1(seller);
         let (_creator_addr, _collection_name, token_name_1, property_version_1) =

@@ -15,7 +15,7 @@ Importantly, although veiled transactions hide the amount of coins sent they sti
 ### How to use veiled coins
 
 
-This module allows users to "register" a veiled account for any pre-existing <code>aptos_framework::Coin</code> type <code>T</code> via
+This module allows users to "register" a veiled account for any pre-existing <code>topo_framework::Coin</code> type <code>T</code> via
 the <code>register</code> entry function. For this, an encryption public key will need to be given as input, under which
 the registered user's veiled balance will be encrypted.
 
@@ -1122,7 +1122,7 @@ Returns the domain separation tag (DST) for constructing Bulletproof-based range
 ## Function `get_max_bits_in_veiled_coin_value`
 
 Returns the maximum # of bits used to represent a veiled coin amount. Might differ than the 64 bits used to
-represent normal <code>aptos_framework::coin::Coin</code> values.
+represent normal <code>topo_framework::coin::Coin</code> values.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="veiled_coin.md#0x7_veiled_coin_get_max_bits_in_veiled_coin_value">get_max_bits_in_veiled_coin_value</a>(): u64

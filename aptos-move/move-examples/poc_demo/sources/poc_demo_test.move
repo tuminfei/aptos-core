@@ -3,13 +3,13 @@ module poc_demo::poc_demo_test {
     use std::signer;
     use std::string;
 
-    use aptos_framework::account;
-    use aptos_framework::aptos_coin::{Self, AptosCoin};
-    use aptos_framework::coin;
-    use aptos_framework::event;
-    use aptos_framework::poc_contribution;
-    use aptos_framework::poc_registry;
-    use aptos_framework::timestamp;
+    use topo_framework::account;
+    use topo_framework::aptos_coin::{Self, AptosCoin};
+    use topo_framework::coin;
+    use topo_framework::event;
+    use topo_framework::poc_contribution;
+    use topo_framework::poc_registry;
+    use topo_framework::timestamp;
 
     use poc_demo::poc_demo;
 

@@ -1,12 +1,12 @@
 /// Structs and functions for on-chain chunky DKG configurations.
-module aptos_framework::chunky_dkg_config {
+module topo_framework::chunky_dkg_config {
     use aptos_std::copyable_any;
     use aptos_std::copyable_any::Any;
     use aptos_std::fixed_point64::FixedPoint64;
-    use aptos_framework::config_buffer;
-    use aptos_framework::system_addresses;
+    use topo_framework::config_buffer;
+    use topo_framework::system_addresses;
 
-    friend aptos_framework::reconfiguration_with_dkg;
+    friend topo_framework::reconfiguration_with_dkg;
 
     /// The configuration of the on-chain chunky DKG feature.
     struct ChunkyDKGConfig has copy, drop, key, store {
@@ -31,7 +31,7 @@ module aptos_framework::chunky_dkg_config {
     /// Initialize the configuration. Used in genesis or governance.
     public fun initialize(framework: &signer, config: ChunkyDKGConfig) {
         system_addresses::assert_aptos_framework(framework);
-        if (!exists<ChunkyDKGConfig>(@aptos_framework)) {
+        if (!exists<ChunkyDKGConfig>(@topo_framework)) {
             move_to(framework, config)
         }
     }
@@ -49,8 +49,8 @@ module aptos_framework::chunky_dkg_config {
         system_addresses::assert_aptos_framework(framework);
         if (config_buffer::does_exist<ChunkyDKGConfig>()) {
             let new_config = config_buffer::extract_v2<ChunkyDKGConfig>();
-            if (exists<ChunkyDKGConfig>(@aptos_framework)) {
-                *borrow_global_mut<ChunkyDKGConfig>(@aptos_framework) = new_config;
+            if (exists<ChunkyDKGConfig>(@topo_framework)) {
+                *borrow_global_mut<ChunkyDKGConfig>(@topo_framework) = new_config;
             } else {
                 move_to(framework, new_config);
             }
@@ -62,8 +62,8 @@ module aptos_framework::chunky_dkg_config {
     /// NOTE: this returning true does not mean chunky DKG will run.
     /// The feature works if and only if `consensus_config::validator_txn_enabled() && chunky_dkg_config::enabled()`.
     public fun enabled(): bool acquires ChunkyDKGConfig {
-        if (exists<ChunkyDKGConfig>(@aptos_framework)) {
-            let config = borrow_global<ChunkyDKGConfig>(@aptos_framework);
+        if (exists<ChunkyDKGConfig>(@topo_framework)) {
+            let config = borrow_global<ChunkyDKGConfig>(@topo_framework);
             let variant_type_name = *config.variant.type_name().bytes();
             variant_type_name != b"0x1::chunky_dkg_config::ConfigOff"
         } else { false }
@@ -89,8 +89,8 @@ module aptos_framework::chunky_dkg_config {
 
     /// Get the currently effective chunky DKG configuration object.
     public fun current(): ChunkyDKGConfig acquires ChunkyDKGConfig {
-        if (exists<ChunkyDKGConfig>(@aptos_framework)) {
-            *borrow_global<ChunkyDKGConfig>(@aptos_framework)
+        if (exists<ChunkyDKGConfig>(@topo_framework)) {
+            *borrow_global<ChunkyDKGConfig>(@topo_framework)
         } else {
             new_off()
         }

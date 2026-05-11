@@ -16,10 +16,10 @@
 /// - Phantom
 /// - Nightly
 
-module aptos_framework::sui_derivable_account {
+module topo_framework::sui_derivable_account {
 
-    use aptos_framework::auth_data::AbstractionAuthData;
-    use aptos_framework::common_account_abstractions_utils::{construct_message, daa_authenticate};
+    use topo_framework::auth_data::AbstractionAuthData;
+    use topo_framework::common_account_abstractions_utils::{construct_message, daa_authenticate};
     use aptos_std::ed25519::{ Self, new_signature_from_bytes, new_validated_public_key_from_bytes, public_key_into_unvalidated };
     use std::bcs_stream::{ Self, deserialize_u8 };
     use std::bcs;
@@ -276,7 +276,7 @@ module aptos_framework::sui_derivable_account {
     #[test_only]
     use std::chain_id;
     #[test_only]
-    use aptos_framework::auth_data::{create_derivable_auth_data};
+    use topo_framework::auth_data::{create_derivable_auth_data};
 
     #[test_only]
     fun create_abstract_public_key(sui_account_address: vector<u8>, domain: vector<u8>): vector<u8> {

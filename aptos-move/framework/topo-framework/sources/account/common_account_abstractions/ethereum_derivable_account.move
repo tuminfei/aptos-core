@@ -23,10 +23,10 @@
 /// - Exodus
 /// - Backpack
 
-module aptos_framework::ethereum_derivable_account {
-    use aptos_framework::auth_data::AbstractionAuthData;
-    use aptos_framework::common_account_abstractions_utils::{network_name, daa_authenticate};
-    use aptos_framework::base16::base16_utf8_to_vec_u8;
+module topo_framework::ethereum_derivable_account {
+    use topo_framework::auth_data::AbstractionAuthData;
+    use topo_framework::common_account_abstractions_utils::{network_name, daa_authenticate};
+    use topo_framework::base16::base16_utf8_to_vec_u8;
     use aptos_std::secp256k1;
     use aptos_std::aptos_hash;
     use std::bcs_stream::{Self, deserialize_u8};
@@ -215,7 +215,7 @@ module aptos_framework::ethereum_derivable_account {
     #[test_only]
     use std::string::utf8;
     #[test_only]
-    use aptos_framework::auth_data::{create_derivable_auth_data};
+    use topo_framework::auth_data::{create_derivable_auth_data};
     #[test_only]
     fun create_abstract_public_key(ethereum_address: vector<u8>, domain: vector<u8>): vector<u8> {
         let abstract_public_key = SIWEAbstractPublicKey {

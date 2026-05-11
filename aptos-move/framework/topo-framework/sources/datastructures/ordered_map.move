@@ -26,10 +26,10 @@
 /// That's why all functions returning iterators are prefixed with "internal_", to clarify nuances needed to make
 /// sure usage is correct.
 /// A set of inline utility methods is provided instead, to provide guaranteed valid usage to iterators.
-module aptos_framework::ordered_map {
-    friend aptos_framework::big_ordered_map;
+module topo_framework::ordered_map {
+    friend topo_framework::big_ordered_map;
     #[test_only]
-    friend aptos_framework::ordered_map_test;
+    friend topo_framework::ordered_map_test;
 
     use std::vector;
 

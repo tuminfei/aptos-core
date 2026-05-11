@@ -269,7 +269,7 @@ this account and leaves the signer cap readily available for pickup.
 ) <b>acquires</b> <a href="resource_account.md#0x1_resource_account_Container">Container</a> {
     <b>let</b> (resource, resource_signer_cap) =
         <a href="account.md#0x1_account_create_resource_account">account::create_resource_account</a>(origin, seed);
-    aptos_framework::code::publish_package_txn(&resource, metadata_serialized, <a href="code.md#0x1_code">code</a>);
+    topo_framework::code::publish_package_txn(&resource, metadata_serialized, <a href="code.md#0x1_code">code</a>);
     <a href="resource_account.md#0x1_resource_account_rotate_account_authentication_key_and_store_capability">rotate_account_authentication_key_and_store_capability</a>(
         origin,
         resource,
@@ -514,7 +514,7 @@ the SignerCapability.
 <b>include</b> <a href="topo_account.md#0x1_topo_account_GuidAbortsIf">topo_account::GuidAbortsIf</a>&lt;TopoCoin&gt;{<b>to</b>: resource_addr};
 <b>include</b> <a href="resource_account.md#0x1_resource_account_RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIfWithoutAccountLimit">RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIfWithoutAccountLimit</a>;
 // This enforces <a id="high-level-req-3" href="#high-level-req">high-level requirement 3</a>:
-<b>ensures</b> <b>exists</b>&lt;aptos_framework::coin::CoinStore&lt;TopoCoin&gt;&gt;(resource_addr);
+<b>ensures</b> <b>exists</b>&lt;topo_framework::coin::CoinStore&lt;TopoCoin&gt;&gt;(resource_addr);
 </code></pre>
 
 
@@ -558,7 +558,7 @@ the SignerCapability.
 <b>ensures</b> <b>exists</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin));
 // This enforces <a id="high-level-req-5" href="#high-level-req">high-level requirement 5</a>:
 <b>ensures</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(optional_auth_key) != 0 ==&gt;
-    <b>global</b>&lt;aptos_framework::account::Account&gt;(resource_addr).authentication_key == optional_auth_key;
+    <b>global</b>&lt;topo_framework::account::Account&gt;(resource_addr).authentication_key == optional_auth_key;
 </code></pre>
 
 

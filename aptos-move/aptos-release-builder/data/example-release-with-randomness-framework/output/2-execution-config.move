@@ -26,8 +26,8 @@
 // )
 
 script {
-    use aptos_framework::topo_governance;
-    use aptos_framework::execution_config;
+    use topo_framework::topo_governance;
+    use topo_framework::execution_config;
 
     fun main(core_resources: &signer) {
         let core_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);

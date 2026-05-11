@@ -1,5 +1,5 @@
-module aptos_framework::rate_limiter {
-    use aptos_framework::timestamp;
+module topo_framework::rate_limiter {
+    use topo_framework::timestamp;
 
     enum RateLimiter has key, store, copy, drop {
         // Struct to represent a Token Bucket that refills every minute
@@ -57,36 +57,36 @@ module aptos_framework::rate_limiter {
         limiter.last_refill_timestamp = current_time;
     }
 
-    #[test(aptos_framework = @0x1)]
-    fun test_initialize_bucket(aptos_framework: &signer) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    #[test(topo_framework = @0x1)]
+    fun test_initialize_bucket(topo_framework: &signer) {
+        timestamp::set_time_has_started_for_testing(topo_framework);
         let bucket = initialize(10, 60);
         assert!(bucket.capacity == 10, 100);
         assert!(bucket.current_amount == 10, 101);
         assert!(bucket.refill_interval == 60, 102);
     }
 
-    #[test(aptos_framework = @0x1)]
-    fun test_request_success(aptos_framework: &signer) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    #[test(topo_framework = @0x1)]
+    fun test_request_success(topo_framework: &signer) {
+        timestamp::set_time_has_started_for_testing(topo_framework);
         let bucket = initialize(10, 30);
         let success = request(&mut bucket, 5);
         assert!(success, 200); // Should succeed since 5 <= 10
         assert!(bucket.current_amount == 5, 201); // Remaining tokens should be 5
     }
 
-    #[test(aptos_framework = @0x1)]
-    fun test_request_failure(aptos_framework: &signer) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    #[test(topo_framework = @0x1)]
+    fun test_request_failure(topo_framework: &signer) {
+        timestamp::set_time_has_started_for_testing(topo_framework);
         let bucket = initialize(10, 30);
         let success = request(&mut bucket, 15);
         assert!(!success, 300); // Should fail since 15 > 10
         assert!(bucket.current_amount == 10, 301); // Tokens should remain unchanged
     }
 
-    #[test(aptos_framework = @0x1)]
-    fun test_refill(aptos_framework: &signer) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    #[test(topo_framework = @0x1)]
+    fun test_refill(topo_framework: &signer) {
+        timestamp::set_time_has_started_for_testing(topo_framework);
         let bucket = initialize(10, 60);
 
         // Simulate a passage of 31 seconds
@@ -118,9 +118,9 @@ module aptos_framework::rate_limiter {
         assert!(bucket.fractional_accumulated == 50, 404);
     }
 
-    #[test(aptos_framework= @0x1)]
-    fun test_fractional_accumulation(aptos_framework: &signer) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    #[test(topo_framework= @0x1)]
+    fun test_fractional_accumulation(topo_framework: &signer) {
+        timestamp::set_time_has_started_for_testing(topo_framework);
         let bucket = initialize(10, 60);
         assert!(request(&mut bucket, 10), 1); // Request should succeed
 
@@ -145,9 +145,9 @@ module aptos_framework::rate_limiter {
         assert!(bucket.fractional_accumulated == 0, 503); // Fractional time should reset
     }
 
-    #[test(aptos_framework= @0x1)]
-    fun test_multiple_refills(aptos_framework: &signer) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    #[test(topo_framework= @0x1)]
+    fun test_multiple_refills(topo_framework: &signer) {
+        timestamp::set_time_has_started_for_testing(topo_framework);
         let bucket = initialize(10, 60);
 
         // Request 8 tokens

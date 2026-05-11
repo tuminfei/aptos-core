@@ -17,7 +17,7 @@ module aptos_experimental::single_order_book {
     use std::error;
     use std::option::{Self, Option};
     use std::string::String;
-    use aptos_framework::big_ordered_map::BigOrderedMap;
+    use topo_framework::big_ordered_map::BigOrderedMap;
     use aptos_trading::order_book_types::{
         OrderId,
         AccountClientOrderId,
@@ -57,9 +57,9 @@ module aptos_experimental::single_order_book {
         price_move_down_condition
     };
     #[test_only]
-    use aptos_framework::timestamp;
+    use topo_framework::timestamp;
     #[test_only]
-    use aptos_framework::account;
+    use topo_framework::account;
     #[test_only]
     use aptos_trading::single_order_types::{
         create_simple_test_order_request,

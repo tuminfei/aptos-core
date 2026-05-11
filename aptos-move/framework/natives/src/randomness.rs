@@ -3,7 +3,7 @@
 
 use aptos_gas_schedule::{
     gas_feature_versions::RELEASE_V1_23,
-    gas_params::natives::aptos_framework::RANDOMNESS_FETCH_AND_INC_COUNTER,
+    gas_params::natives::topo_framework::RANDOMNESS_FETCH_AND_INC_COUNTER,
 };
 use aptos_native_interface::{
     RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError, SafeNativeResult,

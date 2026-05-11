@@ -1,25 +1,25 @@
 /// Reconfiguration with DKG helper functions.
-module aptos_framework::reconfiguration_with_dkg {
+module topo_framework::reconfiguration_with_dkg {
     use std::features;
-    use aptos_framework::chunky_dkg;
-    use aptos_framework::chunky_dkg_config;
-    use aptos_framework::consensus_config;
-    use aptos_framework::decryption;
-    use aptos_framework::dkg;
-    use aptos_framework::execution_config;
-    use aptos_framework::gas_schedule;
-    use aptos_framework::jwk_consensus_config;
-    use aptos_framework::jwks;
-    use aptos_framework::keyless_account;
-    use aptos_framework::randomness_api_v0_config;
-    use aptos_framework::randomness_config;
-    use aptos_framework::randomness_config_seqnum;
-    use aptos_framework::reconfiguration;
-    use aptos_framework::reconfiguration_state;
-    use aptos_framework::stake;
-    use aptos_framework::system_addresses;
-    friend aptos_framework::block;
-    friend aptos_framework::topo_governance;
+    use topo_framework::chunky_dkg;
+    use topo_framework::chunky_dkg_config;
+    use topo_framework::consensus_config;
+    use topo_framework::decryption;
+    use topo_framework::dkg;
+    use topo_framework::execution_config;
+    use topo_framework::gas_schedule;
+    use topo_framework::jwk_consensus_config;
+    use topo_framework::jwks;
+    use topo_framework::keyless_account;
+    use topo_framework::randomness_api_v0_config;
+    use topo_framework::randomness_config;
+    use topo_framework::randomness_config_seqnum;
+    use topo_framework::reconfiguration;
+    use topo_framework::reconfiguration_state;
+    use topo_framework::stake;
+    use topo_framework::system_addresses;
+    friend topo_framework::block;
+    friend topo_framework::topo_governance;
 
     /// Trigger a reconfiguration with DKG.
     /// Do nothing if one is already in progress.

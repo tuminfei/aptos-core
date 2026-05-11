@@ -1,4 +1,4 @@
-spec aptos_framework::transaction_fee {
+spec topo_framework::transaction_fee {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: Given the blockchain is in an operating state, it guarantees that the Aptos framework signer may burn
@@ -43,14 +43,14 @@ spec aptos_framework::transaction_fee {
     /// Registering a block proposer. Processing collected fees.
     /// Criticality: Low
     /// Implementation: The functions: upgrade_burn_percentage, register_proposer_for_fee_collection, and
-    /// process_collected_fees all ensure that the CollectedFeesPerBlock resource exists under aptos_framework by
+    /// process_collected_fees all ensure that the CollectedFeesPerBlock resource exists under topo_framework by
     /// calling the is_fees_collection_enabled method, which returns a boolean value confirming if the resource exists
     /// or not.
     /// Enforcement: Formally verified via [high-level-req-6.1](register_proposer_for_fee_collection), [high-level-req-6.2](process_collected_fees), and [high-level-req-6.3](upgrade_burn_percentage).
     /// </high-level-req>
     ///
     spec module {
-        use aptos_framework::chain_status;
+        use topo_framework::chain_status;
 
         // TODO(fa_migration)
         pragma verify = false;
@@ -58,7 +58,7 @@ spec aptos_framework::transaction_fee {
         pragma aborts_if_is_strict;
         // property 1: Given the blockchain is in an operating state, it guarantees that the Aptos framework signer may burn Aptos coins.
         /// [high-level-req-1]
-        invariant [suspendable] chain_status::is_operating() ==> exists<TopoCoinCapabilities>(@aptos_framework) || exists<AptosFABurnCapabilities>(@aptos_framework);
+        invariant [suspendable] chain_status::is_operating() ==> exists<TopoCoinCapabilities>(@topo_framework) || exists<AptosFABurnCapabilities>(@topo_framework);
     }
 
     spec CollectedFeesPerBlock {
@@ -74,13 +74,13 @@ spec aptos_framework::transaction_fee {
     spec burn_fee(account: address, fee: u64) {
         use std::option;
         use aptos_std::type_info;
-        use aptos_framework::optional_aggregator;
-        use aptos_framework::coin;
-        use aptos_framework::coin::{CoinInfo, CoinStore};
+        use topo_framework::optional_aggregator;
+        use topo_framework::coin;
+        use topo_framework::coin::{CoinInfo, CoinStore};
         // TODO(fa_migration)
         pragma verify = false;
 
-        aborts_if !exists<TopoCoinCapabilities>(@aptos_framework);
+        aborts_if !exists<TopoCoinCapabilities>(@topo_framework);
 
         // This function essentially calls `coin::burn_coin`, monophormized for `TopoCoin`.
         let account_addr = account;
@@ -117,9 +117,9 @@ spec aptos_framework::transaction_fee {
 
     spec mint_and_refund(account: address, refund: u64) {
         use aptos_std::type_info;
-        use aptos_framework::topo_coin::TopoCoin;
-        use aptos_framework::coin::{CoinInfo, CoinStore};
-        use aptos_framework::coin;
+        use topo_framework::topo_coin::TopoCoin;
+        use topo_framework::coin::{CoinInfo, CoinStore};
+        use topo_framework::coin;
         // TODO(fa_migration)
         pragma verify = false;
         // pragma opaque;
@@ -132,7 +132,7 @@ spec aptos_framework::transaction_fee {
         aborts_if !exists<CoinStore<TopoCoin>>(account);
         // modifies global<CoinStore<TopoCoin>>(account);
 
-        aborts_if !exists<TopoCoinMintCapability>(@aptos_framework);
+        aborts_if !exists<TopoCoinMintCapability>(@topo_framework);
 
         let supply = coin::supply<TopoCoin>;
         let post post_supply = coin::supply<TopoCoin>;
@@ -142,13 +142,13 @@ spec aptos_framework::transaction_fee {
 
     /// Ensure caller is admin.
     /// Aborts if `TopoCoinCapabilities` already exists.
-    spec store_topo_coin_burn_cap(aptos_framework: &signer, burn_cap: BurnCapability<TopoCoin>) {
+    spec store_topo_coin_burn_cap(topo_framework: &signer, burn_cap: BurnCapability<TopoCoin>) {
         use std::signer;
 
         // TODO(fa_migration)
         pragma verify = false;
 
-        let addr = signer::address_of(aptos_framework);
+        let addr = signer::address_of(topo_framework);
         aborts_if !system_addresses::is_aptos_framework_address(addr);
 
         aborts_if exists<AptosFABurnCapabilities>(addr);
@@ -159,9 +159,9 @@ spec aptos_framework::transaction_fee {
 
     /// Ensure caller is admin.
     /// Aborts if `TopoCoinMintCapability` already exists.
-    spec store_topo_coin_mint_cap(aptos_framework: &signer, mint_cap: MintCapability<TopoCoin>) {
+    spec store_topo_coin_mint_cap(topo_framework: &signer, mint_cap: MintCapability<TopoCoin>) {
         use std::signer;
-        let addr = signer::address_of(aptos_framework);
+        let addr = signer::address_of(topo_framework);
         aborts_if !system_addresses::is_aptos_framework_address(addr);
         aborts_if exists<TopoCoinMintCapability>(addr);
         ensures exists<TopoCoinMintCapability>(addr);

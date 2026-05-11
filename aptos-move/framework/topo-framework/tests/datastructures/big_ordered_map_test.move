@@ -1,8 +1,8 @@
 #[test_only]
-module aptos_framework::big_ordered_map_test {
-    use aptos_framework::ordered_map;
-    use aptos_framework::ordered_map_test;
-    use aptos_framework::big_ordered_map::{new, new_from, new_with_config};
+module topo_framework::big_ordered_map_test {
+    use topo_framework::ordered_map;
+    use topo_framework::ordered_map_test;
+    use topo_framework::big_ordered_map::{new, new_from, new_with_config};
     use std::option;
 
     #[test]
@@ -370,28 +370,28 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x1000B, location = aptos_framework::big_ordered_map)] /// EINVALID_CONFIG_PARAMETER
+    #[expected_failure(abort_code = 0x1000B, location = topo_framework::big_ordered_map)] /// EINVALID_CONFIG_PARAMETER
     fun test_inner_max_degree_too_large() {
         let map = new_with_config<u8, u8>(4097, 0, false);
         map.destroy_and_validate();
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x1000B, location = aptos_framework::big_ordered_map)] /// EINVALID_CONFIG_PARAMETER
+    #[expected_failure(abort_code = 0x1000B, location = topo_framework::big_ordered_map)] /// EINVALID_CONFIG_PARAMETER
     fun test_inner_max_degree_too_small() {
         let map = new_with_config<u8, u8>(3, 0, false);
         map.destroy_and_validate();
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x1000B, location = aptos_framework::big_ordered_map)] /// EINVALID_CONFIG_PARAMETER
+    #[expected_failure(abort_code = 0x1000B, location = topo_framework::big_ordered_map)] /// EINVALID_CONFIG_PARAMETER
     fun test_leaf_max_degree_too_small() {
         let map = new_with_config<u8, u8>(0, 2, false);
         map.destroy_and_validate();
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10001, location = aptos_framework::big_ordered_map)] /// EKEY_ALREADY_EXISTS
+    #[expected_failure(abort_code = 0x10001, location = topo_framework::big_ordered_map)] /// EKEY_ALREADY_EXISTS
     fun test_abort_add_existing_value() {
         let map = new_from(vector[1], vector[1]);
         map.add(1, 2);
@@ -417,7 +417,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10001, location = aptos_framework::big_ordered_map)] /// EKEY_ALREADY_EXISTS
+    #[expected_failure(abort_code = 0x10001, location = topo_framework::big_ordered_map)] /// EKEY_ALREADY_EXISTS
     fun test_abort_add_existing_value_to_non_leaf() {
         let map = new_with_config(4, 4, false);
         map.add_all(vector_range(1, 10), vector_range(1, 10));
@@ -444,7 +444,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10002, location = aptos_framework::big_ordered_map)] /// EKEY_NOT_FOUND
+    #[expected_failure(abort_code = 0x10002, location = topo_framework::big_ordered_map)] /// EKEY_NOT_FOUND
     fun test_abort_remove_largest_missing_value_to_non_leaf() {
         let map = new_with_config(4, 4, false);
         map.add_all(vector_range(1, 10), vector_range(1, 10));
@@ -453,7 +453,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10002, location = aptos_framework::big_ordered_map)] /// EKEY_NOT_FOUND
+    #[expected_failure(abort_code = 0x10002, location = topo_framework::big_ordered_map)] /// EKEY_NOT_FOUND
     fun test_abort_borrow_missing() {
         let map = new_from(vector[1], vector[1]);
         map.borrow(&2);
@@ -461,7 +461,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10002, location = aptos_framework::big_ordered_map)] /// EKEY_NOT_FOUND
+    #[expected_failure(abort_code = 0x10002, location = topo_framework::big_ordered_map)] /// EKEY_NOT_FOUND
     fun test_abort_borrow_mut_missing() {
         let map = new_from(vector[1], vector[1]);
         map.borrow_mut(&2);
@@ -469,7 +469,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x1000E, location = aptos_framework::big_ordered_map)] /// EBORROW_MUT_REQUIRES_CONSTANT_VALUE_SIZE
+    #[expected_failure(abort_code = 0x1000E, location = topo_framework::big_ordered_map)] /// EBORROW_MUT_REQUIRES_CONSTANT_VALUE_SIZE
     fun test_abort_borrow_mut_requires_constant_value_size() {
         let map = new_with_config(0, 0, false);
         map.add(1, vector[1]);
@@ -486,7 +486,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
     fun test_abort_iter_borrow_key_missing() {
         let map = new_from(vector[1], vector[1]);
         map.internal_new_end_iter().iter_borrow_key();
@@ -494,7 +494,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
     fun test_abort_iter_borrow_missing() {
         let map = new_from(vector[1], vector[1]);
         map.internal_new_end_iter().iter_borrow(&map);
@@ -502,7 +502,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
     fun test_abort_iter_borrow_mut_missing() {
         let map = new_from(vector[1], vector[1]);
         map.internal_new_end_iter().iter_borrow_mut(&mut map);
@@ -510,7 +510,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x1000E, location = aptos_framework::big_ordered_map)] /// EBORROW_MUT_REQUIRES_CONSTANT_VALUE_SIZE
+    #[expected_failure(abort_code = 0x1000E, location = topo_framework::big_ordered_map)] /// EBORROW_MUT_REQUIRES_CONSTANT_VALUE_SIZE
     fun test_abort_iter_borrow_mut_requires_constant_kv_size() {
         let map = new_with_config(0, 0, false);
         map.add(1, vector[1]);
@@ -519,7 +519,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
     fun test_abort_end_iter_next() {
         let map = new_from(vector[1, 2, 3], vector[1, 2, 3]);
         map.internal_new_end_iter().iter_next(&map);
@@ -527,7 +527,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
     fun test_abort_begin_iter_prev() {
         let map = new_from(vector[1, 2, 3], vector[1, 2, 3]);
         map.internal_new_begin_iter().iter_prev(&map);
@@ -535,7 +535,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x1000C, location = aptos_framework::big_ordered_map)] /// EMAP_NOT_EMPTY
+    #[expected_failure(abort_code = 0x1000C, location = topo_framework::big_ordered_map)] /// EMAP_NOT_EMPTY
     fun test_abort_fail_to_destroy_non_empty() {
         let map = new_from(vector[1], vector[1]);
         map.destroy_empty();
@@ -557,7 +557,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x1000F, location = aptos_framework::big_ordered_map)] /// EKEY_BYTES_TOO_LARGE
+    #[expected_failure(abort_code = 0x1000F, location = topo_framework::big_ordered_map)] /// EKEY_BYTES_TOO_LARGE
     fun test_adding_key_too_large() {
         let map = new_with_config(0, 0, false);
         map.add(vector[1u8], 1);
@@ -567,7 +567,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x1000D, location = aptos_framework::big_ordered_map)] /// EARGUMENT_BYTES_TOO_LARGE
+    #[expected_failure(abort_code = 0x1000D, location = topo_framework::big_ordered_map)] /// EARGUMENT_BYTES_TOO_LARGE
     fun test_adding_value_too_large() {
         let map = new_with_config(0, 0, false);
         // default guarantees (key, value) pair up to 10KB
@@ -850,7 +850,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
     fun test_abort_iter_modify_end_iter() {
         let map = new_from(vector[1, 2, 3], vector[10, 20, 30]);
         let _ = map.internal_new_end_iter().iter_modify(&mut map, |v| { *v += 1; true });
@@ -938,7 +938,7 @@ module aptos_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10003, location = aptos_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
+    #[expected_failure(abort_code = 0x10003, location = topo_framework::big_ordered_map)] /// EITER_OUT_OF_BOUNDS
     fun test_abort_iter_remove_end_iter() {
         let map = new_from(vector[1, 2, 3], vector[10, 20, 30]);
         // Finding a missing key returns an end IteratorPtrWithPath

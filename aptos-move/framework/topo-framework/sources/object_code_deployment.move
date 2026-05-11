@@ -28,17 +28,17 @@
 /// 4. Emits 'Freeze' event with the address of the object with the frozen code.
 /// Note: There is no unfreeze function as this gives no benefit if the user can freeze/unfreeze modules at will.
 ///       Once modules are marked as immutable, they cannot be made mutable again.
-module aptos_framework::object_code_deployment {
+module topo_framework::object_code_deployment {
     use std::bcs;
     use std::error;
     use std::features;
     use std::signer;
-    use aptos_framework::account;
-    use aptos_framework::code;
-    use aptos_framework::code::PackageRegistry;
-    use aptos_framework::event;
-    use aptos_framework::object;
-    use aptos_framework::object::{ExtendRef, Object};
+    use topo_framework::account;
+    use topo_framework::code;
+    use topo_framework::code::PackageRegistry;
+    use topo_framework::event;
+    use topo_framework::object;
+    use topo_framework::object::{ExtendRef, Object};
 
     /// Object code deployment feature not supported.
     const EOBJECT_CODE_DEPLOYMENT_NOT_SUPPORTED: u64 = 1;
@@ -49,9 +49,9 @@ module aptos_framework::object_code_deployment {
     /// Current permissioned signer cannot deploy object code.
     const ENO_CODE_PERMISSION: u64 = 4;
 
-    const OBJECT_CODE_DEPLOYMENT_DOMAIN_SEPARATOR: vector<u8> = b"aptos_framework::object_code_deployment";
+    const OBJECT_CODE_DEPLOYMENT_DOMAIN_SEPARATOR: vector<u8> = b"topo_framework::object_code_deployment";
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Internal struct, attached to the object, that holds Refs we need to manage the code deployment (i.e. upgrades).
     struct ManagingRefs has key {
         /// We need to keep the extend ref to be able to generate the signer to upgrade existing code.

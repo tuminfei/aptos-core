@@ -5,11 +5,11 @@
 /// The coins provided by the users are wrapped and coins are returned to users by unwrapping internal fungible asset
 /// with coin_wrapper.
 module swap::router {
-    use aptos_framework::topo_account;
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::fungible_asset::{Self, FungibleAsset, Metadata};
-    use aptos_framework::object::{Self, Object};
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::topo_account;
+    use topo_framework::coin::{Self, Coin};
+    use topo_framework::fungible_asset::{Self, FungibleAsset, Metadata};
+    use topo_framework::object::{Self, Object};
+    use topo_framework::primary_fungible_store;
     use aptos_std::math128;
 
     use swap::coin_wrapper;

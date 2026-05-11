@@ -1,8 +1,8 @@
 script {
     use std::signer;
-    use aptos_framework::topo_account;
-    use aptos_framework::topo_coin;
-    use aptos_framework::coin;
+    use topo_framework::topo_account;
+    use topo_framework::topo_coin;
+    use topo_framework::coin;
 
     // Tune this parameter based upon the actual gas costs
     const GAS_BUFFER: u64 = 100000;

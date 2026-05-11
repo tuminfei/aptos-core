@@ -23,7 +23,7 @@ pub fn generate_version_upgrade_proposal(
         is_testnet,
         next_execution_hash,
         is_multi_step,
-        &["aptos_framework::version"],
+        &["topo_framework::version"],
         |writer| {
             emitln!(
                 writer,

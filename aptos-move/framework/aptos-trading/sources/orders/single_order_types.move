@@ -2,7 +2,7 @@
 module aptos_trading::single_order_types {
     use std::option::{Option, Self};
     use std::string::String;
-    use aptos_framework::timestamp;
+    use topo_framework::timestamp;
     use aptos_trading::order_book_types::{
         OrderId,
         IncreasingIdx,

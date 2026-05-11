@@ -4,7 +4,7 @@
 // Disabled Features: [Bn254Structures]
 //
 script {
-    use aptos_framework::topo_governance;
+    use topo_framework::topo_governance;
     use std::features;
 
     fun main(core_resources: &signer) {

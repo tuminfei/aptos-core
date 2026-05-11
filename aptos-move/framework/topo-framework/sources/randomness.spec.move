@@ -1,9 +1,9 @@
-spec aptos_framework::randomness {
+spec topo_framework::randomness {
 
     spec module {
-        use aptos_framework::chain_status;
+        use topo_framework::chain_status;
         pragma verify = true;
-        invariant [suspendable] chain_status::is_operating() ==> exists<PerBlockRandomness>(@aptos_framework);
+        invariant [suspendable] chain_status::is_operating() ==> exists<PerBlockRandomness>(@topo_framework);
         global var: vector<u8>;
     }
 
@@ -26,22 +26,22 @@ spec aptos_framework::randomness {
     spec initialize(framework: &signer) {
         use std::signer;
         let framework_addr = signer::address_of(framework);
-        aborts_if framework_addr != @aptos_framework;
+        aborts_if framework_addr != @topo_framework;
     }
 
     spec on_new_block(vm: &signer, epoch: u64, round: u64, seed_for_new_block: Option<vector<u8>>) {
         use std::signer;
         aborts_if signer::address_of(vm) != @vm;
-        ensures exists<PerBlockRandomness>(@aptos_framework) ==> global<PerBlockRandomness>(@aptos_framework).seed == seed_for_new_block;
-        ensures exists<PerBlockRandomness>(@aptos_framework) ==> global<PerBlockRandomness>(@aptos_framework).epoch == epoch;
-        ensures exists<PerBlockRandomness>(@aptos_framework) ==> global<PerBlockRandomness>(@aptos_framework).round == round;
+        ensures exists<PerBlockRandomness>(@topo_framework) ==> global<PerBlockRandomness>(@topo_framework).seed == seed_for_new_block;
+        ensures exists<PerBlockRandomness>(@topo_framework) ==> global<PerBlockRandomness>(@topo_framework).epoch == epoch;
+        ensures exists<PerBlockRandomness>(@topo_framework) ==> global<PerBlockRandomness>(@topo_framework).round == round;
     }
 
     spec next_32_bytes(): vector<u8> {
         use std::hash;
         include NextBlobAbortsIf;
         let input = b"APTOS_RANDOMNESS";
-        let randomness = global<PerBlockRandomness>(@aptos_framework);
+        let randomness = global<PerBlockRandomness>(@topo_framework);
         let seed = option::borrow(randomness.seed);
         let txn_hash = transaction_context::spec_get_txn_hash();
         let txn_counter = spec_fetch_and_increment_txn_counter();
@@ -50,10 +50,10 @@ spec aptos_framework::randomness {
     }
 
     spec schema NextBlobAbortsIf {
-        let randomness = global<PerBlockRandomness>(@aptos_framework);
+        let randomness = global<PerBlockRandomness>(@topo_framework);
         aborts_if option::is_none(randomness.seed);
         aborts_if !spec_is_unbiasable();
-        aborts_if !exists<PerBlockRandomness>(@aptos_framework);
+        aborts_if !exists<PerBlockRandomness>(@topo_framework);
     }
 
     spec u8_integer(): u8 {
@@ -124,7 +124,7 @@ spec aptos_framework::randomness {
         pragma aborts_if_is_partial;
         // TODO(tengzhang): complete the aborts_if conditions
         // include n > 1 ==> NextBlobAbortsIf;
-        // aborts_if n > 1 && !exists<PerBlockRandomness>(@aptos_framework);
+        // aborts_if n > 1 && !exists<PerBlockRandomness>(@topo_framework);
     }
 
     spec safe_add_mod_for_verification(a: u256, b: u256, m: u256): u256 {

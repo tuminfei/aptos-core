@@ -53,7 +53,7 @@ module aptos_experimental::dead_mans_switch_tracker {
     friend aptos_experimental::dead_mans_switch_operations;
     use std::option::Option;
     use aptos_std::big_ordered_map::BigOrderedMap;
-    use aptos_framework::event;
+    use topo_framework::event;
     use aptos_experimental::order_book_utils;
 
     /// Error code when the provided keep-alive timeout is shorter than the minimum allowed

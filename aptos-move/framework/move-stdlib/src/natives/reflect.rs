@@ -4,7 +4,7 @@
 //! Implementation of native functions for reflection.
 
 use crate::natives::result;
-use aptos_gas_schedule::gas_params::natives::aptos_framework::REFLECT_RESOLVE_BASE;
+use aptos_gas_schedule::gas_params::natives::topo_framework::REFLECT_RESOLVE_BASE;
 use aptos_native_interface::{
     safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError,
     SafeNativeResult,

@@ -1,12 +1,12 @@
 #[test_only]
 module rewards_pool::test_helpers {
-    use aptos_framework::account;
-    use aptos_framework::topo_governance;
-    use aptos_framework::coin::{Self, Coin};
-    use aptos_framework::fungible_asset::{Self, FungibleAsset};
-    use aptos_framework::object;
-    use aptos_framework::primary_fungible_store;
-    use aptos_framework::timestamp;
+    use topo_framework::account;
+    use topo_framework::topo_governance;
+    use topo_framework::coin::{Self, Coin};
+    use topo_framework::fungible_asset::{Self, FungibleAsset};
+    use topo_framework::object;
+    use topo_framework::primary_fungible_store;
+    use topo_framework::timestamp;
 
     use rewards_pool::epoch;
 

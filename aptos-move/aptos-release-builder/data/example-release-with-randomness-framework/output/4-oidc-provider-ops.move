@@ -1,7 +1,7 @@
 // Script hash: 268052ee
 script {
-    use aptos_framework::topo_governance;
-    use aptos_framework::jwks;
+    use topo_framework::topo_governance;
+    use topo_framework::jwks;
 
     fun main(core_resources: &signer) {
         let core_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);

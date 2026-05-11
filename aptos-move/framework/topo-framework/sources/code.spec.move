@@ -1,4 +1,4 @@
-spec aptos_framework::code {
+spec topo_framework::code {
     /// <high-level-req>
     /// No.: 1
     /// Requirement: Updating a package should fail if the user is not the owner of it.
@@ -73,14 +73,14 @@ spec aptos_framework::code {
     }
 
     spec schema AbortsIfPermissionedSigner {
-        use aptos_framework::permissioned_signer;
+        use topo_framework::permissioned_signer;
         s: signer;
         let perm = CodePublishingPermission {};
         aborts_if !permissioned_signer::spec_check_permission_exists(s, perm);
     }
 
-    spec initialize(aptos_framework: &signer, package_owner: &signer, metadata: PackageMetadata) {
-        let aptos_addr = signer::address_of(aptos_framework);
+    spec initialize(topo_framework: &signer, package_owner: &signer, metadata: PackageMetadata) {
+        let aptos_addr = signer::address_of(topo_framework);
         let owner_addr = signer::address_of(package_owner);
         aborts_if !system_addresses::is_aptos_framework_address(aptos_addr);
 

@@ -3,8 +3,8 @@ module confidential_asset_example::register_example {
     use std::signer;
     use std::string::utf8;
     use aptos_std::debug::print;
-    use aptos_framework::fungible_asset::Metadata;
-    use aptos_framework::object::Object;
+    use topo_framework::fungible_asset::Metadata;
+    use topo_framework::object::Object;
 
     use aptos_experimental::confidential_asset;
     use aptos_experimental::confidential_asset_tests;
@@ -32,7 +32,7 @@ module confidential_asset_example::register_example {
 
     #[test(
         confidential_asset = @aptos_experimental,
-        aptos_fx = @aptos_framework,
+        aptos_fx = @topo_framework,
         fa = @0xfa,
         bob = @0xb0
     )]

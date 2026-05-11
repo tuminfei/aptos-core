@@ -1685,7 +1685,7 @@ Create a fungible asset store whose transfer rule would be overloaded by the pro
     withdraw_function.for_each_ref(|withdraw_function| {
             <b>let</b> dispatcher_withdraw_function_info =
                 <a href="function_info.md#0x1_function_info_new_function_info_from_address">function_info::new_function_info_from_address</a>(
-                    @aptos_framework,
+                    @topo_framework,
                     <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">dispatchable_fungible_asset</a>"),
                     <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"dispatchable_withdraw")
                 );
@@ -1702,7 +1702,7 @@ Create a fungible asset store whose transfer rule would be overloaded by the pro
     deposit_function.for_each_ref(|deposit_function| {
             <b>let</b> dispatcher_deposit_function_info =
                 <a href="function_info.md#0x1_function_info_new_function_info_from_address">function_info::new_function_info_from_address</a>(
-                    @aptos_framework,
+                    @topo_framework,
                     <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">dispatchable_fungible_asset</a>"),
                     <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"dispatchable_deposit")
                 );
@@ -1719,7 +1719,7 @@ Create a fungible asset store whose transfer rule would be overloaded by the pro
     derived_balance_function.for_each_ref(|balance_function| {
             <b>let</b> dispatcher_derived_balance_function_info =
                 <a href="function_info.md#0x1_function_info_new_function_info_from_address">function_info::new_function_info_from_address</a>(
-                    @aptos_framework,
+                    @topo_framework,
                     <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">dispatchable_fungible_asset</a>"),
                     <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"dispatchable_derived_balance")
                 );
@@ -1783,7 +1783,7 @@ Define the derived supply dispatch with the provided function.
     dispatch_function.for_each_ref(|supply_function| {
             <b>let</b> <a href="function_info.md#0x1_function_info">function_info</a> =
                 <a href="function_info.md#0x1_function_info_new_function_info_from_address">function_info::new_function_info_from_address</a>(
-                    @aptos_framework,
+                    @topo_framework,
                     <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"<a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">dispatchable_fungible_asset</a>"),
                     <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"dispatchable_derived_supply")
                 );

@@ -7,5 +7,5 @@ TopoFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", sub
 AptosToken = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "aptos-token", rev = "mainnet" }
 
 [addresses]
-aptos_framework = "0x1"
+topo_framework = "0x1"
 post_mint_reveal_nft = "_"

@@ -222,7 +222,7 @@ must be parked here until the full registry is ready to receive it.
 
 ## Resource `StakingRegistry`
 
-The global staking registry, stored under @aptos_framework.
+The global staking registry, stored under @topo_framework.
 
 Contains all validator pools, all user stake records, and the global config.
 The <code>mint_cap</code> is used to mint new TOPO coins as epoch rewards and fee distributions.
@@ -720,7 +720,7 @@ this much final effective power.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_registry_exists">registry_exists</a>(): bool {
-    <b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)
+    <b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)
 }
 </code></pre>
 
@@ -740,7 +740,7 @@ This two-step approach avoids a circular dependency: the registry needs the mint
 but the mint cap is created before the registry config parameters are known.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -750,16 +750,16 @@ but the mint cap is created before the registry config parameters are known.
 
 
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     mint_cap: MintCapability&lt;TopoCoin&gt;,
 ) {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>assert</b>!(
-        !<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a>&gt;(@aptos_framework)
-            && !<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework),
+        !<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a>&gt;(@topo_framework)
+            && !<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="staking_registry.md#0x1_staking_registry_EALREADY_INITIALIZED">EALREADY_INITIALIZED</a>),
     );
-    <b>move_to</b>(aptos_framework, <a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a> { mint_cap });
+    <b>move_to</b>(topo_framework, <a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a> { mint_cap });
 }
 </code></pre>
 
@@ -778,7 +778,7 @@ Idempotent: if the registry already exists, returns immediately without error.
 Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">genesis::ensure_poc_staking_initialized</a></code>.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_million_power: u64, max_delegators_per_validator: u64, cooldown_secs: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_million_power: u64, max_delegators_per_validator: u64, cooldown_secs: u64)
 </code></pre>
 
 
@@ -788,13 +788,13 @@ Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">
 
 
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     octas_per_million_power: u64,
     max_delegators_per_validator: u64,
     cooldown_secs: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <b>if</b> (<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
+    <b>if</b> (<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b>
     };
 
@@ -803,12 +803,12 @@ Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>),
     );
     <b>assert</b>!(
-        <b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a>&gt;(@aptos_framework),
+        <b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a>&gt;(@topo_framework),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EMINT_CAP_NOT_STORED">EMINT_CAP_NOT_STORED</a>),
     );
 
-    <b>let</b> <a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a> { mint_cap } = <b>move_from</b>&lt;<a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a>&gt;(@aptos_framework);
-    <b>move_to</b>(aptos_framework, <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+    <b>let</b> <a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a> { mint_cap } = <b>move_from</b>&lt;<a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a>&gt;(@topo_framework);
+    <b>move_to</b>(topo_framework, <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
         validators: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
         users: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
         total_staked_power: 0,
@@ -842,7 +842,7 @@ Setting force_exit_power_bps = 8000 means users are ejected when power < 80% of 
 providing a hysteresis band to prevent thrashing at the boundary.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_active_power_thresholds">set_active_power_thresholds</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_active_power: u64, force_exit_power_bps: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_active_power_thresholds">set_active_power_thresholds</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_active_power: u64, force_exit_power_bps: u64)
 </code></pre>
 
 
@@ -852,15 +852,15 @@ providing a hysteresis band to prevent thrashing at the boundary.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_active_power_thresholds">set_active_power_thresholds</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     min_active_power: u64,
     force_exit_power_bps: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
     <a href="staking_registry.md#0x1_staking_registry_assert_valid_active_power_config">assert_valid_active_power_config</a>(min_active_power, force_exit_power_bps);
 
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     registry.config.min_active_power = min_active_power;
     registry.config.force_exit_power_bps = force_exit_power_bps;
 }
@@ -880,7 +880,7 @@ Keeps the existing force-exit BPS unchanged. Only the framework account may chan
 this parameter.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_min_active_power">set_min_active_power</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_active_power: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_min_active_power">set_min_active_power</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_active_power: u64)
 </code></pre>
 
 
@@ -890,14 +890,14 @@ this parameter.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_min_active_power">set_min_active_power</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     min_active_power: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
     <b>assert</b>!(min_active_power &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
 
-    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.min_active_power =
+    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).config.min_active_power =
         min_active_power;
 }
 </code></pre>
@@ -917,7 +917,7 @@ Users whose effective power falls below
 at epoch boundaries. Keeps the existing min_active_power unchanged.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_force_exit_power_bps">set_force_exit_power_bps</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, force_exit_power_bps: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_force_exit_power_bps">set_force_exit_power_bps</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, force_exit_power_bps: u64)
 </code></pre>
 
 
@@ -927,17 +927,17 @@ at epoch boundaries. Keeps the existing min_active_power unchanged.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_force_exit_power_bps">set_force_exit_power_bps</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     force_exit_power_bps: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
     <b>assert</b>!(
         force_exit_power_bps &gt; 0 && force_exit_power_bps &lt;= <a href="staking_registry.md#0x1_staking_registry_BPS_DENOMINATOR">BPS_DENOMINATOR</a>,
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>),
     );
 
-    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.force_exit_power_bps =
+    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).config.force_exit_power_bps =
         force_exit_power_bps;
 }
 </code></pre>
@@ -959,7 +959,7 @@ deposit; raising it can reduce effective power and may cause low-coverage delega
 to be force-undelegated at the next epoch boundary.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_octas_per_million_power">set_octas_per_million_power</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_million_power: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_octas_per_million_power">set_octas_per_million_power</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_million_power: u64)
 </code></pre>
 
 
@@ -969,13 +969,13 @@ to be force-undelegated at the next epoch boundary.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_octas_per_million_power">set_octas_per_million_power</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     octas_per_million_power: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
 
-    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.octas_per_million_power =
+    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).config.octas_per_million_power =
         octas_per_million_power;
 }
 </code></pre>
@@ -990,7 +990,7 @@ to be force-undelegated at the next epoch boundary.
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_cooldown_secs">set_cooldown_secs</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, cooldown_secs: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_cooldown_secs">set_cooldown_secs</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, cooldown_secs: u64)
 </code></pre>
 
 
@@ -1000,13 +1000,13 @@ to be force-undelegated at the next epoch boundary.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_cooldown_secs">set_cooldown_secs</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     cooldown_secs: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
 
-    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.cooldown_secs =
+    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).config.cooldown_secs =
         cooldown_secs;
 }
 </code></pre>
@@ -1026,7 +1026,7 @@ This prevents a user from undelegating, voting, and re-delegating within a singl
 governance proposal window — which would allow double-influence attacks.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">ensure_min_cooldown_secs</a>(aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_cooldown_secs: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">ensure_min_cooldown_secs</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_cooldown_secs: u64)
 </code></pre>
 
 
@@ -1036,15 +1036,15 @@ governance proposal window — which would allow double-influence attacks.
 
 
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">ensure_min_cooldown_secs</a>(
-    aptos_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     min_cooldown_secs: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(aptos_framework);
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b>
     };
 
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (registry.config.cooldown_secs &lt; min_cooldown_secs) {
         registry.config.cooldown_secs = min_cooldown_secs;
     };
@@ -1080,7 +1080,7 @@ before the first epoch begins.
     stake_amount: u64,
 ): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>let</b> wide_power =
         (stake_amount <b>as</b> u128) * (registry.config.genesis_stake_power_multiplier <b>as</b> u128);
     <b>assert</b>!(wide_power &lt;= <a href="staking_registry.md#0x1_staking_registry_MAX_U64">MAX_U64</a>, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
@@ -1215,7 +1215,7 @@ the user's deposit balance, increasing their deposit coverage over time.
     <b>assert</b>!(amount &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EZERO_DEPOSIT">EZERO_DEPOSIT</a>));
 
     <b>let</b> user_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user);
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_ensure_user_record">ensure_user_record</a>(registry, user_address);
 
     <b>let</b> coins = <a href="coin.md#0x1_coin_withdraw">coin::withdraw</a>&lt;TopoCoin&gt;(user, amount);
@@ -1368,11 +1368,11 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_effective_power">get_effective_power</a>(user: <b>address</b>): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> 0
     };
 
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.users.contains(user)) {
         <b>return</b> 0
     };
@@ -1418,11 +1418,11 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_joining_power">get_validator_joining_power</a>(
     validator_address: <b>address</b>,
 ): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> 0
     };
 
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b> 0
     };
@@ -1459,11 +1459,11 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_total_power">get_validator_total_power</a>(
     validator_address: <b>address</b>,
 ): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> 0
     };
 
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b> 0
     };
@@ -1527,11 +1527,11 @@ effective power floored to 1 so active stake cannot decay to zero.
     validator_address: <b>address</b>,
     extra_deposit_octas_by_user: &SimpleMap&lt;<b>address</b>, u64&gt;,
 ): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
     };
 
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
     };
@@ -1589,11 +1589,11 @@ effective power floored to 1 so active stake cannot decay to zero.
     validator_address: <b>address</b>,
     extra_deposit_octas_by_user: &SimpleMap&lt;<b>address</b>, u64&gt;,
 ): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
     };
 
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
     };
@@ -1644,10 +1644,10 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_total_staked_power">get_total_staked_power</a>(): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         0
     } <b>else</b> {
-        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).total_staked_power
+        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).total_staked_power
     }
 }
 </code></pre>
@@ -1673,8 +1673,8 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_validator_exists">validator_exists</a>(validator_address: <b>address</b>): bool <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)
-        && <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).validators.contains(validator_address)
+    <b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)
+        && <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).validators.contains(validator_address)
 }
 </code></pre>
 
@@ -1702,10 +1702,10 @@ effective power floored to 1 so active stake cannot decay to zero.
     validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
 ): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>let</b> exists_flags = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> exists_flags
     };
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>let</b> len = validators.length();
     <b>let</b> i = 0;
     <b>while</b> (i &lt; len) {
@@ -1739,10 +1739,10 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_view">get_validator_view</a>(
     validator_address: <b>address</b>,
 ): (<b>address</b>, <b>address</b>, u64, u64, u64, u64, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> <a href="staking_registry.md#0x1_staking_registry_empty_validator_view">empty_validator_view</a>(validator_address)
     };
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_build_validator_view">build_validator_view</a>(registry, validator_address)
 }
 </code></pre>
@@ -1785,7 +1785,7 @@ effective power floored to 1 so active stake cannot decay to zero.
     <b>let</b> delegator_counts = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> joining_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> total_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> (
             validator_addresses,
             owner_addresses,
@@ -1796,7 +1796,7 @@ effective power floored to 1 so active stake cannot decay to zero.
             total_powers,
         )
     };
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>let</b> len = validators.length();
     <b>let</b> i = 0;
     <b>while</b> (i &lt; len) {
@@ -1853,10 +1853,10 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_user_stake_view">get_user_stake_view</a>(
     user: <b>address</b>,
 ): (<b>address</b>, u64, <b>address</b>, u64, u64, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> <a href="staking_registry.md#0x1_staking_registry_empty_user_stake_view">empty_user_stake_view</a>(user)
     };
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_build_user_stake_view">build_user_stake_view</a>(registry, user)
 }
 </code></pre>
@@ -1885,10 +1885,10 @@ effective power floored to 1 so active stake cannot decay to zero.
     users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
 ): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>let</b> exists_flags = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> exists_flags
     };
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>let</b> len = users.length();
     <b>let</b> i = 0;
     <b>while</b> (i &lt; len) {
@@ -1935,7 +1935,7 @@ effective power floored to 1 so active stake cannot decay to zero.
     <b>let</b> cooldown_until_secs_values = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> committed_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> effective_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> (
             returned_users,
             deposit_octas_values,
@@ -1945,7 +1945,7 @@ effective power floored to 1 so active stake cannot decay to zero.
             effective_powers,
         )
     };
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>let</b> len = users.length();
     <b>let</b> i = 0;
     <b>while</b> (i &lt; len) {
@@ -1999,10 +1999,10 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_delegator_count">get_validator_delegator_count</a>(
     validator_address: <b>address</b>,
 ): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> 0
     };
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b> 0
     };
@@ -2035,10 +2035,10 @@ effective power floored to 1 so active stake cannot decay to zero.
     offset: u64,
     limit: u64,
 ): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
     };
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
     };
@@ -2076,10 +2076,10 @@ effective power floored to 1 so active stake cannot decay to zero.
     <b>let</b> deposit_octas_values = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> committed_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> effective_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> (delegators, deposit_octas_values, committed_powers, effective_powers)
     };
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b> (delegators, deposit_octas_values, committed_powers, effective_powers)
     };
@@ -2124,11 +2124,11 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_user_stake_info">get_user_stake_info</a>(
     user: <b>address</b>,
 ): (u64, <b>address</b>, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> (0, @0x0, 0)
     };
 
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.users.contains(user)) {
         <b>return</b> (0, @0x0, 0)
     };
@@ -2161,11 +2161,11 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_owner">get_validator_owner</a>(
     validator_address: <b>address</b>,
 ): <b>address</b> <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> @0x0
     };
 
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b> @0x0
     };
@@ -2197,11 +2197,11 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_commission_bps">get_validator_commission_bps</a>(
     validator_address: <b>address</b>,
 ): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> 0
     };
 
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b> 0
     };
@@ -2230,10 +2230,10 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_total_staked_power">set_total_staked_power</a>(total_staked_power: u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b>
     };
-    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).total_staked_power = total_staked_power;
+    <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).total_staked_power = total_staked_power;
 }
 </code></pre>
 
@@ -2258,10 +2258,10 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_cooldown_secs">get_cooldown_secs</a>(): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         0
     } <b>else</b> {
-        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.cooldown_secs
+        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).config.cooldown_secs
     }
 }
 </code></pre>
@@ -2287,10 +2287,10 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_octas_per_million_power">get_octas_per_million_power</a>(): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         0
     } <b>else</b> {
-        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.octas_per_million_power
+        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).config.octas_per_million_power
     }
 }
 </code></pre>
@@ -2316,10 +2316,10 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_min_active_power">get_min_active_power</a>(): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         0
     } <b>else</b> {
-        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.min_active_power
+        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).config.min_active_power
     }
 }
 </code></pre>
@@ -2345,10 +2345,10 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_force_exit_power_bps">get_force_exit_power_bps</a>(): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         0
     } <b>else</b> {
-        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework).config.force_exit_power_bps
+        <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).config.force_exit_power_bps
     }
 }
 </code></pre>
@@ -2492,11 +2492,11 @@ Force-undelegated users receive the same cooldown as voluntary undelegation.
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_force_undelegate_below_threshold">force_undelegate_below_threshold</a>(
     validator_address: <b>address</b>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b>
     };
 
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b>
     };
@@ -2551,11 +2551,11 @@ Force-undelegated users receive the same cooldown as voluntary undelegation.
     commission_bps: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_assert_valid_commission">assert_valid_commission</a>(commission_bps);
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b>
     };
 
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b>
     };
@@ -2610,11 +2610,11 @@ If pool_power == 0 or epoch_reward == 0, this is a no-op.
     rewards_rate: u64,
     rewards_rate_denominator: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b>
     };
 
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b>
     };
@@ -2650,7 +2650,7 @@ If pool_power == 0 or epoch_reward == 0, this is a no-op.
     <b>let</b> commission = (((epoch_reward <b>as</b> u128) * (commission_bps <b>as</b> u128)) / 10000) <b>as</b> u64;
     <b>let</b> distributable = epoch_reward - commission;
 
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>let</b> mint_cap = &registry.mint_cap;
     <b>let</b> users = &<b>mut</b> registry.users;
 
@@ -2712,11 +2712,11 @@ this re-mints the validator's share as a reward).
     validator_address: <b>address</b>,
     fee_amount_octa: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework) || fee_amount_octa == 0) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework) || fee_amount_octa == 0) {
         <b>return</b>
     };
 
-    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b>
     };
@@ -2740,7 +2740,7 @@ this re-mints the validator's share as a reward).
     <b>let</b> commission = (((fee_amount_octa <b>as</b> u128) * (commission_bps <b>as</b> u128)) / 10000) <b>as</b> u64;
     <b>let</b> distributable = fee_amount_octa - commission;
 
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>let</b> mint_cap = &registry.mint_cap;
     <b>let</b> users = &<b>mut</b> registry.users;
 
@@ -2793,7 +2793,7 @@ this re-mints the validator's share as a reward).
     commission_bps: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_assert_valid_commission">assert_valid_commission</a>(commission_bps);
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>assert</b>!(
         !registry.validators.contains(validator_address),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="staking_registry.md#0x1_staking_registry_EALREADY_VALIDATOR">EALREADY_VALIDATOR</a>),
@@ -2845,7 +2845,7 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
     user_address: <b>address</b>,
     validator_address: <b>address</b>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>assert</b>!(
         registry.validators.contains(validator_address),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_ENOT_VALIDATOR">ENOT_VALIDATOR</a>),
@@ -2910,7 +2910,7 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
 <pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_undelegate_internal">undelegate_internal</a>(
     user_address: <b>address</b>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>assert</b>!(registry.users.contains(user_address), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EUSER_NOT_FOUND">EUSER_NOT_FOUND</a>));
 
     <b>let</b> delegated_to = registry.users.borrow(user_address).delegated_to;
@@ -2946,7 +2946,7 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
 
 <pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>() {
     <b>assert</b>!(
-        <b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework),
+        <b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework),
         <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
     );
 }
@@ -3029,7 +3029,7 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
 <pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_extract_withdrawable_deposit">extract_withdrawable_deposit</a>(
     user_address: <b>address</b>,
 ): Coin&lt;TopoCoin&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>assert</b>!(registry.users.contains(user_address), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EUSER_NOT_FOUND">EUSER_NOT_FOUND</a>));
 
     <b>let</b> info = registry.users.borrow(user_address);
@@ -3246,11 +3246,11 @@ This avoids O(n) shifting while keeping the list compact.
     validator_address: <b>address</b>,
     status: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework)) {
+    <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b>
     };
 
-    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@aptos_framework);
+    <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
         <b>return</b>
     };

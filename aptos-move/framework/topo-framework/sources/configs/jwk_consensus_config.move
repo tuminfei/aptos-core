@@ -1,17 +1,17 @@
 /// Structs and functions related to JWK consensus configurations.
-module aptos_framework::jwk_consensus_config {
+module topo_framework::jwk_consensus_config {
     use std::error;
     use std::option;
     use std::string::String;
     use aptos_std::copyable_any;
     use aptos_std::copyable_any::Any;
     use aptos_std::simple_map;
-    use aptos_framework::config_buffer;
-    use aptos_framework::system_addresses;
+    use topo_framework::config_buffer;
+    use topo_framework::system_addresses;
     #[test_only]
     use std::string::utf8;
 
-    friend aptos_framework::reconfiguration_with_dkg;
+    friend topo_framework::reconfiguration_with_dkg;
 
     /// `ConfigV1` creation failed with duplicated providers given.
     const EDUPLICATE_PROVIDERS: u64 = 1;
@@ -41,7 +41,7 @@ module aptos_framework::jwk_consensus_config {
     /// Initialize the configuration. Used in genesis or governance.
     public fun initialize(framework: &signer, config: JWKConsensusConfig) {
         system_addresses::assert_aptos_framework(framework);
-        if (!exists<JWKConsensusConfig>(@aptos_framework)) {
+        if (!exists<JWKConsensusConfig>(@topo_framework)) {
             move_to(framework, config);
         }
     }
@@ -49,8 +49,8 @@ module aptos_framework::jwk_consensus_config {
     /// This can be called by on-chain governance to update JWK consensus configs for the next epoch.
     /// Example usage:
     /// ```
-    /// use aptos_framework::jwk_consensus_config;
-    /// use aptos_framework::topo_governance;
+    /// use topo_framework::jwk_consensus_config;
+    /// use topo_framework::topo_governance;
     /// // ...
     /// let config = jwk_consensus_config::new_v1(vector[]);
     /// jwk_consensus_config::set_for_next_epoch(&framework_signer, config);
@@ -66,8 +66,8 @@ module aptos_framework::jwk_consensus_config {
         system_addresses::assert_aptos_framework(framework);
         if (config_buffer::does_exist<JWKConsensusConfig>()) {
             let new_config = config_buffer::extract_v2<JWKConsensusConfig>();
-            if (exists<JWKConsensusConfig>(@aptos_framework)) {
-                *borrow_global_mut<JWKConsensusConfig>(@aptos_framework) = new_config;
+            if (exists<JWKConsensusConfig>(@topo_framework)) {
+                *borrow_global_mut<JWKConsensusConfig>(@topo_framework) = new_config;
             } else {
                 move_to(framework, new_config);
             };
@@ -105,7 +105,7 @@ module aptos_framework::jwk_consensus_config {
 
     #[test_only]
     fun enabled(): bool acquires JWKConsensusConfig {
-        let variant= borrow_global<JWKConsensusConfig>(@aptos_framework).variant;
+        let variant= borrow_global<JWKConsensusConfig>(@topo_framework).variant;
         let variant_type_name = *variant.type_name().bytes();
         variant_type_name != b"0x1::jwk_consensus_config::ConfigOff"
     }

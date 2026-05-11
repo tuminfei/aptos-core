@@ -16,9 +16,9 @@ use aptos_gas_algebra::{
 };
 
 crate::gas_schedule::macros::define_gas_parameters!(
-    AptosFrameworkGasParameters,
-    "aptos_framework",
-    NativeGasParameters => .aptos_framework,
+    TopoFrameworkGasParameters,
+    "topo_framework",
+    NativeGasParameters => .topo_framework,
     [
         [account_create_address_base: InternalGas, "account.create_address.base", 11020],
         [account_create_signer_base: InternalGas, "account.create_signer.base", 11020],

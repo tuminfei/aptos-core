@@ -25,8 +25,8 @@
 // )
 
 script {
-    use aptos_framework::topo_governance;
-    use aptos_framework::consensus_config;
+    use topo_framework::topo_governance;
+    use topo_framework::consensus_config;
     use std::vector;
 
     fun main(proposal_id: u64) {

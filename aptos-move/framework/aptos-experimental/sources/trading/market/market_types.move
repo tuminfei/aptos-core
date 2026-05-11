@@ -10,7 +10,7 @@ module aptos_experimental::market_types {
     use std::string::String;
     use aptos_std::table;
     use aptos_std::table::Table;
-    use aptos_framework::event;
+    use topo_framework::event;
     use aptos_trading::single_order_types::SingleOrder;
     use aptos_trading::order_book_types::{OrderId, TimeInForce, TriggerCondition};
     use aptos_experimental::dead_mans_switch_tracker;

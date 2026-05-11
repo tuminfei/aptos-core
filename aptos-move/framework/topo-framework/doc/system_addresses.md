@@ -281,7 +281,7 @@ Return true if <code>addr</code> is 0x1.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">is_aptos_framework_address</a>(addr: <b>address</b>): bool {
-    addr == @aptos_framework
+    addr == @topo_framework
 }
 </code></pre>
 
@@ -417,7 +417,7 @@ Return true if <code>addr</code> is either the VM address or an Aptos Framework 
 <td>2</td>
 <td>Asserting that a provided address corresponds to the Aptos Framework Resources address should always yield a true result when matched.</td>
 <td>High</td>
-<td>The assert_aptos_framework function ensures that the provided signer belongs to the @aptos_framework account.</td>
+<td>The assert_aptos_framework function ensures that the provided signer belongs to the @topo_framework account.</td>
 <td>Formally verified via <a href="#high-level-req-2">AbortsIfNotAptosFramework</a>.</td>
 </tr>
 
@@ -554,7 +554,7 @@ Specifies that a function aborts if the account does not have the aptos framewor
 <pre><code><b>schema</b> <a href="system_addresses.md#0x1_system_addresses_AbortsIfNotAptosFramework">AbortsIfNotAptosFramework</a> {
     <a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
     // This enforces <a id="high-level-req-2" href="#high-level-req">high-level requirement 2</a>:
-    <b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>) != @aptos_framework <b>with</b> <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_PERMISSION_DENIED">error::PERMISSION_DENIED</a>;
+    <b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>) != @topo_framework <b>with</b> <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_PERMISSION_DENIED">error::PERMISSION_DENIED</a>;
 }
 </code></pre>
 

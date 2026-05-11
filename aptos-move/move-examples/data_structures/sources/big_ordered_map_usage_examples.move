@@ -1,5 +1,5 @@
 module aptos_std::big_ordered_map_usage_examples {
-    use aptos_framework::big_ordered_map;
+    use topo_framework::big_ordered_map;
 
     #[test]
     fun example_with_primitive_types() {

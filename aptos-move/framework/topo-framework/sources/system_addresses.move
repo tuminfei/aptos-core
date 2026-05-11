@@ -1,4 +1,4 @@
-module aptos_framework::system_addresses {
+module topo_framework::system_addresses {
     use std::error;
     use std::signer;
 
@@ -57,7 +57,7 @@ module aptos_framework::system_addresses {
 
     /// Return true if `addr` is 0x1.
     public fun is_aptos_framework_address(addr: address): bool {
-        addr == @aptos_framework
+        addr == @topo_framework
     }
 
     /// Assert that the signer has the VM reserved address.

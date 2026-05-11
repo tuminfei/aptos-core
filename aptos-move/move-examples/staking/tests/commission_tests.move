@@ -2,12 +2,12 @@
 module staking::commission_tests {
     use std::signer;
     use aptos_std::math128;
-    use aptos_framework::account;
-    use aptos_framework::topo_account;
-    use aptos_framework::topo_coin;
-    use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::coin;
-    use aptos_framework::timestamp;
+    use topo_framework::account;
+    use topo_framework::topo_account;
+    use topo_framework::topo_coin;
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin;
+    use topo_framework::timestamp;
     use staking::oracle;
     use staking::commission;
 
@@ -17,7 +17,7 @@ module staking::commission_tests {
     const APT_PRICE: u128 = 534378710;
 
     fun set_up() {
-        timestamp::set_time_has_started_for_testing(&account::create_signer_for_test(@aptos_framework));
+        timestamp::set_time_has_started_for_testing(&account::create_signer_for_test(@topo_framework));
         commission::init_for_test(&account::create_signer_for_test(@0xcafe));
         oracle::set_test_price(APT_PRICE);
     }
@@ -141,7 +141,7 @@ module staking::commission_tests {
 
     fun mint_apt(amount: u64) {
         let (burn_cap, mint_cap) = topo_coin::initialize_for_test(
-            &account::create_signer_for_test(@aptos_framework));
+            &account::create_signer_for_test(@topo_framework));
         topo_account::deposit_coins(@staking, coin::mint(amount, &mint_cap));
         coin::destroy_burn_cap(burn_cap);
         coin::destroy_mint_cap(mint_cap);

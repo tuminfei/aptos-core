@@ -4,8 +4,8 @@ module shared_account::SharedAccount {
     use std::error;
     use std::signer;
     use std::vector;
-    use aptos_framework::account;
-    use aptos_framework::coin;
+    use topo_framework::account;
+    use topo_framework::coin;
 
     // struct Share records the address of the share_holder and their corresponding number of shares
     struct Share has store {
@@ -87,9 +87,9 @@ module shared_account::SharedAccount {
         let user_addr1 = signer::address_of(&test_user1);
         let user_addr2 = signer::address_of(&test_user2);
 
-        aptos_framework::topo_account::create_account(user_addr);
-        aptos_framework::topo_account::create_account(user_addr1);
-        aptos_framework::topo_account::create_account(user_addr2);
+        topo_framework::topo_account::create_account(user_addr);
+        topo_framework::topo_account::create_account(user_addr1);
+        topo_framework::topo_account::create_account(user_addr2);
 
         vector::push_back(&mut addresses, user_addr1);
         vector::push_back(&mut addresses, user_addr2);
@@ -103,9 +103,9 @@ module shared_account::SharedAccount {
         borrow_global<SharedAccountEvent>(user_addr).resource_addr
     }
 
-    #[test(user = @0x1111, test_user1 = @0x1112, test_user2 = @0x1113, core_framework = @aptos_framework)]
+    #[test(user = @0x1111, test_user1 = @0x1112, test_user2 = @0x1113, core_framework = @topo_framework)]
     public entry fun test_disperse(user: signer, test_user1: signer, test_user2: signer, core_framework: signer) acquires SharedAccount, SharedAccountEvent {
-        use aptos_framework::topo_coin::{Self, TopoCoin};
+        use topo_framework::topo_coin::{Self, TopoCoin};
         let user_addr1 = signer::address_of(&test_user1);
         let user_addr2 = signer::address_of(&test_user2);
         let (burn_cap, mint_cap) = topo_coin::initialize_for_test(&core_framework);
@@ -126,7 +126,7 @@ module shared_account::SharedAccount {
     #[test(user = @0x1111, test_user1 = @0x1112, test_user2 = @0x1113)]
     #[expected_failure]
     public entry fun test_disperse_insufficient_balance(user: signer, test_user1: signer, test_user2: signer) acquires SharedAccount, SharedAccountEvent {
-        use aptos_framework::topo_coin::TopoCoin;
+        use topo_framework::topo_coin::TopoCoin;
         let resource_addr = set_up(user, test_user1, test_user2);
         let shared_account = borrow_global<SharedAccount>(resource_addr);
         let resource_signer = account::create_signer_with_capability(&shared_account.signer_capability);

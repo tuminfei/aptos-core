@@ -3,10 +3,10 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     use aptos_std::string;
     use aptos_std::signer;
     use aptos_std::math64;
-    use aptos_framework::account;
-    use aptos_framework::coin;
-    use aptos_framework::topo_coin::{Self, TopoCoin};
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::account;
+    use topo_framework::coin;
+    use topo_framework::topo_coin::{Self, TopoCoin};
+    use topo_framework::primary_fungible_store;
     use bonding_curve_launchpad::bonding_curve_launchpad;
     use bonding_curve_launchpad::liquidity_pairs;
     use swap::test_helpers;
@@ -18,7 +18,7 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
 
     //---------------------------Test Helpers---------------------------
     fun test_setup_accounts(
-        aptos_framework: &signer, _swap_dex_signer: &signer, bonding_curve_creator: &signer
+        topo_framework: &signer, _swap_dex_signer: &signer, bonding_curve_creator: &signer
     ) {
         account::create_account_for_test(@0x1);
         account::create_account_for_test(@0xcafe);
@@ -26,7 +26,7 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
         account::create_account_for_test(@0x803);
         coin::register<TopoCoin>(bonding_curve_creator);
 
-        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(aptos_framework);
+        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(topo_framework);
         let bcc_coins = coin::mint(1_000_000_000_000_000, &mint_cap);
         let bcc_address = signer::address_of(bonding_curve_creator);
         coin::deposit(bcc_address, bcc_coins);
@@ -56,7 +56,7 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(deployer = @bonding_curve_launchpad)]
-    #[expected_failure(abort_code = 393218, location = aptos_framework::object)]
+    #[expected_failure(abort_code = 393218, location = topo_framework::object)]
     public fun test_nonexistant_get_metadata(deployer: &signer) {
         account::create_account_for_test(@0x1);
         liquidity_pairs::initialize_for_test(deployer);
@@ -68,18 +68,18 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
 
     //---------------------------E2E Tests---------------------------
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     fun test_e2e_bonding_curve_creation(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_setup_accounts(aptos_framework, swap_dex_signer, bonding_curve_creator);
+        test_setup_accounts(topo_framework, swap_dex_signer, bonding_curve_creator);
         test_setup_initialize_contracts(swap_dex_signer, bcl_owner_signer);
         // Create FA and LiquidityPair, w.o Initial Swap.
         let user_address = signer::address_of(bonding_curve_creator);
@@ -105,18 +105,18 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     fun test_e2e_bonding_curve_creation_with_initial_liquidity(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_setup_accounts(aptos_framework, swap_dex_signer, bonding_curve_creator);
+        test_setup_accounts(topo_framework, swap_dex_signer, bonding_curve_creator);
         test_setup_initialize_contracts(swap_dex_signer, bcl_owner_signer);
         // Create FA and LiquidityPair, w/ Initial Swap.
         let user_address = signer::address_of(bonding_curve_creator);
@@ -142,18 +142,18 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     fun test_e2e_bonding_curve_creation_multiple(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_setup_accounts(aptos_framework, swap_dex_signer, bonding_curve_creator);
+        test_setup_accounts(topo_framework, swap_dex_signer, bonding_curve_creator);
         test_setup_initialize_contracts(swap_dex_signer, bcl_owner_signer);
         // Create FA and LiquidityPair, w.o Initial Swap.
         let name = string::utf8(b"SheepyCoin");
@@ -191,18 +191,18 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     fun test_e2e_directional_swaps(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_e2e_bonding_curve_creation(aptos_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
+        test_e2e_bonding_curve_creation(topo_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
         let user_address = signer::address_of(bonding_curve_creator);
         let name = string::utf8(b"SheepyCoin");
         let symbol = string::utf8(b"SHEEP");
@@ -230,18 +230,18 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     fun test_e2e_graduation(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_e2e_bonding_curve_creation(aptos_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
+        test_e2e_bonding_curve_creation(topo_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
         let grad_apt: u64 = 6_000 * math64::pow(10, (8 as u64));
         let name = string::utf8(b"SheepyCoin");
         let symbol = string::utf8(b"SHEEP");
@@ -257,12 +257,12 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     fun test_e2e_swap_after_graduation(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_e2e_graduation(aptos_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
+        test_e2e_graduation(topo_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
         let fa_obj_metadata =
             bonding_curve_launchpad::get_metadata(
                 string::utf8(b"SheepyCoin"),
@@ -273,20 +273,20 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
 
     // ----E2E EXPECTED FAILING-----
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     #[expected_failure(abort_code = bonding_curve_launchpad::bonding_curve_launchpad::EFA_EXISTS_ALREADY, location = bonding_curve_launchpad)]
     fun test_e2e_failing_duplicate_FA(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
         test_e2e_bonding_curve_creation(
-            aptos_framework,
+            topo_framework,
             swap_dex_signer,
             bcl_owner_signer,
             bonding_curve_creator
@@ -310,19 +310,19 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     #[expected_failure(abort_code = liquidity_pairs::ELIQUIDITY_PAIR_DISABLED, location = liquidity_pairs)]
     fun test_e2e_failing_apt_swap_after_graduation(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_e2e_graduation(aptos_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
+        test_e2e_graduation(topo_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
         bonding_curve_launchpad::swap(
             bonding_curve_creator,
             string::utf8(b"SheepyCoin"),
@@ -333,19 +333,19 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     #[expected_failure(abort_code = liquidity_pairs::ELIQUIDITY_PAIR_DISABLED, location = liquidity_pairs)]
     fun test_e2e_failing_fa_swap_after_graduation(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_e2e_graduation(aptos_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
+        test_e2e_graduation(topo_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
         bonding_curve_launchpad::swap(
             bonding_curve_creator,
             string::utf8(b"SheepyCoin"),
@@ -356,19 +356,19 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
-    #[expected_failure(abort_code = 393218, location = aptos_framework::object)]
+    #[expected_failure(abort_code = 393218, location = topo_framework::object)]
     fun test_e2e_failing_swap_of_nonexistant_fa(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_setup_accounts(aptos_framework, swap_dex_signer, bonding_curve_creator);
+        test_setup_accounts(topo_framework, swap_dex_signer, bonding_curve_creator);
         test_setup_initialize_contracts(swap_dex_signer, bcl_owner_signer);
         bonding_curve_launchpad::swap(
             bonding_curve_creator,
@@ -380,20 +380,20 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     #[expected_failure(abort_code = bonding_curve_launchpad::bonding_curve_launchpad::EFA_FROZEN, location = bonding_curve_launchpad)]
     fun test_e2e_failing_transfer_of_frozen_fa(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
         test_e2e_bonding_curve_creation_with_initial_liquidity(
-            aptos_framework,
+            topo_framework,
             swap_dex_signer,
             bcl_owner_signer,
             bonding_curve_creator
@@ -406,19 +406,19 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     #[expected_failure(abort_code = bonding_curve_launchpad::bonding_curve_launchpad::ELIQUIDITY_PAIR_SWAP_AMOUNTIN_INVALID, location = bonding_curve_launchpad)]
     fun test_e2e_failing_swap_of_zero_input_apt(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_e2e_bonding_curve_creation(aptos_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
+        test_e2e_bonding_curve_creation(topo_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
         bonding_curve_launchpad::swap(
             bonding_curve_creator,
             string::utf8(b"SheepyCoin"),
@@ -429,19 +429,19 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     #[expected_failure(abort_code = bonding_curve_launchpad::bonding_curve_launchpad::ELIQUIDITY_PAIR_SWAP_AMOUNTIN_INVALID, location = bonding_curve_launchpad)]
     fun test_e2e_failing_swap_of_zero_input_fa(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_e2e_bonding_curve_creation(aptos_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
+        test_e2e_bonding_curve_creation(topo_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
         bonding_curve_launchpad::swap(
             bonding_curve_creator,
             string::utf8(b"SheepyCoin"),
@@ -452,19 +452,19 @@ module bonding_curve_launchpad::test_bonding_curve_launchpad {
     }
 
     #[test(
-        aptos_framework = @0x1,
+        topo_framework = @0x1,
         swap_dex_signer = @0xcafe,
         bcl_owner_signer = @bonding_curve_launchpad,
         bonding_curve_creator = @0x803
     )]
     #[expected_failure(abort_code = liquidity_pairs::EFA_PRIMARY_STORE_DOES_NOT_EXIST, location = liquidity_pairs)]
     fun test_e2e_failing_swap_of_user_without_fa(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         swap_dex_signer: &signer,
         bcl_owner_signer: &signer,
         bonding_curve_creator: &signer
     ) {
-        test_e2e_bonding_curve_creation(aptos_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
+        test_e2e_bonding_curve_creation(topo_framework, swap_dex_signer, bcl_owner_signer, bonding_curve_creator);
         bonding_curve_launchpad::swap(
             bonding_curve_creator,
             string::utf8(b"SheepyCoin"),

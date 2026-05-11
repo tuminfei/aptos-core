@@ -2,10 +2,10 @@
 ///
 /// This example requires CLI version 3.1.0 or later.
 module raffle::raffle {
-    use aptos_framework::topo_coin::TopoCoin;
-    use aptos_framework::coin;
-    use aptos_framework::randomness;
-    use aptos_framework::coin::Coin;
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin;
+    use topo_framework::randomness;
+    use topo_framework::coin::Coin;
     use std::signer;
     use std::vector;
 

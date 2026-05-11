@@ -8,9 +8,9 @@ module topo_token_objects::property_map {
     use aptos_std::from_bcs;
     use aptos_std::simple_map::{Self, SimpleMap};
     use aptos_std::type_info;
-    use aptos_framework::object::{ConstructorRef, Object, ExtendRef, ObjectCore};
+    use topo_framework::object::{ConstructorRef, Object, ExtendRef, ObjectCore};
     #[test_only]
-    use aptos_framework::object::Self;
+    use topo_framework::object::Self;
 
     // Errors
     /// The property map does not exist
@@ -49,7 +49,7 @@ module topo_token_objects::property_map {
     const STRING: u8 = 9;
 
     // Structs
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// A Map for typed key to value mapping, the contract using it
     /// should keep track of what keys are what types, and parse them accordingly.
     struct PropertyMap has drop, key {

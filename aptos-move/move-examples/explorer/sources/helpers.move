@@ -1,7 +1,7 @@
 /// These are immutable, helper functions that are used by the Aptos Explorer
 module explorer::helpers {
-    use aptos_framework::delegation_pool;
-    use aptos_framework::stake;
+    use topo_framework::delegation_pool;
+    use topo_framework::stake;
     use aptos_std::vector;
 
     #[view]

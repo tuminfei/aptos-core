@@ -1,9 +1,9 @@
-module aptos_framework::randomness_api_v0_config {
+module topo_framework::randomness_api_v0_config {
     use std::option::Option;
-    use aptos_framework::chain_status;
-    use aptos_framework::config_buffer;
-    use aptos_framework::system_addresses;
-    friend aptos_framework::reconfiguration_with_dkg;
+    use topo_framework::chain_status;
+    use topo_framework::config_buffer;
+    use topo_framework::system_addresses;
+    friend topo_framework::reconfiguration_with_dkg;
 
     struct RequiredGasDeposit has key, drop, store {
         gas_amount: Option<u64>,
@@ -39,16 +39,16 @@ module aptos_framework::randomness_api_v0_config {
         system_addresses::assert_aptos_framework(framework);
         if (config_buffer::does_exist<RequiredGasDeposit>()) {
             let new_config = config_buffer::extract_v2<RequiredGasDeposit>();
-            if (exists<RequiredGasDeposit>(@aptos_framework)) {
-                *borrow_global_mut<RequiredGasDeposit>(@aptos_framework) = new_config;
+            if (exists<RequiredGasDeposit>(@topo_framework)) {
+                *borrow_global_mut<RequiredGasDeposit>(@topo_framework) = new_config;
             } else {
                 move_to(framework, new_config);
             }
         };
         if (config_buffer::does_exist<AllowCustomMaxGasFlag>()) {
             let new_config = config_buffer::extract_v2<AllowCustomMaxGasFlag>();
-            if (exists<AllowCustomMaxGasFlag>(@aptos_framework)) {
-                *borrow_global_mut<AllowCustomMaxGasFlag>(@aptos_framework) = new_config;
+            if (exists<AllowCustomMaxGasFlag>(@topo_framework)) {
+                *borrow_global_mut<AllowCustomMaxGasFlag>(@topo_framework) = new_config;
             } else {
                 move_to(framework, new_config);
             }

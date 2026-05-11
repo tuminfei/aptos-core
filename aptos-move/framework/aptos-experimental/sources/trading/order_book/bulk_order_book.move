@@ -47,7 +47,7 @@ module aptos_experimental::bulk_order_book {
     #[test_only]
     friend aptos_experimental::bulk_order_book_tests;
 
-    use aptos_framework::big_ordered_map::BigOrderedMap;
+    use topo_framework::big_ordered_map::BigOrderedMap;
     use aptos_trading::order_book_types::{
         bulk_order_type,
         OrderId,

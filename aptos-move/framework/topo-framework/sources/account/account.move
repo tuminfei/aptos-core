@@ -1,4 +1,4 @@
-module aptos_framework::account {
+module topo_framework::account {
     use std::bcs;
     use std::error;
     use std::features;
@@ -6,12 +6,12 @@ module aptos_framework::account {
     use std::option::{Self, Option};
     use std::signer;
     use std::vector;
-    use aptos_framework::chain_id;
-    use aptos_framework::create_signer::create_signer;
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::guid;
-    use aptos_framework::permissioned_signer;
-    use aptos_framework::system_addresses;
+    use topo_framework::chain_id;
+    use topo_framework::create_signer::create_signer;
+    use topo_framework::event::{Self, EventHandle};
+    use topo_framework::guid;
+    use topo_framework::permissioned_signer;
+    use topo_framework::system_addresses;
     use aptos_std::ed25519;
     use aptos_std::from_bcs;
     use aptos_std::multi_ed25519;
@@ -20,12 +20,12 @@ module aptos_framework::account {
     use aptos_std::table::{Self, Table};
     use aptos_std::type_info::{Self, TypeInfo};
 
-    friend aptos_framework::topo_account;
-    friend aptos_framework::coin;
-    friend aptos_framework::genesis;
-    friend aptos_framework::multisig_account;
-    friend aptos_framework::resource_account;
-    friend aptos_framework::transaction_validation;
+    friend topo_framework::topo_account;
+    friend topo_framework::coin;
+    friend topo_framework::genesis;
+    friend topo_framework::multisig_account;
+    friend topo_framework::resource_account;
+    friend topo_framework::transaction_validation;
 
     #[event]
     struct KeyRotation has drop, store {
@@ -266,9 +266,9 @@ module aptos_framework::account {
     }
 
     /// Only called during genesis to initialize system resources for this module.
-    public(friend) fun initialize(aptos_framework: &signer) {
-        system_addresses::assert_aptos_framework(aptos_framework);
-        move_to(aptos_framework, OriginatingAddress {
+    public(friend) fun initialize(topo_framework: &signer) {
+        system_addresses::assert_aptos_framework(topo_framework);
+        move_to(topo_framework, OriginatingAddress {
             address_map: table::new(),
         });
     }
@@ -276,7 +276,7 @@ module aptos_framework::account {
     public fun create_account_if_does_not_exist(account_address: address) {
         if (!resource_exists_at(account_address)) {
             assert!(
-                account_address != @vm_reserved && account_address != @aptos_framework && account_address != @aptos_token,
+                account_address != @vm_reserved && account_address != @topo_framework && account_address != @aptos_token,
                 error::invalid_argument(ECANNOT_RESERVED_ADDRESS)
             );
             create_account_unchecked(account_address);
@@ -291,7 +291,7 @@ module aptos_framework::account {
         assert!(!exists<Account>(new_address), error::already_exists(EACCOUNT_ALREADY_EXISTS));
         // NOTE: @core_resources gets created via a `create_account` call, so we do not include it below.
         assert!(
-            new_address != @vm_reserved && new_address != @aptos_framework && new_address != @aptos_token,
+            new_address != @vm_reserved && new_address != @topo_framework && new_address != @aptos_token,
             error::invalid_argument(ECANNOT_RESERVED_ADDRESS)
         );
         if (features::is_default_account_resource_enabled()) {
@@ -393,7 +393,7 @@ module aptos_framework::account {
 
     #[view]
     public fun originating_address(auth_key: address): Option<address> acquires OriginatingAddress {
-        let address_map_ref = &OriginatingAddress[@aptos_framework].address_map;
+        let address_map_ref = &OriginatingAddress[@topo_framework].address_map;
         if (address_map_ref.contains(auth_key)) {
             option::some(*address_map_ref.borrow(auth_key))
         } else {
@@ -837,7 +837,7 @@ module aptos_framework::account {
         let auth_key_as_address =
             from_bcs::to_address(Account[account_addr].authentication_key);
         let address_map_ref_mut =
-            &mut OriginatingAddress[@aptos_framework].address_map;
+            &mut OriginatingAddress[@topo_framework].address_map;
         if (address_map_ref_mut.contains(auth_key_as_address)) {
             assert!(
                 *address_map_ref_mut.borrow(auth_key_as_address) == account_addr,
@@ -1046,7 +1046,7 @@ module aptos_framework::account {
         account_resource: &mut Account,
         new_auth_key_vector: vector<u8>,
     ) acquires OriginatingAddress {
-        let address_map = &mut OriginatingAddress[@aptos_framework].address_map;
+        let address_map = &mut OriginatingAddress[@topo_framework].address_map;
         let curr_auth_key = from_bcs::to_address(account_resource.authentication_key);
         let new_auth_key = from_bcs::to_address(new_auth_key_vector);
         assert!(
@@ -1291,7 +1291,7 @@ module aptos_framework::account {
     #[test]
     /// Assert correct signer creation.
     fun test_create_signer_for_test() {
-        assert!(signer::address_of(&create_signer_for_test(@aptos_framework)) == @0x1, 0);
+        assert!(signer::address_of(&create_signer_for_test(@topo_framework)) == @0x1, 0);
         assert!(signer::address_of(&create_signer_for_test(@0x123)) == @0x123, 0);
     }
 
@@ -1447,7 +1447,7 @@ module aptos_framework::account {
     ///////////////////////////////////////////////////////////////////////////
 
     #[test(alice = @0xa11ce)]
-    #[expected_failure(abort_code = 65537, location = aptos_framework::ed25519)]
+    #[expected_failure(abort_code = 65537, location = topo_framework::ed25519)]
     public entry fun test_empty_public_key(alice: signer) acquires Account, OriginatingAddress {
         create_account(signer::address_of(&alice));
         let pk = vector[];
@@ -1782,7 +1782,7 @@ module aptos_framework::account {
     //
     // Tests for offering rotation capabilities
     //
-    #[test(bob = @0x345, framework = @aptos_framework)]
+    #[test(bob = @0x345, framework = @topo_framework)]
     public entry fun test_valid_offer_rotation_capability(bob: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
         let (alice_sk, alice_pk) = ed25519::generate_keys();
@@ -1814,7 +1814,7 @@ module aptos_framework::account {
         assert!(alice_resource.rotation_capability_offer.for.contains(&bob_addr));
     }
 
-    #[test(bob = @0x345, framework = @aptos_framework)]
+    #[test(bob = @0x345, framework = @topo_framework)]
     #[expected_failure(abort_code = 65544, location = Self)]
     public entry fun test_invalid_offer_rotation_capability(bob: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
@@ -1845,7 +1845,7 @@ module aptos_framework::account {
         );
     }
 
-    #[test(bob = @0x345, framework = @aptos_framework)]
+    #[test(bob = @0x345, framework = @topo_framework)]
     public entry fun test_valid_revoke_rotation_capability(bob: signer, framework: signer) acquires Account {
         chain_id::initialize_for_test(&framework, 4);
         let (alice_sk, alice_pk) = ed25519::generate_keys();
@@ -1875,7 +1875,7 @@ module aptos_framework::account {
         revoke_rotation_capability(&alice, signer::address_of(&bob));
     }
 
-    #[test(bob = @0x345, charlie = @0x567, framework = @aptos_framework)]
+    #[test(bob = @0x345, charlie = @0x567, framework = @topo_framework)]
     #[expected_failure(abort_code = 393234, location = Self)]
     public entry fun test_invalid_revoke_rotation_capability(
         bob: signer,
@@ -1915,7 +1915,7 @@ module aptos_framework::account {
     // Tests for key rotation
     //
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     public entry fun test_valid_rotate_authentication_key_multi_ed25519_to_multi_ed25519(
         account: signer
     ) acquires Account, OriginatingAddress {
@@ -1950,13 +1950,13 @@ module aptos_framework::account {
             multi_ed25519::signature_to_bytes(&from_sig),
             multi_ed25519::signature_to_bytes(&to_sig),
         );
-        let address_map = &OriginatingAddress[@aptos_framework].address_map;
+        let address_map = &OriginatingAddress[@topo_framework].address_map;
         let expected_originating_address = address_map.borrow(new_address);
         assert!(*expected_originating_address == alice_addr, 0);
         assert!(Account[alice_addr].authentication_key == new_auth_key, 0);
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     public entry fun test_valid_rotate_authentication_key_multi_ed25519_to_ed25519(
         account: signer
     ) acquires Account, OriginatingAddress {
@@ -1995,13 +1995,13 @@ module aptos_framework::account {
             ed25519::signature_to_bytes(&to_sig),
         );
 
-        let address_map = &OriginatingAddress[@aptos_framework].address_map;
+        let address_map = &OriginatingAddress[@topo_framework].address_map;
         let expected_originating_address = address_map.borrow(new_addr);
         assert!(*expected_originating_address == alice_addr, 0);
         assert!(Account[alice_addr].authentication_key == new_auth_key, 0);
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     public entry fun test_add_ed25519_backup_key_to_keyless_account(
         account: signer
     ) acquires Account {
@@ -2036,7 +2036,7 @@ module aptos_framework::account {
         assert!(Account[alice_addr].authentication_key == new_auth_key, 0);
     }
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     public entry fun test_simple_rotation(account: &signer) acquires Account {
         initialize(account);
 
@@ -2053,7 +2053,7 @@ module aptos_framework::account {
     }
 
 
-    #[test(account = @aptos_framework)]
+    #[test(account = @topo_framework)]
     #[expected_failure(abort_code = 0x20014, location = Self)]
     public entry fun test_max_guid(account: &signer) acquires Account {
         let addr = signer::address_of(account);

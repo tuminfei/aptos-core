@@ -11,19 +11,19 @@
 /// fungible asset from it. This emits a withdraw event.
 /// 4. The fungible asset metadata object calls `deposit` on the recipient's primary store to deposit `amount` of
 /// fungible asset to it. This emits an deposit event.
-module aptos_framework::primary_fungible_store {
-    use aptos_framework::dispatchable_fungible_asset;
-    use aptos_framework::fungible_asset::{Self, FungibleAsset, FungibleStore, Metadata, MintRef, TransferRef, BurnRef};
-    use aptos_framework::object::{Self, Object, ConstructorRef, DeriveRef};
+module topo_framework::primary_fungible_store {
+    use topo_framework::dispatchable_fungible_asset;
+    use topo_framework::fungible_asset::{Self, FungibleAsset, FungibleStore, Metadata, MintRef, TransferRef, BurnRef};
+    use topo_framework::object::{Self, Object, ConstructorRef, DeriveRef};
 
     use std::option::Option;
     use std::signer;
     use std::string::String;
 
     #[test_only]
-    use aptos_framework::permissioned_signer;
+    use topo_framework::permissioned_signer;
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// A resource that holds the derive ref for the fungible asset metadata object. This is used to create primary
     /// stores for users with deterministic addresses so that users can easily deposit/withdraw/transfer fungible
     /// assets.
@@ -304,7 +304,7 @@ module aptos_framework::primary_fungible_store {
     }
 
     #[test_only]
-    use aptos_framework::fungible_asset::{
+    use topo_framework::fungible_asset::{
         create_test_token,
         generate_mint_ref,
         generate_burn_ref,

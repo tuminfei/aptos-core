@@ -1,4 +1,4 @@
-spec aptos_framework::function_info {
+spec topo_framework::function_info {
     spec module {
         fun spec_is_identifier(s: vector<u8>): bool;
     }
