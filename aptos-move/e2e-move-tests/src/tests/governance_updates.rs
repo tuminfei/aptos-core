@@ -174,7 +174,7 @@ fn run(
     let txn = TransactionBuilder::new(account.clone())
         .script(script)
         .sequence_number(h.sequence_number(account.address()))
-        .max_gas_amount(1_000_000)
+        .max_gas_amount(20_000_000)
         .gas_unit_price(1)
         .sign();
 
