@@ -5,6 +5,7 @@ use crate::{tests::common, BlockSplit, SUCCESS};
 use aptos_language_e2e_tests::account::{Account, TransactionBuilder};
 use aptos_move_e2e_test_harness::{assert_success, MoveHarness};
 use aptos_types::{
+    chain_id::ChainId,
     move_utils::MemberId,
     on_chain_config::FeatureFlag,
     transaction::{EntryFunction, MultisigTransactionPayload, TransactionPayload},
@@ -278,7 +279,7 @@ fn test_transaction_context_chain_id() {
     let account = setup(&mut harness);
 
     let chain_id = call_get_chain_id_from_native_txn_context(&mut harness, &account);
-    assert_eq!(chain_id, 4);
+    assert_eq!(chain_id, ChainId::test().id());
 }
 
 #[test]

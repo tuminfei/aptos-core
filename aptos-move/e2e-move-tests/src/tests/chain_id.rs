@@ -3,6 +3,7 @@
 
 use crate::{assert_success, tests::common, MoveHarness};
 use aptos_language_e2e_tests::account::Account;
+use aptos_types::chain_id::ChainId;
 use move_core_types::{account_address::AccountAddress, parser::parse_struct_tag};
 use serde::{Deserialize, Serialize};
 
@@ -68,7 +69,7 @@ fn test_chain_id_from_aptos_framework() {
 
     assert_eq!(
         call_get_chain_id_from_aptos_framework(&mut harness, &account),
-        4u8
+        ChainId::test().id()
     );
 }
 
@@ -79,6 +80,6 @@ fn test_chain_id_from_type_info() {
 
     assert_eq!(
         call_get_chain_id_from_native_txn_context(&mut harness, &account),
-        4u8
+        ChainId::test().id()
     );
 }
