@@ -22,6 +22,10 @@ fn large_transactions() {
     // be submitted by any one and that can result in a large amount of large transactions making their
     // way into consensus.
     let mut h = MoveHarness::new();
+    h.modify_gas_schedule(|gas_params| {
+        gas_params.vm.txn.max_transaction_size_in_bytes = (1000 * 1024).into();
+        gas_params.vm.txn.max_transaction_size_in_bytes_gov = (1000 * 1024).into();
+    });
 
     let alice = h.new_account_at(AccountAddress::from_hex_literal("0xa11ce").unwrap());
     let root = h.aptos_framework_account();
