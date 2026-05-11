@@ -53,7 +53,7 @@ module post_mint_reveal_nft::minting {
     use topo_framework::coin;
     use topo_framework::event;
     use topo_framework::timestamp;
-    use aptos_token::token::{
+    use topo_token::token::{
         Self,
         TokenMutabilityConfig,
         create_token_mutability_config,

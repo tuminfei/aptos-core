@@ -31,7 +31,7 @@
     Compiling, may take a little while to download git dependencies...
     INCLUDING DEPENDENCY AptosFramework
     INCLUDING DEPENDENCY AptosStdlib
-    INCLUDING DEPENDENCY AptosToken
+    INCLUDING DEPENDENCY TopoToken
     INCLUDING DEPENDENCY MoveStdlib
     BUILDING Examples
     package size 2770 bytes
@@ -68,8 +68,8 @@ module mint_nft::create_nft {
     use std::string::{Self, String};
     use std::vector;
 
-    use aptos_token::token;
-    use aptos_token::token::TokenDataId;
+    use topo_token::token;
+    use topo_token::token::TokenDataId;
 
     // This struct stores an NFT collection's relevant information
     struct ModuleData has key {

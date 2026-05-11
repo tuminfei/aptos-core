@@ -17,11 +17,11 @@ module collection_offer {
     use topo_framework::object::{Self, DeleteRef, Object};
     use topo_framework::timestamp;
 
-    use aptos_token::token as tokenv1;
+    use topo_token::token as tokenv1;
 
-    use aptos_token_objects::collection::Collection;
-    use aptos_token_objects::royalty;
-    use aptos_token_objects::token::{Self as tokenv2, Token as TokenV2};
+    use topo_token_objects::collection::Collection;
+    use topo_token_objects::royalty;
+    use topo_token_objects::token::{Self as tokenv2, Token as TokenV2};
 
     use marketplace::events;
     use marketplace::fee_schedule::{Self, FeeSchedule};
@@ -528,9 +528,9 @@ module collection_offer_tests {
     use topo_framework::object;
     use topo_framework::timestamp;
 
-    use aptos_token::token as tokenv1;
+    use topo_token::token as tokenv1;
 
-    use aptos_token_objects::collection as collectionv2;
+    use topo_token_objects::collection as collectionv2;
 
     use marketplace::collection_offer;
     use marketplace::listing;
@@ -723,7 +723,7 @@ module collection_offer_tests {
     }
 
     #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
-    #[expected_failure(abort_code = 0x10005, location = aptos_token::token)]
+    #[expected_failure(abort_code = 0x10005, location = topo_token::token)]
     fun test_token_v1_has_none(
         topo_framework: &signer,
         marketplace: &signer,
@@ -829,7 +829,7 @@ module collection_offer_tests {
     }
 
     #[test(topo_framework = @0x1, marketplace = @0x111, seller = @0x222, purchaser = @0x333)]
-    #[expected_failure(abort_code = 0x10005, location = aptos_token::token)]
+    #[expected_failure(abort_code = 0x10005, location = topo_token::token)]
     fun test_token_v1_other_collection(
         topo_framework: &signer,
         marketplace: &signer,

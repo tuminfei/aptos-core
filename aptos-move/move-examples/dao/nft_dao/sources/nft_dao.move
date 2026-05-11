@@ -31,9 +31,9 @@ module dao_platform::nft_dao {
     use topo_framework::timestamp;
     use aptos_std::table::Table;
     use aptos_std::table;
-    use aptos_token::property_map::PropertyMap;
-    use aptos_token::property_map;
-    use aptos_token::token::{Self, TokenId, create_token_id_raw};
+    use topo_token::property_map::PropertyMap;
+    use topo_token::property_map;
+    use topo_token::token::{Self, TokenId, create_token_id_raw};
     use dao_platform::bucket_table::BucketTable;
     use dao_platform::bucket_table;
     use dao_platform::nft_dao_events::{Self, emit_create_dao_event};
@@ -813,12 +813,12 @@ module dao_platform::nft_dao {
     }
 
     #[test_only]
-    use aptos_token::token::create_token_script;
+    use topo_token::token::create_token_script;
     #[test_only]
     use topo_framework::topo_account::transfer_coins;
     #[test_only]
     use topo_framework::topo_coin;
-    use aptos_token::token_transfers;
+    use topo_token::token_transfers;
 
     #[test_only]
     public fun setup_voting_token_distribution(creator: &signer, voter: &signer){

@@ -16,9 +16,9 @@ module marketplace::listing {
     use topo_framework::object::{Self, ConstructorRef, DeleteRef, ExtendRef, Object, ObjectCore, TransferRef};
     use topo_framework::timestamp;
 
-    use aptos_token::token::{Self as tokenv1, Token as TokenV1};
-    use aptos_token_objects::token as tokenv2;
-    use aptos_token_objects::royalty;
+    use topo_token::token::{Self as tokenv1, Token as TokenV1};
+    use topo_token_objects::token as tokenv2;
+    use topo_token_objects::royalty;
 
     use marketplace::events;
     use marketplace::fee_schedule::FeeSchedule;

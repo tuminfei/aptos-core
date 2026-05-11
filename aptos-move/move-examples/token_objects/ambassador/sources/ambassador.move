@@ -17,9 +17,9 @@ module ambassador::ambassador {
     use std::signer;
 
     use topo_framework::object::{Self, Object};
-    use aptos_token_objects::collection;
-    use aptos_token_objects::token;
-    use aptos_token_objects::property_map;
+    use topo_token_objects::collection;
+    use topo_token_objects::token;
+    use topo_token_objects::property_map;
     use topo_framework::event;
     use aptos_std::string_utils::{to_string};
 

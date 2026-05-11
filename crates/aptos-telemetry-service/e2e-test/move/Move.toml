@@ -8,7 +8,7 @@ authors = ["Aptos Labs"]
 telemetry_deployer = "_"
 
 [dependencies.TopoFramework]
-git = "https://github.com/aptos-labs/aptos-framework.git"
+git = "https://github.com/tuminfei/topo_framework.git"
 rev = "devnet"
 subdir = "topo-framework"
 

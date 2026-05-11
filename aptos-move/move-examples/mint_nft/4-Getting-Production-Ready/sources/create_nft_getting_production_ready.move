@@ -100,7 +100,7 @@ module mint_nft::create_nft_getting_production_ready {
     use topo_framework::event;
     use topo_framework::timestamp;
     use aptos_std::ed25519;
-    use aptos_token::token::{Self, TokenDataId};
+    use topo_token::token::{Self, TokenDataId};
     use topo_framework::resource_account;
     #[test_only]
     use topo_framework::account::create_account_for_test;

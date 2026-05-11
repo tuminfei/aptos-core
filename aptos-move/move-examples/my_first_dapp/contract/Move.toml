@@ -7,6 +7,6 @@ authors = []
 todolist_addr='_'
 
 [dependencies]
-TopoFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", rev = "mainnet", subdir = "topo-framework" }
+TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", rev = "mainnet", subdir = "topo-framework" }
 
 [dev-dependencies]

@@ -3,7 +3,7 @@ module token_lockup::unit_tests {
    use topo_framework::object;
    use topo_framework::account;
    use topo_framework::timestamp;
-   use aptos_token_objects::token::{Token};
+   use topo_token_objects::token::{Token};
    use std::signer;
    use std::string::{Self};
    use token_lockup::token_lockup;

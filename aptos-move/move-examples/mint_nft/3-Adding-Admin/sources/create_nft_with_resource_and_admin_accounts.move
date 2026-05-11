@@ -28,7 +28,7 @@
     Compiling, may take a little while to download git dependencies...
     INCLUDING DEPENDENCY AptosFramework
     INCLUDING DEPENDENCY AptosStdlib
-    INCLUDING DEPENDENCY AptosToken
+    INCLUDING DEPENDENCY TopoToken
     INCLUDING DEPENDENCY MoveStdlib
     BUILDING Examples
     Do you want to publish this package under the resource account's address 34f5acaaef16988aa31bb56ad7b35e30d14ff9fc849d370be799617b61d3df04? [yes/no] >
@@ -108,10 +108,10 @@ module mint_nft::create_nft_with_resource_and_admin_accounts {
     use std::string;
     use std::vector;
 
-    use aptos_token::token;
+    use topo_token::token;
     use std::signer;
     use std::string::String;
-    use aptos_token::token::TokenDataId;
+    use topo_token::token::TokenDataId;
     use topo_framework::account::SignerCapability;
     use topo_framework::resource_account;
     use topo_framework::account;

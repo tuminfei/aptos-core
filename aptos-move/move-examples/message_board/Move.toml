@@ -3,7 +3,7 @@ name = "MessageBoard"
 version = "0.0.1"
 
 [dependencies]
-TopoFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "topo-framework", rev = "mainnet" }
+TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
 
 [addresses]
 std = "0x1"

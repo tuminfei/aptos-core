@@ -4,9 +4,9 @@
 module knight::knight {
     use topo_framework::event;
     use topo_framework::object::{Self, Object};
-    use aptos_token_objects::collection;
-    use aptos_token_objects::property_map;
-    use aptos_token_objects::token;
+    use topo_token_objects::collection;
+    use topo_token_objects::property_map;
+    use topo_token_objects::token;
     use std::option;
     use std::signer;
     use std::string::{Self, String};

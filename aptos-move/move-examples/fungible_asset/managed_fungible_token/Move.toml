@@ -4,10 +4,10 @@ version = "0.0.0"
 
 [addresses]
 topo_framework = "0x1"
-aptos_token_objects = "0x4"
+topo_token_objects = "0x4"
 example_addr = "_"
 
 [dependencies]
-TopoFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "topo-framework", rev = "mainnet" }
-AptosTokenObjects = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "aptos-token-objects", rev = "mainnet" }
+TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
+TopoTokenObjects = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-token-objects", rev = "mainnet" }
 ManagedFungibleAsset = { local = "../managed_fungible_asset" }

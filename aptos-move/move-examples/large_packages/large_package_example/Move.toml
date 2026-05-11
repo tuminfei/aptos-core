@@ -4,7 +4,7 @@ version = "1.0.0"
 upgrade_policy = "compatible"
 
 [dependencies]
-TopoFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "topo-framework", rev = "mainnet" }
+TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
 
 [addresses]
 large_package_example = "_"

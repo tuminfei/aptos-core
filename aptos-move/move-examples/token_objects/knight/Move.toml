@@ -6,5 +6,5 @@ version = '1.0.0'
 knight = "_"
 
 [dependencies]
-TopoFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "topo-framework", rev = "mainnet" }
-AptosTokenObjects = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "aptos-token-objects", rev = "mainnet" }
+TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
+TopoTokenObjects = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-token-objects", rev = "mainnet" }

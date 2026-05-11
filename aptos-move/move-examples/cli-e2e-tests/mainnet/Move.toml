@@ -9,11 +9,11 @@ addr = "_"
 addr = "0x12345"
 
 [dependencies.TopoFramework]
-git = "https://github.com/aptos-labs/aptos-framework.git"
+git = "https://github.com/tuminfei/topo_framework.git"
 rev = "mainnet"
 subdir = "topo-framework"
 
-[dependencies.AptosTokenObjects]
-git = "https://github.com/aptos-labs/aptos-framework.git"
+[dependencies.TopoTokenObjects]
+git = "https://github.com/tuminfei/topo_framework.git"
 rev = "mainnet"
-subdir = "aptos-token-objects"
+subdir = "topo-token-objects"

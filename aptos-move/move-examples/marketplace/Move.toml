@@ -6,6 +6,6 @@ version = "0.0.0"
 marketplace = "_"
 
 [dependencies]
-TopoFramework = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "topo-framework", rev = "mainnet" }
-AptosToken = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "aptos-token", rev = "mainnet" }
-AptosTokenObjects = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir = "aptos-token-objects", rev = "mainnet" }
+TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
+TopoToken = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-token", rev = "mainnet" }
+TopoTokenObjects = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-token-objects", rev = "mainnet" }

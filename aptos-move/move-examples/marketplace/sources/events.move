@@ -6,9 +6,9 @@ module marketplace::events {
     use topo_framework::event;
     use topo_framework::object::{Self, Object};
 
-    use aptos_token::token as tokenv1;
-    use aptos_token_objects::collection as collectionv2;
-    use aptos_token_objects::token as tokenv2;
+    use topo_token::token as tokenv1;
+    use topo_token_objects::collection as collectionv2;
+    use topo_token_objects::token as tokenv2;
 
     friend marketplace::coin_listing;
     friend marketplace::collection_offer;
