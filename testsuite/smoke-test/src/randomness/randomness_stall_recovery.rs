@@ -112,8 +112,8 @@ async fn randomness_stall_recovery() {
     info!("Bump on-chain conig seqnum to re-enable randomness.");
     let script = r#"
 script {
-    use aptos_framework::topo_governance;
-    use aptos_framework::randomness_config_seqnum;
+    use topo_framework::topo_governance;
+    use topo_framework::randomness_config_seqnum;
 
     fun main(core_resources: &signer) {
         let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);

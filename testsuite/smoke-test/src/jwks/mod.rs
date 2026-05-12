@@ -34,8 +34,8 @@ pub async fn update_jwk_consensus_config(
     let script = match config {
         OnChainJWKConsensusConfig::Off => r#"
 script {
-    use aptos_framework::topo_governance;
-    use aptos_framework::jwk_consensus_config;
+    use topo_framework::topo_governance;
+    use topo_framework::jwk_consensus_config;
     fun main(core_resources: &signer) {
         let framework = topo_governance::get_signer_testnet_only(core_resources, @0x1);
         let config = jwk_consensus_config::new_off();
@@ -60,8 +60,8 @@ script {
             format!(
                 r#"
 script {{
-    use aptos_framework::topo_governance;
-    use aptos_framework::jwk_consensus_config;
+    use topo_framework::topo_governance;
+    use topo_framework::jwk_consensus_config;
     use std::string::utf8;
 
     fun main(core_resources: &signer) {{
@@ -117,8 +117,8 @@ async fn jwk_patching() {
     info!("Insert a JWK.");
     let jwk_patch_script = r#"
 script {
-    use aptos_framework::jwks;
-    use aptos_framework::topo_governance;
+    use topo_framework::jwks;
+    use topo_framework::topo_governance;
     fun main(core_resources: &signer) {
         let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
         let alice_jwk_0 = jwks::new_unsupported_jwk(b"alice_jwk_id_0", b"alice_jwk_payload_0");

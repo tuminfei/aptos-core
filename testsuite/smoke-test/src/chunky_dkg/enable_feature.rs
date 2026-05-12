@@ -80,9 +80,9 @@ async fn chunky_dkg_enable_feature() {
     let script = r#"
 script {
     use topo_std::fixed_point64;
-    use aptos_framework::topo_governance;
-    use aptos_framework::chunky_dkg_config;
-    use aptos_framework::features;
+    use topo_framework::topo_governance;
+    use topo_framework::chunky_dkg_config;
+    use topo_framework::features;
 
     fun main(core_resources: &signer) {
         let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);

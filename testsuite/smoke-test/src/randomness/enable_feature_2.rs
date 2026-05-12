@@ -56,9 +56,9 @@ async fn enable_feature_2() {
     let script = format!(
         r#"
 script {{
-    use aptos_framework::topo_governance;
-    use aptos_framework::consensus_config;
-    use aptos_framework::randomness_config;
+    use topo_framework::topo_governance;
+    use topo_framework::consensus_config;
+    use topo_framework::randomness_config;
     use topo_std::fixed_point64;
 
     fun main(core_resources: &signer) {{

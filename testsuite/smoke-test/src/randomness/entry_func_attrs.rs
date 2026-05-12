@@ -175,8 +175,8 @@ async fn common(params: TestParams) {
     let script = format!(
         r#"
 script {{
-    use aptos_framework::topo_governance;
-    use aptos_framework::randomness_api_v0_config;
+    use topo_framework::topo_governance;
+    use topo_framework::randomness_api_v0_config;
     use std::option;
 
     fun main(core_resources: &signer) {{

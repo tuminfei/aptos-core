@@ -437,9 +437,9 @@ fn generate_genesis_transaction(
     let script = format!(
         r#"
         script {{
-            use aptos_framework::stake;
-            use aptos_framework::topo_governance;
-            use aptos_framework::block;
+            use topo_framework::stake;
+            use topo_framework::topo_governance;
+            use topo_framework::block;
 
             fun main(vm_signer: &signer, framework_signer: &signer) {{
                 stake::remove_validators(framework_signer, &vector[@0x{}]);

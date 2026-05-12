@@ -77,8 +77,8 @@ async fn update_execution_config(
     let update_execution_config_script = format!(
         r#"
     script {{
-        use aptos_framework::topo_governance;
-        use aptos_framework::execution_config;
+        use topo_framework::topo_governance;
+        use topo_framework::execution_config;
         fun main(core_resources: &signer) {{
             let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
             let config_bytes = {};

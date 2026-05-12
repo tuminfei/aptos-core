@@ -54,12 +54,12 @@ async fn test_permissioned_delegation() {
         r#"
     script {{
     use topo_std::ed25519;
-    use aptos_framework::coin;
-    use aptos_framework::permissioned_delegation;
-    use aptos_framework::primary_fungible_store;
-    use aptos_framework::transaction_validation;
+    use topo_framework::coin;
+    use topo_framework::permissioned_delegation;
+    use topo_framework::primary_fungible_store;
+    use topo_framework::transaction_validation;
     fun main(sender: &signer) {{
-        coin::migrate_to_fungible_store<aptos_framework::topo_coin::TopoCoin>(sender);
+        coin::migrate_to_fungible_store<topo_framework::topo_coin::TopoCoin>(sender);
         let key = permissioned_delegation::gen_ed25519_key(ed25519::new_unvalidated_public_key_from_bytes(x"{}"));
         let permissioned_signer = permissioned_delegation::add_permissioned_handle(sender, key, std::option::none(), {});
         primary_fungible_store::grant_topo_permission(sender, &permissioned_signer, 1000000000); // 10 topo

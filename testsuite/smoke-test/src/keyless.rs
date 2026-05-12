@@ -263,8 +263,8 @@ async fn federated_keyless_scenario(
         };
         let script = r#"
 script {
-    use aptos_framework::jwks;
-    use aptos_framework::topo_governance;
+    use topo_framework::jwks;
+    use topo_framework::topo_governance;
     fun main(core_resources: &signer) {
         let framework = topo_governance::get_signer_testnet_only(core_resources, @0x1);
         jwks::set_patches(&framework, vector[]);
@@ -288,7 +288,7 @@ script {
         let script = format!(
             r#"
 script {{
-    use aptos_framework::jwks;
+    use topo_framework::jwks;
     use std::string::utf8;
     fun main(account: &signer) {{
         let iss = b"{}";
@@ -838,8 +838,8 @@ pub(crate) async fn remove_training_wheels(
     let script = format!(
         r#"
 script {{
-use aptos_framework::{};
-use aptos_framework::topo_governance;
+use topo_framework::{};
+use topo_framework::topo_governance;
 use std::option;
 fun main(core_resources: &signer) {{
     let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
@@ -938,9 +938,9 @@ pub(crate) async fn spawn_network_and_execute_gov_proposals(
     let script = format!(
         r#"
 script {{
-use aptos_framework::jwks;
-use aptos_framework::{};
-use aptos_framework::topo_governance;
+use topo_framework::jwks;
+use topo_framework::{};
+use topo_framework::topo_governance;
 use std::string::utf8;
 use std::option;
 fun main(core_resources: &signer) {{
@@ -1024,8 +1024,8 @@ fn get_rotate_vk_governance_script(vk: &Groth16VerificationKey) -> String {
     let script = format!(
         r#"
 script {{
-    use aptos_framework::{};
-    use aptos_framework::topo_governance;
+    use topo_framework::{};
+    use topo_framework::topo_governance;
     fun main(core_resources: &signer) {{
         let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
         let vk = {}::new_groth16_verification_key(x"{}", x"{}", x"{}", x"{}", vector[x"{}", x"{}"]);

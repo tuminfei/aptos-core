@@ -306,8 +306,8 @@ async fn test_onchain_config_change() {
     let update_consensus_config_script = format!(
         r#"
     script {{
-        use aptos_framework::topo_governance;
-        use aptos_framework::consensus_config;
+        use topo_framework::topo_governance;
+        use topo_framework::consensus_config;
         fun main(core_resources: &signer) {{
             let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
             let config_bytes = {};
@@ -420,8 +420,8 @@ async fn test_onchain_shuffling_change() {
     let update_execution_config_script = format!(
         r#"
     script {{
-        use aptos_framework::topo_governance;
-        use aptos_framework::execution_config;
+        use topo_framework::topo_governance;
+        use topo_framework::execution_config;
         fun main(core_resources: &signer) {{
             let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
             let config_bytes = {};
