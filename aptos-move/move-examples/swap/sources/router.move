@@ -10,7 +10,7 @@ module swap::router {
     use topo_framework::fungible_asset::{Self, FungibleAsset, Metadata};
     use topo_framework::object::{Self, Object};
     use topo_framework::primary_fungible_store;
-    use aptos_std::math128;
+    use topo_std::math128;
 
     use swap::coin_wrapper;
     use swap::liquidity_pool::{Self, LiquidityPool};

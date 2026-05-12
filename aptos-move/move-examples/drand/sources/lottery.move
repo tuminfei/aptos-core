@@ -22,7 +22,7 @@ module drand::lottery {
     use topo_framework::timestamp;
     use topo_framework::topo_coin::TopoCoin;
     use drand::drand;
-    //use aptos_std::debug;
+    //use topo_std::debug;
 
     /// Error code code when someone tries to start a very "short" lottery where users might not have enough time
     /// to buy tickets.

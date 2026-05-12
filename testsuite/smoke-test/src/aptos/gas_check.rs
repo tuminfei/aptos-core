@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::smoke_test_environment::new_local_swarm_with_aptos;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_forge::Swarm;
 use std::time::Duration;
 
@@ -26,7 +26,7 @@ async fn test_gas_check() {
 
     let transfer_txn = account1.sign_with_transaction_builder(
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_coin_transfer(account2.address(), 100)),
+            .payload(topo_stdlib::topo_coin_transfer(account2.address(), 100)),
     );
     // fail due to not enough gas
     let err = info
@@ -43,7 +43,7 @@ async fn test_gas_check() {
     let transfer_too_much = account2.sign_with_transaction_builder(
         // TODO(Gas): double check this
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_coin_transfer(account1.address(), 1_000)),
+            .payload(topo_stdlib::topo_coin_transfer(account1.address(), 1_000)),
     );
 
     let err = info
@@ -71,14 +71,14 @@ async fn test_gas_check() {
     let update_txn = info
         .root_account()
         .sign_with_transaction_builder(txn_factory.payload(
-            aptos_stdlib::gas_schedule_set_gas_schedule(gas_schedule_blob),
+            topo_stdlib::gas_schedule_set_gas_schedule(gas_schedule_blob),
         ));
     info.client().submit_and_wait(&update_txn).await.unwrap();
     */
 
     let zero_gas_txn = account1.sign_with_transaction_builder(
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_coin_transfer(account2.address(), 100))
+            .payload(topo_stdlib::topo_coin_transfer(account2.address(), 100))
             .gas_unit_price(0),
     );
     while info

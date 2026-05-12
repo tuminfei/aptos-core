@@ -3,7 +3,7 @@
 use crate::{ObjectPool, TransactionGenerator, TransactionGeneratorCreator};
 use aptos_sdk::{
     move_types::account_address::AccountAddress,
-    transaction_builder::{aptos_stdlib, TransactionFactory},
+    transaction_builder::{topo_stdlib, TransactionFactory},
     types::{chain_id::ChainId, transaction::SignedTransaction, LocalAccount},
 };
 use rand::{
@@ -191,7 +191,7 @@ impl P2PTransactionGenerator {
     ) -> SignedTransaction {
         from.sign_with_transaction_builder(if self.use_fa_transfer {
             txn_factory
-                .payload(aptos_stdlib::topo_account_fungible_transfer_only(
+                .payload(topo_stdlib::topo_account_fungible_transfer_only(
                     *to, num_coins,
                 ))
                 .upgrade_payload_with_rng(
@@ -201,7 +201,7 @@ impl P2PTransactionGenerator {
                 )
         } else {
             txn_factory
-                .payload(aptos_stdlib::topo_coin_transfer(*to, num_coins))
+                .payload(topo_stdlib::topo_coin_transfer(*to, num_coins))
                 .upgrade_payload_with_rng(
                     rng,
                     use_txn_payload_v2_format,

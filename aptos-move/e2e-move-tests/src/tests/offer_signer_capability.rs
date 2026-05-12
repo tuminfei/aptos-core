@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, MoveHarness};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::SigningKey;
 use aptos_types::{
     account_address::AccountAddress,
@@ -46,7 +46,7 @@ fn offer_signer_capability_v2() {
 
     assert_success!(harness.run_transaction_payload(
         &account_alice,
-        aptos_stdlib::account_offer_signer_capability(
+        topo_stdlib::account_offer_signer_capability(
             signature.to_bytes().to_vec(),
             0,
             account_alice.pubkey.to_bytes(),

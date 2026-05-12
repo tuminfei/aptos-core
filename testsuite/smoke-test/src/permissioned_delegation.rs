@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::smoke_test_environment::SwarmBuilder;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::SigningKey;
 use aptos_forge::Swarm;
 use aptos_move_cli::MemberId;
@@ -53,7 +53,7 @@ async fn test_permissioned_delegation() {
     let script = format!(
         r#"
     script {{
-    use aptos_std::ed25519;
+    use topo_std::ed25519;
     use aptos_framework::coin;
     use aptos_framework::permissioned_delegation;
     use aptos_framework::primary_fungible_store;
@@ -104,7 +104,7 @@ async fn test_permissioned_delegation() {
         vec![],
         None,
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
+            .payload(topo_stdlib::topo_account_fungible_transfer_only(
                 account2.address(),
                 100000000,
             )),
@@ -116,7 +116,7 @@ async fn test_permissioned_delegation() {
         vec![],
         None,
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
+            .payload(topo_stdlib::topo_account_fungible_transfer_only(
                 account2.address(),
                 200000000,
             )),
@@ -128,7 +128,7 @@ async fn test_permissioned_delegation() {
         vec![],
         None,
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
+            .payload(topo_stdlib::topo_account_fungible_transfer_only(
                 account2.address(),
                 200000000,
             ))
@@ -140,7 +140,7 @@ async fn test_permissioned_delegation() {
         vec![],
         None,
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
+            .payload(topo_stdlib::topo_account_fungible_transfer_only(
                 account2.address(),
                 700000001,
             ))
@@ -152,7 +152,7 @@ async fn test_permissioned_delegation() {
         vec![],
         None,
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
+            .payload(topo_stdlib::topo_account_fungible_transfer_only(
                 account2.address(),
                 700000000,
             ))

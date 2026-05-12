@@ -1,4 +1,4 @@
-module aptos_std::big_ordered_map_usage_examples {
+module topo_std::big_ordered_map_usage_examples {
     use topo_framework::big_ordered_map;
 
     #[test]

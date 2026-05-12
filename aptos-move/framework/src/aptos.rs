@@ -200,10 +200,12 @@ static NAMED_ADDRESSES: Lazy<BTreeMap<String, NumericalAddress>> = Lazy::new(|| 
     let ten = NumericalAddress::parse_str("0xA").unwrap();
     let resources = NumericalAddress::parse_str("0xA550C18").unwrap();
     result.insert("std".to_owned(), one);
+    result.insert("topo_std".to_owned(), one);
     result.insert("aptos_std".to_owned(), one);
     result.insert("topo_framework".to_owned(), one);
     result.insert("topo_token".to_owned(), three);
     result.insert("topo_token_objects".to_owned(), four);
+    result.insert("topo_trading".to_owned(), five);
     result.insert("aptos_trading".to_owned(), five);
     result.insert("aptos_experimental".to_owned(), seven);
     result.insert("aptos_fungible_asset".to_owned(), ten);

@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::smoke_test_environment::new_local_swarm_with_aptos;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_forge::{AptosPublicInfo, Swarm};
 use aptos_sdk::{transaction_builder::TransactionBuilder, types::LocalAccount};
 use aptos_types::{
@@ -17,7 +17,7 @@ async fn submit_and_check_err<F: Fn(TransactionBuilder) -> TransactionBuilder>(
 ) {
     let payload = info
         .transaction_factory()
-        .payload(aptos_stdlib::topo_coin_claim_mint_capability())
+        .payload(topo_stdlib::topo_coin_claim_mint_capability())
         .sequence_number(0);
     let txn = local_account.sign_transaction(f(payload).build());
     let err = format!(

@@ -1,6 +1,6 @@
 module 0xbeef::test {
-    use aptos_std::crypto_algebra;
-    use aptos_std::bls12381_algebra::G1;
+    use topo_std::crypto_algebra;
+    use topo_std::bls12381_algebra::G1;
 
     // A phantom struct with 8 type parameters (valid type tag).
     struct W<

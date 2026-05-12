@@ -5,7 +5,9 @@ use aptos_release_bundle::ReleaseBundle;
 use once_cell::sync::Lazy;
 
 pub mod aptos_framework_sdk_builder;
-pub mod aptos_stdlib;
+#[path = "aptos_stdlib.rs"]
+pub mod topo_stdlib;
+pub use topo_stdlib as aptos_stdlib;
 pub mod topo_token_objects_sdk_builder;
 pub mod topo_token_sdk_builder;
 

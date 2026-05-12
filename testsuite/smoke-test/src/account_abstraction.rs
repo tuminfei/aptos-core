@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::smoke_test_environment::SwarmBuilder;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::SigningKey;
 use aptos_forge::Swarm;
 use aptos_sdk::types::{AccountKey, LocalAccount};
@@ -143,7 +143,7 @@ async fn test_solana_derivable_account() {
         vec![],
         Some(&info.root_account()),
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_account_create_account(
+            .payload(topo_stdlib::topo_account_create_account(
                 AccountAddress::random(),
             )),
     );
@@ -223,7 +223,7 @@ async fn test_ethereum_derivable_account() {
         vec![],
         Some(&info.root_account()),
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_account_create_account(
+            .payload(topo_stdlib::topo_account_create_account(
                 AccountAddress::random(),
             )),
     );

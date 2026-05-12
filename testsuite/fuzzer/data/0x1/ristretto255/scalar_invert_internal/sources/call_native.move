@@ -1,5 +1,5 @@
 module poc::scalar_invert_internal {
-    use aptos_std::ristretto255::{Self, Scalar};
+    use topo_std::ristretto255::{Self, Scalar};
     use std::option::{Self};
 
     public entry fun main(_owner: &signer) {

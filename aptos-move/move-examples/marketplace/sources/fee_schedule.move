@@ -6,9 +6,9 @@ module marketplace::fee_schedule {
     use std::error;
     use std::signer;
     use std::string::{Self, String};
-    use aptos_std::math64;
+    use topo_std::math64;
 
-    use aptos_std::type_info;
+    use topo_std::type_info;
 
     use topo_framework::event;
     use topo_framework::object::{Self, ConstructorRef, ExtendRef, Object};

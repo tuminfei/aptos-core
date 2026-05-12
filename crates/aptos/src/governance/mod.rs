@@ -18,7 +18,7 @@ use crate::{
     CliCommand, CliResult,
 };
 use aptos_api_types::ViewFunction;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::HashValue;
 use topo_framework::{new_release_package, BuiltPackage};
 use aptos_logger::warn;
@@ -384,7 +384,7 @@ impl CliCommand<ProposalSubmissionSummary> for SubmitProposal {
         let txn: Transaction = if self.args.is_multi_step {
             self.args
                 .txn_options
-                .submit_transaction(aptos_stdlib::topo_governance_create_proposal_v2(
+                .submit_transaction(topo_stdlib::topo_governance_create_proposal_v2(
                     script_hash.to_vec(),
                     self.args.metadata_url.to_string().as_bytes().to_vec(),
                     metadata_hash.to_hex().as_bytes().to_vec(),
@@ -394,7 +394,7 @@ impl CliCommand<ProposalSubmissionSummary> for SubmitProposal {
         } else {
             self.args
                 .txn_options
-                .submit_transaction(aptos_stdlib::topo_governance_create_proposal(
+                .submit_transaction(topo_stdlib::topo_governance_create_proposal(
                     script_hash.to_vec(),
                     self.args.metadata_url.to_string().as_bytes().to_vec(),
                     metadata_hash.to_hex().as_bytes().to_vec(),
@@ -579,7 +579,7 @@ impl SubmitVote {
             summaries.push(
                 self.args
                     .txn_options
-                    .submit_transaction(aptos_stdlib::topo_governance_vote(
+                    .submit_transaction(topo_stdlib::topo_governance_vote(
                     proposal_id,
                     vote,
                 ))
@@ -673,7 +673,7 @@ impl SubmitVote {
             summaries.push(
                 self.args
                     .txn_options
-                    .submit_transaction(aptos_stdlib::topo_governance_partial_vote(
+                    .submit_transaction(topo_stdlib::topo_governance_partial_vote(
                     proposal_id,
                     voting_power,
                     vote,
@@ -734,7 +734,7 @@ impl CliCommand<TransactionSummary> for ApproveExecutionHash {
         Ok(self
             .txn_options
             .submit_transaction(
-                aptos_stdlib::topo_governance_add_approved_script_hash_script(self.proposal_id),
+                topo_stdlib::topo_governance_add_approved_script_hash_script(self.proposal_id),
             )
             .await
             .map(TransactionSummary::from)?)

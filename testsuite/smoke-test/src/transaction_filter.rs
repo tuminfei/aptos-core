@@ -5,7 +5,7 @@ use crate::{
     smoke_test_environment::SwarmBuilder,
     utils::{create_test_accounts, execute_transactions},
 };
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_config::config::{
     BatchTransactionFilterConfig, BlockTransactionFilterConfig, NodeConfig, TransactionFilterConfig,
 };
@@ -203,7 +203,7 @@ async fn create_signed_transaction_from_sender(
     // Create the unsigned transaction
     let unsigned_txn = aptos_public_info
         .transaction_factory()
-        .payload(aptos_stdlib::topo_coin_transfer(receiver.address(), 100))
+        .payload(topo_stdlib::topo_coin_transfer(receiver.address(), 100))
         .sender(sender_address)
         .sequence_number(sequence_number)
         .max_gas_amount(1_000_000)

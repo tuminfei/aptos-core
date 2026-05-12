@@ -3,7 +3,7 @@
 
 use crate::{smoke_test_environment::SwarmBuilder, utils::get_keyless_on_chain_resource};
 use aptos::{common::types::GasOptions, test::CliTestFramework};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::{
     ed25519::Ed25519PrivateKey, poseidon_bn254::keyless::fr_to_bytes_le, PrivateKey, SigningKey,
 };
@@ -375,7 +375,7 @@ script {{
 
     let txn_builder = info
         .transaction_factory()
-        .payload(aptos_stdlib::topo_coin_transfer(
+        .payload(topo_stdlib::topo_coin_transfer(
             recipient.address(),
             1_000_000,
         ));
@@ -487,7 +487,7 @@ async fn test_keyless_groth16_verifies_using_rust_sdk() {
     // was signed earlier with the default expiration window.
     let builder = info
         .transaction_factory()
-        .payload(aptos_stdlib::topo_coin_transfer(recipient.address(), 100));
+        .payload(topo_stdlib::topo_coin_transfer(recipient.address(), 100));
     let signed_txn = account.sign_with_transaction_builder(builder);
 
     info!("Submit keyless Groth16 transaction");
@@ -554,7 +554,7 @@ async fn test_keyless_groth16_verifies_using_rust_sdk_from_jwt() {
     // computed from the post-upgrade ledger time instead of the pre-upgrade one.
     let builder = info
         .transaction_factory()
-        .payload(aptos_stdlib::topo_coin_transfer(recipient.address(), 100));
+        .payload(topo_stdlib::topo_coin_transfer(recipient.address(), 100));
     let signed_txn = account.sign_with_transaction_builder(builder);
 
     info!("Submit keyless Groth16 transaction");
@@ -663,7 +663,7 @@ async fn sign_transaction_any_keyless_pk(
 
     let raw_txn = info
         .transaction_factory()
-        .payload(aptos_stdlib::topo_coin_transfer(
+        .payload(topo_stdlib::topo_coin_transfer(
             recipient.address(),
             1_000_000,
         ))

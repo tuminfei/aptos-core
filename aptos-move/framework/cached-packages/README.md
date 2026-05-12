@@ -6,16 +6,17 @@ This crate provides pre-compiled Move framework packages as checked-in artifacts
 
 The following files are **generated** and checked into the repo:
 
-- `src/head.mrb` — BCS-serialized `ReleaseBundle` containing all compiled Move framework packages (move-stdlib, aptos-stdlib, topo-framework, aptos-token, aptos-token-objects, aptos-trading, aptos-experimental).
+- `src/head.mrb` — BCS-serialized `ReleaseBundle` containing all compiled Move framework packages (move-stdlib, topo-stdlib, topo-framework, topo-token, topo-token-objects, topo-trading, aptos-experimental).
 - `src/aptos_framework_sdk_builder.rs` — Rust SDK bindings for topo-framework.
-- `src/topo_token_sdk_builder.rs` — Rust SDK bindings for aptos-token.
-- `src/aptos_token_objects_sdk_builder.rs` — Rust SDK bindings for aptos-token-objects.
+- `src/topo_stdlib.rs` — Rust SDK bindings and helpers for topo-stdlib.
+- `src/topo_token_sdk_builder.rs` — Rust SDK bindings for topo-token.
+- `src/topo_token_objects_sdk_builder.rs` — Rust SDK bindings for topo-token-objects.
 
 ## Updating the artifacts
 
 These artifacts must be regenerated whenever you change something that affects the compiled output. This includes:
 
-- Move source files under `aptos-move/framework/` (e.g. in `topo-framework/sources/`, `aptos-stdlib/sources/`, `move-stdlib/sources/`, etc.)
+- Move source files under `aptos-move/framework/` (e.g. in `topo-framework/sources/`, `topo-stdlib/sources/`, `move-stdlib/sources/`, etc.)
 - Move compiler implementation or options (crates under `third_party/move/`)
 - Build options in `aptos-move/framework/src/aptos.rs` (`create_release_options`)
 

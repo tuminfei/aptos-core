@@ -79,7 +79,7 @@ async fn chunky_dkg_enable_feature() {
     info!("Enabling chunky DKG config and ENCRYPTED_TRANSACTIONS at runtime.");
     let script = r#"
 script {
-    use aptos_std::fixed_point64;
+    use topo_std::fixed_point64;
     use aptos_framework::topo_governance;
     use aptos_framework::chunky_dkg_config;
     use aptos_framework::features;

@@ -16,7 +16,7 @@ use aptos_sdk::{
         error::{AptosErrorResponse, RestError},
         Client,
     },
-    transaction_builder::{aptos_stdlib, TransactionFactory},
+    transaction_builder::{topo_stdlib, TransactionFactory},
     types::LocalAccount,
 };
 use aptos_transaction_emitter_lib::{
@@ -241,7 +241,7 @@ pub async fn execute_return_worker_funds(
             if balance > txn_factory_ref.get_max_gas_amount() * txn_factory_ref.get_gas_unit_price()
             {
                 let txn = account.sign_with_transaction_builder(txn_factory_ref.payload(
-                    aptos_stdlib::topo_coin_transfer(
+                    topo_stdlib::topo_coin_transfer(
                         coin_source_account.address(),
                         balance
                             - txn_factory_ref.get_max_gas_amount()

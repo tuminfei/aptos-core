@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_language_e2e_tests::account::Account;
 use aptos_move_e2e_test_harness::MoveHarness;
 use aptos_types::{
@@ -20,7 +20,7 @@ pub fn create_proposal_v2(
 ) -> TransactionStatus {
     harness.run_transaction_payload(
         account,
-        aptos_stdlib::topo_governance_create_proposal_v2(
+        topo_stdlib::topo_governance_create_proposal_v2(
             execution_hash,
             metadata_location,
             metadata_hash,
@@ -39,7 +39,7 @@ pub fn partial_vote(
 ) -> TransactionStatus {
     harness.run_transaction_payload(
         account,
-        aptos_stdlib::topo_governance_partial_vote(
+        topo_stdlib::topo_governance_partial_vote(
             proposal_id,
             voting_power,
             should_pass,

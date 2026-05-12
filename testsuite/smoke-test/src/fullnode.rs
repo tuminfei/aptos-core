@@ -7,7 +7,7 @@ use crate::{
     utils::{create_test_accounts, execute_transactions, MAX_HEALTHY_WAIT_SECS},
 };
 use anyhow::bail;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_config::config::{BootstrappingMode, NodeConfig, OverrideNodeConfig};
 use aptos_db_indexer_schemas::{
     metadata::MetadataKey,
@@ -76,7 +76,7 @@ async fn test_indexer() {
         .unwrap();
 
     let txn = account1.sign_with_transaction_builder(
-        factory.payload(aptos_stdlib::topo_coin_transfer(account2.address(), 10)),
+        factory.payload(topo_stdlib::topo_coin_transfer(account2.address(), 10)),
     );
 
     client.submit_and_wait(&txn).await.unwrap();

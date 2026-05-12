@@ -15,7 +15,7 @@ module guild::guild {
     use std::signer;
     use std::string::{Self, String};
     use topo_framework::object::{Self, Object};
-    use aptos_std::smart_vector::{Self, SmartVector};
+    use topo_std::smart_vector::{Self, SmartVector};
     use topo_token_objects::collection;
     use topo_token_objects::token;
 

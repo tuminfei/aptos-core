@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use topo_framework::BuiltPackage;
 use aptos_language_e2e_tests::{
     account::Account,
@@ -24,7 +24,7 @@ pub fn generate_module_payload(package: &BuiltPackage) -> TransactionPayload {
         .expect("extracting package metadata must succeed");
 
     // publish package similar to create_publish_package in harness.rs
-    aptos_stdlib::code_publish_package_txn(
+    topo_stdlib::code_publish_package_txn(
         bcs::to_bytes(&metadata).expect("PackageMetadata has BCS"),
         code,
     )

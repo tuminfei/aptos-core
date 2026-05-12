@@ -155,7 +155,7 @@ pub fn check_baseline(test_file: &str, output: &CliOutput) {
 ///
 /// No framework dependency is added by default — the test sources should be
 /// self-contained. Use [`make_package_with_framework`] when the Move code
-/// imports from `TopoFramework` / `AptosStdlib` / `MoveStdlib`.
+/// imports from `TopoFramework` / `TopoStdlib` / `MoveStdlib`.
 pub fn make_package(name: &str, sources: &[(&str, &str)]) -> TempDir {
     let mut builder = PackageBuilder::new(name);
     builder.add_alias(name, "0xCAFE");

@@ -4,4 +4,4 @@ version = "0.0.0"
 
 [dependencies]
 TopoFramework = { local = "../../../../framework/topo-framework" }
-AptosStdlib = { local = "../../../../framework/aptos-stdlib" }
+TopoStdlib = { local = "../../../../framework/topo-stdlib" }

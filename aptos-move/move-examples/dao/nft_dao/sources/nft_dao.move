@@ -29,8 +29,8 @@ module dao_platform::nft_dao {
     use topo_framework::topo_coin::TopoCoin;
     use topo_framework::coin;
     use topo_framework::timestamp;
-    use aptos_std::table::Table;
-    use aptos_std::table;
+    use topo_std::table::Table;
+    use topo_std::table;
     use topo_token::property_map::PropertyMap;
     use topo_token::property_map;
     use topo_token::token::{Self, TokenId, create_token_id_raw};

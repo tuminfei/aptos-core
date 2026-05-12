@@ -1,7 +1,7 @@
 module swap::package_manager {
     use topo_framework::account::{Self, SignerCapability};
     use topo_framework::resource_account;
-    use aptos_std::smart_table::{Self, SmartTable};
+    use topo_std::smart_table::{Self, SmartTable};
     use std::string::String;
 
     friend swap::coin_wrapper;

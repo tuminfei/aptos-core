@@ -394,7 +394,7 @@ fn script_to_enable_main_logic() -> String {
 script {
     use aptos_framework::topo_governance;
     use aptos_framework::randomness_config;
-    use aptos_std::fixed_point64;
+    use topo_std::fixed_point64;
 
     fun main(core_resources: &signer) {
         let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);

@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::account::Account;
 use aptos_types::{
@@ -51,7 +51,7 @@ fn exchange_e2e_test() {
     // create the resource account and publish the code under the resource account's address
     let result = h.run_transaction_payload(
         &origin_account,
-        aptos_stdlib::resource_account_create_resource_account_and_publish_package(
+        topo_stdlib::resource_account_create_resource_account_and_publish_package(
             vec![],
             bcs::to_bytes(&metadata).expect("PackageMetadata has BCS"),
             code,

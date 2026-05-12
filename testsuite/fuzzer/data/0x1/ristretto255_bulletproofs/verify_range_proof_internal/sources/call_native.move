@@ -1,6 +1,6 @@
 module poc::verify_range_proof_internal {
-    use aptos_std::ristretto255_bulletproofs::{Self, range_proof_from_bytes};
-    use aptos_std::ristretto255::{Self, new_compressed_point_from_bytes, basepoint, hash_to_point_base};
+    use topo_std::ristretto255_bulletproofs::{Self, range_proof_from_bytes};
+    use topo_std::ristretto255::{Self, new_compressed_point_from_bytes, basepoint, hash_to_point_base};
     use std::option::{Self};
 
     const A_DST: vector<u8> = b"AptosBulletproofs";

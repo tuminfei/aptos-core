@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::{bls12381, PrivateKey, Uniform};
 use aptos_language_e2e_tests::account::Account;
 use aptos_move_e2e_test_harness::MoveHarness;
@@ -32,12 +32,12 @@ pub fn initialize_staking(
 ) -> TransactionStatus {
     harness.run_transaction_payload(
         account,
-        aptos_stdlib::stake_initialize_stake_owner(initial_stake_amount, operator_address),
+        topo_stdlib::stake_initialize_stake_owner(initial_stake_amount, operator_address),
     )
 }
 
 pub fn add_stake(harness: &mut MoveHarness, account: &Account, amount: u64) -> TransactionStatus {
-    harness.run_transaction_payload(account, aptos_stdlib::staking_registry_deposit(amount))
+    harness.run_transaction_payload(account, topo_stdlib::staking_registry_deposit(amount))
 }
 
 pub fn unlock_stake(
@@ -65,7 +65,7 @@ pub fn join_validator_set(
 ) -> TransactionStatus {
     harness.run_transaction_payload(
         account,
-        aptos_stdlib::stake_join_validator_set(pool_address),
+        topo_stdlib::stake_join_validator_set(pool_address),
     )
 }
 
@@ -81,7 +81,7 @@ pub fn rotate_consensus_key(
         .to_vec();
     harness.run_transaction_payload(
         account,
-        aptos_stdlib::stake_rotate_consensus_key(
+        topo_stdlib::stake_rotate_consensus_key(
             pool_address,
             consensus_pubkey,
             proof_of_possession,
@@ -96,12 +96,12 @@ pub fn leave_validator_set(
 ) -> TransactionStatus {
     harness.run_transaction_payload(
         account,
-        aptos_stdlib::stake_leave_validator_set(pool_address),
+        topo_stdlib::stake_leave_validator_set(pool_address),
     )
 }
 
 pub fn increase_lockup(harness: &mut MoveHarness, account: &Account) -> TransactionStatus {
-    harness.run_transaction_payload(account, aptos_stdlib::stake_increase_lockup())
+    harness.run_transaction_payload(account, topo_stdlib::stake_increase_lockup())
 }
 
 pub fn get_stake_pool(harness: &MoveHarness, pool_address: &AccountAddress) -> StakePool {

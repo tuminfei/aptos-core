@@ -9,7 +9,7 @@ module addr::token_objects {
     use aptos_token_objects::token;
     use aptos_token_objects::property_map;
     use aptos_framework::event;
-    use aptos_std::string_utils::{to_string};
+    use topo_std::string_utils::{to_string};
 
     /// The token does not exist
     const ETOKEN_DOES_NOT_EXIST: u64 = 1;

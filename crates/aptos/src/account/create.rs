@@ -4,7 +4,7 @@
 use crate::common::types::{
     CliCommand, CliTypedResult, TransactionOptions, TransactionOptionsExt, TransactionSummary,
 };
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_types::account_address::AccountAddress;
 use async_trait::async_trait;
 use clap::Parser;
@@ -36,7 +36,7 @@ impl CliCommand<TransactionSummary> for CreateAccount {
     async fn execute(self) -> CliTypedResult<TransactionSummary> {
         let address = self.account;
         self.txn_options
-            .submit_transaction(aptos_stdlib::topo_account_create_account(address))
+            .submit_transaction(topo_stdlib::topo_account_create_account(address))
             .await
             .map(TransactionSummary::from)
     }

@@ -4,7 +4,7 @@
 /// can be added and developers using this module should consider various security and economic implications when using
 /// this oracle in their protocols.
 module staking::oracle {
-    use aptos_std::math128;
+    use topo_std::math128;
     use pyth::i64;
     use pyth::price;
     use pyth::price_identifier;

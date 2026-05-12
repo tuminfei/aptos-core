@@ -2,7 +2,7 @@
 module explorer::helpers {
     use topo_framework::delegation_pool;
     use topo_framework::stake;
-    use aptos_std::vector;
+    use std::vector;
 
     #[view]
     public fun pool_address_info(pool_addrs: vector<address>): vector<vector<u64>> {

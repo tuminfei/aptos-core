@@ -11,7 +11,7 @@ module poc_framework::poc_power_store {
     use std::error;
     use std::signer;
 
-    use aptos_std::table::{Self, Table};
+    use topo_std::table::{Self, Table};
 
     use topo_framework::event;
     use topo_framework::system_addresses;

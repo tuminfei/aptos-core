@@ -7,7 +7,7 @@ use aptos_api_types::{
     mime_types, HexEncodedBytes, TransactionOnChainData, X_APTOS_CHAIN_ID,
     X_APTOS_LEDGER_TIMESTAMP, X_APTOS_LEDGER_VERSION,
 };
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_config::{
     config::{
         HotStateConfig, NodeConfig, RocksdbConfigs, StorageDirPaths,
@@ -854,7 +854,7 @@ impl TestContext {
         let code = package.extract_code();
         let metadata = package.extract_metadata().unwrap();
 
-        aptos_stdlib::code_publish_package_txn(bcs::to_bytes(&metadata).unwrap(), code)
+        topo_stdlib::code_publish_package_txn(bcs::to_bytes(&metadata).unwrap(), code)
     }
 
     pub async fn publish_package(

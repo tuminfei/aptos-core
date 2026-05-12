@@ -63,7 +63,7 @@ pub fn generate_randomness_config_update_proposal(
         is_multi_step,
         &[
             "topo_framework::randomness_config",
-            "aptos_std::fixed_point64",
+            "topo_std::fixed_point64",
         ],
         |writer| {
             match config {

@@ -3,7 +3,7 @@ name = "DataStructure"
 version = "0.0.1"
 
 [dependencies]
-AptosStdlib = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "aptos-stdlib", rev = "mainnet" }
+TopoStdlib = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-stdlib", rev = "mainnet" }
 TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
 
 

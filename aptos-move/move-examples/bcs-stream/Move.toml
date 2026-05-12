@@ -6,4 +6,4 @@ version = "0.0.0"
 bcs_stream = "0xCAFE"
 
 [dependencies]
-AptosStdlib = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "aptos-stdlib", rev = "mainnet" }
+TopoStdlib = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-stdlib", rev = "mainnet" }

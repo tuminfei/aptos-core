@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, BlockSplit, MoveHarness, SUCCESS};
-use aptos_cached_packages::aptos_stdlib::{topo_account_batch_transfer, topo_account_transfer};
+use aptos_cached_packages::topo_stdlib::{topo_account_batch_transfer, topo_account_transfer};
 use aptos_language_e2e_tests::{
     account::Account,
     executor::{ExecutorMode, FakeExecutor},

@@ -26,7 +26,7 @@ module poc_framework::poc_registry {
     use std::signer;
     use std::string::String;
 
-    use aptos_std::table::{Self, Table};
+    use topo_std::table::{Self, Table};
 
     use topo_framework::event;
     use topo_framework::fungible_asset::Metadata;

@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::SigningKey;
 use topo_framework::BuiltPackage;
 use aptos_language_e2e_tests::account::{Account, AccountPublicKey, TransactionBuilder};
@@ -389,7 +389,7 @@ fn spend_keyless_account(
     account: &Account,
     recipient: AccountAddress,
 ) -> SignedTransaction {
-    let payload = aptos_stdlib::topo_coin_transfer(recipient, 1);
+    let payload = topo_stdlib::topo_coin_transfer(recipient, 1);
     //println!("Payload: {:?}", payload);
     let raw_txn = TransactionBuilder::new(account.clone())
         .payload(payload)

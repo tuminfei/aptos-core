@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_language_e2e_tests::{account::Account, executor::FakeExecutor};
 use aptos_types::transaction::{ExecutionStatus, TransactionStatus};
 
@@ -21,7 +21,7 @@ fn mint_to_new_account() {
     let mint_amount = 1_000_000;
     let txn = root
         .transaction()
-        .payload(aptos_stdlib::topo_coin_mint(
+        .payload(topo_stdlib::topo_coin_mint(
             *new_account.address(),
             mint_amount,
         ))

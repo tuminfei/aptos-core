@@ -3,7 +3,7 @@
 
 #![forbid(unsafe_code)]
 
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::{ed25519::Ed25519PrivateKey, HashValue, PrivateKey, Uniform};
 use aptos_db::AptosDB;
 use aptos_executor::{
@@ -134,7 +134,7 @@ fn get_topo_coin_mint_transaction(
         /* sequence_number = */ aptos_root_seq_num,
         aptos_root_key.clone(),
         aptos_root_key.public_key(),
-        Some(aptos_stdlib::topo_coin_mint(*account, amount)),
+        Some(topo_stdlib::topo_coin_mint(*account, amount)),
     )
 }
 
@@ -149,7 +149,7 @@ fn get_account_transaction(
         /* sequence_number = */ aptos_root_seq_num,
         aptos_root_key.clone(),
         aptos_root_key.public_key(),
-        Some(aptos_stdlib::topo_account_create_account(*account)),
+        Some(topo_stdlib::topo_account_create_account(*account)),
     )
 }
 
@@ -165,7 +165,7 @@ fn get_topo_coin_transfer_transaction(
         sender_seq_number,
         sender_key.clone(),
         sender_key.public_key(),
-        Some(aptos_stdlib::topo_coin_transfer(recipient, amount)),
+        Some(topo_stdlib::topo_coin_transfer(recipient, amount)),
     )
 }
 

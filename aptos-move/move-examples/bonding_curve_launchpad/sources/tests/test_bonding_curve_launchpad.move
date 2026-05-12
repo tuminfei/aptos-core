@@ -1,8 +1,8 @@
 #[test_only]
 module bonding_curve_launchpad::test_bonding_curve_launchpad {
-    use aptos_std::string;
-    use aptos_std::signer;
-    use aptos_std::math64;
+    use std::string;
+    use std::signer;
+    use topo_std::math64;
     use topo_framework::account;
     use topo_framework::coin;
     use topo_framework::topo_coin::{Self, TopoCoin};

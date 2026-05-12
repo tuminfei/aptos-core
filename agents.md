@@ -155,7 +155,7 @@ cargo sort --grouped --workspace --check
 cargo test -p aptos-vm -p aptos-types -p aptos-crypto
 
 # Framework
-cargo test -p topo-framework -p aptos-stdlib
+cargo test -p topo-framework -p topo-stdlib
 
 # Smoke tests (slower but comprehensive)
 cargo test -p smoke-test

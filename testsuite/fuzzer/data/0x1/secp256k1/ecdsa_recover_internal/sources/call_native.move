@@ -1,5 +1,5 @@
 module poc::ecdsa_recover_internal {
-    use aptos_std::secp256k1;
+    use topo_std::secp256k1;
     use std::option;
     use std::hash;
 

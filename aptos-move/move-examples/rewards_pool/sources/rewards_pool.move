@@ -18,9 +18,9 @@ module rewards_pool::rewards_pool {
     use topo_framework::fungible_asset::{Self, FungibleAsset, FungibleStore, Metadata};
     use topo_framework::primary_fungible_store;
     use topo_framework::object::{Self, Object, ExtendRef};
-    use aptos_std::pool_u64_unbound::{Self as pool_u64, Pool};
-    use aptos_std::simple_map::{Self, SimpleMap};
-    use aptos_std::smart_table::{Self, SmartTable};
+    use topo_std::pool_u64_unbound::{Self as pool_u64, Pool};
+    use topo_std::simple_map::{Self, SimpleMap};
+    use topo_std::smart_table::{Self, SmartTable};
 
     use rewards_pool::epoch;
 

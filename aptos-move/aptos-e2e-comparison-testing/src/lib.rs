@@ -45,10 +45,10 @@ pub use online_execution::*;
 const APTOS_PACKAGES_DIR_NAMES: [&str; 7] = [
     "topo-framework",
     "move-stdlib",
-    "aptos-stdlib",
-    "aptos-token",
-    "aptos-token-objects",
-    "aptos-trading",
+    "topo-stdlib",
+    "topo-token",
+    "topo-token-objects",
+    "topo-trading",
     "aptos-experimental",
 ];
 

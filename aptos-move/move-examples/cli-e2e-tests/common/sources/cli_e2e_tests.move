@@ -8,7 +8,7 @@ module addr::cli_e2e_tests {
 
     use topo_token_objects::collection;
     use topo_token_objects::token;
-    use aptos_std::string_utils;
+    use topo_std::string_utils;
 
     const ENOT_A_HERO: u64 = 1;
     const ENOT_A_WEAPON: u64 = 2;

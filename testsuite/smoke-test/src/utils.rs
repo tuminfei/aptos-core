@@ -4,7 +4,7 @@
 use crate::aptos_cli::validator::generate_blob;
 use aptos::common::types::GasOptions;
 use aptos::test::CliTestFramework;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_config::{
     config::{NodeConfig, Peer, PeerRole, HANDSHAKE_VERSION},
     network_id::NetworkId,
@@ -208,7 +208,7 @@ fn sign_transfer_coins_transaction(
 ) -> SignedTransaction {
     sender.sign_with_transaction_builder(
         transaction_factory
-            .payload(aptos_stdlib::topo_coin_transfer(receiver.address(), amount))
+            .payload(topo_stdlib::topo_coin_transfer(receiver.address(), amount))
             .expiration_timestamp_secs(transfer_coins_expiration_timestamp_secs()),
     )
 }

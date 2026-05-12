@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::MoveHarness;
-use aptos_cached_packages::aptos_stdlib::topo_token_stdlib;
+use aptos_cached_packages::topo_stdlib::topo_token_stdlib;
 
 #[test]
 fn test_token_creation_with_token_events_store() {

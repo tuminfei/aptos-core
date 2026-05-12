@@ -9,7 +9,7 @@ module raffle::raffle_test {
     use topo_framework::coin::MintCapability;
 
     #[test_only]
-    use aptos_std::debug;
+    use topo_std::debug;
 
     #[test_only]
     use std::signer;
@@ -22,7 +22,7 @@ module raffle::raffle_test {
     use raffle::raffle;
 
     #[test_only]
-    use aptos_std::crypto_algebra::enable_cryptography_algebra_natives;
+    use topo_std::crypto_algebra::enable_cryptography_algebra_natives;
     #[test_only]
     use topo_framework::randomness;
 

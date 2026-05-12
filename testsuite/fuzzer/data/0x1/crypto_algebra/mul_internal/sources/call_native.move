@@ -1,6 +1,6 @@
 module poc::mul_internal {
-    use aptos_std::crypto_algebra::{Self};
-    use aptos_std::bls12381_algebra::{Fr};
+    use topo_std::crypto_algebra::{Self};
+    use topo_std::bls12381_algebra::{Fr};
 
     public entry fun main(_owner: &signer) {
         let zero = crypto_algebra::zero<Fr>();

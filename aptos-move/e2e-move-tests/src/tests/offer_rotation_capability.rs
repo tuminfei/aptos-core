@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, MoveHarness};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::SigningKey;
 use aptos_language_e2e_tests::account::Account;
 use aptos_types::{
@@ -56,7 +56,7 @@ pub fn offer_rotation_capability_v2(
 
     assert_success!(harness.run_transaction_payload(
         offerer_account,
-        aptos_stdlib::account_offer_rotation_capability(
+        topo_stdlib::account_offer_rotation_capability(
             rotation_proof_signed.to_bytes().to_vec(),
             0,
             offerer_account.pubkey.to_bytes(),
@@ -82,7 +82,7 @@ pub fn revoke_rotation_capability(
 ) {
     assert_success!(harness.run_transaction_payload(
         offerer_account,
-        aptos_stdlib::account_revoke_rotation_capability(delegate_address,)
+        topo_stdlib::account_revoke_rotation_capability(delegate_address,)
     ));
     let account_resource = parse_struct_tag("0x1::account::Account").unwrap();
     assert_eq!(

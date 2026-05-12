@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::common::types::{CliCommand, CliTypedResult, TransactionOptions, TransactionOptionsExt};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_rest_client::{
     aptos_api_types::{HashValue, WriteResource, WriteSetChange},
     Transaction,
@@ -39,7 +39,7 @@ impl CliCommand<TransferSummary> for TransferCoins {
 
     async fn execute(self) -> CliTypedResult<TransferSummary> {
         self.txn_options
-            .submit_transaction(aptos_stdlib::topo_account_transfer(
+            .submit_transaction(topo_stdlib::topo_account_transfer(
                 self.account,
                 self.amount,
             ))

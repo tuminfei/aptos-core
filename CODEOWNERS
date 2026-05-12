@@ -14,11 +14,11 @@
 /aptos-move/aptos-vm-profiling/ @vgao1996
 /aptos-move/aptos-vm-types/ @georgemitenkov @gelash @vgao1996
 /aptos-move/framework/ @wrwg
-/aptos-move/framework/aptos-framework/sources/account.move @alinush
-/aptos-move/framework/aptos-framework/sources/jwks.move @zjma
-/aptos-move/framework/aptos-framework/sources/keyless_account.move @alinush
-/aptos-move/framework/aptos-stdlib/sources/cryptography/ @alinush @zjma
-/aptos-move/framework/aptos-stdlib/sources/hash.move @alinush
+/aptos-move/framework/topo-framework/sources/account.move @alinush
+/aptos-move/framework/topo-framework/sources/jwks.move @zjma
+/aptos-move/framework/topo-framework/sources/keyless_account.move @alinush
+/aptos-move/framework/topo-stdlib/sources/cryptography/ @alinush @zjma
+/aptos-move/framework/topo-stdlib/sources/hash.move @alinush
 
 # Owner for aptos-token, cryptography natives, parallel-executor and vm-genesis.
 /aptos-move/framework/src/natives/cryptography/ @alinush @zjma

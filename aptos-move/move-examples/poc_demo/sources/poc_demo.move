@@ -4,7 +4,7 @@ module poc_demo::poc_demo {
     use std::signer;
     use std::string::{Self, String};
 
-    use aptos_std::smart_table::{Self, SmartTable};
+    use topo_std::smart_table::{Self, SmartTable};
 
     use topo_framework::account::{Self, SignerCapability};
     use topo_framework::event;

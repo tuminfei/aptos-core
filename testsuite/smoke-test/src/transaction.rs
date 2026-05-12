@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::smoke_test_environment::new_local_swarm_with_aptos;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_forge::Swarm;
 use aptos_keygen::KeyGen;
 use aptos_rest_client::{
@@ -56,7 +56,7 @@ async fn test_external_transaction_signer() {
 
     let unsigned_txn = info
         .transaction_factory()
-        .payload(aptos_stdlib::topo_coin_transfer(receiver.address(), amount))
+        .payload(topo_stdlib::topo_coin_transfer(receiver.address(), amount))
         .sender(sender_address)
         .sequence_number(test_sequence_number)
         .max_gas_amount(test_max_gas_amount)

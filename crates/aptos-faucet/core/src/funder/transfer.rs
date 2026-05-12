@@ -17,7 +17,7 @@ use aptos_logger::info;
 use aptos_sdk::{
     crypto::{ed25519::Ed25519PrivateKey, PrivateKey},
     rest_client::{AptosBaseUrl, Client},
-    transaction_builder::{aptos_stdlib, TransactionFactory},
+    transaction_builder::{topo_stdlib, TransactionFactory},
     types::{
         account_address::AccountAddress,
         chain_id::ChainId,
@@ -289,7 +289,7 @@ impl FunderTrait for TransferFunder {
             let txn = self
                 .execute_transaction(
                     &client,
-                    aptos_stdlib::topo_account_transfer(receiver_address, amount),
+                    topo_stdlib::topo_account_transfer(receiver_address, amount),
                     &receiver_address,
                 )
                 .await?;

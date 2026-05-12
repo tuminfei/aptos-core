@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, assert_vm_status, MoveHarness};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
@@ -131,7 +131,7 @@ fn test_metadata_with_changes(f: impl Fn() -> Vec<Metadata>) -> TransactionStatu
         .expect("extracting package metadata must succeed");
     h.run_transaction_payload(
         &account,
-        aptos_stdlib::code_publish_package_txn(
+        topo_stdlib::code_publish_package_txn(
             bcs::to_bytes(&package_metadata).expect("PackageMetadata has BCS"),
             vec![invalid_code],
         ),
@@ -195,7 +195,7 @@ fn test_compilation_metadata_with_changes(
         .expect("extracting package metadata must succeed");
     h.run_transaction_payload(
         &account,
-        aptos_stdlib::code_publish_package_txn(
+        topo_stdlib::code_publish_package_txn(
             bcs::to_bytes(&package_metadata).expect("PackageMetadata has BCS"),
             vec![invalid_code],
         ),
@@ -246,7 +246,7 @@ fn test_compilation_metadata_internal(
         );
         h.run_transaction_payload_mainnet(
             &account,
-            aptos_stdlib::code_publish_package_txn(
+            topo_stdlib::code_publish_package_txn(
                 bcs::to_bytes(&package_metadata).expect("PackageMetadata has BCS"),
                 package.extract_code(),
             ),
@@ -254,7 +254,7 @@ fn test_compilation_metadata_internal(
     } else {
         h.run_transaction_payload(
             &account,
-            aptos_stdlib::code_publish_package_txn(
+            topo_stdlib::code_publish_package_txn(
                 bcs::to_bytes(&package_metadata).expect("PackageMetadata has BCS"),
                 package.extract_code(),
             ),

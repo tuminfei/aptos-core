@@ -58,9 +58,9 @@ cargo build -p aptos-cached-packages   # REQUIRED: rebuild cached packages
 
 ### Move Framework Stack
 - `aptos-move/framework/move-stdlib/` - Core Move stdlib
-- `aptos-move/framework/aptos-stdlib/` - Aptos-specific stdlib
+- `aptos-move/framework/topo-stdlib/` - Topo-specific stdlib
 - `aptos-move/framework/topo-framework/` - Core chain modules (coin, account, staking)
-- `aptos-move/framework/aptos-token-objects/` - NFT standards
+- `aptos-move/framework/topo-token-objects/` - NFT standards
 
 ### Key Crates
 - `aptos-types` - Core type definitions used everywhere

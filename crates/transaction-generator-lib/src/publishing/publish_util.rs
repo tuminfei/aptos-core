@@ -12,7 +12,7 @@ use topo_framework::{
 use aptos_sdk::{
     bcs,
     move_types::{identifier::Identifier, language_storage::ModuleId},
-    transaction_builder::aptos_stdlib,
+    transaction_builder::topo_stdlib,
     types::{
         account_address::AccountAddress,
         chain_id::ChainId,
@@ -218,7 +218,7 @@ impl Package {
                 CHUNK_SIZE_IN_BYTES,
             )
         } else {
-            vec![aptos_stdlib::code_publish_package_txn(
+            vec![topo_stdlib::code_publish_package_txn(
                 metadata_serialized,
                 code,
             )]

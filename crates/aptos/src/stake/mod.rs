@@ -11,7 +11,7 @@ use crate::{
     },
     node::{get_stake_pools, StakePoolType},
 };
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_types::{
     account_address::AccountAddress,
 };
@@ -258,7 +258,7 @@ impl CliCommand<Vec<TransactionSummary>> for IncreaseLockup {
                 StakePoolType::Direct => {
                     transaction_summaries.push(
                         self.txn_options
-                            .submit_transaction(aptos_stdlib::stake_increase_lockup())
+                            .submit_transaction(topo_stdlib::stake_increase_lockup())
                             .await
                             .map(|inner| inner.into())?,
                     );
@@ -312,7 +312,7 @@ impl CliCommand<TransactionSummary> for InitializeStakeOwner {
     async fn execute(mut self) -> CliTypedResult<TransactionSummary> {
         let owner_address = self.txn_options.sender_address()?;
         self.txn_options
-            .submit_transaction(aptos_stdlib::stake_initialize_stake_owner(
+            .submit_transaction(topo_stdlib::stake_initialize_stake_owner(
                 self.initial_stake_amount,
                 self.operator_address.unwrap_or(owner_address),
             ))
@@ -358,7 +358,7 @@ impl CliCommand<Vec<TransactionSummary>> for SetOperator {
                 StakePoolType::Direct => {
                     transaction_summaries.push(
                         self.txn_options
-                            .submit_transaction(aptos_stdlib::stake_set_operator(
+                            .submit_transaction(topo_stdlib::stake_set_operator(
                                 new_operator_address,
                             ))
                             .await

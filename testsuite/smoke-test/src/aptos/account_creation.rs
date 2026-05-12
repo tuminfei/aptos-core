@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::smoke_test_environment::new_local_swarm_with_aptos;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_forge::Swarm;
 use aptos_types::CoinType;
 
@@ -18,12 +18,12 @@ async fn test_account_auto_creation() {
     let account2 = info.random_account();
 
     let migrate_txn = account1.sign_with_transaction_builder(info.transaction_factory().payload(
-        aptos_stdlib::coin_migrate_to_fungible_store(aptos_types::TopoCoinType::type_tag()),
+        topo_stdlib::coin_migrate_to_fungible_store(aptos_types::TopoCoinType::type_tag()),
     ));
     info.client().submit_and_wait(&migrate_txn).await.unwrap();
 
     let send_fa_txn = account1.sign_with_transaction_builder(info.transaction_factory().payload(
-        aptos_stdlib::topo_account_fungible_transfer_only(account2.address(), 10_000_000_000),
+        topo_stdlib::topo_account_fungible_transfer_only(account2.address(), 10_000_000_000),
     ));
     info.client().submit_and_wait(&send_fa_txn).await.unwrap();
 
@@ -31,7 +31,7 @@ async fn test_account_auto_creation() {
     // account2 should be created automatically by sending this transaction.
     let send_back_fa_txn = account2.sign_with_transaction_builder(
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
+            .payload(topo_stdlib::topo_account_fungible_transfer_only(
                 account1.address(),
                 1,
             ))

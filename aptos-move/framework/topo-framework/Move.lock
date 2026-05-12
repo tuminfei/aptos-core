@@ -8,10 +8,10 @@ version = 4
 source = { root = true }
 use_environment = "testnet"
 manifest_digest = "C924A1DD72F654232DD8FEBC0AE13E18A1F36490C87823757CA499A11BA46ADB"
-deps = { AptosStdlib = "AptosStdlib", MoveStdlib = "MoveStdlib" }
+deps = { TopoStdlib = "TopoStdlib", MoveStdlib = "MoveStdlib" }
 
-[pinned.testnet.AptosStdlib]
-source = { local = "../aptos-stdlib" }
+[pinned.testnet.TopoStdlib]
+source = { local = "../topo-stdlib" }
 use_environment = "testnet"
 manifest_digest = "7AFB66695545775FBFBB2D3078ADFD084244D5002392E837FDE21D9EA1C6D01C"
 deps = { MoveStdlib = "MoveStdlib" }

@@ -26,7 +26,7 @@ use aptos_logger::{sample, sample::SampleRate};
 use aptos_rest_client::{aptos_api_types::AptosErrorCode, error::RestError, Client as RestClient};
 use aptos_sdk::{
     move_types::account_address::AccountAddress,
-    transaction_builder::{aptos_stdlib, TransactionFactory},
+    transaction_builder::{topo_stdlib, TransactionFactory},
     types::{transaction::SignedTransaction, AccountKey, LocalAccount},
 };
 use aptos_transaction_generator_lib::{
@@ -1327,7 +1327,7 @@ pub fn gen_transfer_txn_request(
     txn_factory: &TransactionFactory,
 ) -> SignedTransaction {
     sender.sign_with_transaction_builder(
-        txn_factory.payload(aptos_stdlib::topo_coin_transfer(*receiver, num_coins)),
+        txn_factory.payload(topo_stdlib::topo_coin_transfer(*receiver, num_coins)),
     )
 }
 

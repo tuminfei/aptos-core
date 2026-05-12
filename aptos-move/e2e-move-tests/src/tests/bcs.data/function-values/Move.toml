@@ -3,4 +3,4 @@ name = "function_values"
 version = "0.0.0"
 
 [dependencies]
-AptosStdlib = { local = "../../../../../framework/aptos-stdlib" }
+TopoStdlib = { local = "../../../../../framework/topo-stdlib" }

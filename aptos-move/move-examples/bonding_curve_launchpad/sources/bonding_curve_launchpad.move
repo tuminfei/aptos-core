@@ -8,7 +8,7 @@ module bonding_curve_launchpad::bonding_curve_launchpad {
     use topo_framework::event;
     use topo_framework::function_info::{Self, FunctionInfo};
     use topo_framework::dispatchable_fungible_asset;
-    use aptos_std::math128;
+    use topo_std::math128;
     use bonding_curve_launchpad::liquidity_pairs;
 
     /// FA's name and symbol already exist on the launchpad.

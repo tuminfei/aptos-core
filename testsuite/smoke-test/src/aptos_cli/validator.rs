@@ -15,7 +15,7 @@ use aptos::{
     test::{CliTestFramework, ValidatorPerformance},
 };
 use aptos_bitvec::BitVec;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::{bls12381, ed25519::Ed25519PrivateKey, x25519, ValidCryptoMaterialStringExt};
 use aptos_forge::{reconfig, wait_for_all_nodes_to_catchup, LocalSwarm, NodeExt, Swarm, SwarmExt};
 use aptos_genesis::config::HostAndPort;
@@ -474,7 +474,7 @@ async fn assert_reordering(swarm: &mut dyn Swarm, expected_reordering: bool) {
 
         for _ in 0..5 {
             let txn = account.sign_with_transaction_builder(
-                transaction_factory.payload(aptos_stdlib::topo_coin_transfer(dst.address(), 10)),
+                transaction_factory.payload(topo_stdlib::topo_coin_transfer(dst.address(), 10)),
             );
             txns.push(txn);
         }

@@ -4,7 +4,7 @@
 use super::{new_test_context, new_test_context_with_orderless_flags};
 use aptos_api_test_context::{current_function_name, find_value, TestContext};
 use aptos_api_types::{MoveModuleBytecode, MoveResource, MoveStructTag, StateKeyWrapper};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_sdk::types::TOPO_COIN_TYPE_STR;
 use aptos_types::{
     account_config::{primary_apt_store, ObjectCoreResource},
@@ -265,16 +265,16 @@ async fn test_account_auto_creation() {
     let root_account = context.root_account().await;
     let account = context.gen_account();
     let txn1 = root_account.sign_with_transaction_builder(context.transaction_factory().payload(
-        aptos_stdlib::coin_migrate_to_fungible_store(TopoCoinType::type_tag()),
+        topo_stdlib::coin_migrate_to_fungible_store(TopoCoinType::type_tag()),
     ));
     let txn2 = root_account.sign_with_transaction_builder(context.transaction_factory().payload(
-        aptos_stdlib::topo_account_fungible_transfer_only(account.address(), 10_000_000_000),
+        topo_stdlib::topo_account_fungible_transfer_only(account.address(), 10_000_000_000),
     ));
     context.commit_block(&[txn1.clone(), txn2.clone()]).await;
     let txn = account.sign_with_transaction_builder(
         context
             .transaction_factory()
-            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
+            .payload(topo_stdlib::topo_account_fungible_transfer_only(
                 root_account.address(),
                 1,
             ))
@@ -312,7 +312,7 @@ async fn test_get_account_balance(
     let txn = root_account.sign_with_transaction_builder(
         context
             .transaction_factory()
-            .payload(aptos_stdlib::coin_migrate_to_fungible_store(
+            .payload(topo_stdlib::coin_migrate_to_fungible_store(
                 TopoCoinType::type_tag(),
             ))
             .expiration_timestamp_secs(context.get_expiration_time())
@@ -376,7 +376,7 @@ async fn test_get_account_balance(
 async fn test_get_account_modules_by_ledger_version_with_context(mut context: TestContext) {
     let initial_ledger_version = u64::from(context.get_latest_ledger_info().ledger_version);
     let payload =
-        aptos_stdlib::publish_module_source("test_module", "module 0xa550c18::test_module {}");
+        topo_stdlib::publish_module_source("test_module", "module 0xa550c18::test_module {}");
 
     let root_account = context.root_account().await;
     let txn = root_account.sign_with_transaction_builder(

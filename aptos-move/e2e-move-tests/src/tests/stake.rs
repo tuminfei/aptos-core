@@ -9,7 +9,7 @@ use crate::{
     },
     tests::common,
 };
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_move_e2e_test_harness::{assert_success, MoveHarness};
 use aptos_types::account_address::{default_stake_pool_address, AccountAddress};
 use once_cell::sync::Lazy;
@@ -352,7 +352,7 @@ fn test_staking_contract() {
     let operator_2_address = *operator_2.address();
     assert_success!(harness.run_transaction_payload(
         &staker,
-        aptos_stdlib::staking_contract_create_staking_contract(
+        topo_stdlib::staking_contract_create_staking_contract(
             operator_1_address,
             operator_1_address,
             amount * 2, // 创建时直接质押全部金额
@@ -363,7 +363,7 @@ fn test_staking_contract() {
     // staking_contract_add_stake 函数不存在，使用 staking_registry_deposit 代替
     assert_success!(harness.run_transaction_payload(
         &staker,
-        aptos_stdlib::staking_registry_deposit(amount)
+        topo_stdlib::staking_registry_deposit(amount)
     ));
 
     // Join validator set.
@@ -387,7 +387,7 @@ fn test_staking_contract() {
     harness.new_epoch();
     // assert_success!(harness.run_transaction_payload(
     //     &staker,
-    //     aptos_stdlib::staking_contract_request_commission(staker_address, operator_1_address)
+    //     topo_stdlib::staking_contract_request_commission(staker_address, operator_1_address)
     // ));
 
     // Wait until stake is unlocked.
@@ -395,7 +395,7 @@ fn test_staking_contract() {
     harness.new_epoch();
     assert_success!(harness.run_transaction_payload(
         &staker,
-        aptos_stdlib::staking_contract_distribute(staker_address, operator_1_address)
+        topo_stdlib::staking_contract_distribute(staker_address, operator_1_address)
     ));
 
     // Staker unlocks some stake.
@@ -403,7 +403,7 @@ fn test_staking_contract() {
     harness.new_epoch();
     assert_success!(harness.run_transaction_payload(
         &staker,
-        aptos_stdlib::staking_contract_unlock_stake(operator_1_address, amount)
+        topo_stdlib::staking_contract_unlock_stake(operator_1_address, amount)
     ));
 
     // Wait until stake is unlocked.
@@ -411,13 +411,13 @@ fn test_staking_contract() {
     harness.new_epoch();
     assert_success!(harness.run_transaction_payload(
         &staker,
-        aptos_stdlib::staking_contract_distribute(staker_address, operator_1_address)
+        topo_stdlib::staking_contract_distribute(staker_address, operator_1_address)
     ));
 
     // Switch operators.
     assert_success!(harness.run_transaction_payload(
         &staker,
-        aptos_stdlib::staking_contract_switch_operator_with_same_commission(
+        topo_stdlib::staking_contract_switch_operator_with_same_commission(
             operator_1_address,
             operator_2_address,
         )

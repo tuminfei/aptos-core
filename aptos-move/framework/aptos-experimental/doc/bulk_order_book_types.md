@@ -129,9 +129,9 @@ ask_sizes
 -  [Function `destroy_bulk_order`](#0x7_bulk_order_book_types_destroy_bulk_order)
 
 
-<pre><code><b>use</b> <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
-<b>use</b> <a href="../../aptos-framework/doc/timestamp.md#0x1_timestamp">0x1::timestamp</a>;
-<b>use</b> <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<pre><code><b>use</b> <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../topo-framework/doc/timestamp.md#0x1_timestamp">0x1::timestamp</a>;
+<b>use</b> <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 <b>use</b> <a href="order_book_types.md#0x7_order_book_types">0x7::order_book_types</a>;
 </code></pre>
 
@@ -148,7 +148,7 @@ Request structure for placing a new bulk order with multiple price levels.
 
 ### Fields:
 
-- <code><a href="../../aptos-framework/doc/account.md#0x1_account">account</a></code>: The account placing the order
+- <code><a href="../../topo-framework/doc/account.md#0x1_account">account</a></code>: The account placing the order
 - <code>bid_prices</code>: Vector of bid prices in descending order (best price first)
 - <code>bid_sizes</code>: Vector of bid sizes corresponding to each price level
 - <code>ask_prices</code>: Vector of ask prices in ascending order (best price first)
@@ -186,7 +186,7 @@ Bulk orders do not support TimeInForce options and behave as maker orders only
 
 <dl>
 <dt>
-<code><a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b></code>
+<code><a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b></code>
 </dt>
 <dd>
 
@@ -198,25 +198,25 @@ Bulk orders do not support TimeInForce options and behave as maker orders only
 
 </dd>
 <dt>
-<code>bid_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>bid_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>bid_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>bid_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>ask_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>ask_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>ask_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>ask_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
@@ -251,7 +251,7 @@ both original and remaining sizes for tracking purposes.
 ### Fields:
 
 - <code>order_id</code>: Unique identifier for the order
-- <code><a href="../../aptos-framework/doc/account.md#0x1_account">account</a></code>: Account that placed the order
+- <code><a href="../../topo-framework/doc/account.md#0x1_account">account</a></code>: Account that placed the order
 - <code>unique_priority_idx</code>: Priority index for time-based ordering
 - <code>orig_bid_size</code>: Original total size of all bid levels
 - <code>orig_ask_size</code>: Original total size of all ask levels
@@ -289,7 +289,7 @@ both original and remaining sizes for tracking purposes.
 
 </dd>
 <dt>
-<code><a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b></code>
+<code><a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b></code>
 </dt>
 <dd>
 
@@ -313,25 +313,25 @@ both original and remaining sizes for tracking purposes.
 
 </dd>
 <dt>
-<code>bid_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>bid_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>bid_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>bid_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>ask_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>ask_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>ask_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>ask_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
@@ -386,31 +386,31 @@ both original and remaining sizes for tracking purposes.
 
 </dd>
 <dt>
-<code>cancelled_bid_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_bid_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_bid_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_bid_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_ask_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_ask_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_ask_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_ask_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>previous_seq_num: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;</code>
+<code>previous_seq_num: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
@@ -604,13 +604,13 @@ Creates a new bulk order with the specified parameters.
 
 A tuple containing:
 - <code><a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;</code>: The created bulk order with non-crossing levels
-- <code><a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled bid prices (levels that crossed the spread)
-- <code><a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled bid sizes corresponding to cancelled prices
-- <code><a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled ask prices (levels that crossed the spread)
-- <code><a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled ask sizes corresponding to cancelled prices
+- <code><a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled bid prices (levels that crossed the spread)
+- <code><a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled bid sizes corresponding to cancelled prices
+- <code><a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled ask prices (levels that crossed the spread)
+- <code><a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled ask sizes corresponding to cancelled prices
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_new_bulk_order">new_bulk_order</a>&lt;M: <b>copy</b>, drop, store&gt;(order_id: <a href="order_book_types.md#0x7_order_book_types_OrderIdType">order_book_types::OrderId</a>, unique_priority_idx: <a href="order_book_types.md#0x7_order_book_types_UniqueIdxType">order_book_types::IncreasingIdx</a>, order_req: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest">bulk_order_types::BulkOrderRequest</a>&lt;M&gt;, best_bid_price: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, best_ask_price: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;): (<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_new_bulk_order">new_bulk_order</a>&lt;M: <b>copy</b>, drop, store&gt;(order_id: <a href="order_book_types.md#0x7_order_book_types_OrderIdType">order_book_types::OrderId</a>, unique_priority_idx: <a href="order_book_types.md#0x7_order_book_types_UniqueIdxType">order_book_types::IncreasingIdx</a>, order_req: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest">bulk_order_types::BulkOrderRequest</a>&lt;M&gt;, best_bid_price: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, best_ask_price: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;): (<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -625,9 +625,9 @@ A tuple containing:
     order_req: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest">BulkOrderRequest</a>&lt;M&gt;,
     best_bid_price: Option&lt;u64&gt;,
     best_ask_price: Option&lt;u64&gt;,
-): (<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;) {
-    <b>let</b> BulkOrderRequest::V1 { <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>, order_sequence_number, bid_prices, bid_sizes, ask_prices, ask_sizes, metadata } = order_req;
-    <b>let</b> creation_time_micros = <a href="../../aptos-framework/doc/timestamp.md#0x1_timestamp_now_microseconds">timestamp::now_microseconds</a>();
+): (<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;) {
+    <b>let</b> BulkOrderRequest::V1 { <a href="../../topo-framework/doc/account.md#0x1_account">account</a>, order_sequence_number, bid_prices, bid_sizes, ask_prices, ask_sizes, metadata } = order_req;
+    <b>let</b> creation_time_micros = <a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_now_microseconds">timestamp::now_microseconds</a>();
     <b>let</b> bid_price_crossing_idx = <a href="bulk_order_types.md#0x7_bulk_order_book_types_discard_price_crossing_levels">discard_price_crossing_levels</a>(&bid_prices, best_ask_price, <b>true</b>);
     <b>let</b> ask_price_crossing_idx = <a href="bulk_order_types.md#0x7_bulk_order_book_types_discard_price_crossing_levels">discard_price_crossing_levels</a>(&ask_prices, best_bid_price, <b>false</b>);
 
@@ -637,18 +637,18 @@ A tuple containing:
         <b>let</b> post_only_bid_sizes = bid_sizes.trim(bid_price_crossing_idx);
         (bid_prices, bid_sizes, post_only_bid_prices, post_only_bid_sizes)
     } <b>else</b> {
-        (<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), bid_prices, bid_sizes)
+        (<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), bid_prices, bid_sizes)
     };
     <b>let</b> (cancelled_ask_prices, cancelled_ask_sizes, post_only_ask_prices, post_only_ask_sizes) = <b>if</b> (ask_price_crossing_idx &gt; 0) {
         <b>let</b> post_only_ask_prices = ask_prices.trim(ask_price_crossing_idx);
         <b>let</b> post_only_ask_sizes = ask_sizes.trim(ask_price_crossing_idx);
         (ask_prices, ask_sizes, post_only_ask_prices, post_only_ask_sizes)
     } <b>else</b> {
-        (<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), ask_prices, ask_sizes)
+        (<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), ask_prices, ask_sizes)
     };
     <b>let</b> bulk_order = BulkOrder::V1 {
         order_id,
-        <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>,
+        <a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
         unique_priority_idx,
         order_sequence_number,
         creation_time_micros,
@@ -677,7 +677,7 @@ Creates a new bulk order request with the specified price levels and sizes.
 
 ### Arguments:
 
-- <code><a href="../../aptos-framework/doc/account.md#0x1_account">account</a></code>: The account placing the order
+- <code><a href="../../topo-framework/doc/account.md#0x1_account">account</a></code>: The account placing the order
 - <code>bid_prices</code>: Vector of bid prices in descending order
 - <code>bid_sizes</code>: Vector of bid sizes corresponding to each price level
 - <code>ask_prices</code>: Vector of ask prices in ascending order
@@ -700,7 +700,7 @@ A <code><a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest"
 - If ask_prices and ask_sizes have different lengths
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_new_bulk_order_request">new_bulk_order_request</a>&lt;M: <b>copy</b>, drop, store&gt;(<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, sequence_number: u64, bid_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bid_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, metadata: M): <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest">bulk_order_types::BulkOrderRequest</a>&lt;M&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_new_bulk_order_request">new_bulk_order_request</a>&lt;M: <b>copy</b>, drop, store&gt;(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, sequence_number: u64, bid_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bid_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, metadata: M): <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest">bulk_order_types::BulkOrderRequest</a>&lt;M&gt;
 </code></pre>
 
 
@@ -710,12 +710,12 @@ A <code><a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest"
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_new_bulk_order_request">new_bulk_order_request</a>&lt;M: store + <b>copy</b> + drop&gt;(
-    <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
+    <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
     sequence_number: u64,
-    bid_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    bid_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    ask_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    ask_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bid_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bid_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    ask_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    ask_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     metadata: M
 ): <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest">BulkOrderRequest</a>&lt;M&gt; {
     <b>let</b> num_bids = bid_prices.length();
@@ -737,7 +737,7 @@ A <code><a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest"
     };
 
     <b>let</b> req = BulkOrderRequest::V1 {
-        <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>,
+        <a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
         order_sequence_number: sequence_number,
         bid_prices,
         bid_sizes,
@@ -771,7 +771,7 @@ A <code><a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest"
 <pre><code><b>public</b> <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_account_from_order_request">get_account_from_order_request</a>&lt;M: store + <b>copy</b> + drop&gt;(
     order_req: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest">BulkOrderRequest</a>&lt;M&gt;
 ): <b>address</b> {
-    order_req.<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>
+    order_req.<a href="../../topo-framework/doc/account.md#0x1_account">account</a>
 }
 </code></pre>
 
@@ -837,7 +837,7 @@ A <code><a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest"
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_new_bulk_order_place_response">new_bulk_order_place_response</a>&lt;M: <b>copy</b>, drop, store&gt;(order: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, cancelled_bid_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, previous_seq_num: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;): <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderPlaceResponse">bulk_order_types::BulkOrderPlaceResponse</a>&lt;M&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_new_bulk_order_place_response">new_bulk_order_place_response</a>&lt;M: <b>copy</b>, drop, store&gt;(order: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, cancelled_bid_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, previous_seq_num: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;): <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderPlaceResponse">bulk_order_types::BulkOrderPlaceResponse</a>&lt;M&gt;
 </code></pre>
 
 
@@ -848,11 +848,11 @@ A <code><a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest"
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_new_bulk_order_place_response">new_bulk_order_place_response</a>&lt;M: store + <b>copy</b> + drop&gt;(
     order: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;,
-    cancelled_bid_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_bid_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_ask_prices: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_ask_sizes: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    previous_seq_num: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+    cancelled_bid_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_bid_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_ask_prices: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_ask_sizes: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    previous_seq_num: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 <<<<<<< HEAD
 ): <a href="bulk_order_book_types.md#0x7_bulk_order_book_types_BulkOrderPlaceResponse">BulkOrderPlaceResponse</a>&lt;M&gt; {
     BulkOrderPlaceResponse::V1 {
@@ -880,7 +880,7 @@ A <code><a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest"
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_destroy_bulk_order_place_response">destroy_bulk_order_place_response</a>&lt;M: <b>copy</b>, drop, store&gt;(response: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderPlaceResponse">bulk_order_types::BulkOrderPlaceResponse</a>&lt;M&gt;): (<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_destroy_bulk_order_place_response">destroy_bulk_order_place_response</a>&lt;M: <b>copy</b>, drop, store&gt;(response: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderPlaceResponse">bulk_order_types::BulkOrderPlaceResponse</a>&lt;M&gt;): (<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -892,12 +892,12 @@ A <code><a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderRequest"
 <<<<<<< HEAD
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_book_types.md#0x7_bulk_order_book_types_destroy_bulk_order_place_response">destroy_bulk_order_place_response</a>&lt;M: store + <b>copy</b> + drop&gt;(
     response: <a href="bulk_order_book_types.md#0x7_bulk_order_book_types_BulkOrderPlaceResponse">BulkOrderPlaceResponse</a>&lt;M&gt;
-): (<a href="bulk_order_book_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;) {
+): (<a href="bulk_order_book_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;) {
     <b>let</b> BulkOrderPlaceResponse::V1 { order, cancelled_bid_prices, cancelled_bid_sizes, cancelled_ask_prices, cancelled_ask_sizes, previous_seq_num } = response;
 =======
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_destroy_bulk_order_place_response">destroy_bulk_order_place_response</a>&lt;M: store + <b>copy</b> + drop&gt;(
     response: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderPlaceResponse">BulkOrderPlaceResponse</a>&lt;M&gt;
-): (<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;) {
+): (<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;) {
     <b>let</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrderPlaceResponse">BulkOrderPlaceResponse</a> { order, cancelled_bid_prices, cancelled_bid_sizes, cancelled_ask_prices, cancelled_ask_sizes, previous_seq_num } = response;
 >>>>>>> f583b0f4e1 (add trading framework package for types)
     (order, cancelled_bid_prices, cancelled_bid_sizes, cancelled_ask_prices, cancelled_ask_sizes, previous_seq_num)
@@ -922,7 +922,7 @@ Validates that all sizes in the vector are greater than 0.
 - <code>sizes</code>: Vector of sizes to validate
 
 
-<pre><code><b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_validate_not_zero_sizes">validate_not_zero_sizes</a>(sizes: &<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;): bool
+<pre><code><b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_validate_not_zero_sizes">validate_not_zero_sizes</a>(sizes: &<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;): bool
 </code></pre>
 
 
@@ -931,7 +931,7 @@ Validates that all sizes in the vector are greater than 0.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_validate_not_zero_sizes">validate_not_zero_sizes</a>(sizes: &<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;): bool {
+<pre><code><b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_validate_not_zero_sizes">validate_not_zero_sizes</a>(sizes: &<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;): bool {
     <b>let</b> i = 0;
     <b>while</b> (i &lt; sizes.length()) {
         <b>if</b> (sizes[i] == 0) {
@@ -962,7 +962,7 @@ Validates that prices are in the correct order (descending for bids, ascending f
 - <code>is_descending</code>: True if prices should be in descending order, false for ascending
 
 
-<pre><code><b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_validate_price_ordering">validate_price_ordering</a>(prices: &<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, is_descending: bool): bool
+<pre><code><b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_validate_price_ordering">validate_price_ordering</a>(prices: &<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, is_descending: bool): bool
 </code></pre>
 
 
@@ -972,7 +972,7 @@ Validates that prices are in the correct order (descending for bids, ascending f
 
 
 <pre><code><b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_validate_price_ordering">validate_price_ordering</a>(
-    prices: &<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    prices: &<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     is_descending: bool
 ): bool {
     <b>let</b> i = 0;
@@ -1005,7 +1005,7 @@ Validates that prices are in the correct order (descending for bids, ascending f
 
 
 
-<pre><code><b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_discard_price_crossing_levels">discard_price_crossing_levels</a>(prices: &<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, best_price: <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, is_bid: bool): u64
+<pre><code><b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_discard_price_crossing_levels">discard_price_crossing_levels</a>(prices: &<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, best_price: <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, is_bid: bool): u64
 </code></pre>
 
 
@@ -1015,7 +1015,7 @@ Validates that prices are in the correct order (descending for bids, ascending f
 
 
 <pre><code><b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_discard_price_crossing_levels">discard_price_crossing_levels</a>(
-    prices: &<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    prices: &<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     best_price: Option&lt;u64&gt;,
     is_bid: bool,
 ): u64 {
@@ -1068,7 +1068,7 @@ Validates that prices are in the correct order (descending for bids, ascending f
     new_order_match&lt;M&gt;(
         new_bulk_order_match_details&lt;M&gt;(
             order.order_id,
-            order.<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>,
+            order.<a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
             order.unique_priority_idx,
             price,
             remaining_size,
@@ -1232,7 +1232,7 @@ The account that placed the order.
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_account">get_account</a>&lt;M: store + <b>copy</b> + drop&gt;(
     self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;,
 ): <b>address</b> {
-    self.<a href="../../aptos-framework/doc/account.md#0x1_account">account</a>
+    self.<a href="../../topo-framework/doc/account.md#0x1_account">account</a>
 }
 </code></pre>
 
@@ -1314,7 +1314,7 @@ Gets the active price for a specific side of a bulk order.
 An option containing the active price if available, none otherwise.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_active_price">get_active_price</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool): <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_active_price">get_active_price</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool): <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -1329,9 +1329,9 @@ An option containing the active price if available, none otherwise.
 ): Option&lt;u64&gt; {
     <b>let</b> prices = <b>if</b> (is_bid) { &self.bid_prices } <b>else</b> { &self.ask_prices };
     <b>if</b> (prices.length() == 0) {
-        <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>() // No active price level
+        <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>() // No active price level
     } <b>else</b> {
-        <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(prices[0]) // Return the first price level
+        <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(prices[0]) // Return the first price level
     }
 }
 </code></pre>
@@ -1346,7 +1346,7 @@ An option containing the active price if available, none otherwise.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_all_prices">get_all_prices</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool): <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_all_prices">get_all_prices</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool): <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -1358,7 +1358,7 @@ An option containing the active price if available, none otherwise.
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_all_prices">get_all_prices</a>&lt;M: store + <b>copy</b> + drop&gt;(
     self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;,
     is_bid: bool,
-): <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; {
+): <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; {
     <b>if</b> (is_bid) {
         self.bid_prices
     } <b>else</b> {
@@ -1377,7 +1377,7 @@ An option containing the active price if available, none otherwise.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_all_sizes">get_all_sizes</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool): <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_all_sizes">get_all_sizes</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool): <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -1389,7 +1389,7 @@ An option containing the active price if available, none otherwise.
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_all_sizes">get_all_sizes</a>&lt;M: store + <b>copy</b> + drop&gt;(
     self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;,
     is_bid: bool,
-): <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; {
+): <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; {
     <b>if</b> (is_bid) {
         self.bid_sizes
     } <b>else</b> {
@@ -1424,7 +1424,7 @@ Gets the active size for a specific side of a bulk order.
 An option containing the active size if available, none otherwise.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_active_size">get_active_size</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool): <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_get_active_size">get_active_size</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool): <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -1439,9 +1439,9 @@ An option containing the active size if available, none otherwise.
 ): Option&lt;u64&gt; {
     <b>let</b> sizes = <b>if</b> (is_bid) { &self.bid_sizes } <b>else</b> { &self.ask_sizes };
     <b>if</b> (sizes.length() == 0) {
-        <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>() // No active size level
+        <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>() // No active size level
     } <b>else</b> {
-        <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(sizes[0]) // Return the first size level
+        <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(sizes[0]) // Return the first size level
     }
 }
 </code></pre>
@@ -1544,7 +1544,7 @@ A tuple containing the next active price and size as options.
 - If the matched size exceeds the available size at the first level
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_match_order_and_get_next">match_order_and_get_next</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool, matched_size: u64): (<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_match_order_and_get_next">match_order_and_get_next</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool, matched_size: u64): (<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -1571,9 +1571,9 @@ A tuple containing the next active price and size as options.
         sizes.remove(0);
     };
     <b>if</b> (sizes.length() == 0) {
-        (<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()) // No active price or size left
+        (<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()) // No active price or size left
     } <b>else</b> {
-        (<a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(prices[0]), <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(sizes[0])) // Return the next active price and size
+        (<a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(prices[0]), <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(sizes[0])) // Return the next active price and size
     }
 }
 </code></pre>
@@ -1608,10 +1608,10 @@ Sets the bulk order to empty state by clearing all sizes.
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_set_empty">set_empty</a>&lt;M: store + <b>copy</b> + drop&gt;(
     self: &<b>mut</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">BulkOrder</a>&lt;M&gt;
 ) {
-    self.bid_sizes = <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
-    self.ask_sizes = <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
-    self.bid_prices = <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
-    self.ask_prices = <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    self.bid_sizes = <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    self.ask_sizes = <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    self.bid_prices = <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    self.ask_prices = <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
 }
 </code></pre>
 
@@ -1625,7 +1625,7 @@ Sets the bulk order to empty state by clearing all sizes.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_destroy_bulk_order">destroy_bulk_order</a>&lt;M: <b>copy</b>, drop, store&gt;(self: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;): (<a href="order_book_types.md#0x7_order_book_types_OrderIdType">order_book_types::OrderId</a>, <b>address</b>, <a href="order_book_types.md#0x7_order_book_types_UniqueIdxType">order_book_types::IncreasingIdx</a>, u64, u64, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, M)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_types.md#0x7_bulk_order_book_types_destroy_bulk_order">destroy_bulk_order</a>&lt;M: <b>copy</b>, drop, store&gt;(self: <a href="bulk_order_types.md#0x7_bulk_order_book_types_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;): (<a href="order_book_types.md#0x7_order_book_types_OrderIdType">order_book_types::OrderId</a>, <b>address</b>, <a href="order_book_types.md#0x7_order_book_types_UniqueIdxType">order_book_types::IncreasingIdx</a>, u64, u64, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, M)
 </code></pre>
 
 
@@ -1642,15 +1642,15 @@ Sets the bulk order to empty state by clearing all sizes.
     IncreasingIdx,
     u64,
     u64,
-    <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-framework/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../topo-framework/../topo-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     M
 ) {
     <b>let</b> BulkOrder::V1 {
         order_id,
-        <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>,
+        <a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
         unique_priority_idx,
         order_sequence_number,
         creation_time_micros,
@@ -1662,7 +1662,7 @@ Sets the bulk order to empty state by clearing all sizes.
     } = self;
     (
         order_id,
-        <a href="../../aptos-framework/doc/account.md#0x1_account">account</a>,
+        <a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
         unique_priority_idx,
         order_sequence_number,
         creation_time_micros,

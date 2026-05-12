@@ -32,7 +32,7 @@ fn test_nft_dao_txn_arguments() {
 
     let result = h.run_transaction_payload(
         &acc,
-        aptos_cached_packages::aptos_stdlib::code_publish_package_txn(
+        aptos_cached_packages::topo_stdlib::code_publish_package_txn(
             bcs::to_bytes(&metadata).expect("PackageMetadata has BCS"),
             code,
         ),

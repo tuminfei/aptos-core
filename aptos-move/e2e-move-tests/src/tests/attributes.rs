@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, assert_vm_status, MoveHarness};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
@@ -186,7 +186,7 @@ fn test_bad_fun_attribute_in_compiled_module() {
         .expect("extracting package metadata must succeed");
     let result = h.run_transaction_payload(
         &account,
-        aptos_stdlib::code_publish_package_txn(
+        topo_stdlib::code_publish_package_txn(
             bcs::to_bytes(&metadata).expect("PackageMetadata has BCS"),
             vec![code],
         ),
@@ -212,7 +212,7 @@ fn test_bad_view_attribute_in_compiled_module() {
         build_package_and_insert_attribute(source, None, Some(("view", fake_attribute)));
     let result = h.run_transaction_payload(
         &account,
-        aptos_stdlib::code_publish_package_txn(metadata, code),
+        topo_stdlib::code_publish_package_txn(metadata, code),
     );
 
     assert_vm_status!(result, StatusCode::CONSTRAINT_NOT_SATISFIED);
@@ -238,7 +238,7 @@ fn verify_resource_group_member_fails_when_not_enabled() {
     );
     let result = h.run_transaction_payload(
         &account,
-        aptos_stdlib::code_publish_package_txn(metadata, code),
+        topo_stdlib::code_publish_package_txn(metadata, code),
     );
 
     assert_vm_status!(result, StatusCode::CONSTRAINT_NOT_SATISFIED);
@@ -261,7 +261,7 @@ fn verify_resource_groups_fail_when_not_enabled() {
         build_package_and_insert_attribute(source, Some(("ResourceGroup", fake_attribute)), None);
     let result = h.run_transaction_payload(
         &account,
-        aptos_stdlib::code_publish_package_txn(metadata, code),
+        topo_stdlib::code_publish_package_txn(metadata, code),
     );
 
     assert_vm_status!(result, StatusCode::CONSTRAINT_NOT_SATISFIED);
@@ -284,7 +284,7 @@ fn verify_module_events_fail_when_not_enabled() {
         build_package_and_insert_attribute(source, Some(("Event", fake_attribute)), None);
     let result = h.run_transaction_payload(
         &account,
-        aptos_stdlib::code_publish_package_txn(metadata, code),
+        topo_stdlib::code_publish_package_txn(metadata, code),
     );
 
     assert_vm_status!(result, StatusCode::CONSTRAINT_NOT_SATISFIED);

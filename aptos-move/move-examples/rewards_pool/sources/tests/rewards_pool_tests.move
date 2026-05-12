@@ -3,7 +3,7 @@ module rewards_pool::rewards_pool_tests {
     use topo_framework::fungible_asset::{Self, FungibleAsset};
     use topo_framework::object::Object;
     use topo_framework::primary_fungible_store;
-    use aptos_std::simple_map;
+    use topo_std::simple_map;
     use rewards_pool::rewards_pool::{Self, RewardsPool};
     use rewards_pool::test_helpers;
     use rewards_pool::epoch;

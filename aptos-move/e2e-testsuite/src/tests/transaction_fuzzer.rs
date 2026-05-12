@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_cached_packages::aptos_stdlib::EntryFunctionCall;
+use aptos_cached_packages::topo_stdlib::EntryFunctionCall;
 use aptos_language_e2e_tests::{account::Account, executor::FakeExecutor};
 use proptest::{collection::vec, prelude::*};
 

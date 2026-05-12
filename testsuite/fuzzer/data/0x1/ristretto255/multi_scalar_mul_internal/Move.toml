@@ -9,4 +9,4 @@ poc = "0xcaffe"
 [dependencies]
 MoveStdlib = { local = "../../../../../../aptos-move/framework/move-stdlib" }
 TopoFramework = { local = "../../../../../../aptos-move/framework/topo-framework" }
-AptosStdlib = { local = "../../../../../../aptos-move/framework/aptos-stdlib" } 
+TopoStdlib = { local = "../../../../../../aptos-move/framework/topo-stdlib" } 

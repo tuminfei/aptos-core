@@ -944,7 +944,7 @@ mod tests {
     use aptos_crypto::HashValue;
     use aptos_executor::block_executor::BlockExecutor;
     use aptos_executor_types::BlockExecutorTrait;
-    use aptos_sdk::{transaction_builder::aptos_stdlib, types::LocalAccount};
+    use aptos_sdk::{transaction_builder::topo_stdlib, types::LocalAccount};
     use aptos_temppath::TempPath;
     use aptos_transaction_generator_lib::WorkflowProgress;
     use aptos_transaction_workloads_lib::args::TransactionTypeArg;
@@ -989,17 +989,17 @@ mod tests {
         fa_features.disable(FeatureFlag::CONCURRENT_FUNGIBLE_BALANCE);
 
         test_compare_prod_and_another::<E>(values_match, fa_features.clone(), |address| {
-            aptos_stdlib::topo_account_fungible_transfer_only(address, 1000)
+            topo_stdlib::topo_account_fungible_transfer_only(address, 1000)
         });
 
         test_compare_prod_and_another::<E>(values_match, fa_features.clone(), |address| {
-            aptos_stdlib::topo_account_transfer(address, 1000)
+            topo_stdlib::topo_account_transfer(address, 1000)
         });
 
         test_compare_prod_and_another::<E>(
             values_match,
             fa_features,
-            aptos_stdlib::topo_account_create_account,
+            topo_stdlib::topo_account_create_account,
         );
     }
 

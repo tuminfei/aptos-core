@@ -1,6 +1,6 @@
 module poc::scalar_from_sha512_internal {
-    use aptos_std::ristretto255;
-    use aptos_std::aptos_hash;
+    use topo_std::ristretto255;
+    use topo_std::aptos_hash;
 
     public entry fun main(_owner:&signer) {
         let input = b"hello world";

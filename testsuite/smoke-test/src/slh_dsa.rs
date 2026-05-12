@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::smoke_test_environment::SwarmBuilder;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_crypto::{
     slh_dsa_sha2_128s::{PrivateKey, PublicKey},
     traits::Uniform,
@@ -64,7 +64,7 @@ async fn slh_dsa_scenario(enable_feature: bool) {
     // Create and sign a transaction
     let raw_txn = info
         .transaction_factory()
-        .payload(aptos_stdlib::topo_coin_transfer(
+        .payload(topo_stdlib::topo_coin_transfer(
             recipient.address(),
             1_000_000,
         ))

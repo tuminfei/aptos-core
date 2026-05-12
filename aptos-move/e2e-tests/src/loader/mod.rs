@@ -4,7 +4,7 @@
 //! Logic for account universes. This is not in the parent module to enforce privacy.
 
 use crate::{account::AccountData, executor::FakeExecutor};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use topo_framework::{BuildOptions, BuiltPackage};
 use aptos_gas_algebra::GasQuantity;
 use aptos_proptest_helpers::Index;
@@ -290,7 +290,7 @@ impl DependencyGraph {
             .account()
             .transaction()
             .sequence_number(node.account_data.sequence_number())
-            .payload(aptos_stdlib::code_publish_package_txn(
+            .payload(topo_stdlib::code_publish_package_txn(
                 bcs::to_bytes(&metadata).expect("PackageMetadata has BCS"),
                 code,
             ))

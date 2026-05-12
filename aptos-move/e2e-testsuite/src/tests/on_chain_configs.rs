@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_language_e2e_tests::{common_transactions::peer_to_peer_txn, executor::FakeExecutor};
 use aptos_types::{
     account_config::CORE_CODE_ADDRESS,
@@ -20,12 +20,12 @@ fn initial_aptos_version() {
     let account = executor.new_account_at(CORE_CODE_ADDRESS);
     let txn_0 = account
         .transaction()
-        .payload(aptos_stdlib::version_set_for_next_epoch(version.major + 1))
+        .payload(topo_stdlib::version_set_for_next_epoch(version.major + 1))
         .sequence_number(0)
         .sign();
     let txn_1 = account
         .transaction()
-        .payload(aptos_stdlib::topo_governance_force_end_epoch())
+        .payload(topo_stdlib::topo_governance_force_end_epoch())
         .sequence_number(1)
         .sign();
     executor.new_block();
@@ -52,7 +52,7 @@ fn drop_txn_after_reconfiguration() {
     let txn = executor
         .new_account_at(CORE_CODE_ADDRESS)
         .transaction()
-        .payload(aptos_stdlib::topo_governance_force_end_epoch())
+        .payload(topo_stdlib::topo_governance_force_end_epoch())
         .sequence_number(0)
         .sign();
     executor.new_block();

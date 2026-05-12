@@ -17,7 +17,7 @@ module defi::locked_coins {
     use topo_framework::coin::{Self, Coin};
     use topo_framework::event;
     use topo_framework::timestamp;
-    use aptos_std::table::{Self, Table};
+    use topo_std::table::{Self, Table};
     use std::error;
     use std::signer;
     use std::vector;

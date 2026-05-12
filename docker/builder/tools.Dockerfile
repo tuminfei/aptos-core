@@ -41,8 +41,8 @@ COPY --link --from=tools-builder /aptos/aptos-move/framework/ /aptos/aptos-move/
 COPY --link --from=tools-builder /aptos/aptos-move/aptos-release-builder/ /aptos/aptos-move/aptos-release-builder/
 
 # Copy the example module to publish for api-tester
-COPY --link --from=tools-builder /aptos/aptos-move/framework/aptos-framework /aptos-move/framework/aptos-framework
-COPY --link --from=tools-builder /aptos/aptos-move/framework/aptos-stdlib /aptos-move/framework/aptos-stdlib
+COPY --link --from=tools-builder /aptos/aptos-move/framework/topo-framework /aptos-move/framework/topo-framework
+COPY --link --from=tools-builder /aptos/aptos-move/framework/topo-stdlib /aptos-move/framework/topo-stdlib
 COPY --link --from=tools-builder /aptos/aptos-move/framework/move-stdlib /aptos-move/framework/move-stdlib
 COPY --link --from=tools-builder /aptos/aptos-move/move-examples/hello_blockchain /aptos-move/move-examples/hello_blockchain
 

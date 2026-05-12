@@ -22,9 +22,9 @@ module swap::coin_wrapper {
     use topo_framework::fungible_asset::{Self, BurnRef, FungibleAsset, Metadata, MintRef};
     use topo_framework::object::{Self, Object};
     use topo_framework::primary_fungible_store;
-    use aptos_std::smart_table::{Self, SmartTable};
-    use aptos_std::string_utils;
-    use aptos_std::type_info;
+    use topo_std::smart_table::{Self, SmartTable};
+    use topo_std::string_utils;
+    use topo_std::type_info;
     use std::string::{Self, String};
     use std::option;
     use std::signer;

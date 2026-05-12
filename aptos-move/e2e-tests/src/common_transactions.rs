@@ -4,7 +4,7 @@
 //! Support for encoding transactions for common situations.
 
 use crate::account::Account;
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_types::transaction::{Script, SignedTransaction};
 use indoc::indoc;
 use move_asm::assembler;
@@ -50,7 +50,7 @@ pub fn create_account_txn(
 ) -> SignedTransaction {
     sender
         .transaction()
-        .payload(aptos_stdlib::topo_account_create_account(
+        .payload(topo_stdlib::topo_account_create_account(
             *new_account.address(),
         ))
         .sequence_number(seq_num)
@@ -71,7 +71,7 @@ pub fn peer_to_peer_txn(
     // get a SignedTransaction
     sender
         .transaction()
-        .payload(aptos_stdlib::topo_account_fungible_transfer_only(
+        .payload(topo_stdlib::topo_account_fungible_transfer_only(
             *receiver.address(),
             transfer_amount,
         ))

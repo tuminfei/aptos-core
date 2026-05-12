@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 use crate::tdbg;
-use aptos_cached_packages::aptos_stdlib::code_publish_package_txn;
+use aptos_cached_packages::topo_stdlib::code_publish_package_txn;
 use aptos_crypto::HashValue;
 use topo_framework::natives::code::{ModuleMetadata, PackageDep, PackageMetadata, UpgradePolicy};
 use aptos_language_e2e_tests::{account::Account, executor::FakeExecutor};

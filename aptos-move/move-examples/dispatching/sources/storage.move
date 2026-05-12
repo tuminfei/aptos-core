@@ -3,8 +3,8 @@ module dispatching::storage {
     use std::option;
     use std::string;
 
-    use aptos_std::table::{Self, Table};
-    use aptos_std::type_info::{Self, TypeInfo};
+    use topo_std::table::{Self, Table};
+    use topo_std::type_info::{Self, TypeInfo};
 
     use topo_framework::dispatchable_fungible_asset;
     use topo_framework::function_info::FunctionInfo;

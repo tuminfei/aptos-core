@@ -5,7 +5,7 @@ module 0x1::runtime_checks {
     use std::bcs;
     use std::string;
     use std::option;
-    use aptos_std::string_utils;
+    use topo_std::string_utils;
     use topo_framework::aggregator_v2::{Self, Aggregator, AggregatorSnapshot, DerivedStringSnapshot};
 
     //

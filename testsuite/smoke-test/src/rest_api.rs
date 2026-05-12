@@ -5,7 +5,7 @@ use crate::{
     smoke_test_environment::{new_local_swarm_with_aptos, SwarmBuilder},
     txn_emitter::generate_traffic,
 };
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_config::config::GasEstimationConfig;
 use aptos_crypto::ed25519::Ed25519Signature;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm, TransactionType};
@@ -64,7 +64,7 @@ async fn test_basic_client() {
 
     let tx = account1.sign_with_transaction_builder(
         info.transaction_factory()
-            .payload(aptos_stdlib::topo_coin_transfer(account2.address(), 1)),
+            .payload(topo_stdlib::topo_coin_transfer(account2.address(), 1)),
     );
     let pending_txn = info.client().submit(&tx).await.unwrap().into_inner();
 

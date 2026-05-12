@@ -14,9 +14,9 @@ use std::{fmt::Display, path::PathBuf};
 pub enum StdLib {
     TopoTokenObjects,
     TopoToken,
-    AptosTrading,
+    TopoTrading,
     TopoFramework,
-    AptosStdlib,
+    TopoStdlib,
     MoveStdlib,
 }
 
@@ -57,11 +57,11 @@ impl StdLib {
     /// Returns the name of the standard library.
     pub fn as_str(&self) -> &'static str {
         match self {
-            StdLib::AptosTrading => "AptosTrading",
+            StdLib::TopoTrading => "TopoTrading",
             StdLib::TopoToken => "TopoToken",
             StdLib::TopoTokenObjects => "TopoTokenObjects",
             StdLib::TopoFramework => "TopoFramework",
-            StdLib::AptosStdlib => "AptosStdlib",
+            StdLib::TopoStdlib => "TopoStdlib",
             StdLib::MoveStdlib => "MoveStdlib",
         }
     }
@@ -69,10 +69,11 @@ impl StdLib {
     /// Returns the standard library from the given package name, or `None` if the package name is not a standard library.
     pub fn from_package_name(package_name: Symbol) -> Option<StdLib> {
         match package_name.as_str() {
+            "TopoTrading" | "AptosTrading" => Some(StdLib::TopoTrading),
             "TopoToken" => Some(StdLib::TopoToken),
             "TopoTokenObjects" => Some(StdLib::TopoTokenObjects),
             "TopoFramework" => Some(StdLib::TopoFramework),
-            "AptosStdlib" => Some(StdLib::AptosStdlib),
+            "TopoStdlib" | "AptosStdlib" => Some(StdLib::TopoStdlib),
             "MoveStdlib" => Some(StdLib::MoveStdlib),
             _ => None,
         }
@@ -81,11 +82,11 @@ impl StdLib {
     /// Returns the subdirectory of the standard library in the git repository.
     fn sub_dir(&self) -> &'static str {
         match self {
-            StdLib::AptosTrading => "aptos-trading",
+            StdLib::TopoTrading => "topo-trading",
             StdLib::TopoToken => "topo-token",
             StdLib::TopoTokenObjects => "topo-token-objects",
             StdLib::TopoFramework => "topo-framework",
-            StdLib::AptosStdlib => "aptos-stdlib",
+            StdLib::TopoStdlib => "topo-stdlib",
             StdLib::MoveStdlib => "move-stdlib",
         }
     }

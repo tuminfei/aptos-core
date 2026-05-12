@@ -8,7 +8,7 @@ use aptos_infallible::{RwLock, RwLockWriteGuard};
 use aptos_logger::{sample, sample::SampleRate};
 use aptos_sdk::{
     move_types::account_address::AccountAddress,
-    transaction_builder::{aptos_stdlib, TransactionFactory},
+    transaction_builder::{topo_stdlib, TransactionFactory},
     types::{transaction::SignedTransaction, LocalAccount},
 };
 use async_trait::async_trait;
@@ -561,8 +561,8 @@ pub fn create_account_transaction(
     creation_balance: u64,
 ) -> SignedTransaction {
     from.sign_with_transaction_builder(txn_factory.payload(if creation_balance > 0 {
-        aptos_stdlib::topo_account_transfer(to, creation_balance)
+        topo_stdlib::topo_account_transfer(to, creation_balance)
     } else {
-        aptos_stdlib::topo_account_create_account(to)
+        topo_stdlib::topo_account_create_account(to)
     }))
 }

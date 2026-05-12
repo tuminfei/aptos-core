@@ -21,7 +21,7 @@
 module package::package_manager {
     use topo_framework::account::{Self, SignerCapability};
     use topo_framework::resource_account;
-    use aptos_std::smart_table::{Self, SmartTable};
+    use topo_std::smart_table::{Self, SmartTable};
     use std::string::String;
 
     /// Stores permission config such as SignerCapability for controlling the resource account.

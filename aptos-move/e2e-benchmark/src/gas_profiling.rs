@@ -515,7 +515,7 @@ mod tests {
     use crate::gas_profiling::{
         print_gas_with_statement_summary_and_tps_header, CalibrationRunner, CalibrationWorkload,
     };
-    use aptos_cached_packages::{aptos_stdlib, topo_token_sdk_builder};
+    use aptos_cached_packages::{topo_stdlib, topo_token_sdk_builder};
     use aptos_crypto::{bls12381, PrivateKey, Uniform};
     use aptos_move_e2e_test_harness::MoveHarnessSend;
     use aptos_sdk::move_types::{identifier::Identifier, language_storage::ModuleId};
@@ -574,19 +574,19 @@ mod tests {
         runner.run(
             "Transfer",
             account_1,
-            aptos_stdlib::topo_coin_transfer(account_2_address, 1000),
+            topo_stdlib::topo_coin_transfer(account_2_address, 1000),
         );
 
         runner.run(
             "2ndTransfer",
             account_1,
-            aptos_stdlib::topo_coin_transfer(account_2_address, 1000),
+            topo_stdlib::topo_coin_transfer(account_2_address, 1000),
         );
 
         runner.run(
             "CreateAccount",
             account_1,
-            aptos_stdlib::topo_account_create_account(
+            topo_stdlib::topo_account_create_account(
                 AccountAddress::from_hex_literal("0xcafe1").unwrap(),
             ),
         );
@@ -594,7 +594,7 @@ mod tests {
         runner.run(
             "CreateTransfer",
             account_1,
-            aptos_stdlib::topo_account_transfer(
+            topo_stdlib::topo_account_transfer(
                 AccountAddress::from_hex_literal("0xcafe2").unwrap(),
                 1000,
             ),
@@ -626,7 +626,7 @@ mod tests {
         runner.run(
             "CreateStakePool",
             account_1,
-            aptos_stdlib::staking_contract_create_staking_contract(
+            topo_stdlib::staking_contract_create_staking_contract(
                 account_2_address,
                 account_3_address,
                 25_000_000,
@@ -643,7 +643,7 @@ mod tests {
         runner.run(
             "RotateConsensusKey",
             account_2,
-            aptos_stdlib::stake_rotate_consensus_key(
+            topo_stdlib::stake_rotate_consensus_key(
                 pool_address,
                 consensus_pubkey,
                 proof_of_possession,
@@ -652,29 +652,29 @@ mod tests {
         runner.run(
             "JoinValidator100",
             account_2,
-            aptos_stdlib::stake_join_validator_set(pool_address),
+            topo_stdlib::stake_join_validator_set(pool_address),
         );
         runner.run(
             "AddStake",
             account_1,
-            aptos_stdlib::staking_registry_deposit(1000),
+            topo_stdlib::staking_registry_deposit(1000),
         );
         runner.run(
             "UnlockStake",
             account_1,
-            aptos_stdlib::staking_contract_unlock_stake(account_2_address, 1000),
+            topo_stdlib::staking_contract_unlock_stake(account_2_address, 1000),
         );
         runner.harness.fast_forward(7200);
         runner.harness.new_epoch();
         runner.run(
             "WithdrawStake",
             account_1,
-            aptos_stdlib::staking_contract_distribute(account_1_address, account_2_address),
+            topo_stdlib::staking_contract_distribute(account_1_address, account_2_address),
         );
         runner.run(
             "LeaveValidatorSet100",
             account_2,
-            aptos_stdlib::stake_leave_validator_set(pool_address),
+            topo_stdlib::stake_leave_validator_set(pool_address),
         );
         let collection_name = "collection name".to_owned().into_bytes();
         let token_name = "token name".to_owned().into_bytes();
@@ -1058,14 +1058,14 @@ mod tests {
         runner.run_with_tps_estimate(
             "Transfer",
             account_1,
-            aptos_stdlib::topo_coin_transfer(account_2_address, 1000),
+            topo_stdlib::topo_coin_transfer(account_2_address, 1000),
             if use_large_db_numbers { 2032. } else { 2791. },
         );
 
         runner.run_with_tps_estimate(
             "CreateAccount",
             account_1,
-            aptos_stdlib::topo_account_create_account(
+            topo_stdlib::topo_account_create_account(
                 AccountAddress::from_hex_literal("0xcafe1").unwrap(),
             ),
             if use_large_db_numbers { 1583.0 } else { 2215. },

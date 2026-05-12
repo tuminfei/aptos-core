@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use topo_framework::{natives::code::PackageMetadata, BuildOptions, BuiltPackage};
 use aptos_gas_profiling::TransactionGasLog;
 use aptos_gas_schedule::{AptosGasParameters, FromOnChainGasSchedule, ToOnChainGasSchedule};
@@ -554,7 +554,7 @@ impl<O: OutputLogger> MoveHarnessImpl<O> {
         patch_metadata(&mut metadata);
         self.create_transaction_payload(
             account,
-            aptos_stdlib::code_publish_package_txn(
+            topo_stdlib::code_publish_package_txn(
                 bcs::to_bytes(&metadata).expect("PackageMetadata has BCS"),
                 code,
             ),
@@ -578,7 +578,7 @@ impl<O: OutputLogger> MoveHarnessImpl<O> {
         patch_metadata(&mut metadata);
         self.create_transaction_payload(
             account,
-            aptos_stdlib::object_code_deployment_publish(
+            topo_stdlib::object_code_deployment_publish(
                 bcs::to_bytes(&metadata).expect("PackageMetadata has BCS"),
                 code,
             ),
@@ -603,7 +603,7 @@ impl<O: OutputLogger> MoveHarnessImpl<O> {
         patch_metadata(&mut metadata);
         self.create_transaction_payload(
             account,
-            aptos_stdlib::object_code_deployment_upgrade(
+            topo_stdlib::object_code_deployment_upgrade(
                 bcs::to_bytes(&metadata).expect("PackageMetadata has BCS"),
                 code,
                 code_object,
@@ -731,7 +731,7 @@ impl<O: OutputLogger> MoveHarnessImpl<O> {
     ) -> TransactionStatus {
         let txn = self.create_transaction_payload(
             account,
-            aptos_stdlib::object_code_deployment_freeze_code_object(code_object),
+            topo_stdlib::object_code_deployment_freeze_code_object(code_object),
         );
         self.run(txn)
     }

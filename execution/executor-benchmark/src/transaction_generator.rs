@@ -9,7 +9,7 @@ use aptos_crypto::{ed25519::Ed25519PrivateKey, HashValue, PrivateKey, Uniform};
 use aptos_logger::{debug, info};
 use aptos_metrics_core::{IntCounterVecHelper, TimerHelper};
 use aptos_sdk::{
-    transaction_builder::{aptos_stdlib, TransactionFactory},
+    transaction_builder::{topo_stdlib, TransactionFactory},
     types::LocalAccount,
 };
 use aptos_storage_interface::{
@@ -592,7 +592,7 @@ impl TransactionGenerator {
             let transactions: Vec<_> = chunk
                 .iter()
                 .map(|new_account| {
-                    let payload = aptos_stdlib::topo_account_transfer(
+                    let payload = topo_stdlib::topo_account_transfer(
                         new_account.authentication_key().account_address(),
                         seed_account_balance,
                     );

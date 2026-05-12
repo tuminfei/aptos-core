@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_db::AptosDB;
 use aptos_db_indexer::db_indexer::DBIndexer;
 use aptos_executor_test_helpers::{
@@ -104,7 +104,7 @@ pub fn create_test_db() -> (Arc<AptosDB>, LocalAccount) {
         account1.sign_with_transaction_builder(txn_factory.transfer(account3.address(), 70 * B));
 
     let reconfig1 = core_resources_account.sign_with_transaction_builder(
-        txn_factory.payload(aptos_stdlib::topo_governance_force_end_epoch_test_only()),
+        txn_factory.payload(topo_stdlib::topo_governance_force_end_epoch_test_only()),
     );
 
     let block1: Vec<_> = into_signature_verified_block(vec![

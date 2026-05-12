@@ -1,8 +1,8 @@
 module bonding_curve_launchpad::liquidity_pairs {
     use std::string::{Self, String};
     use std::vector;
-    use aptos_std::signer;
-    use aptos_std::math128;
+    use std::signer;
+    use topo_std::math128;
     use topo_framework::coin;
     use topo_framework::topo_account;
     use topo_framework::topo_coin::{TopoCoin};

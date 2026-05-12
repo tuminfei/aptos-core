@@ -20,11 +20,11 @@ module swap::liquidity_pool {
     };
     use topo_framework::object::{Self, ConstructorRef, Object};
     use topo_framework::primary_fungible_store;
-    use aptos_std::comparator;
-    use aptos_std::math128;
-    use aptos_std::math64;
-    use aptos_std::smart_table::{Self, SmartTable};
-    use aptos_std::smart_vector::{Self, SmartVector};
+    use topo_std::comparator;
+    use topo_std::math128;
+    use topo_std::math64;
+    use topo_std::smart_table::{Self, SmartTable};
+    use topo_std::smart_vector::{Self, SmartVector};
 
     use swap::coin_wrapper;
     use swap::package_manager;

@@ -7,5 +7,5 @@ account = "_"
 
 [dependencies]
 TopoFramework = { local = "../../../../../aptos-move/framework/topo-framework" }
-AptosStdlib = { local = "../../../../../aptos-move/framework/aptos-stdlib" }
+TopoStdlib = { local = "../../../../../aptos-move/framework/topo-stdlib" }
 MoveStdlib = { local = "../../../../../aptos-move/framework/move-stdlib" }

@@ -5,7 +5,7 @@ use super::{
     new_test_context, new_test_context_with_config, new_test_context_with_orderless_flags,
 };
 use aptos_api_test_context::{current_function_name, TestContext};
-use aptos_cached_packages::aptos_stdlib;
+use aptos_cached_packages::topo_stdlib;
 use aptos_config::config::{NodeConfig, ViewFilter, ViewFunctionId};
 use aptos_types::account_address::AccountAddress;
 use rstest::rstest;
@@ -391,7 +391,7 @@ async fn test_view_tuple(use_txn_payload_v2_format: bool, use_orderless_transact
         use_txn_payload_v2_format,
         use_orderless_transactions,
     );
-    let payload = aptos_stdlib::publish_module_source(
+    let payload = topo_stdlib::publish_module_source(
         "test_module",
         r#"
         module 0xa550c18::test_module {

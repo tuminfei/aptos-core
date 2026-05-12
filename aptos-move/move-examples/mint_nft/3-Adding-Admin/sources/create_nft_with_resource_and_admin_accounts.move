@@ -27,7 +27,7 @@
 
     Compiling, may take a little while to download git dependencies...
     INCLUDING DEPENDENCY AptosFramework
-    INCLUDING DEPENDENCY AptosStdlib
+    INCLUDING DEPENDENCY TopoStdlib
     INCLUDING DEPENDENCY TopoToken
     INCLUDING DEPENDENCY MoveStdlib
     BUILDING Examples

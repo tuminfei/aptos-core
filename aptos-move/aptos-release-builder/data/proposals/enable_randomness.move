@@ -2,7 +2,7 @@
 script {
     use topo_framework::topo_governance;
     use topo_framework::randomness_config;
-    use aptos_std::fixed_point64;
+    use topo_std::fixed_point64;
 
     fun main(proposal_id: u64) {
         let framework = topo_governance::resolve_multi_step_proposal(

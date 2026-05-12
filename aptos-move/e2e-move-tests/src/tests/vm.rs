@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::MoveHarness;
-use aptos_cached_packages::aptos_stdlib::topo_account_transfer;
+use aptos_cached_packages::topo_stdlib::topo_account_transfer;
 use aptos_crypto::HashValue;
 use aptos_types::{
     on_chain_config::FeatureFlag,
