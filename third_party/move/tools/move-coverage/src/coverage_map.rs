@@ -18,6 +18,10 @@ use std::{
     path::Path,
 };
 
+fn is_script_context_name(name: &str) -> bool {
+    matches!(name, "Script" | "script")
+}
+
 /// Map from code offset in a function to the number of times it was executed.
 pub type FunctionCoverage = BTreeMap<u64, u64>;
 
@@ -85,7 +89,7 @@ impl CoverageMap {
             } else {
                 // Don't count scripts (for now)
                 assert_eq!(context_segs.pop().unwrap(), "main",);
-                assert_eq!(context_segs.pop().unwrap(), "Script",);
+                assert!(is_script_context_name(context_segs.pop().unwrap()));
             }
         }
         Ok(self)
@@ -331,7 +335,7 @@ impl TraceMap {
             } else {
                 // Don't count scripts (for now)
                 assert_eq!(context_segs.pop().unwrap(), "main",);
-                assert_eq!(context_segs.pop().unwrap(), "Script",);
+                assert!(is_script_context_name(context_segs.pop().unwrap()));
             }
         }
         Ok(self)
