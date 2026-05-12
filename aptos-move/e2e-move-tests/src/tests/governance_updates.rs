@@ -24,7 +24,7 @@ fn large_transactions() {
     let mut h = MoveHarness::new();
     h.modify_gas_schedule(|gas_params| {
         gas_params.vm.txn.max_transaction_size_in_bytes = (1000 * 1024).into();
-        gas_params.vm.txn.max_transaction_size_in_bytes_gov = (1000 * 1024).into();
+        gas_params.vm.txn.max_transaction_size_in_bytes_gov = (1004 * 1024).into();
     });
 
     let alice = h.new_account_at(AccountAddress::from_hex_literal("0xa11ce").unwrap());
