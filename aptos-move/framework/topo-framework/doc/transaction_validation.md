@@ -67,16 +67,16 @@
 <b>use</b> <a href="account_abstraction.md#0x1_account_abstraction">0x1::account_abstraction</a>;
 <b>use</b> <a href="chain_id.md#0x1_chain_id">0x1::chain_id</a>;
 <b>use</b> <a href="create_signer.md#0x1_create_signer">0x1::create_signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features">0x1::features</a>;
+<b>use</b> <a href="../../move-stdlib/doc/features.md#0x1_features">0x1::features</a>;
 <b>use</b> <a href="nonce_validation.md#0x1_nonce_validation">0x1::nonce_validation</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="permissioned_signer.md#0x1_permissioned_signer">0x1::permissioned_signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
 <b>use</b> <a href="timestamp.md#0x1_timestamp">0x1::timestamp</a>;
 <b>use</b> <a href="topo_account.md#0x1_topo_account">0x1::topo_account</a>;
 <b>use</b> <a href="transaction_fee.md#0x1_transaction_fee">0x1::transaction_fee</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<b>use</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 </code></pre>
 
 
@@ -167,31 +167,31 @@ correct chain-specific prologue and epilogue functions
 
 </dd>
 <dt>
-<code>module_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>module_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>script_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>script_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>module_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>module_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>multi_agent_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>multi_agent_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>user_epilogue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>user_epilogue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
@@ -391,7 +391,7 @@ Permission management
 Master signer grant permissioned signer ability to consume a given amount of gas in octas.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_grant_gas_permission">grant_gas_permission</a>(master: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, permissioned: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_amount: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_grant_gas_permission">grant_gas_permission</a>(master: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, permissioned: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_amount: u64)
 </code></pre>
 
 
@@ -401,8 +401,8 @@ Master signer grant permissioned signer ability to consume a given amount of gas
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_grant_gas_permission">grant_gas_permission</a>(
-    master: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    permissioned: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    master: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    permissioned: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     gas_amount: u64
 ) {
     <a href="permissioned_signer.md#0x1_permissioned_signer_authorize_increase">permissioned_signer::authorize_increase</a>(
@@ -425,7 +425,7 @@ Master signer grant permissioned signer ability to consume a given amount of gas
 Removing permissions from permissioned signer.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_revoke_gas_permission">revoke_gas_permission</a>(permissioned: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_revoke_gas_permission">revoke_gas_permission</a>(permissioned: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -434,7 +434,7 @@ Removing permissions from permissioned signer.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_revoke_gas_permission">revoke_gas_permission</a>(permissioned: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_revoke_gas_permission">revoke_gas_permission</a>(permissioned: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="permissioned_signer.md#0x1_permissioned_signer_revoke_permission">permissioned_signer::revoke_permission</a>(permissioned, <a href="transaction_validation.md#0x1_transaction_validation_GasPermission">GasPermission</a> {})
 }
 </code></pre>
@@ -450,7 +450,7 @@ Removing permissions from permissioned signer.
 Only called during genesis to initialize system resources for this module.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, script_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, module_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, multi_agent_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, user_epilogue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, script_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, module_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, multi_agent_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, user_epilogue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -460,12 +460,12 @@ Only called during genesis to initialize system resources for this module.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_initialize">initialize</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    script_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    script_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     // module_prologue_name is deprecated and not used.
-    module_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    multi_agent_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    user_epilogue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    module_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    multi_agent_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    user_epilogue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
 ) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
@@ -502,8 +502,8 @@ Only called during genesis to initialize system resources for this module.
 
 <pre><code>inline <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_allow_missing_txn_authentication_key">allow_missing_txn_authentication_key</a>(transaction_sender: <b>address</b>): bool {
     // aa verifies authentication itself
-    <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_is_derivable_account_abstraction_enabled">features::is_derivable_account_abstraction_enabled</a>()
-        || (<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_is_account_abstraction_enabled">features::is_account_abstraction_enabled</a>() && <a href="account_abstraction.md#0x1_account_abstraction_using_dispatchable_authenticator">account_abstraction::using_dispatchable_authenticator</a>(transaction_sender))
+    <a href="../../move-stdlib/doc/features.md#0x1_features_is_derivable_account_abstraction_enabled">features::is_derivable_account_abstraction_enabled</a>()
+        || (<a href="../../move-stdlib/doc/features.md#0x1_features_is_account_abstraction_enabled">features::is_account_abstraction_enabled</a>() && <a href="account_abstraction.md#0x1_account_abstraction_using_dispatchable_authenticator">account_abstraction::using_dispatchable_authenticator</a>(transaction_sender))
 }
 </code></pre>
 
@@ -517,7 +517,7 @@ Only called during genesis to initialize system resources for this module.
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_prologue_common">prologue_common</a>(sender: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, txn_authentication_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_prologue_common">prologue_common</a>(sender: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, txn_authentication_key: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -527,23 +527,23 @@ Only called during genesis to initialize system resources for this module.
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_prologue_common">prologue_common</a>(
-    sender: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    gas_payer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    sender: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    gas_payer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">ReplayProtector</a>,
-    txn_authentication_key: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    txn_authentication_key: Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
     <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8,
     is_simulation: bool,
 ) {
-    <b>let</b> sender_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(sender);
-    <b>let</b> gas_payer_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(gas_payer);
+    <b>let</b> sender_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(sender);
+    <b>let</b> gas_payer_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(gas_payer);
     <b>assert</b>!(
         <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() &lt; txn_expiration_time,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ETRANSACTION_EXPIRED">PROLOGUE_ETRANSACTION_EXPIRED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ETRANSACTION_EXPIRED">PROLOGUE_ETRANSACTION_EXPIRED</a>),
     );
-    <b>assert</b>!(<a href="chain_id.md#0x1_chain_id_get">chain_id::get</a>() == <a href="chain_id.md#0x1_chain_id">chain_id</a>, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EBAD_CHAIN_ID">PROLOGUE_EBAD_CHAIN_ID</a>));
+    <b>assert</b>!(<a href="chain_id.md#0x1_chain_id_get">chain_id::get</a>() == <a href="chain_id.md#0x1_chain_id">chain_id</a>, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EBAD_CHAIN_ID">PROLOGUE_EBAD_CHAIN_ID</a>));
 
     // TODO[Orderless]: Here, we are maintaining the same order of validation steps <b>as</b> before orderless txns were introduced.
     // Ideally, do the replay protection check in the end after the authentication key check and gas payment checks.
@@ -554,17 +554,17 @@ Only called during genesis to initialize system resources for this module.
             <b>if</b> (
                 sender_address == gas_payer_address ||
                 <a href="account.md#0x1_account_exists_at">account::exists_at</a>(sender_address) ||
-                !<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_sponsored_automatic_account_creation_enabled">features::sponsored_automatic_account_creation_enabled</a>()
+                !<a href="../../move-stdlib/doc/features.md#0x1_features_sponsored_automatic_account_creation_enabled">features::sponsored_automatic_account_creation_enabled</a>()
             ) {
                 <b>assert</b>!(
-                    txn_authentication_key == <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(<a href="account.md#0x1_account_get_authentication_key">account::get_authentication_key</a>(sender_address)),
-                    <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>),
+                    txn_authentication_key == <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(<a href="account.md#0x1_account_get_authentication_key">account::get_authentication_key</a>(sender_address)),
+                    <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>),
                 );
             };
         } <b>else</b> {
             <b>assert</b>!(
                 <a href="transaction_validation.md#0x1_transaction_validation_allow_missing_txn_authentication_key">allow_missing_txn_authentication_key</a>(sender_address),
-                <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>)
+                <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>)
             );
         };
     };
@@ -599,11 +599,11 @@ Only called during genesis to initialize system resources for this module.
                 (max_transaction_fee <b>as</b> u256),
                 <a href="transaction_validation.md#0x1_transaction_validation_GasPermission">GasPermission</a> {}
             ),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_PERMISSIONED_GAS_LIMIT_INSUFFICIENT">PROLOGUE_PERMISSIONED_GAS_LIMIT_INSUFFICIENT</a>)
+            <a href="../../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_PERMISSIONED_GAS_LIMIT_INSUFFICIENT">PROLOGUE_PERMISSIONED_GAS_LIMIT_INSUFFICIENT</a>)
         );
         <b>assert</b>!(
             <a href="topo_account.md#0x1_topo_account_is_fungible_balance_at_least">topo_account::is_fungible_balance_at_least</a>(gas_payer_address, max_transaction_fee),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ECANT_PAY_GAS_DEPOSIT">PROLOGUE_ECANT_PAY_GAS_DEPOSIT</a>)
+            <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ECANT_PAY_GAS_DEPOSIT">PROLOGUE_ECANT_PAY_GAS_DEPOSIT</a>)
         );
     };
 }
@@ -636,31 +636,31 @@ Only called during genesis to initialize system resources for this module.
     <b>if</b> (
         sender_address == gas_payer_address
             || <a href="account.md#0x1_account_exists_at">account::exists_at</a>(sender_address)
-            || !<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_sponsored_automatic_account_creation_enabled">features::sponsored_automatic_account_creation_enabled</a>()
+            || !<a href="../../move-stdlib/doc/features.md#0x1_features_sponsored_automatic_account_creation_enabled">features::sponsored_automatic_account_creation_enabled</a>()
             || txn_sequence_number &gt; 0
     ) {
-        <b>assert</b>!(<a href="account.md#0x1_account_exists_at">account::exists_at</a>(sender_address), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EACCOUNT_DOES_NOT_EXIST">PROLOGUE_EACCOUNT_DOES_NOT_EXIST</a>));
+        <b>assert</b>!(<a href="account.md#0x1_account_exists_at">account::exists_at</a>(sender_address), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EACCOUNT_DOES_NOT_EXIST">PROLOGUE_EACCOUNT_DOES_NOT_EXIST</a>));
         <b>let</b> account_sequence_number = <a href="account.md#0x1_account_get_sequence_number">account::get_sequence_number</a>(sender_address);
         <b>assert</b>!(
             txn_sequence_number &lt; (1u64 &lt;&lt; 63),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ESEQUENCE_NUMBER_TOO_BIG">PROLOGUE_ESEQUENCE_NUMBER_TOO_BIG</a>)
+            <a href="../../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ESEQUENCE_NUMBER_TOO_BIG">PROLOGUE_ESEQUENCE_NUMBER_TOO_BIG</a>)
         );
 
         <b>assert</b>!(
             txn_sequence_number &gt;= account_sequence_number,
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ESEQUENCE_NUMBER_TOO_OLD">PROLOGUE_ESEQUENCE_NUMBER_TOO_OLD</a>)
+            <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ESEQUENCE_NUMBER_TOO_OLD">PROLOGUE_ESEQUENCE_NUMBER_TOO_OLD</a>)
         );
 
         <b>assert</b>!(
             txn_sequence_number == account_sequence_number,
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ESEQUENCE_NUMBER_TOO_NEW">PROLOGUE_ESEQUENCE_NUMBER_TOO_NEW</a>)
+            <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ESEQUENCE_NUMBER_TOO_NEW">PROLOGUE_ESEQUENCE_NUMBER_TOO_NEW</a>)
         );
     } <b>else</b> {
         // In this case, the transaction is sponsored and the <a href="account.md#0x1_account">account</a> does not exist, so ensure
         // the default values match.
         <b>assert</b>!(
             txn_sequence_number == 0,
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ESEQUENCE_NUMBER_TOO_NEW">PROLOGUE_ESEQUENCE_NUMBER_TOO_NEW</a>)
+            <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ESEQUENCE_NUMBER_TOO_NEW">PROLOGUE_ESEQUENCE_NUMBER_TOO_NEW</a>)
         );
     };
 }
@@ -693,9 +693,9 @@ Only called during genesis to initialize system resources for this module.
     // prologue_common already checks that the current_time &gt; txn_expiration_time
     <b>assert</b>!(
         txn_expiration_time &lt;= <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() + <a href="transaction_validation.md#0x1_transaction_validation_MAX_EXP_TIME_SECONDS_FOR_ORDERLESS_TXNS">MAX_EXP_TIME_SECONDS_FOR_ORDERLESS_TXNS</a>,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ETRANSACTION_EXPIRATION_TOO_FAR_IN_FUTURE">PROLOGUE_ETRANSACTION_EXPIRATION_TOO_FAR_IN_FUTURE</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ETRANSACTION_EXPIRATION_TOO_FAR_IN_FUTURE">PROLOGUE_ETRANSACTION_EXPIRATION_TOO_FAR_IN_FUTURE</a>),
     );
-    <b>assert</b>!(<a href="nonce_validation.md#0x1_nonce_validation_check_and_insert_nonce">nonce_validation::check_and_insert_nonce</a>(sender, nonce, txn_expiration_time), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ENONCE_ALREADY_USED">PROLOGUE_ENONCE_ALREADY_USED</a>));
+    <b>assert</b>!(<a href="nonce_validation.md#0x1_nonce_validation_check_and_insert_nonce">nonce_validation::check_and_insert_nonce</a>(sender, nonce, txn_expiration_time), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ENONCE_ALREADY_USED">PROLOGUE_ENONCE_ALREADY_USED</a>));
 }
 </code></pre>
 
@@ -709,7 +709,7 @@ Only called during genesis to initialize system resources for this module.
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_script_prologue">script_prologue</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, _script_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_script_prologue">script_prologue</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, _script_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -719,21 +719,21 @@ Only called during genesis to initialize system resources for this module.
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_script_prologue">script_prologue</a>(
-    sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     txn_sequence_number: u64,
-    txn_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    txn_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
     <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8,
-    _script_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    _script_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
 ) {
     // prologue_common <b>with</b> is_simulation set <b>to</b> <b>false</b> behaves identically <b>to</b> the original script_prologue function.
     <a href="transaction_validation.md#0x1_transaction_validation_prologue_common">prologue_common</a>(
         &sender,
         &sender,
         ReplayProtector::SequenceNumber(txn_sequence_number),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_public_key),
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_public_key),
         txn_gas_price,
         txn_max_gas_units,
         txn_expiration_time,
@@ -753,7 +753,7 @@ Only called during genesis to initialize system resources for this module.
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_script_prologue_extended">script_prologue_extended</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, _script_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_script_prologue_extended">script_prologue_extended</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, _script_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_simulation: bool)
 </code></pre>
 
 
@@ -763,21 +763,21 @@ Only called during genesis to initialize system resources for this module.
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_script_prologue_extended">script_prologue_extended</a>(
-    sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     txn_sequence_number: u64,
-    txn_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    txn_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
     <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8,
-    _script_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    _script_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     is_simulation: bool,
 ) {
     <a href="transaction_validation.md#0x1_transaction_validation_prologue_common">prologue_common</a>(
         &sender,
         &sender,
         ReplayProtector::SequenceNumber(txn_sequence_number),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_public_key),
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_public_key),
         txn_gas_price,
         txn_max_gas_units,
         txn_expiration_time,
@@ -797,7 +797,7 @@ Only called during genesis to initialize system resources for this module.
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_script_prologue">multi_agent_script_prologue</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_script_prologue">multi_agent_script_prologue</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8)
 </code></pre>
 
 
@@ -807,11 +807,11 @@ Only called during genesis to initialize system resources for this module.
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_script_prologue">multi_agent_script_prologue</a>(
-    sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     txn_sequence_number: u64,
-    txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
@@ -823,7 +823,7 @@ Only called during genesis to initialize system resources for this module.
         &sender,
         &sender,
         ReplayProtector::SequenceNumber(txn_sequence_number),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_sender_public_key),
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_sender_public_key),
         txn_gas_price,
         txn_max_gas_units,
         txn_expiration_time,
@@ -832,7 +832,7 @@ Only called during genesis to initialize system resources for this module.
     );
     <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_common_prologue">multi_agent_common_prologue</a>(
         secondary_signer_addresses,
-        secondary_signer_public_key_hashes.map(|x| <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(x)),
+        secondary_signer_public_key_hashes.map(|x| <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(x)),
         <b>false</b>
     );
 }
@@ -848,7 +848,7 @@ Only called during genesis to initialize system resources for this module.
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_script_prologue_extended">multi_agent_script_prologue_extended</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_script_prologue_extended">multi_agent_script_prologue_extended</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -858,11 +858,11 @@ Only called during genesis to initialize system resources for this module.
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_script_prologue_extended">multi_agent_script_prologue_extended</a>(
-    sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     txn_sequence_number: u64,
-    txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
@@ -873,7 +873,7 @@ Only called during genesis to initialize system resources for this module.
         &sender,
         &sender,
         ReplayProtector::SequenceNumber(txn_sequence_number),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_sender_public_key),
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_sender_public_key),
         txn_gas_price,
         txn_max_gas_units,
         txn_expiration_time,
@@ -882,7 +882,7 @@ Only called during genesis to initialize system resources for this module.
     );
     <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_common_prologue">multi_agent_common_prologue</a>(
         secondary_signer_addresses,
-        secondary_signer_public_key_hashes.map(|x| <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(x)),
+        secondary_signer_public_key_hashes.map(|x| <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(x)),
         is_simulation
     );
 }
@@ -898,7 +898,7 @@ Only called during genesis to initialize system resources for this module.
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_common_prologue">multi_agent_common_prologue</a>(secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_common_prologue">multi_agent_common_prologue</a>(secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, is_simulation: bool)
 </code></pre>
 
 
@@ -908,14 +908,14 @@ Only called during genesis to initialize system resources for this module.
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_common_prologue">multi_agent_common_prologue</a>(
-    secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;,
+    secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;,
     is_simulation: bool,
 ) {
     <b>let</b> num_secondary_signers = secondary_signer_addresses.length();
     <b>assert</b>!(
         secondary_signer_public_key_hashes.length() == num_secondary_signers,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ESECONDARY_KEYS_ADDRESSES_COUNT_MISMATCH">PROLOGUE_ESECONDARY_KEYS_ADDRESSES_COUNT_MISMATCH</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ESECONDARY_KEYS_ADDRESSES_COUNT_MISMATCH">PROLOGUE_ESECONDARY_KEYS_ADDRESSES_COUNT_MISMATCH</a>),
     );
 
     <b>let</b> i = 0;
@@ -926,19 +926,19 @@ Only called during genesis to initialize system resources for this module.
         //         <a href="account.md#0x1_account_exists_at">account::exists_at</a>(secondary_signer_addresses[j]);
         //     <b>invariant</b> <b>forall</b> j in 0..i:
         //         secondary_signer_public_key_hashes[j] == <a href="account.md#0x1_account_get_authentication_key">account::get_authentication_key</a>(secondary_signer_addresses[j]) ||
-        //             (<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_simulation_enhancement_enabled">features::spec_simulation_enhancement_enabled</a>() && is_simulation && <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_is_empty">vector::is_empty</a>(secondary_signer_public_key_hashes[j]));
+        //             (<a href="../../move-stdlib/doc/features.md#0x1_features_spec_simulation_enhancement_enabled">features::spec_simulation_enhancement_enabled</a>() && is_simulation && <a href="../../move-stdlib/doc/vector.md#0x1_vector_is_empty">vector::is_empty</a>(secondary_signer_public_key_hashes[j]));
         //         account::account_resource_exists_at(secondary_signer_addresses[j])
         //         && secondary_signer_public_key_hashes[j]
         //             == <a href="account.md#0x1_account_get_authentication_key">account::get_authentication_key</a>(secondary_signer_addresses[j])
         //             || features::account_abstraction_enabled() && account_abstraction::using_native_authenticator(
         //             secondary_signer_addresses[j]
-        //         ) && <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(secondary_signer_public_key_hashes[j]) == account_abstraction::native_authenticator(
+        //         ) && <a href="../../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(secondary_signer_public_key_hashes[j]) == account_abstraction::native_authenticator(
         //         <a href="account.md#0x1_account_exists_at">account::exists_at</a>(secondary_signer_addresses[j])
         //         && secondary_signer_public_key_hashes[j]
         //             == <a href="account.md#0x1_account_spec_get_authentication_key">account::spec_get_authentication_key</a>(secondary_signer_addresses[j])
         //             || features::spec_account_abstraction_enabled() && account_abstraction::using_native_authenticator(
         //             secondary_signer_addresses[j]
-        //         ) && <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(
+        //         ) && <a href="../../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(
         //             secondary_signer_public_key_hashes[j]
         //         ) == account_abstraction::spec_native_authenticator(
         //             secondary_signer_addresses[j]
@@ -947,18 +947,18 @@ Only called during genesis to initialize system resources for this module.
         (i &lt; num_secondary_signers)
     }) {
         <b>let</b> secondary_address = secondary_signer_addresses[i];
-        <b>assert</b>!(<a href="account.md#0x1_account_exists_at">account::exists_at</a>(secondary_address), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EACCOUNT_DOES_NOT_EXIST">PROLOGUE_EACCOUNT_DOES_NOT_EXIST</a>));
+        <b>assert</b>!(<a href="account.md#0x1_account_exists_at">account::exists_at</a>(secondary_address), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EACCOUNT_DOES_NOT_EXIST">PROLOGUE_EACCOUNT_DOES_NOT_EXIST</a>));
         <b>let</b> signer_public_key_hash = secondary_signer_public_key_hashes[i];
         <b>if</b> (!<a href="transaction_validation.md#0x1_transaction_validation_skip_auth_key_check">skip_auth_key_check</a>(is_simulation, &signer_public_key_hash)) {
             <b>if</b> (signer_public_key_hash.is_some()) {
                 <b>assert</b>!(
-                    signer_public_key_hash == <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(<a href="account.md#0x1_account_get_authentication_key">account::get_authentication_key</a>(secondary_address)),
-                    <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>)
+                    signer_public_key_hash == <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(<a href="account.md#0x1_account_get_authentication_key">account::get_authentication_key</a>(secondary_address)),
+                    <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>)
                 );
             } <b>else</b> {
                 <b>assert</b>!(
                     <a href="transaction_validation.md#0x1_transaction_validation_allow_missing_txn_authentication_key">allow_missing_txn_authentication_key</a>(secondary_address),
-                    <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>)
+                    <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>)
                 )
             };
         };
@@ -978,7 +978,7 @@ Only called during genesis to initialize system resources for this module.
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_fee_payer_script_prologue">fee_payer_script_prologue</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_address: <b>address</b>, fee_payer_public_key_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_fee_payer_script_prologue">fee_payer_script_prologue</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_address: <b>address</b>, fee_payer_public_key_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8)
 </code></pre>
 
 
@@ -988,13 +988,13 @@ Only called during genesis to initialize system resources for this module.
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_fee_payer_script_prologue">fee_payer_script_prologue</a>(
-    sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     txn_sequence_number: u64,
-    txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     fee_payer_address: <b>address</b>,
-    fee_payer_public_key_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    fee_payer_public_key_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
@@ -1006,7 +1006,7 @@ Only called during genesis to initialize system resources for this module.
         &sender,
         &<a href="create_signer.md#0x1_create_signer_create_signer">create_signer::create_signer</a>(fee_payer_address),
         ReplayProtector::SequenceNumber(txn_sequence_number),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_sender_public_key),
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_sender_public_key),
         txn_gas_price,
         txn_max_gas_units,
         txn_expiration_time,
@@ -1015,12 +1015,12 @@ Only called during genesis to initialize system resources for this module.
     );
     <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_common_prologue">multi_agent_common_prologue</a>(
         secondary_signer_addresses,
-        secondary_signer_public_key_hashes.map(|x| <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(x)),
+        secondary_signer_public_key_hashes.map(|x| <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(x)),
         <b>false</b>
     );
     <b>assert</b>!(
         fee_payer_public_key_hash == <a href="account.md#0x1_account_get_authentication_key">account::get_authentication_key</a>(fee_payer_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>),
     );
 }
 </code></pre>
@@ -1035,7 +1035,7 @@ Only called during genesis to initialize system resources for this module.
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_fee_payer_script_prologue_extended">fee_payer_script_prologue_extended</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_address: <b>address</b>, fee_payer_public_key_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_fee_payer_script_prologue_extended">fee_payer_script_prologue_extended</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_address: <b>address</b>, fee_payer_public_key_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -1045,13 +1045,13 @@ Only called during genesis to initialize system resources for this module.
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_fee_payer_script_prologue_extended">fee_payer_script_prologue_extended</a>(
-    sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     txn_sequence_number: u64,
-    txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     fee_payer_address: <b>address</b>,
-    fee_payer_public_key_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    fee_payer_public_key_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
@@ -1062,7 +1062,7 @@ Only called during genesis to initialize system resources for this module.
         &sender,
         &<a href="create_signer.md#0x1_create_signer_create_signer">create_signer::create_signer</a>(fee_payer_address),
         ReplayProtector::SequenceNumber(txn_sequence_number),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_sender_public_key),
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(txn_sender_public_key),
         txn_gas_price,
         txn_max_gas_units,
         txn_expiration_time,
@@ -1071,13 +1071,13 @@ Only called during genesis to initialize system resources for this module.
     );
     <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_common_prologue">multi_agent_common_prologue</a>(
         secondary_signer_addresses,
-        secondary_signer_public_key_hashes.map(|x| <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(x)),
+        secondary_signer_public_key_hashes.map(|x| <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(x)),
         is_simulation
     );
-    <b>if</b> (!<a href="transaction_validation.md#0x1_transaction_validation_skip_auth_key_check">skip_auth_key_check</a>(is_simulation, &<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(fee_payer_public_key_hash))) {
+    <b>if</b> (!<a href="transaction_validation.md#0x1_transaction_validation_skip_auth_key_check">skip_auth_key_check</a>(is_simulation, &<a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(fee_payer_public_key_hash))) {
             <b>assert</b>!(
                 fee_payer_public_key_hash == <a href="account.md#0x1_account_get_authentication_key">account::get_authentication_key</a>(fee_payer_address),
-                <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>),
+                <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>),
             )
     }
 }
@@ -1095,7 +1095,7 @@ Epilogue function is run after a transaction is successfully executed.
 Called by the Adapter
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue">epilogue</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue">epilogue</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64)
 </code></pre>
 
 
@@ -1105,13 +1105,13 @@ Called by the Adapter
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue">epilogue</a>(
-    <a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    <a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     storage_fee_refunded: u64,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     gas_units_remaining: u64,
 ) {
-    <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&<a href="account.md#0x1_account">account</a>);
+    <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&<a href="account.md#0x1_account">account</a>);
     <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer">epilogue_gas_payer</a>(
         <a href="account.md#0x1_account">account</a>,
         addr,
@@ -1133,7 +1133,7 @@ Called by the Adapter
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_extended">epilogue_extended</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_extended">epilogue_extended</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
 </code></pre>
 
 
@@ -1143,14 +1143,14 @@ Called by the Adapter
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_extended">epilogue_extended</a>(
-    <a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    <a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     storage_fee_refunded: u64,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     gas_units_remaining: u64,
     is_simulation: bool,
 ) {
-    <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&<a href="account.md#0x1_account">account</a>);
+    <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&<a href="account.md#0x1_account">account</a>);
     <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer_extended">epilogue_gas_payer_extended</a>(
         <a href="account.md#0x1_account">account</a>,
         addr,
@@ -1175,7 +1175,7 @@ Epilogue function with explicit gas payer specified, is run after a transaction 
 Called by the Adapter
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer">epilogue_gas_payer</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <b>address</b>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer">epilogue_gas_payer</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <b>address</b>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64)
 </code></pre>
 
 
@@ -1185,7 +1185,7 @@ Called by the Adapter
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer">epilogue_gas_payer</a>(
-    <a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    <a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     gas_payer: <b>address</b>,
     storage_fee_refunded: u64,
     txn_gas_price: u64,
@@ -1216,7 +1216,7 @@ Called by the Adapter
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer_extended">epilogue_gas_payer_extended</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <b>address</b>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer_extended">epilogue_gas_payer_extended</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <b>address</b>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
 </code></pre>
 
 
@@ -1226,7 +1226,7 @@ Called by the Adapter
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer_extended">epilogue_gas_payer_extended</a>(
-    <a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    <a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     gas_payer: <b>address</b>,
     storage_fee_refunded: u64,
     txn_gas_price: u64,
@@ -1234,21 +1234,21 @@ Called by the Adapter
     gas_units_remaining: u64,
     is_simulation: bool,
 ) {
-    <b>assert</b>!(txn_max_gas_units &gt;= gas_units_remaining, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_EOUT_OF_GAS">EOUT_OF_GAS</a>));
+    <b>assert</b>!(txn_max_gas_units &gt;= gas_units_remaining, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_EOUT_OF_GAS">EOUT_OF_GAS</a>));
     <b>let</b> gas_used = txn_max_gas_units - gas_units_remaining;
 
     <b>assert</b>!(
         (txn_gas_price <b>as</b> u128) * (gas_used <b>as</b> u128) &lt;= <a href="transaction_validation.md#0x1_transaction_validation_MAX_U64">MAX_U64</a>,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_EOUT_OF_GAS">EOUT_OF_GAS</a>)
+        <a href="../../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_EOUT_OF_GAS">EOUT_OF_GAS</a>)
     );
     <b>let</b> transaction_fee_amount = txn_gas_price * gas_used;
 
-    // it's important <b>to</b> maintain the <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">error</a> <a href="code.md#0x1_code">code</a> consistent <b>with</b> vm
+    // it's important <b>to</b> maintain the <a href="../../move-stdlib/doc/error.md#0x1_error">error</a> <a href="code.md#0x1_code">code</a> consistent <b>with</b> vm
     // <b>to</b> do failed transaction cleanup.
     <b>if</b> (!<a href="transaction_validation.md#0x1_transaction_validation_skip_gas_payment">skip_gas_payment</a>(is_simulation, gas_payer)) {
         <b>assert</b>!(
             <a href="topo_account.md#0x1_topo_account_is_fungible_balance_at_least">topo_account::is_fungible_balance_at_least</a>(gas_payer, transaction_fee_amount),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ECANT_PAY_GAS_DEPOSIT">PROLOGUE_ECANT_PAY_GAS_DEPOSIT</a>),
+            <a href="../../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ECANT_PAY_GAS_DEPOSIT">PROLOGUE_ECANT_PAY_GAS_DEPOSIT</a>),
         );
 
         <b>if</b> (transaction_fee_amount &gt; storage_fee_refunded) {
@@ -1261,7 +1261,7 @@ Called by the Adapter
     };
 
     // Increment sequence number
-    <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&<a href="account.md#0x1_account">account</a>);
+    <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&<a href="account.md#0x1_account">account</a>);
     <a href="account.md#0x1_account_increment_sequence_number">account::increment_sequence_number</a>(addr);
 }
 </code></pre>
@@ -1276,7 +1276,7 @@ Called by the Adapter
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_skip_auth_key_check">skip_auth_key_check</a>(is_simulation: bool, auth_key: &<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;): bool
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_skip_auth_key_check">skip_auth_key_check</a>(is_simulation: bool, auth_key: &<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;): bool
 </code></pre>
 
 
@@ -1285,7 +1285,7 @@ Called by the Adapter
 <summary>Implementation</summary>
 
 
-<pre><code>inline <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_skip_auth_key_check">skip_auth_key_check</a>(is_simulation: bool, auth_key: &Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;): bool {
+<pre><code>inline <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_skip_auth_key_check">skip_auth_key_check</a>(is_simulation: bool, auth_key: &Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;): bool {
     is_simulation && (auth_key.is_none() || auth_key.borrow().is_empty())
 }
 </code></pre>
@@ -1325,7 +1325,7 @@ Called by the Adapter
 new set of functions
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue">unified_prologue</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_sequence_number: u64, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue">unified_prologue</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_sequence_number: u64, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -1335,12 +1335,12 @@ new set of functions
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue">unified_prologue</a>(
-    sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     // None means no need <b>to</b> check, i.e. either AA (<b>where</b> it is already checked) or simulation
-    txn_sender_public_key: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    txn_sender_public_key: Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     txn_sequence_number: u64,
-    secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;,
+    secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
@@ -1374,7 +1374,7 @@ new set of functions
 If there is no fee_payer, fee_payer = sender
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_fee_payer">unified_prologue_fee_payer</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, fee_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_public_key_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_sequence_number: u64, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_fee_payer">unified_prologue_fee_payer</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, fee_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_public_key_hash: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_sequence_number: u64, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -1384,15 +1384,15 @@ If there is no fee_payer, fee_payer = sender
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_fee_payer">unified_prologue_fee_payer</a>(
-    sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    fee_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    fee_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     // None means no need <b>to</b> check, i.e. either AA (<b>where</b> it is already checked) or simulation
-    txn_sender_public_key: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    txn_sender_public_key: Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     // None means no need <b>to</b> check, i.e. either AA (<b>where</b> it is already checked) or simulation
-    fee_payer_public_key_hash: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    fee_payer_public_key_hash: Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     txn_sequence_number: u64,
-    secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;,
+    secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
@@ -1426,7 +1426,7 @@ If there is no fee_payer, fee_payer = sender
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_epilogue">unified_epilogue</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_epilogue">unified_epilogue</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
 </code></pre>
 
 
@@ -1436,8 +1436,8 @@ If there is no fee_payer, fee_payer = sender
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_epilogue">unified_epilogue</a>(
-    <a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    gas_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    <a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    gas_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     storage_fee_refunded: u64,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
@@ -1468,7 +1468,7 @@ If there is no fee_payer, fee_payer = sender
 new set of functions to support txn payload v2 format and orderless transactions
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_v2">unified_prologue_v2</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_v2">unified_prologue_v2</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -1478,11 +1478,11 @@ new set of functions to support txn payload v2 format and orderless transactions
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_v2">unified_prologue_v2</a>(
-    sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    txn_sender_public_key: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    txn_sender_public_key: Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">ReplayProtector</a>,
-    secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;,
+    secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
@@ -1515,7 +1515,7 @@ new set of functions to support txn payload v2 format and orderless transactions
 If there is no fee_payer, fee_payer = sender
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_fee_payer_v2">unified_prologue_fee_payer_v2</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, fee_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_public_key_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_fee_payer_v2">unified_prologue_fee_payer_v2</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, fee_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_public_key_hash: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -1525,13 +1525,13 @@ If there is no fee_payer, fee_payer = sender
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_fee_payer_v2">unified_prologue_fee_payer_v2</a>(
-    sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    fee_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    txn_sender_public_key: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
-    fee_payer_public_key_hash: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    fee_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    txn_sender_public_key: Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    fee_payer_public_key_hash: Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">ReplayProtector</a>,
-    secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;,
+    secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
     txn_expiration_time: u64,
@@ -1551,16 +1551,16 @@ If there is no fee_payer, fee_payer = sender
     );
     <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_common_prologue">multi_agent_common_prologue</a>(secondary_signer_addresses, secondary_signer_public_key_hashes, is_simulation);
     <b>if</b> (!<a href="transaction_validation.md#0x1_transaction_validation_skip_auth_key_check">skip_auth_key_check</a>(is_simulation, &fee_payer_public_key_hash)) {
-        <b>let</b> fee_payer_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&fee_payer);
+        <b>let</b> fee_payer_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&fee_payer);
         <b>if</b> (fee_payer_public_key_hash.is_some()) {
             <b>assert</b>!(
-                fee_payer_public_key_hash == <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(<a href="account.md#0x1_account_get_authentication_key">account::get_authentication_key</a>(fee_payer_address)),
-                <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>)
+                fee_payer_public_key_hash == <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(<a href="account.md#0x1_account_get_authentication_key">account::get_authentication_key</a>(fee_payer_address)),
+                <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>)
             );
         } <b>else</b> {
             <b>assert</b>!(
                 <a href="transaction_validation.md#0x1_transaction_validation_allow_missing_txn_authentication_key">allow_missing_txn_authentication_key</a>(fee_payer_address),
-                <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>)
+                <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY">PROLOGUE_EINVALID_ACCOUNT_AUTH_KEY</a>)
             )
         };
     }
@@ -1577,7 +1577,7 @@ If there is no fee_payer, fee_payer = sender
 
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_epilogue_v2">unified_epilogue_v2</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool, is_orderless_txn: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_epilogue_v2">unified_epilogue_v2</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool, is_orderless_txn: bool)
 </code></pre>
 
 
@@ -1587,8 +1587,8 @@ If there is no fee_payer, fee_payer = sender
 
 
 <pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_epilogue_v2">unified_epilogue_v2</a>(
-    <a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    gas_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    <a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    gas_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     storage_fee_refunded: u64,
     txn_gas_price: u64,
     txn_max_gas_units: u64,
@@ -1596,17 +1596,17 @@ If there is no fee_payer, fee_payer = sender
     is_simulation: bool,
     is_orderless_txn: bool,
 ) {
-    <b>assert</b>!(txn_max_gas_units &gt;= gas_units_remaining, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_EOUT_OF_GAS">EOUT_OF_GAS</a>));
+    <b>assert</b>!(txn_max_gas_units &gt;= gas_units_remaining, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="transaction_validation.md#0x1_transaction_validation_EOUT_OF_GAS">EOUT_OF_GAS</a>));
     <b>let</b> gas_used = txn_max_gas_units - gas_units_remaining;
 
     <b>assert</b>!(
         (txn_gas_price <b>as</b> u128) * (gas_used <b>as</b> u128) &lt;= <a href="transaction_validation.md#0x1_transaction_validation_MAX_U64">MAX_U64</a>,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_EOUT_OF_GAS">EOUT_OF_GAS</a>)
+        <a href="../../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_EOUT_OF_GAS">EOUT_OF_GAS</a>)
     );
     <b>let</b> transaction_fee_amount = txn_gas_price * gas_used;
 
-    <b>let</b> gas_payer_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&gas_payer);
-    // it's important <b>to</b> maintain the <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">error</a> <a href="code.md#0x1_code">code</a> consistent <b>with</b> vm
+    <b>let</b> gas_payer_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&gas_payer);
+    // it's important <b>to</b> maintain the <a href="../../move-stdlib/doc/error.md#0x1_error">error</a> <a href="code.md#0x1_code">code</a> consistent <b>with</b> vm
     // <b>to</b> do failed transaction cleanup.
     <b>if</b> (!<a href="transaction_validation.md#0x1_transaction_validation_skip_gas_payment">skip_gas_payment</a>(
         is_simulation,
@@ -1614,7 +1614,7 @@ If there is no fee_payer, fee_payer = sender
     )) {
         <b>assert</b>!(
             <a href="topo_account.md#0x1_topo_account_is_fungible_balance_at_least">topo_account::is_fungible_balance_at_least</a>(gas_payer_address, transaction_fee_amount),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ECANT_PAY_GAS_DEPOSIT">PROLOGUE_ECANT_PAY_GAS_DEPOSIT</a>),
+            <a href="../../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="transaction_validation.md#0x1_transaction_validation_PROLOGUE_ECANT_PAY_GAS_DEPOSIT">PROLOGUE_ECANT_PAY_GAS_DEPOSIT</a>),
         );
 
         <b>if</b> (transaction_fee_amount &gt; storage_fee_refunded) {
@@ -1638,7 +1638,7 @@ If there is no fee_payer, fee_payer = sender
 
     <b>if</b> (!is_orderless_txn) {
         // Increment sequence number
-        <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&<a href="account.md#0x1_account">account</a>);
+        <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&<a href="account.md#0x1_account">account</a>);
         <a href="account.md#0x1_account_increment_sequence_number">account::increment_sequence_number</a>(addr);
     }
 }
@@ -1709,7 +1709,7 @@ If there is no fee_payer, fee_payer = sender
 ### Function `grant_gas_permission`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_grant_gas_permission">grant_gas_permission</a>(master: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, permissioned: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_amount: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_grant_gas_permission">grant_gas_permission</a>(master: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, permissioned: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_amount: u64)
 </code></pre>
 
 
@@ -1725,7 +1725,7 @@ If there is no fee_payer, fee_payer = sender
 ### Function `revoke_gas_permission`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_revoke_gas_permission">revoke_gas_permission</a>(permissioned: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_revoke_gas_permission">revoke_gas_permission</a>(permissioned: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1741,7 +1741,7 @@ If there is no fee_payer, fee_payer = sender
 ### Function `initialize`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, script_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, module_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, multi_agent_prologue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, user_epilogue_name: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, script_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, module_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, multi_agent_prologue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, user_epilogue_name: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -1749,7 +1749,7 @@ Ensure caller is <code>topo_framework</code>.
 Aborts if TransactionValidation already exists.
 
 
-<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<pre><code><b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(addr);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="transaction_validation.md#0x1_transaction_validation_TransactionValidation">TransactionValidation</a>&gt;(addr);
 <b>ensures</b> <b>exists</b>&lt;<a href="transaction_validation.md#0x1_transaction_validation_TransactionValidation">TransactionValidation</a>&gt;(addr);
@@ -1764,10 +1764,10 @@ Give some constraints that may abort according to the conditions.
 
 
 <pre><code><b>schema</b> <a href="transaction_validation.md#0x1_transaction_validation_PrologueCommonAbortsIf">PrologueCommonAbortsIf</a> {
-    sender: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
-    gas_payer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
+    sender: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
+    gas_payer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
     replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">ReplayProtector</a>;
-    txn_authentication_key: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;;
+    txn_authentication_key: Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;;
     txn_gas_price: u64;
     txn_max_gas_units: u64;
     txn_expiration_time: u64;
@@ -1776,8 +1776,8 @@ Give some constraints that may abort according to the conditions.
     <b>aborts_if</b> !(<a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() &lt; txn_expiration_time);
     <b>aborts_if</b> !<b>exists</b>&lt;ChainId&gt;(@topo_framework);
     <b>aborts_if</b> !(<a href="chain_id.md#0x1_chain_id_get">chain_id::get</a>() == <a href="chain_id.md#0x1_chain_id">chain_id</a>);
-    <b>let</b> transaction_sender = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(sender);
-    <b>let</b> gas_payer_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(gas_payer);
+    <b>let</b> transaction_sender = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(sender);
+    <b>let</b> gas_payer_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(gas_payer);
 }
 </code></pre>
 
@@ -1788,7 +1788,7 @@ Give some constraints that may abort according to the conditions.
 ### Function `prologue_common`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_prologue_common">prologue_common</a>(sender: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, txn_authentication_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_prologue_common">prologue_common</a>(sender: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, txn_authentication_key: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -1837,7 +1837,7 @@ Give some constraints that may abort according to the conditions.
 ### Function `script_prologue`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_script_prologue">script_prologue</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, _script_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_script_prologue">script_prologue</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, _script_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -1853,8 +1853,8 @@ Give some constraints that may abort according to the conditions.
 
 
 <pre><code><b>schema</b> <a href="transaction_validation.md#0x1_transaction_validation_MultiAgentPrologueCommonAbortsIf">MultiAgentPrologueCommonAbortsIf</a> {
-    secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;;
-    secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;;
+    secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;;
+    secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;;
     is_simulation: bool;
     <b>let</b> num_secondary_signers = len(secondary_signer_addresses);
     <b>aborts_if</b> len(secondary_signer_public_key_hashes) != num_secondary_signers;
@@ -1862,19 +1862,19 @@ Give some constraints that may abort according to the conditions.
     <b>aborts_if</b> <b>exists</b> i in 0..num_secondary_signers:
         !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(secondary_signer_addresses[i]);
     <b>aborts_if</b> <b>exists</b> i in 0..num_secondary_signers:
-        !<a href="transaction_validation.md#0x1_transaction_validation_can_skip">can_skip</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_simulation_enhancement_enabled">features::spec_simulation_enhancement_enabled</a>(), is_simulation, secondary_signer_public_key_hashes[i]) &&
-            <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(secondary_signer_public_key_hashes[i]) && <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(
+        !<a href="transaction_validation.md#0x1_transaction_validation_can_skip">can_skip</a>(<a href="../../move-stdlib/doc/features.md#0x1_features_spec_simulation_enhancement_enabled">features::spec_simulation_enhancement_enabled</a>(), is_simulation, secondary_signer_public_key_hashes[i]) &&
+            <a href="../../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(secondary_signer_public_key_hashes[i]) && <a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(
             secondary_signer_public_key_hashes[i]
         ) !=
                 <a href="account.md#0x1_account_spec_get_authentication_key">account::spec_get_authentication_key</a>(secondary_signer_addresses[i]);
     <b>ensures</b> <b>forall</b> i in 0..num_secondary_signers:
         <a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(secondary_signer_addresses[i]);
     <b>ensures</b> <b>forall</b> i in 0..num_secondary_signers:
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_none">option::is_none</a>(secondary_signer_public_key_hashes[i]) || <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(
+        <a href="../../move-stdlib/doc/option.md#0x1_option_is_none">option::is_none</a>(secondary_signer_public_key_hashes[i]) || <a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(
             secondary_signer_public_key_hashes[i]
         ) ==
             <a href="account.md#0x1_account_spec_get_authentication_key">account::spec_get_authentication_key</a>(secondary_signer_addresses[i])
-            || <a href="transaction_validation.md#0x1_transaction_validation_can_skip">can_skip</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_simulation_enhancement_enabled">features::spec_simulation_enhancement_enabled</a>(), is_simulation, secondary_signer_public_key_hashes[i]);
+            || <a href="transaction_validation.md#0x1_transaction_validation_can_skip">can_skip</a>(<a href="../../move-stdlib/doc/features.md#0x1_features_spec_simulation_enhancement_enabled">features::spec_simulation_enhancement_enabled</a>(), is_simulation, secondary_signer_public_key_hashes[i]);
 }
 </code></pre>
 
@@ -1884,8 +1884,8 @@ Give some constraints that may abort according to the conditions.
 <a id="0x1_transaction_validation_can_skip"></a>
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_can_skip">can_skip</a>(feature_flag: bool, is_simulation: bool, auth_key: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;): bool {
-   <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_simulation_enhancement_enabled">features::spec_simulation_enhancement_enabled</a>() && is_simulation && <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_none">option::is_none</a>(auth_key)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_can_skip">can_skip</a>(feature_flag: bool, is_simulation: bool, auth_key: Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;): bool {
+   <a href="../../move-stdlib/doc/features.md#0x1_features_spec_simulation_enhancement_enabled">features::spec_simulation_enhancement_enabled</a>() && is_simulation && <a href="../../move-stdlib/doc/option.md#0x1_option_is_none">option::is_none</a>(auth_key)
 }
 </code></pre>
 
@@ -1896,7 +1896,7 @@ Give some constraints that may abort according to the conditions.
 ### Function `script_prologue_extended`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_script_prologue_extended">script_prologue_extended</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, _script_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_script_prologue_extended">script_prologue_extended</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, _script_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, is_simulation: bool)
 </code></pre>
 
 
@@ -1905,7 +1905,7 @@ Give some constraints that may abort according to the conditions.
 <pre><code><b>pragma</b> verify = <b>false</b>;
 <b>include</b> <a href="transaction_validation.md#0x1_transaction_validation_PrologueCommonAbortsIf">PrologueCommonAbortsIf</a> {
     gas_payer: sender,
-    txn_authentication_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(txn_public_key),
+    txn_authentication_key: <a href="../../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(txn_public_key),
     replay_protector: ReplayProtector::SequenceNumber(txn_sequence_number),
 };
 </code></pre>
@@ -1917,7 +1917,7 @@ Give some constraints that may abort according to the conditions.
 ### Function `multi_agent_script_prologue`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_script_prologue">multi_agent_script_prologue</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_script_prologue">multi_agent_script_prologue</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8)
 </code></pre>
 
 
@@ -1933,7 +1933,7 @@ Give some constraints that may abort according to the conditions.
 ### Function `multi_agent_script_prologue_extended`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_script_prologue_extended">multi_agent_script_prologue_extended</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_script_prologue_extended">multi_agent_script_prologue_extended</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -1953,7 +1953,7 @@ not equal the number of singers.
 ### Function `multi_agent_common_prologue`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_common_prologue">multi_agent_common_prologue</a>(secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_multi_agent_common_prologue">multi_agent_common_prologue</a>(secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, is_simulation: bool)
 </code></pre>
 
 
@@ -1969,7 +1969,7 @@ not equal the number of singers.
 ### Function `fee_payer_script_prologue`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_fee_payer_script_prologue">fee_payer_script_prologue</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_address: <b>address</b>, fee_payer_public_key_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_fee_payer_script_prologue">fee_payer_script_prologue</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_address: <b>address</b>, fee_payer_public_key_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8)
 </code></pre>
 
 
@@ -1985,7 +1985,7 @@ not equal the number of singers.
 ### Function `fee_payer_script_prologue_extended`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_fee_payer_script_prologue_extended">fee_payer_script_prologue_extended</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_address: <b>address</b>, fee_payer_public_key_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_fee_payer_script_prologue_extended">fee_payer_script_prologue_extended</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sequence_number: u64, txn_sender_public_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_address: <b>address</b>, fee_payer_public_key_hash: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -1993,16 +1993,16 @@ not equal the number of singers.
 
 <pre><code><b>pragma</b> aborts_if_is_partial;
 <b>pragma</b> verify_duration_estimate = 120;
-<b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_is_enabled">features::spec_is_enabled</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_FEE_PAYER_ENABLED">features::FEE_PAYER_ENABLED</a>);
+<b>aborts_if</b> !<a href="../../move-stdlib/doc/features.md#0x1_features_spec_is_enabled">features::spec_is_enabled</a>(<a href="../../move-stdlib/doc/features.md#0x1_features_FEE_PAYER_ENABLED">features::FEE_PAYER_ENABLED</a>);
 <b>let</b> gas_payer = <a href="create_signer.md#0x1_create_signer_spec_create_signer">create_signer::spec_create_signer</a>(fee_payer_address);
 <b>include</b> <a href="transaction_validation.md#0x1_transaction_validation_PrologueCommonAbortsIf">PrologueCommonAbortsIf</a> {
     gas_payer,
     replay_protector: ReplayProtector::SequenceNumber(txn_sequence_number),
-    txn_authentication_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(txn_sender_public_key),
+    txn_authentication_key: <a href="../../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(txn_sender_public_key),
 };
 <b>aborts_if</b> !<a href="account.md#0x1_account_spec_exists_at">account::spec_exists_at</a>(fee_payer_address);
 <b>aborts_if</b> !(fee_payer_public_key_hash == <a href="account.md#0x1_account_spec_get_authentication_key">account::spec_get_authentication_key</a>(fee_payer_address));
-<b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_spec_fee_payer_enabled">features::spec_fee_payer_enabled</a>();
+<b>aborts_if</b> !<a href="../../move-stdlib/doc/features.md#0x1_features_spec_fee_payer_enabled">features::spec_fee_payer_enabled</a>();
 </code></pre>
 
 
@@ -2012,7 +2012,7 @@ not equal the number of singers.
 ### Function `epilogue`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue">epilogue</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue">epilogue</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64)
 </code></pre>
 
 
@@ -2028,7 +2028,7 @@ not equal the number of singers.
 ### Function `epilogue_extended`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_extended">epilogue_extended</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_extended">epilogue_extended</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
 </code></pre>
 
 
@@ -2038,7 +2038,7 @@ Skip transaction_fee::burn_fee verification.
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>include</b> <a href="transaction_validation.md#0x1_transaction_validation_EpilogueGasPayerAbortsIf">EpilogueGasPayerAbortsIf</a> { gas_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>) };
+<b>include</b> <a href="transaction_validation.md#0x1_transaction_validation_EpilogueGasPayerAbortsIf">EpilogueGasPayerAbortsIf</a> { gas_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>) };
 </code></pre>
 
 
@@ -2048,7 +2048,7 @@ Skip transaction_fee::burn_fee verification.
 ### Function `epilogue_gas_payer`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer">epilogue_gas_payer</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <b>address</b>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer">epilogue_gas_payer</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <b>address</b>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64)
 </code></pre>
 
 
@@ -2064,7 +2064,7 @@ Skip transaction_fee::burn_fee verification.
 ### Function `epilogue_gas_payer_extended`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer_extended">epilogue_gas_payer_extended</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <b>address</b>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_epilogue_gas_payer_extended">epilogue_gas_payer_extended</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <b>address</b>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
 </code></pre>
 
 
@@ -2084,7 +2084,7 @@ Skip transaction_fee::burn_fee verification.
 ### Function `unified_prologue`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue">unified_prologue</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_sequence_number: u64, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue">unified_prologue</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_sequence_number: u64, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -2100,7 +2100,7 @@ Skip transaction_fee::burn_fee verification.
 ### Function `unified_prologue_fee_payer`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_fee_payer">unified_prologue_fee_payer</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, fee_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_public_key_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_sequence_number: u64, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_fee_payer">unified_prologue_fee_payer</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, fee_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_public_key_hash: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, txn_sequence_number: u64, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -2116,7 +2116,7 @@ Skip transaction_fee::burn_fee verification.
 ### Function `unified_epilogue`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_epilogue">unified_epilogue</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_epilogue">unified_epilogue</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool)
 </code></pre>
 
 
@@ -2132,7 +2132,7 @@ Skip transaction_fee::burn_fee verification.
 ### Function `unified_prologue_v2`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_v2">unified_prologue_v2</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_v2">unified_prologue_v2</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -2148,7 +2148,7 @@ Skip transaction_fee::burn_fee verification.
 ### Function `unified_prologue_fee_payer_v2`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_fee_payer_v2">unified_prologue_fee_payer_v2</a>(sender: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, fee_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_public_key_hash: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, secondary_signer_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_prologue_fee_payer_v2">unified_prologue_fee_payer_v2</a>(sender: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, fee_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, txn_sender_public_key: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, fee_payer_public_key_hash: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, replay_protector: <a href="transaction_validation.md#0x1_transaction_validation_ReplayProtector">transaction_validation::ReplayProtector</a>, secondary_signer_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, secondary_signer_public_key_hashes: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;&gt;, txn_gas_price: u64, txn_max_gas_units: u64, txn_expiration_time: u64, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, is_simulation: bool)
 </code></pre>
 
 
@@ -2164,7 +2164,7 @@ Skip transaction_fee::burn_fee verification.
 ### Function `unified_epilogue_v2`
 
 
-<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_epilogue_v2">unified_epilogue_v2</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool, is_orderless_txn: bool)
+<pre><code><b>fun</b> <a href="transaction_validation.md#0x1_transaction_validation_unified_epilogue_v2">unified_epilogue_v2</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, gas_payer: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, storage_fee_refunded: u64, txn_gas_price: u64, txn_max_gas_units: u64, gas_units_remaining: u64, is_simulation: bool, is_orderless_txn: bool)
 </code></pre>
 
 
@@ -2180,7 +2180,7 @@ Skip transaction_fee::burn_fee verification.
 
 
 <pre><code><b>schema</b> <a href="transaction_validation.md#0x1_transaction_validation_EpilogueGasPayerAbortsIf">EpilogueGasPayerAbortsIf</a> {
-    <a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
+    <a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
     gas_payer: <b>address</b>;
     storage_fee_refunded: u64;
     txn_gas_price: u64;
@@ -2190,7 +2190,7 @@ Skip transaction_fee::burn_fee verification.
     <b>let</b> gas_used = txn_max_gas_units - gas_units_remaining;
     <b>aborts_if</b> !(txn_gas_price * gas_used &lt;= <a href="transaction_validation.md#0x1_transaction_validation_MAX_U64">MAX_U64</a>);
     <b>let</b> transaction_fee_amount = txn_gas_price * gas_used;
-    <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
+    <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
     <b>let</b> pre_account = <b>global</b>&lt;<a href="account.md#0x1_account_Account">account::Account</a>&gt;(addr);
     <b>let</b> <b>post</b> <a href="account.md#0x1_account">account</a> = <b>global</b>&lt;<a href="account.md#0x1_account_Account">account::Account</a>&gt;(addr);
     <b>aborts_if</b> !<b>exists</b>&lt;CoinStore&lt;TopoCoin&gt;&gt;(gas_payer);
@@ -2198,13 +2198,13 @@ Skip transaction_fee::burn_fee verification.
     <b>aborts_if</b> !(<b>global</b>&lt;Account&gt;(addr).sequence_number &lt; <a href="transaction_validation.md#0x1_transaction_validation_MAX_U64">MAX_U64</a>);
     <b>ensures</b> <a href="account.md#0x1_account">account</a>.sequence_number == pre_account.sequence_number + 1;
     <b>let</b> amount_to_burn = transaction_fee_amount - storage_fee_refunded;
-    <b>let</b> topo_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;().account_address;
+    <b>let</b> topo_addr = <a href="../../topo-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;().account_address;
     <b>let</b> maybe_topo_supply = <b>global</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(topo_addr).supply;
-    <b>let</b> total_supply_enabled = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(maybe_topo_supply);
-    <b>let</b> topo_supply = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(maybe_topo_supply);
+    <b>let</b> total_supply_enabled = <a href="../../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(maybe_topo_supply);
+    <b>let</b> topo_supply = <a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(maybe_topo_supply);
     <b>let</b> topo_supply_value = <a href="optional_aggregator.md#0x1_optional_aggregator_optional_aggregator_value">optional_aggregator::optional_aggregator_value</a>(topo_supply);
     <b>let</b> <b>post</b> post_maybe_topo_supply = <b>global</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(topo_addr).supply;
-    <b>let</b> <b>post</b> post_topo_supply = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(post_maybe_topo_supply);
+    <b>let</b> <b>post</b> post_topo_supply = <a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(post_maybe_topo_supply);
     <b>let</b> <b>post</b> post_topo_supply_value = <a href="optional_aggregator.md#0x1_optional_aggregator_optional_aggregator_value">optional_aggregator::optional_aggregator_value</a>(post_topo_supply);
     <b>aborts_if</b> amount_to_burn &gt; 0 && !<b>exists</b>&lt;TopoCoinCapabilities&gt;(@topo_framework);
     <b>aborts_if</b> amount_to_burn &gt; 0 && !<b>exists</b>&lt;CoinInfo&lt;TopoCoin&gt;&gt;(topo_addr);
@@ -2217,7 +2217,7 @@ Skip transaction_fee::burn_fee verification.
     <b>aborts_if</b> amount_to_mint &gt; 0 && !<b>exists</b>&lt;TopoCoinMintCapability&gt;(@topo_framework);
     <b>aborts_if</b> amount_to_mint &gt; 0 && total_supply + amount_to_mint &gt; MAX_U128;
     <b>ensures</b> amount_to_mint &gt; 0 ==&gt; post_total_supply == total_supply + amount_to_mint;
-    <b>let</b> aptos_addr = <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;().account_address;
+    <b>let</b> aptos_addr = <a href="../../topo-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;().account_address;
     <b>aborts_if</b> (amount_to_mint != 0) && !<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;TopoCoin&gt;&gt;(aptos_addr);
     <b>include</b> <a href="coin.md#0x1_coin_CoinAddAbortsIf">coin::CoinAddAbortsIf</a>&lt;TopoCoin&gt; { amount: amount_to_mint };
 }

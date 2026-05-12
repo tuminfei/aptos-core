@@ -5,7 +5,7 @@ module aptos_experimental::market_clearinghouse_order_info {
 
     use std::option::Option;
     use std::string::String;
-    use aptos_trading::order_book_types::{
+    use topo_trading::order_book_types::{
         OrderId,
         TimeInForce,
         OrderType,

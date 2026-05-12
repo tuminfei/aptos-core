@@ -58,10 +58,10 @@
 <pre><code><b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
 <b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
 <b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
+<b>use</b> <a href="../../topo-stdlib/doc/table.md#0x1_table">0x1::table</a>;
 </code></pre>
 
 
@@ -92,25 +92,25 @@ in O(1) without scanning the full registry.
 
 <dl>
 <dt>
-<code>apps: <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="poc_registry.md#0x1_poc_registry_AppInfo">poc_registry::AppInfo</a>&gt;</code>
+<code>apps: <a href="../../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="poc_registry.md#0x1_poc_registry_AppInfo">poc_registry::AppInfo</a>&gt;</code>
 </dt>
 <dd>
  Primary table: admin address → full AppInfo
 </dd>
 <dt>
-<code>app_address_to_admin: <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <b>address</b>&gt;</code>
+<code>app_address_to_admin: <a href="../../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <b>address</b>&gt;</code>
 </dt>
 <dd>
  Reverse lookup: contract deployment address → admin address
 </dd>
 <dt>
-<code>custody_address_to_admin: <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <b>address</b>&gt;</code>
+<code>custody_address_to_admin: <a href="../../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <b>address</b>&gt;</code>
 </dt>
 <dd>
  Reverse lookup: custody address → admin address
 </dd>
 <dt>
-<code>equity_token_to_admin: <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <b>address</b>&gt;</code>
+<code>equity_token_to_admin: <a href="../../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <b>address</b>&gt;</code>
 </dt>
 <dd>
  Reverse lookup: equity token address → admin address
@@ -180,7 +180,7 @@ Complete registration record for a Dapp application.
  Controlled by the chain's DAO governance organization (currently @topo_framework).
 </dd>
 <dt>
-<code>metadata_uri: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
+<code>metadata_uri: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
 </dt>
 <dd>
  Application's official website or authoritative information link
@@ -728,7 +728,7 @@ Called by the genesis module to initialize the registry at chain genesis.
 Only callable by friend modules (genesis).
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -737,7 +737,7 @@ Only callable by friend modules (genesis).
 <summary>Implementation</summary>
 
 
-<pre><code><b>friend</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>friend</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="poc_registry.md#0x1_poc_registry_initialize_registry">initialize_registry</a>(topo_framework);
 }
 </code></pre>
@@ -754,7 +754,7 @@ Initialize the Registry resource.
 Only callable by @topo_framework. Idempotent — skips if already initialized.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_initialize_registry">initialize_registry</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_initialize_registry">initialize_registry</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -763,14 +763,14 @@ Only callable by @topo_framework. Idempotent — skips if already initialized.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_initialize_registry">initialize_registry</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_initialize_registry">initialize_registry</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>if</b> (!<b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework)) {
         <b>move_to</b>(topo_framework, <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
-            apps: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
-            app_address_to_admin: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
-            custody_address_to_admin: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
-            equity_token_to_admin: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+            apps: <a href="../../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+            app_address_to_admin: <a href="../../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+            custody_address_to_admin: <a href="../../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+            equity_token_to_admin: <a href="../../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
         });
     };
 }
@@ -807,7 +807,7 @@ Parameters:
 - metadata_uri: Application's official website or authoritative information link
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_register_app">register_app</a>(app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, app_address: <b>address</b>, equity_token_address: <b>address</b>, custody_address: <b>address</b>, metadata_uri: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_register_app">register_app</a>(app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, app_address: <b>address</b>, equity_token_address: <b>address</b>, custody_address: <b>address</b>, metadata_uri: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>)
 </code></pre>
 
 
@@ -817,34 +817,34 @@ Parameters:
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_register_app">register_app</a>(
-    app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     app_address: <b>address</b>,
     equity_token_address: <b>address</b>,
     custody_address: <b>address</b>,
     metadata_uri: String,
 ) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
-    <b>let</b> app_admin_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin);
+    <b>let</b> app_admin_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin);
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
     );
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
 
     <b>assert</b>!(
         !registry.apps.contains(app_admin_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADMIN_ALREADY_EXISTS">EAPP_ADMIN_ALREADY_EXISTS</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADMIN_ALREADY_EXISTS">EAPP_ADMIN_ALREADY_EXISTS</a>),
     );
     <b>assert</b>!(
         !registry.app_address_to_admin.contains(app_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADDRESS_ALREADY_EXISTS">EAPP_ADDRESS_ALREADY_EXISTS</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADDRESS_ALREADY_EXISTS">EAPP_ADDRESS_ALREADY_EXISTS</a>),
     );
     <b>assert</b>!(
         !registry.custody_address_to_admin.contains(custody_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_ECUSTODY_ADDRESS_ALREADY_EXISTS">ECUSTODY_ADDRESS_ALREADY_EXISTS</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_ECUSTODY_ADDRESS_ALREADY_EXISTS">ECUSTODY_ADDRESS_ALREADY_EXISTS</a>),
     );
     <b>assert</b>!(
         !registry.equity_token_to_admin.contains(equity_token_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_EEQUITY_TOKEN_ALREADY_EXISTS">EEQUITY_TOKEN_ALREADY_EXISTS</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_EEQUITY_TOKEN_ALREADY_EXISTS">EEQUITY_TOKEN_ALREADY_EXISTS</a>),
     );
 
     <a href="object.md#0x1_object_address_to_object">object::address_to_object</a>&lt;Metadata&gt;(equity_token_address);
@@ -891,7 +891,7 @@ Idempotent: if the new address equals the current address, returns immediately.
 This does NOT reset poc_listing_status — only equity token changes trigger a reset.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_update_app_address">update_app_address</a>(app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_app_address: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_update_app_address">update_app_address</a>(app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_app_address: <b>address</b>)
 </code></pre>
 
 
@@ -901,10 +901,10 @@ This does NOT reset poc_listing_status — only equity token changes trigger a r
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_update_app_address">update_app_address</a>(
-    app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     new_app_address: <b>address</b>,
 ) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
-    <b>let</b> app_admin_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin);
+    <b>let</b> app_admin_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin);
     <b>let</b> current_info = <a href="poc_registry.md#0x1_poc_registry_get_app_info">get_app_info</a>(app_admin_address);
     <b>if</b> (current_info.app_address == new_app_address) {
         <b>return</b>
@@ -912,12 +912,12 @@ This does NOT reset poc_listing_status — only equity token changes trigger a r
 
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
     );
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
     <b>assert</b>!(
         !registry.app_address_to_admin.contains(new_app_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADDRESS_ALREADY_EXISTS">EAPP_ADDRESS_ALREADY_EXISTS</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADDRESS_ALREADY_EXISTS">EAPP_ADDRESS_ALREADY_EXISTS</a>),
     );
 
     <b>let</b> old_app_address = current_info.app_address;
@@ -959,7 +959,7 @@ its trusted whitelist status.
 Idempotent: if the new address equals the current address, returns immediately.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_update_equity_token_address">update_equity_token_address</a>(app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_equity_token_address: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_update_equity_token_address">update_equity_token_address</a>(app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_equity_token_address: <b>address</b>)
 </code></pre>
 
 
@@ -969,10 +969,10 @@ Idempotent: if the new address equals the current address, returns immediately.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_update_equity_token_address">update_equity_token_address</a>(
-    app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     new_equity_token_address: <b>address</b>,
 ) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
-    <b>let</b> app_admin_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin);
+    <b>let</b> app_admin_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin);
     <b>let</b> current_info = <a href="poc_registry.md#0x1_poc_registry_get_app_info">get_app_info</a>(app_admin_address);
     <b>if</b> (current_info.equity_token_address == new_equity_token_address) {
         <b>return</b>
@@ -980,12 +980,12 @@ Idempotent: if the new address equals the current address, returns immediately.
 
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
     );
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
     <b>assert</b>!(
         !registry.equity_token_to_admin.contains(new_equity_token_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_EEQUITY_TOKEN_ALREADY_EXISTS">EEQUITY_TOKEN_ALREADY_EXISTS</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_EEQUITY_TOKEN_ALREADY_EXISTS">EEQUITY_TOKEN_ALREADY_EXISTS</a>),
     );
     <a href="object.md#0x1_object_address_to_object">object::address_to_object</a>&lt;Metadata&gt;(new_equity_token_address);
 
@@ -1023,7 +1023,7 @@ contribution events. Changing it does NOT reset poc_listing_status.
 Idempotent: if the new address equals the current address, returns immediately.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_update_custody_address">update_custody_address</a>(app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_custody_address: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_update_custody_address">update_custody_address</a>(app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_custody_address: <b>address</b>)
 </code></pre>
 
 
@@ -1033,10 +1033,10 @@ Idempotent: if the new address equals the current address, returns immediately.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_update_custody_address">update_custody_address</a>(
-    app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     new_custody_address: <b>address</b>,
 ) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
-    <b>let</b> app_admin_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin);
+    <b>let</b> app_admin_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin);
     <b>let</b> current_info = <a href="poc_registry.md#0x1_poc_registry_get_app_info">get_app_info</a>(app_admin_address);
     <b>if</b> (current_info.custody_address == new_custody_address) {
         <b>return</b>
@@ -1044,12 +1044,12 @@ Idempotent: if the new address equals the current address, returns immediately.
 
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
     );
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
     <b>assert</b>!(
         !registry.custody_address_to_admin.contains(new_custody_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_ECUSTODY_ADDRESS_ALREADY_EXISTS">ECUSTODY_ADDRESS_ALREADY_EXISTS</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="poc_registry.md#0x1_poc_registry_ECUSTODY_ADDRESS_ALREADY_EXISTS">ECUSTODY_ADDRESS_ALREADY_EXISTS</a>),
     );
 
     <b>let</b> old_custody_address = current_info.custody_address;
@@ -1081,7 +1081,7 @@ While paused, trusted contribution events cannot be emitted via <code><a href="p
 The application can be resumed via <code>resume_app</code> as long as it has not been permanently stopped.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_pause_app">pause_app</a>(app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_pause_app">pause_app</a>(app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1090,8 +1090,8 @@ The application can be resumed via <code>resume_app</code> as long as it has not
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_pause_app">pause_app</a>(app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
-    <a href="poc_registry.md#0x1_poc_registry_update_app_state">update_app_state</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin), <a href="poc_registry.md#0x1_poc_registry_APP_STATE_PAUSED">APP_STATE_PAUSED</a>);
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_pause_app">pause_app</a>(app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
+    <a href="poc_registry.md#0x1_poc_registry_update_app_state">update_app_state</a>(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin), <a href="poc_registry.md#0x1_poc_registry_APP_STATE_PAUSED">APP_STATE_PAUSED</a>);
 }
 </code></pre>
 
@@ -1109,7 +1109,7 @@ Aborts if the application is in STOPPED state — permanent stops cannot be reve
 This guard prevents accidental resurrection of a stopped application.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_resume_app">resume_app</a>(app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_resume_app">resume_app</a>(app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1118,11 +1118,11 @@ This guard prevents accidental resurrection of a stopped application.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_resume_app">resume_app</a>(app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
-    <b>let</b> app_admin_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin);
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_resume_app">resume_app</a>(app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
+    <b>let</b> app_admin_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin);
     <b>assert</b>!(
         <a href="poc_registry.md#0x1_poc_registry_get_app_state">get_app_state</a>(app_admin_address) != <a href="poc_registry.md#0x1_poc_registry_APP_STATE_STOPPED">APP_STATE_STOPPED</a>,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_STOPPED">EAPP_STOPPED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_STOPPED">EAPP_STOPPED</a>),
     );
     <a href="poc_registry.md#0x1_poc_registry_update_app_state">update_app_state</a>(app_admin_address, <a href="poc_registry.md#0x1_poc_registry_APP_STATE_ACTIVE">APP_STATE_ACTIVE</a>);
 }
@@ -1142,7 +1142,7 @@ Once stopped, the application cannot be restored to ACTIVE or PAUSED state.
 Use this only when the application is being permanently decommissioned.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_stop_app">stop_app</a>(app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_stop_app">stop_app</a>(app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1151,8 +1151,8 @@ Use this only when the application is being permanently decommissioned.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_stop_app">stop_app</a>(app_admin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
-    <a href="poc_registry.md#0x1_poc_registry_update_app_state">update_app_state</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin), <a href="poc_registry.md#0x1_poc_registry_APP_STATE_STOPPED">APP_STATE_STOPPED</a>);
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_stop_app">stop_app</a>(app_admin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
+    <a href="poc_registry.md#0x1_poc_registry_update_app_state">update_app_state</a>(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_admin), <a href="poc_registry.md#0x1_poc_registry_APP_STATE_STOPPED">APP_STATE_STOPPED</a>);
 }
 </code></pre>
 
@@ -1173,7 +1173,7 @@ This is the master setter; <code>whitelist_app_for_poc</code> and <code>suspend_
 convenience wrappers around this function.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_set_poc_listing_status">set_poc_listing_status</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, app_admin: <b>address</b>, new_poc_listing_status: u8)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_set_poc_listing_status">set_poc_listing_status</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, app_admin: <b>address</b>, new_poc_listing_status: u8)
 </code></pre>
 
 
@@ -1183,7 +1183,7 @@ convenience wrappers around this function.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_set_poc_listing_status">set_poc_listing_status</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     app_admin: <b>address</b>,
     new_poc_listing_status: u8,
 ) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
@@ -1208,7 +1208,7 @@ The suspension can be lifted by calling <code>whitelist_app_for_poc</code> after
 Only callable by @topo_framework.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_suspend_poc_listing">suspend_poc_listing</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, app_admin: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_suspend_poc_listing">suspend_poc_listing</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, app_admin: <b>address</b>)
 </code></pre>
 
 
@@ -1218,7 +1218,7 @@ Only callable by @topo_framework.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_suspend_poc_listing">suspend_poc_listing</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     app_admin: <b>address</b>,
 ) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
     <a href="poc_registry.md#0x1_poc_registry_set_poc_listing_status">set_poc_listing_status</a>(topo_framework, app_admin, <a href="poc_registry.md#0x1_poc_registry_POC_LISTING_STATUS_SUSPENDED">POC_LISTING_STATUS_SUSPENDED</a>);
@@ -1240,7 +1240,7 @@ by off-chain indexers and counted toward POC power, which can participate in gov
 Only callable by @topo_framework.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_whitelist_app_for_poc">whitelist_app_for_poc</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, app_admin: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_whitelist_app_for_poc">whitelist_app_for_poc</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, app_admin: <b>address</b>)
 </code></pre>
 
 
@@ -1250,7 +1250,7 @@ Only callable by @topo_framework.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_whitelist_app_for_poc">whitelist_app_for_poc</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     app_admin: <b>address</b>,
 ) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
     <a href="poc_registry.md#0x1_poc_registry_set_poc_listing_status">set_poc_listing_status</a>(topo_framework, app_admin, <a href="poc_registry.md#0x1_poc_registry_POC_LISTING_STATUS_WHITELISTED">POC_LISTING_STATUS_WHITELISTED</a>);
@@ -1272,7 +1272,7 @@ Only callable by @topo_framework (DAO governance).
 Idempotent: if the new value equals the current value, returns without emitting an event.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_set_effective_weight_pbs">set_effective_weight_pbs</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, app_admin: <b>address</b>, new_effective_weight_pbs: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_set_effective_weight_pbs">set_effective_weight_pbs</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, app_admin: <b>address</b>, new_effective_weight_pbs: u64)
 </code></pre>
 
 
@@ -1282,18 +1282,18 @@ Idempotent: if the new value equals the current value, returns without emitting 
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_set_effective_weight_pbs">set_effective_weight_pbs</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     app_admin: <b>address</b>,
     new_effective_weight_pbs: u64,
 ) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>assert</b>!(
         new_effective_weight_pbs &lt;= <a href="poc_registry.md#0x1_poc_registry_MAX_EFFECTIVE_WEIGHT_PBS">MAX_EFFECTIVE_WEIGHT_PBS</a>,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_registry.md#0x1_poc_registry_EINVALID_EFFECTIVE_WEIGHT">EINVALID_EFFECTIVE_WEIGHT</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_registry.md#0x1_poc_registry_EINVALID_EFFECTIVE_WEIGHT">EINVALID_EFFECTIVE_WEIGHT</a>),
     );
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
     );
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
     <b>let</b> info = <a href="poc_registry.md#0x1_poc_registry_borrow_app_info_mut">borrow_app_info_mut</a>(registry, app_admin);
@@ -1353,7 +1353,7 @@ Batch-check app registration for caller-provided admin addresses.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_exists_apps">exists_apps</a>(app_admins: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt;
+<b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_exists_apps">exists_apps</a>(app_admins: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt;
 </code></pre>
 
 
@@ -1362,8 +1362,8 @@ Batch-check app registration for caller-provided admin addresses.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_exists_apps">exists_apps</a>(app_admins: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt; <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
-    <b>let</b> exists_flags = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+<pre><code><b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_exists_apps">exists_apps</a>(app_admins: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt; <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
+    <b>let</b> exists_flags = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> len = app_admins.length();
     <b>if</b> (!<b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework)) {
         <b>let</b> i = 0;
@@ -1395,7 +1395,7 @@ Return full app records for explicit admin addresses.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_get_app_infos_by_admins">get_app_infos_by_admins</a>(app_admins: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="poc_registry.md#0x1_poc_registry_AppInfo">poc_registry::AppInfo</a>&gt;
+<b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_get_app_infos_by_admins">get_app_infos_by_admins</a>(app_admins: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="poc_registry.md#0x1_poc_registry_AppInfo">poc_registry::AppInfo</a>&gt;
 </code></pre>
 
 
@@ -1405,20 +1405,20 @@ Return full app records for explicit admin addresses.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_get_app_infos_by_admins">get_app_infos_by_admins</a>(
-    app_admins: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="poc_registry.md#0x1_poc_registry_AppInfo">AppInfo</a>&gt; <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
+    app_admins: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="poc_registry.md#0x1_poc_registry_AppInfo">AppInfo</a>&gt; <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
     <b>if</b> (!<b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework)) {
-        <b>return</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+        <b>return</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
     };
     <b>let</b> registry = <b>borrow_global</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
-    <b>let</b> infos = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> infos = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> len = app_admins.length();
     <b>let</b> i = 0;
     <b>while</b> (i &lt; len) {
         <b>let</b> app_admin = *app_admins.borrow(i);
         <b>assert</b>!(
             registry.apps.contains(app_admin),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADMIN_NOT_FOUND">EAPP_ADMIN_NOT_FOUND</a>),
+            <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADMIN_NOT_FOUND">EAPP_ADMIN_NOT_FOUND</a>),
         );
         infos.push_back(*registry.apps.borrow(app_admin));
         i += 1;
@@ -1440,7 +1440,7 @@ Missing app addresses are returned as @0x0 to keep the batch response total.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_get_app_admins_by_app_addresses">get_app_admins_by_app_addresses</a>(app_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+<b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_get_app_admins_by_app_addresses">get_app_admins_by_app_addresses</a>(app_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
 </code></pre>
 
 
@@ -1450,9 +1450,9 @@ Missing app addresses are returned as @0x0 to keep the batch response total.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_get_app_admins_by_app_addresses">get_app_admins_by_app_addresses</a>(
-    app_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
-    <b>let</b> app_admins = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    app_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
+    <b>let</b> app_admins = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> len = app_addresses.length();
     <b>if</b> (!<b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework)) {
         <b>let</b> i = 0;
@@ -1507,12 +1507,12 @@ app_signer → app_admin → equity_token / custody_address.
 ): <b>address</b> <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
     );
     <b>let</b> registry = <b>borrow_global</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
     <b>assert</b>!(
         registry.app_address_to_admin.contains(app_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADDRESS_NOT_FOUND">EAPP_ADDRESS_NOT_FOUND</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADDRESS_NOT_FOUND">EAPP_ADDRESS_NOT_FOUND</a>),
     );
     *registry.app_address_to_admin.borrow(app_address)
 }
@@ -1543,12 +1543,12 @@ app_signer → app_admin → equity_token / custody_address.
     ): <b>address</b> <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
         <b>assert</b>!(
             <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+            <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
         );
         <b>let</b> registry = <b>borrow_global</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
         <b>assert</b>!(
             registry.custody_address_to_admin.contains(custody_address),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_ECUSTODY_ADDRESS_NOT_FOUND">ECUSTODY_ADDRESS_NOT_FOUND</a>),
+            <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_ECUSTODY_ADDRESS_NOT_FOUND">ECUSTODY_ADDRESS_NOT_FOUND</a>),
         );
         *registry.custody_address_to_admin.borrow(custody_address)
     }
@@ -1579,12 +1579,12 @@ app_signer → app_admin → equity_token / custody_address.
     ): <b>address</b> <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
         <b>assert</b>!(
             <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+            <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
         );
         <b>let</b> registry = <b>borrow_global</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
         <b>assert</b>!(
             registry.equity_token_to_admin.contains(equity_token_address),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EEQUITY_TOKEN_NOT_FOUND">EEQUITY_TOKEN_NOT_FOUND</a>),
+            <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EEQUITY_TOKEN_NOT_FOUND">EEQUITY_TOKEN_NOT_FOUND</a>),
         );
         *registry.equity_token_to_admin.borrow(equity_token_address)
     }
@@ -1613,12 +1613,12 @@ app_signer → app_admin → equity_token / custody_address.
 <pre><code><b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_get_app_info">get_app_info</a>(app_admin: <b>address</b>): <a href="poc_registry.md#0x1_poc_registry_AppInfo">AppInfo</a> <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
         <b>assert</b>!(
             <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+            <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
         );
         <b>let</b> registry = <b>borrow_global</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
         <b>assert</b>!(
             registry.apps.contains(app_admin),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADMIN_NOT_FOUND">EAPP_ADMIN_NOT_FOUND</a>),
+            <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADMIN_NOT_FOUND">EAPP_ADMIN_NOT_FOUND</a>),
         );
         *registry.apps.borrow(app_admin)
     }
@@ -1787,7 +1787,7 @@ app_signer → app_admin → equity_token / custody_address.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_get_metadata_uri">get_metadata_uri</a>(app_admin: <b>address</b>): <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>
+<b>public</b> <b>fun</b> <a href="poc_registry.md#0x1_poc_registry_get_metadata_uri">get_metadata_uri</a>(app_admin: <b>address</b>): <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>
 </code></pre>
 
 
@@ -1939,7 +1939,7 @@ Aborts if the admin address is not found in the registry.
 ): &<b>mut</b> <a href="poc_registry.md#0x1_poc_registry_AppInfo">AppInfo</a> {
     <b>assert</b>!(
         registry.apps.contains(app_admin),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADMIN_NOT_FOUND">EAPP_ADMIN_NOT_FOUND</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EAPP_ADMIN_NOT_FOUND">EAPP_ADMIN_NOT_FOUND</a>),
     );
     registry.apps.borrow_mut(app_admin)
 }
@@ -1973,7 +1973,7 @@ Idempotent: if the new state equals the current state, returns without emitting 
     <a href="poc_registry.md#0x1_poc_registry_assert_valid_app_state">assert_valid_app_state</a>(new_app_state);
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
     );
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
     <b>let</b> info = <a href="poc_registry.md#0x1_poc_registry_borrow_app_info_mut">borrow_app_info_mut</a>(registry, app_admin);
@@ -2019,7 +2019,7 @@ Idempotent: if the new status equals the current status, returns without emittin
 ) <b>acquires</b> <a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a> {
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_registry.md#0x1_poc_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
     );
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="poc_registry.md#0x1_poc_registry_Registry">Registry</a>&gt;(@topo_framework);
     <b>let</b> info = <a href="poc_registry.md#0x1_poc_registry_borrow_app_info_mut">borrow_app_info_mut</a>(registry, app_admin);
@@ -2109,7 +2109,7 @@ Validate that an app_state value is one of the three legal constants (internal u
         app_state == <a href="poc_registry.md#0x1_poc_registry_APP_STATE_ACTIVE">APP_STATE_ACTIVE</a> ||
             app_state == <a href="poc_registry.md#0x1_poc_registry_APP_STATE_PAUSED">APP_STATE_PAUSED</a> ||
             app_state == <a href="poc_registry.md#0x1_poc_registry_APP_STATE_STOPPED">APP_STATE_STOPPED</a>,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_registry.md#0x1_poc_registry_EINVALID_APP_STATE">EINVALID_APP_STATE</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_registry.md#0x1_poc_registry_EINVALID_APP_STATE">EINVALID_APP_STATE</a>),
     );
 }
 </code></pre>
@@ -2139,7 +2139,7 @@ Validate that a poc_listing_status value is one of the three legal constants (in
         poc_listing_status == <a href="poc_registry.md#0x1_poc_registry_POC_LISTING_STATUS_REGISTERED">POC_LISTING_STATUS_REGISTERED</a> ||
             poc_listing_status == <a href="poc_registry.md#0x1_poc_registry_POC_LISTING_STATUS_WHITELISTED">POC_LISTING_STATUS_WHITELISTED</a> ||
             poc_listing_status == <a href="poc_registry.md#0x1_poc_registry_POC_LISTING_STATUS_SUSPENDED">POC_LISTING_STATUS_SUSPENDED</a>,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_registry.md#0x1_poc_registry_EINVALID_POC_LISTING_STATUS">EINVALID_POC_LISTING_STATUS</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_registry.md#0x1_poc_registry_EINVALID_POC_LISTING_STATUS">EINVALID_POC_LISTING_STATUS</a>),
     );
 }
 </code></pre>

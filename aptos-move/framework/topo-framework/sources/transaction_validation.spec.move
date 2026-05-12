@@ -445,7 +445,7 @@ spec topo_framework::transaction_validation {
 
     spec schema EpilogueGasPayerAbortsIf {
         use std::option;
-        use aptos_std::type_info;
+        use topo_std::type_info;
         use topo_framework::account::{Account};
         use topo_framework::topo_coin::{TopoCoin};
         use topo_framework::coin;

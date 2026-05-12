@@ -109,7 +109,7 @@ and <code>custody_actor</code> (signer for the custody address)
 <b>use</b> <a href="poc_power_store.md#0x1_poc_power_store">0x1::poc_power_store</a>;
 <b>use</b> <a href="poc_registry.md#0x1_poc_registry">0x1::poc_registry</a>;
 <b>use</b> <a href="primary_fungible_store.md#0x1_primary_fungible_store">0x1::primary_fungible_store</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 </code></pre>
 
 
@@ -258,7 +258,7 @@ actually receives — not the amount requested.
 the true received amount, inflating POC power calculations.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution">grant_equity_with_contribution</a>(app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, contributor: <b>address</b>, equity_amount: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution">grant_equity_with_contribution</a>(app_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, custody_actor: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, contributor: <b>address</b>, equity_amount: u64)
 </code></pre>
 
 
@@ -268,15 +268,15 @@ the true received amount, inflating POC power calculations.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution">grant_equity_with_contribution</a>(
-    app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    app_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    custody_actor: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     contributor: <b>address</b>,
     equity_amount: u64,
 ) {
     // Step 1: Validate equity_amount &gt; 0.
     // This is a hard pre-condition: a zero-amount transfer is meaningless and
     // would produce a misleading <a href="poc_contribution.md#0x1_poc_contribution_ContributionEvent">ContributionEvent</a> <b>with</b> equity_amount = 0.
-    <b>assert</b>!(equity_amount &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_contribution.md#0x1_poc_contribution_EZERO_AMOUNT">EZERO_AMOUNT</a>));
+    <b>assert</b>!(equity_amount &gt; 0, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_contribution.md#0x1_poc_contribution_EZERO_AMOUNT">EZERO_AMOUNT</a>));
 
     // Step 2: Resolve the equity token from the registry and execute the transfer.
     //
@@ -313,7 +313,7 @@ the true received amount, inflating POC power calculations.
     // Two checks must both pass:
     // a) is_app_eligible_for_poc: app_state == ACTIVE && poc_listing_status == WHITELISTED
     //    If the app is paused, stopped, or not yet whitelisted, no <a href="event.md#0x1_event">event</a> is emitted.
-    // b) custody <b>address</b> match: the actual <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a> of custody_actor must equal the
+    // b) custody <b>address</b> match: the actual <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a> of custody_actor must equal the
     //    custody_address registered in <a href="poc_registry.md#0x1_poc_registry">poc_registry</a>. This prevents a whitelisted app
     //    from using an unregistered custody <a href="account.md#0x1_account">account</a> <b>to</b> emit contribution events.
     <b>if</b> (<a href="poc_registry.md#0x1_poc_registry_is_app_eligible_for_poc">poc_registry::is_app_eligible_for_poc</a>(app_admin)) {
@@ -340,7 +340,7 @@ the custody signer is not the registered custody address, this function aborts
 before moving any equity tokens.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution_strict">grant_equity_with_contribution_strict</a>(app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, contributor: <b>address</b>, equity_amount: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution_strict">grant_equity_with_contribution_strict</a>(app_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, custody_actor: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, contributor: <b>address</b>, equity_amount: u64)
 </code></pre>
 
 
@@ -350,12 +350,12 @@ before moving any equity tokens.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_grant_equity_with_contribution_strict">grant_equity_with_contribution_strict</a>(
-    app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    app_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    custody_actor: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     contributor: <b>address</b>,
     equity_amount: u64,
 ) {
-    <b>assert</b>!(equity_amount &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_contribution.md#0x1_poc_contribution_EZERO_AMOUNT">EZERO_AMOUNT</a>));
+    <b>assert</b>!(equity_amount &gt; 0, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_contribution.md#0x1_poc_contribution_EZERO_AMOUNT">EZERO_AMOUNT</a>));
 
     <b>let</b> (
         app_admin,
@@ -366,11 +366,11 @@ before moving any equity tokens.
     ) = <a href="poc_contribution.md#0x1_poc_contribution_resolve_contribution_context">resolve_contribution_context</a>(app_signer, custody_actor);
     <b>assert</b>!(
         <a href="poc_registry.md#0x1_poc_registry_is_app_eligible_for_poc">poc_registry::is_app_eligible_for_poc</a>(app_admin),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_contribution.md#0x1_poc_contribution_EAPP_NOT_ELIGIBLE_FOR_POC">EAPP_NOT_ELIGIBLE_FOR_POC</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_contribution.md#0x1_poc_contribution_EAPP_NOT_ELIGIBLE_FOR_POC">EAPP_NOT_ELIGIBLE_FOR_POC</a>),
     );
     <b>assert</b>!(
         actual_custody_address == registered_custody_address,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_contribution.md#0x1_poc_contribution_ECUSTODY_ADDRESS_MISMATCH">ECUSTODY_ADDRESS_MISMATCH</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_contribution.md#0x1_poc_contribution_ECUSTODY_ADDRESS_MISMATCH">ECUSTODY_ADDRESS_MISMATCH</a>),
     );
 
     <a href="primary_fungible_store.md#0x1_primary_fungible_store_transfer_assert_minimum_deposit">primary_fungible_store::transfer_assert_minimum_deposit</a>(
@@ -394,7 +394,7 @@ before moving any equity tokens.
 
 
 
-<pre><code><b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_resolve_contribution_context">resolve_contribution_context</a>(app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<b>address</b>, <b>address</b>, <b>address</b>, <b>address</b>, <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;)
+<pre><code><b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_resolve_contribution_context">resolve_contribution_context</a>(app_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, custody_actor: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<b>address</b>, <b>address</b>, <b>address</b>, <b>address</b>, <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;)
 </code></pre>
 
 
@@ -404,15 +404,15 @@ before moving any equity tokens.
 
 
 <pre><code><b>fun</b> <a href="poc_contribution.md#0x1_poc_contribution_resolve_contribution_context">resolve_contribution_context</a>(
-    app_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    custody_actor: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    app_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    custody_actor: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
 ): (<b>address</b>, <b>address</b>, <b>address</b>, <b>address</b>, Object&lt;Metadata&gt;) {
-    <b>let</b> app_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_signer);
+    <b>let</b> app_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(app_signer);
     <b>let</b> app_admin = <a href="poc_registry.md#0x1_poc_registry_get_app_admin_by_app_address">poc_registry::get_app_admin_by_app_address</a>(app_address);
     <b>let</b> equity_token_address = <a href="poc_registry.md#0x1_poc_registry_get_equity_token_address">poc_registry::get_equity_token_address</a>(app_admin);
     <b>let</b> metadata = <a href="object.md#0x1_object_address_to_object">object::address_to_object</a>&lt;Metadata&gt;(equity_token_address);
     <b>let</b> registered_custody_address = <a href="poc_registry.md#0x1_poc_registry_get_custody_address">poc_registry::get_custody_address</a>(app_admin);
-    <b>let</b> actual_custody_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(custody_actor);
+    <b>let</b> actual_custody_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(custody_actor);
     (
         app_admin,
         app_address,

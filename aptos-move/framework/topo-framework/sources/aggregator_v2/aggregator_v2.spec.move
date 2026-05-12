@@ -78,7 +78,7 @@ spec topo_framework::aggregator_v2 {
     }
 
     spec schema AbortsIfIntElement<IntElement> {
-        use aptos_std::type_info;
+        use topo_std::type_info;
         aborts_if [abstract] type_info::type_name<IntElement>().bytes != b"u64" && type_info::type_name<IntElement>().bytes != b"u128";
     }
 

@@ -9,7 +9,7 @@
 -  [Function `reverse_bits`](#0x7_order_id_generation_reverse_bits)
 
 
-<pre><code><b>use</b> <a href="../../aptos-trading/../topo-framework/doc/transaction_context.md#0x1_transaction_context">0x1::transaction_context</a>;
+<pre><code><b>use</b> <a href="../../topo-framework/doc/transaction_context.md#0x1_transaction_context">0x1::transaction_context</a>;
 <b>use</b> <a href="">0x5::order_book_types</a>;
 </code></pre>
 
@@ -33,7 +33,7 @@
 <pre><code><b>public</b> <b>fun</b> <a href="order_id_generation.md#0x7_order_id_generation_next_order_id">next_order_id</a>(): OrderId {
     // reverse bits <b>to</b> make order ids random, so indices on top of them are shuffled.
     new_order_id_type(<a href="order_id_generation.md#0x7_order_id_generation_reverse_bits">reverse_bits</a>(
-        <a href="../../aptos-trading/../topo-framework/doc/transaction_context.md#0x1_transaction_context_monotonically_increasing_counter">transaction_context::monotonically_increasing_counter</a>()
+        <a href="../../topo-framework/doc/transaction_context.md#0x1_transaction_context_monotonically_increasing_counter">transaction_context::monotonically_increasing_counter</a>()
     ))
 }
 </code></pre>

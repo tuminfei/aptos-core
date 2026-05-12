@@ -194,7 +194,7 @@ Checkout our developer doc on our token standard https://aptos.dev/standards
 <b>use</b> <a href="../../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 <b>use</b> <a href="../../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
-<b>use</b> <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
+<b>use</b> <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table">0x1::table</a>;
 <b>use</b> <a href="../../topo-framework/doc/timestamp.md#0x1_timestamp">0x1::timestamp</a>;
 <b>use</b> <a href="property_map.md#0x3_property_map">0x3::property_map</a>;
 <b>use</b> <a href="token_event_store.md#0x3_token_event_store">0x3::token_event_store</a>;
@@ -504,7 +504,7 @@ Represents token resources owned by token owner
 
 <dl>
 <dt>
-<code>tokens: <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="token.md#0x3_token_TokenId">token::TokenId</a>, <a href="token.md#0x3_token_Token">token::Token</a>&gt;</code>
+<code>tokens: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="token.md#0x3_token_TokenId">token::TokenId</a>, <a href="token.md#0x3_token_Token">token::Token</a>&gt;</code>
 </dt>
 <dd>
  the tokens owned by a token owner
@@ -602,13 +602,13 @@ Represent collection and token metadata for a creator
 
 <dl>
 <dt>
-<code>collection_data: <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, <a href="token.md#0x3_token_CollectionData">token::CollectionData</a>&gt;</code>
+<code>collection_data: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, <a href="token.md#0x3_token_CollectionData">token::CollectionData</a>&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>token_data: <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="token.md#0x3_token_TokenDataId">token::TokenDataId</a>, <a href="token.md#0x3_token_TokenData">token::TokenData</a>&gt;</code>
+<code>token_data: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="token.md#0x3_token_TokenDataId">token::TokenDataId</a>, <a href="token.md#0x3_token_TokenData">token::TokenData</a>&gt;</code>
 </dt>
 <dd>
 
@@ -3208,7 +3208,7 @@ direct deposit if user opt in direct transfer
         <b>move_to</b>(
             <a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
             <a href="token.md#0x3_token_TokenStore">TokenStore</a> {
-                tokens: <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+                tokens: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
                 direct_transfer: <b>false</b>,
                 deposit_events: <a href="../../topo-framework/doc/account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="token.md#0x3_token_DepositEvent">DepositEvent</a>&gt;(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>),
                 withdraw_events: <a href="../../topo-framework/doc/account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="token.md#0x3_token_WithdrawEvent">WithdrawEvent</a>&gt;(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>),
@@ -3522,8 +3522,8 @@ Create a new collection to hold tokens
         <b>move_to</b>(
             creator,
             <a href="token.md#0x3_token_Collections">Collections</a> {
-                collection_data: <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
-                token_data: <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+                collection_data: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+                token_data: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
                 create_collection_events: <a href="../../topo-framework/doc/account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="token.md#0x3_token_CreateCollectionEvent">CreateCollectionEvent</a>&gt;(creator),
                 create_token_data_events: <a href="../../topo-framework/doc/account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="token.md#0x3_token_CreateTokenDataEvent">CreateTokenDataEvent</a>&gt;(creator),
                 mint_token_events: <a href="../../topo-framework/doc/account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="token.md#0x3_token_MintTokenEvent">MintTokenEvent</a>&gt;(creator),
@@ -5271,7 +5271,7 @@ The sum of supply and mint Token is less than maximum.
 <b>let</b> token_data_id = <a href="token.md#0x3_token_spec_create_tokendata">spec_create_tokendata</a>(addr, collection, name);
 <b>let</b> creator_addr = token_data_id.creator;
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr).token_data;
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
 <b>aborts_if</b> token_data_id.creator != addr;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr);
 <b>aborts_if</b> balance &lt;= 0;
@@ -5316,7 +5316,7 @@ only creator of the tokendata can mint tokens
 <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>);
 <b>let</b> creator_addr = token_data_id.creator;
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr).token_data;
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
 <b>aborts_if</b> token_data_id.creator != <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>);
 <b>include</b> <a href="token.md#0x3_token_CreateTokenDataIdAbortsIf">CreateTokenDataIdAbortsIf</a>{
 creator: token_data_address,
@@ -5430,14 +5430,14 @@ The signer is creator.
 <b>let</b> token_id = <a href="token.md#0x3_token_spec_create_token_id_raw">spec_create_token_id_raw</a>(creator_address, collection, name, property_version);
 <b>let</b> creator_addr = token_id.token_data_id.creator;
 <b>let</b> collections = <b>borrow_global_mut</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address);
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(
     collections.token_data,
     token_id.token_data_id,
 );
 <b>aborts_if</b> amount &lt;= 0;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(collections.token_data, token_id.token_data_id);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(token_data.default_properties.map, std::string::spec_utf8(<a href="token.md#0x3_token_BURNABLE_BY_CREATOR">BURNABLE_BY_CREATOR</a>));
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(collections.token_data, token_id.token_data_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(token_data.default_properties.map, std::string::spec_utf8(<a href="token.md#0x3_token_BURNABLE_BY_CREATOR">BURNABLE_BY_CREATOR</a>));
 </code></pre>
 
 
@@ -5458,7 +5458,7 @@ The token_data_id should exist in token_data.
 <b>let</b> token_id = <a href="token.md#0x3_token_spec_create_token_id_raw">spec_create_token_id_raw</a>(creators_address, collection, name, property_version);
 <b>let</b> creator_addr = token_id.token_data_id.creator;
 <b>let</b> collections = <b>borrow_global_mut</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr);
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(
     collections.token_data,
     token_id.token_data_id,
 );
@@ -5467,8 +5467,8 @@ creator: creators_address
 };
 <b>aborts_if</b> amount &lt;= 0;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(collections.token_data, token_id.token_data_id);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(token_data.default_properties.map, std::string::spec_utf8(<a href="token.md#0x3_token_BURNABLE_BY_OWNER">BURNABLE_BY_OWNER</a>));
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(collections.token_data, token_id.token_data_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(token_data.default_properties.map, std::string::spec_utf8(<a href="token.md#0x3_token_BURNABLE_BY_OWNER">BURNABLE_BY_OWNER</a>));
 <b>aborts_if</b> !<a href="../../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(<a href="token.md#0x3_token_BURNABLE_BY_OWNER">BURNABLE_BY_OWNER</a>);
 </code></pre>
 
@@ -5508,7 +5508,7 @@ The description of Collection is mutable.
 
 <pre><code><b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(creator);
 <b>let</b> <a href="../../topo-framework/doc/account.md#0x1_account">account</a> = <b>global</b>&lt;<a href="../../topo-framework/doc/account.md#0x1_account_Account">account::Account</a>&gt;(addr);
-<b>let</b> collection_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(<b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(addr).collection_data, collection_name);
+<b>let</b> collection_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(<b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(addr).collection_data, collection_name);
 <b>include</b> <a href="token.md#0x3_token_AssertCollectionExistsAbortsIf">AssertCollectionExistsAbortsIf</a> {
     creator_address: addr,
     collection_name
@@ -5532,7 +5532,7 @@ The uri of Collection is mutable.
 
 <pre><code><b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(creator);
 <b>let</b> <a href="../../topo-framework/doc/account.md#0x1_account">account</a> = <b>global</b>&lt;<a href="../../topo-framework/doc/account.md#0x1_account_Account">account::Account</a>&gt;(addr);
-<b>let</b> collection_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(<b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(addr).collection_data, collection_name);
+<b>let</b> collection_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(<b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(addr).collection_data, collection_name);
 <b>aborts_if</b> len(uri.bytes) &gt; <a href="token.md#0x3_token_MAX_URI_LENGTH">MAX_URI_LENGTH</a>;
 <b>include</b> <a href="token.md#0x3_token_AssertCollectionExistsAbortsIf">AssertCollectionExistsAbortsIf</a> {
     creator_address: addr,
@@ -5559,7 +5559,7 @@ The maxium of Collection is mutable.
 
 <pre><code><b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(creator);
 <b>let</b> <a href="../../topo-framework/doc/account.md#0x1_account">account</a> = <b>global</b>&lt;<a href="../../topo-framework/doc/account.md#0x1_account_Account">account::Account</a>&gt;(addr);
-<b>let</b> collection_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(<b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(addr).collection_data, collection_name);
+<b>let</b> collection_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(<b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(addr).collection_data, collection_name);
 <b>include</b> <a href="token.md#0x3_token_AssertCollectionExistsAbortsIf">AssertCollectionExistsAbortsIf</a> {
     creator_address: addr,
     collection_name
@@ -5588,7 +5588,7 @@ The token maximum is mutable
 <pre><code><b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(creator);
 <b>let</b> <a href="../../topo-framework/doc/account.md#0x1_account">account</a> = <b>global</b>&lt;<a href="../../topo-framework/doc/account.md#0x1_account_Account">account::Account</a>&gt;(addr);
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(token_data_id.creator).token_data;
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
 <b>include</b> <a href="token.md#0x3_token_AssertTokendataExistsAbortsIf">AssertTokendataExistsAbortsIf</a>;
 <b>aborts_if</b> token_data.maximum == 0 || maximum == 0;
 <b>aborts_if</b> maximum &lt; token_data.supply;
@@ -5614,7 +5614,7 @@ The token uri is mutable
 <pre><code><b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(creator);
 <b>let</b> <a href="../../topo-framework/doc/account.md#0x1_account">account</a> = <b>global</b>&lt;<a href="../../topo-framework/doc/account.md#0x1_account_Account">account::Account</a>&gt;(addr);
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(token_data_id.creator).token_data;
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
 <b>include</b> <a href="token.md#0x3_token_AssertTokendataExistsAbortsIf">AssertTokendataExistsAbortsIf</a>;
 <b>aborts_if</b> len(uri.bytes) &gt; <a href="token.md#0x3_token_MAX_URI_LENGTH">MAX_URI_LENGTH</a>;
 <b>aborts_if</b> !token_data.mutability_config.uri;
@@ -5638,7 +5638,7 @@ The token royalty is mutable
 <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(creator);
 <b>let</b> <a href="../../topo-framework/doc/account.md#0x1_account">account</a> = <b>global</b>&lt;<a href="../../topo-framework/doc/account.md#0x1_account_Account">account::Account</a>&gt;(addr);
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(token_data_id.creator).token_data;
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
 <b>aborts_if</b> !token_data.mutability_config.royalty;
 </code></pre>
 
@@ -5660,7 +5660,7 @@ The token description is mutable
 <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(creator);
 <b>let</b> <a href="../../topo-framework/doc/account.md#0x1_account">account</a> = <b>global</b>&lt;<a href="../../topo-framework/doc/account.md#0x1_account_Account">account::Account</a>&gt;(addr);
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(token_data_id.creator).token_data;
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
 <b>aborts_if</b> !token_data.mutability_config.description;
 </code></pre>
 
@@ -5680,7 +5680,7 @@ The property map is mutable
 
 <pre><code><b>pragma</b> aborts_if_is_partial;
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(token_data_id.creator).token_data;
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
 <b>include</b> <a href="token.md#0x3_token_AssertTokendataExistsAbortsIf">AssertTokendataExistsAbortsIf</a>;
 <b>aborts_if</b> len(keys) != len(values);
 <b>aborts_if</b> len(keys) != len(types);
@@ -5707,11 +5707,11 @@ The property map is mutable.
 <b>let</b> creator = token_id.token_data_id.creator;
 <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>);
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator).token_data;
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_id.token_data_id);
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_id.token_data_id);
 <b>aborts_if</b> addr != creator;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_id.token_data_id);
-<b>aborts_if</b> !token_data.mutability_config.properties && !<a href="../../topo-framework/../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(token_data.default_properties.map, std::string::spec_utf8(<a href="token.md#0x3_token_TOKEN_PROPERTY_MUTABLE">TOKEN_PROPERTY_MUTABLE</a>));
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_id.token_data_id);
+<b>aborts_if</b> !token_data.mutability_config.properties && !<a href="../../topo-framework/../topo-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(token_data.default_properties.map, std::string::spec_utf8(<a href="token.md#0x3_token_TOKEN_PROPERTY_MUTABLE">TOKEN_PROPERTY_MUTABLE</a>));
 </code></pre>
 
 
@@ -6060,7 +6060,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
 <b>let</b> account_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>);
 <b>let</b> collections = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(account_addr);
 <b>let</b> token_data_id = <a href="token.md#0x3_token_spec_create_token_data_id">spec_create_token_data_id</a>(account_addr, collection, name);
-<b>let</b> Collection = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(collections.collection_data, token_data_id.collection);
+<b>let</b> Collection = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(collections.collection_data, token_data_id.collection);
 <b>let</b> length = len(property_keys);
 <b>aborts_if</b> len(name.bytes) &gt; <a href="token.md#0x3_token_MAX_NFT_NAME_LENGTH">MAX_NFT_NAME_LENGTH</a>;
 <b>aborts_if</b> len(collection.bytes) &gt; <a href="token.md#0x3_token_MAX_COLLECTION_NAME_LENGTH">MAX_COLLECTION_NAME_LENGTH</a>;
@@ -6072,8 +6072,8 @@ The length of name should less than MAX_NFT_NAME_LENGTH
     collection,
     name
 };
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(collections.collection_data, collection);
-<b>aborts_if</b> <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(collections.token_data, token_data_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(collections.collection_data, collection);
+<b>aborts_if</b> <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(collections.token_data, token_data_id);
 <b>aborts_if</b> Collection.maximum &gt; 0 && Collection.supply + 1 &gt; MAX_U64;
 <b>aborts_if</b> Collection.maximum &gt; 0 && Collection.maximum &lt; Collection.supply + 1;
 <b>include</b> <a href="token.md#0x3_token_CreateRoyaltyAbortsIf">CreateRoyaltyAbortsIf</a> {
@@ -6178,7 +6178,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
 
 <pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address);
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address).token_data;
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
 </code></pre>
 
 
@@ -6196,7 +6196,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
 
 <pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address);
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address).token_data;
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
 </code></pre>
 
 
@@ -6297,9 +6297,9 @@ The sum of supply and the amount of mint Token is less than maximum.
     <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>);
     <b>let</b> creator_addr = token_data_id.creator;
     <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr).token_data;
-    <b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
+    <b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
     <b>aborts_if</b> token_data_id.creator != addr;
-    <b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
+    <b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
     <b>aborts_if</b> token_data.maximum &gt; 0 && token_data.supply + amount &gt; token_data.maximum;
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr);
     <b>aborts_if</b> amount &lt;= 0;
@@ -6325,11 +6325,11 @@ The sum of supply and the amount of mint Token is less than maximum.
 <b>let</b> opt_in_transfer = <b>global</b>&lt;<a href="token.md#0x3_token_TokenStore">TokenStore</a>&gt;(receiver).direct_transfer;
 <b>let</b> creator_addr = token_data_id.creator;
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr).token_data;
-<b>let</b> token_data = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
+<b>let</b> token_data = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(all_token_data, token_data_id);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_TokenStore">TokenStore</a>&gt;(receiver);
 <b>aborts_if</b> !opt_in_transfer;
 <b>aborts_if</b> token_data_id.creator != addr;
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
 <b>aborts_if</b> token_data.maximum &gt; 0 && token_data.supply + amount &gt; token_data.maximum;
 <b>aborts_if</b> amount &lt;= 0;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr);
@@ -6403,8 +6403,8 @@ The length of name should less than MAX_NFT_NAME_LENGTH
    <b>if</b> (!<b>exists</b>&lt;<a href="token.md#0x3_token_TokenStore">TokenStore</a>&gt;(owner)) {
        0
    }
-   <b>else</b> <b>if</b> (<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, id)) {
-       <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, id).amount
+   <b>else</b> <b>if</b> (<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, id)) {
+       <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, id).amount
    } <b>else</b> {
        0
    }
@@ -6445,7 +6445,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
 <pre><code><b>let</b> creator_addr = token_id.token_data_id.creator;
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr).token_data;
 <b>aborts_if</b> <a href="token.md#0x3_token_spec_balance_of">spec_balance_of</a>(owner, token_id) &lt;= 0;
-<b>aborts_if</b> token_id.property_version == 0 && !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_id.token_data_id);
+<b>aborts_if</b> token_id.property_version == 0 && !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_id.token_data_id);
 <b>aborts_if</b> token_id.property_version == 0 && !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr);
 </code></pre>
 
@@ -6465,7 +6465,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
 <pre><code><b>let</b> creator_address = token_data_id.creator;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address);
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address).token_data;
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
 </code></pre>
 
 
@@ -6483,7 +6483,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
 
 <pre><code><b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator);
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator).token_data;
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
 </code></pre>
 
 
@@ -6502,7 +6502,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
 <pre><code><b>let</b> creator_address = token_data_id.creator;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address);
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address).token_data;
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
 </code></pre>
 
 
@@ -6532,7 +6532,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
     <b>let</b> creator_address = token_data_id.creator;
     <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address).token_data;
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address);
-    <b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
+    <b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
 }
 </code></pre>
 
@@ -6552,7 +6552,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
 <pre><code><b>let</b> creator_addr = token_data_id.creator;
 <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr).token_data;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
 </code></pre>
 
 
@@ -6571,7 +6571,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
 
 <pre><code><b>let</b> all_collection_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator).collection_data;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_collection_data, collection_name);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_collection_data, collection_name);
 </code></pre>
 
 
@@ -6604,7 +6604,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
     <b>aborts_if</b> amount &lt;= 0;
     <b>aborts_if</b> <a href="token.md#0x3_token_spec_balance_of">spec_balance_of</a>(account_addr, id) &lt; amount;
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_TokenStore">TokenStore</a>&gt;(account_addr);
-    <b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(tokens, id);
+    <b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(tokens, id);
 }
 </code></pre>
 
@@ -6624,7 +6624,7 @@ The length of name should less than MAX_NFT_NAME_LENGTH
 <pre><code><b>pragma</b> aborts_if_is_partial;
 <b>let</b> tokens = <b>global</b>&lt;<a href="token.md#0x3_token_TokenStore">TokenStore</a>&gt;(token_owner).tokens;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_TokenStore">TokenStore</a>&gt;(token_owner);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(tokens, token_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(tokens, token_id);
 </code></pre>
 
 
@@ -6656,8 +6656,8 @@ The length of name should less than MAX_NFT_NAME_LENGTH
     token_id: <a href="token.md#0x3_token_TokenId">TokenId</a>;
     token_amount: u64;
     <b>let</b> token_store = <b>global</b>&lt;<a href="token.md#0x3_token_TokenStore">TokenStore</a>&gt;(account_addr);
-    <b>let</b> recipient_token = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, token_id);
-    <b>let</b> b = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, token_id);
+    <b>let</b> recipient_token = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, token_id);
+    <b>let</b> b = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, token_id);
     <b>aborts_if</b> token_amount &lt;= 0;
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_TokenStore">TokenStore</a>&gt;(account_addr);
     <b>aborts_if</b> b && recipient_token.id != token_id;
@@ -6693,7 +6693,7 @@ The collection_name should exist in collection_data of the creator_address's Col
     collection_name: String;
     <b>let</b> all_collection_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address).collection_data;
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_address);
-    <b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_collection_data, collection_name);
+    <b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_collection_data, collection_name);
 }
 </code></pre>
 
@@ -6730,7 +6730,7 @@ The token_data_id is in the all_token_data.
     <b>aborts_if</b> addr != creator_addr;
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr);
     <b>let</b> all_token_data = <b>global</b>&lt;<a href="token.md#0x3_token_Collections">Collections</a>&gt;(creator_addr).token_data;
-    <b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
+    <b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(all_token_data, token_data_id);
 }
 </code></pre>
 

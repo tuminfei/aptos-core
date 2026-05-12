@@ -2,13 +2,13 @@ module topo_framework::permissioned_delegation {
     use std::error;
     use std::option::Option;
     use std::signer;
-    use aptos_std::ed25519::{
+    use topo_std::ed25519::{
         Self,
         new_signature_from_bytes,
         new_unvalidated_public_key_from_bytes,
         UnvalidatedPublicKey
     };
-    use aptos_std::big_ordered_map::{Self, BigOrderedMap};
+    use topo_framework::big_ordered_map::{Self, BigOrderedMap};
     use topo_framework::auth_data::AbstractionAuthData;
     use topo_framework::bcs_stream::{Self, deserialize_u8};
     use topo_framework::permissioned_signer::{Self, is_permissioned_signer, StorablePermissionedHandle};
@@ -155,7 +155,7 @@ module topo_framework::permissioned_delegation {
     }
 
     #[test_only]
-    use aptos_std::ed25519::{sign_arbitrary_bytes, generate_keys, validated_public_key_to_bytes, Signature,
+    use topo_std::ed25519::{sign_arbitrary_bytes, generate_keys, validated_public_key_to_bytes, Signature,
         public_key_into_unvalidated
     };
     #[test_only]

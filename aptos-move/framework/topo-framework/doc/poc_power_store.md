@@ -84,9 +84,9 @@ Lifecycle Example:
 
 
 <pre><code><b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
+<b>use</b> <a href="../../topo-stdlib/doc/table.md#0x1_table">0x1::table</a>;
 </code></pre>
 
 
@@ -119,7 +119,7 @@ Invariants:
  The single trusted address allowed to upload power updates
 </dd>
 <dt>
-<code>users: <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="poc_power_store.md#0x1_poc_power_store_UserPowerInfo">poc_power_store::UserPowerInfo</a>&gt;</code>
+<code>users: <a href="../../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="poc_power_store.md#0x1_poc_power_store_UserPowerInfo">poc_power_store::UserPowerInfo</a>&gt;</code>
 </dt>
 <dd>
  Per-user storage: address → two-slot power version window
@@ -490,7 +490,7 @@ PowerStore resource has not been initialized yet
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>)
 </code></pre>
 
 
@@ -499,7 +499,7 @@ PowerStore resource has not been initialized yet
 <summary>Implementation</summary>
 
 
-<pre><code><b>friend</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>) {
+<pre><code><b>friend</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>) {
     <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store_internal">initialize_power_store_internal</a>(
         topo_framework,
         operator,
@@ -519,7 +519,7 @@ PowerStore resource has not been initialized yet
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_with_power_period">initialize_with_power_period</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>, power_period_in_epochs: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_with_power_period">initialize_with_power_period</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>, power_period_in_epochs: u64)
 </code></pre>
 
 
@@ -529,7 +529,7 @@ PowerStore resource has not been initialized yet
 
 
 <pre><code><b>friend</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_with_power_period">initialize_with_power_period</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     operator: <b>address</b>,
     power_period_in_epochs: u64,
 ) {
@@ -552,7 +552,7 @@ PowerStore resource has not been initialized yet
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store">initialize_power_store</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store">initialize_power_store</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>)
 </code></pre>
 
 
@@ -562,7 +562,7 @@ PowerStore resource has not been initialized yet
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store">initialize_power_store</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     operator: <b>address</b>,
 ) {
     <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store_internal">initialize_power_store_internal</a>(
@@ -584,7 +584,7 @@ PowerStore resource has not been initialized yet
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store_with_period">initialize_power_store_with_period</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>, power_period_in_epochs: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store_with_period">initialize_power_store_with_period</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>, power_period_in_epochs: u64)
 </code></pre>
 
 
@@ -594,7 +594,7 @@ PowerStore resource has not been initialized yet
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store_with_period">initialize_power_store_with_period</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     operator: <b>address</b>,
     power_period_in_epochs: u64,
 ) {
@@ -617,7 +617,7 @@ PowerStore resource has not been initialized yet
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_retention_bps_per_period">set_retention_bps_per_period</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, retention_bps_per_period: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_retention_bps_per_period">set_retention_bps_per_period</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, retention_bps_per_period: u64)
 </code></pre>
 
 
@@ -627,7 +627,7 @@ PowerStore resource has not been initialized yet
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_retention_bps_per_period">set_retention_bps_per_period</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     retention_bps_per_period: u64,
 ) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
@@ -653,7 +653,7 @@ parameter change from reinterpreting historical epochs and making
 <code>current_period</code> jump by more than one at the next epoch boundary.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_power_period_in_epochs">set_power_period_in_epochs</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, power_period_in_epochs: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_power_period_in_epochs">set_power_period_in_epochs</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, power_period_in_epochs: u64)
 </code></pre>
 
 
@@ -663,7 +663,7 @@ parameter change from reinterpreting historical epochs and making
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_power_period_in_epochs">set_power_period_in_epochs</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     power_period_in_epochs: u64,
 ) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
@@ -685,7 +685,7 @@ parameter change from reinterpreting historical epochs and making
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_operator">set_operator</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_operator">set_operator</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>)
 </code></pre>
 
 
@@ -695,7 +695,7 @@ parameter change from reinterpreting historical epochs and making
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_operator">set_operator</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     new_operator: <b>address</b>,
 ) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
@@ -740,7 +740,7 @@ Idempotency: calling this multiple times for the same target_period overwrites t
 This allows the operator to correct a mistake before the period boundary is crossed.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_stage_batch_update">stage_batch_update</a>(operator: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, target_period: u64, users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, powers: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_stage_batch_update">stage_batch_update</a>(operator: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, target_period: u64, users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, powers: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -750,24 +750,24 @@ This allows the operator to correct a mistake before the period boundary is cros
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_stage_batch_update">stage_batch_update</a>(
-    operator: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    operator: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     target_period: u64,
-    users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    powers: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    powers: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
 ) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
     <a href="poc_power_store.md#0x1_poc_power_store_assert_store_exists">assert_store_exists</a>();
     <a href="poc_power_store.md#0x1_poc_power_store_assert_clock_exists">assert_clock_exists</a>();
     <b>assert</b>!(
         users.length() == powers.length(),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_power_store.md#0x1_poc_power_store_EINVALID_BATCH_LENGTH">EINVALID_BATCH_LENGTH</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_power_store.md#0x1_poc_power_store_EINVALID_BATCH_LENGTH">EINVALID_BATCH_LENGTH</a>),
     );
 
     <b>let</b> clock = <b>borrow_global</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@topo_framework);
     <b>let</b> store = <b>borrow_global_mut</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@topo_framework);
-    <a href="poc_power_store.md#0x1_poc_power_store_assert_power_update_authority">assert_power_update_authority</a>(store, <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(operator));
+    <a href="poc_power_store.md#0x1_poc_power_store_assert_power_update_authority">assert_power_update_authority</a>(store, <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(operator));
     <b>assert</b>!(
         target_period == clock.current_period + 1,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_power_store.md#0x1_poc_power_store_EINVALID_TARGET_PERIOD">EINVALID_TARGET_PERIOD</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_power_store.md#0x1_poc_power_store_EINVALID_TARGET_PERIOD">EINVALID_TARGET_PERIOD</a>),
     );
 
     <b>let</b> effective_period = target_period;
@@ -803,7 +803,7 @@ last_epoch == 0 && current_period == 0 (i.e., during genesis initialization).
 Used to seed initial validator power values before the first epoch begins.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_genesis_committed_power">set_genesis_committed_power</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, user: <b>address</b>, power: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_genesis_committed_power">set_genesis_committed_power</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, user: <b>address</b>, power: u64)
 </code></pre>
 
 
@@ -813,7 +813,7 @@ Used to seed initial validator power values before the first epoch begins.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_set_genesis_committed_power">set_genesis_committed_power</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     user: <b>address</b>,
     power: u64,
 ) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
@@ -825,7 +825,7 @@ Used to seed initial validator power values before the first epoch begins.
     <b>let</b> store = <b>borrow_global_mut</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@topo_framework);
     <b>assert</b>!(
         clock.last_epoch == 0 && clock.current_period == 0,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="poc_power_store.md#0x1_poc_power_store_EGENESIS_COMMIT_ONLY">EGENESIS_COMMIT_ONLY</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="poc_power_store.md#0x1_poc_power_store_EGENESIS_COMMIT_ONLY">EGENESIS_COMMIT_ONLY</a>),
     );
     <a href="poc_power_store.md#0x1_poc_power_store_upsert_power_version">upsert_power_version</a>(store, user, 0, power);
 }
@@ -1024,7 +1024,7 @@ next 60 committed epochs    → period 2
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_powers">get_user_committed_powers</a>(users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+<b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_powers">get_user_committed_powers</a>(users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -1034,9 +1034,9 @@ next 60 committed epochs    → period 2
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_committed_powers">get_user_committed_powers</a>(
-    users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
-    <b>let</b> powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
+    <b>let</b> powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@topo_framework) || !<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@topo_framework)) {
         <b>return</b> powers
     };
@@ -1067,7 +1067,7 @@ next 60 committed epochs    → period 2
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_powers_for_period">get_user_powers_for_period</a>(users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, target_period: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+<b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_powers_for_period">get_user_powers_for_period</a>(users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, target_period: u64): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -1077,10 +1077,10 @@ next 60 committed epochs    → period 2
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_powers_for_period">get_user_powers_for_period</a>(
-    users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
     target_period: u64,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
-    <b>let</b> powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
+    <b>let</b> powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@topo_framework)) {
         <b>return</b> powers
     };
@@ -1142,7 +1142,7 @@ next 60 committed epochs    → period 2
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_power_versions_by_addresses">get_user_power_versions_by_addresses</a>(users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_power_versions_by_addresses">get_user_power_versions_by_addresses</a>(users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -1152,21 +1152,21 @@ next 60 committed epochs    → period 2
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_get_user_power_versions_by_addresses">get_user_power_versions_by_addresses</a>(
-    users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
 ): (
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
 ) <b>acquires</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
-    <b>let</b> returned_users = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> older_effective_periods = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> older_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> newer_effective_periods = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> newer_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> committed_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> returned_users = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> older_effective_periods = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> older_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> newer_effective_periods = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> newer_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> committed_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>if</b> (!<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@topo_framework) || !<b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@topo_framework)) {
         <b>return</b> (
             returned_users,
@@ -1359,7 +1359,7 @@ next 60 committed epochs    → period 2
 
 
 
-<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store_internal">initialize_power_store_internal</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>, retention_bps_per_period: u64, power_period_in_epochs: u64)
+<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store_internal">initialize_power_store_internal</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, operator: <b>address</b>, retention_bps_per_period: u64, power_period_in_epochs: u64)
 </code></pre>
 
 
@@ -1369,7 +1369,7 @@ next 60 committed epochs    → period 2
 
 
 <pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_initialize_power_store_internal">initialize_power_store_internal</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     operator: <b>address</b>,
     retention_bps_per_period: u64,
     power_period_in_epochs: u64,
@@ -1379,7 +1379,7 @@ next 60 committed epochs    → period 2
     <a href="poc_power_store.md#0x1_poc_power_store_assert_valid_power_period">assert_valid_power_period</a>(power_period_in_epochs);
     <b>move_to</b>(topo_framework, <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a> {
         operator,
-        users: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+        users: <a href="../../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
         retention_bps_per_period,
     });
     <b>move_to</b>(topo_framework, <a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a> {
@@ -1413,7 +1413,7 @@ next 60 committed epochs    → period 2
 <pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_assert_store_exists">assert_store_exists</a>() {
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_power_store.md#0x1_poc_power_store_ESTORE_NOT_INITIALIZED">ESTORE_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_power_store.md#0x1_poc_power_store_ESTORE_NOT_INITIALIZED">ESTORE_NOT_INITIALIZED</a>),
     );
 }
 </code></pre>
@@ -1440,7 +1440,7 @@ next 60 committed epochs    → period 2
 <pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_assert_clock_exists">assert_clock_exists</a>() {
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="poc_power_store.md#0x1_poc_power_store_PeriodClock">PeriodClock</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_power_store.md#0x1_poc_power_store_ESTORE_NOT_INITIALIZED">ESTORE_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="poc_power_store.md#0x1_poc_power_store_ESTORE_NOT_INITIALIZED">ESTORE_NOT_INITIALIZED</a>),
     );
 }
 </code></pre>
@@ -1467,7 +1467,7 @@ next 60 committed epochs    → period 2
 <pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_assert_power_update_authority">assert_power_update_authority</a>(store: &<a href="poc_power_store.md#0x1_poc_power_store_PowerStore">PowerStore</a>, caller: <b>address</b>) {
     <b>assert</b>!(
         store.operator == caller || <a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(caller),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_power_store.md#0x1_poc_power_store_ENOT_OPERATOR">ENOT_OPERATOR</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="poc_power_store.md#0x1_poc_power_store_ENOT_OPERATOR">ENOT_OPERATOR</a>),
     );
 }
 </code></pre>
@@ -1495,7 +1495,7 @@ next 60 committed epochs    → period 2
     <b>assert</b>!(
         retention_bps_per_period &gt; 0
             && retention_bps_per_period &lt;= <a href="poc_power_store.md#0x1_poc_power_store_BPS_DENOMINATOR">BPS_DENOMINATOR</a>,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_power_store.md#0x1_poc_power_store_EINVALID_RETENTION_BPS">EINVALID_RETENTION_BPS</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_power_store.md#0x1_poc_power_store_EINVALID_RETENTION_BPS">EINVALID_RETENTION_BPS</a>),
     );
 }
 </code></pre>
@@ -1522,7 +1522,7 @@ next 60 committed epochs    → period 2
 <pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_assert_valid_power_period">assert_valid_power_period</a>(power_period_in_epochs: u64) {
     <b>assert</b>!(
         power_period_in_epochs &gt; 0,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_power_store.md#0x1_poc_power_store_EINVALID_POWER_PERIOD">EINVALID_POWER_PERIOD</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="poc_power_store.md#0x1_poc_power_store_EINVALID_POWER_PERIOD">EINVALID_POWER_PERIOD</a>),
     );
 }
 </code></pre>

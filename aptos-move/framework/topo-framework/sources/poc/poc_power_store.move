@@ -33,8 +33,8 @@ module topo_framework::poc_power_store {
     use std::error;
     use std::signer;
 
-    use aptos_std::table;
-    use aptos_std::table::Table;
+    use topo_std::table;
+    use topo_std::table::Table;
 
     use topo_framework::event;
     use topo_framework::system_addresses;

@@ -105,7 +105,7 @@ goes through the staking_registry's stored mint cap (for rewards only).
 <b>use</b> <a href="poc_power_store.md#0x1_poc_power_store">0x1::poc_power_store</a>;
 <b>use</b> <a href="primary_fungible_store.md#0x1_primary_fungible_store">0x1::primary_fungible_store</a>;
 <b>use</b> <a href="reconfiguration.md#0x1_reconfiguration">0x1::reconfiguration</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 <b>use</b> <a href="stake.md#0x1_stake">0x1::stake</a>;
 <b>use</b> <a href="staking_config.md#0x1_staking_config">0x1::staking_config</a>;
 <b>use</b> <a href="staking_registry.md#0x1_staking_registry">0x1::staking_registry</a>;
@@ -116,7 +116,7 @@ goes through the staking_registry's stored mint cap (for rewards only).
 <b>use</b> <a href="topo_governance.md#0x1_topo_governance">0x1::topo_governance</a>;
 <b>use</b> <a href="transaction_fee.md#0x1_transaction_fee">0x1::transaction_fee</a>;
 <b>use</b> <a href="transaction_validation.md#0x1_transaction_validation">0x1::transaction_validation</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<b>use</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 <b>use</b> <a href="version.md#0x1_version">0x1::version</a>;
 </code></pre>
 
@@ -196,25 +196,25 @@ goes through the staking_registry's stored mint cap (for rewards only).
 
 </dd>
 <dt>
-<code>consensus_pubkey: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>consensus_pubkey: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>proof_of_possession: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>proof_of_possession: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>network_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>network_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>full_node_network_addresses: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>full_node_network_addresses: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
@@ -313,7 +313,7 @@ SignerCapability to topo_governance (decentralized on-chain governance owns the 
 - Initializes block module with epoch_interval_microsecs (controls epoch length).
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize">initialize</a>(<a href="gas_schedule.md#0x1_gas_schedule">gas_schedule</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, initial_version: u64, <a href="consensus_config.md#0x1_consensus_config">consensus_config</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="execution_config.md#0x1_execution_config">execution_config</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, epoch_interval_microsecs: u64, minimum_stake: u64, maximum_stake: u64, recurring_lockup_duration_secs: u64, allow_validator_set_change: bool, rewards_rate: u64, rewards_rate_denominator: u64, voting_power_increase_limit: u64)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize">initialize</a>(<a href="gas_schedule.md#0x1_gas_schedule">gas_schedule</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, initial_version: u64, <a href="consensus_config.md#0x1_consensus_config">consensus_config</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="execution_config.md#0x1_execution_config">execution_config</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, epoch_interval_microsecs: u64, minimum_stake: u64, maximum_stake: u64, recurring_lockup_duration_secs: u64, allow_validator_set_change: bool, rewards_rate: u64, rewards_rate_denominator: u64, voting_power_increase_limit: u64)
 </code></pre>
 
 
@@ -323,11 +323,11 @@ SignerCapability to topo_governance (decentralized on-chain governance owns the 
 
 
 <pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize">initialize</a>(
-    <a href="gas_schedule.md#0x1_gas_schedule">gas_schedule</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    <a href="gas_schedule.md#0x1_gas_schedule">gas_schedule</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8,
     initial_version: u64,
-    <a href="consensus_config.md#0x1_consensus_config">consensus_config</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    <a href="execution_config.md#0x1_execution_config">execution_config</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    <a href="consensus_config.md#0x1_consensus_config">consensus_config</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    <a href="execution_config.md#0x1_execution_config">execution_config</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     epoch_interval_microsecs: u64,
     minimum_stake: u64,
     maximum_stake: u64,
@@ -355,7 +355,7 @@ SignerCapability to topo_governance (decentralized on-chain governance owns the 
     <a href="topo_governance.md#0x1_topo_governance_store_signer_cap">topo_governance::store_signer_cap</a>(&aptos_framework_account, @topo_framework, aptos_framework_signer_cap);
 
     // put reserved framework reserved accounts under aptos governance
-    <b>let</b> framework_reserved_addresses = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;[@0x2, @0x3, @0x4, @0x5, @0x6, @0x7, @0x8, @0x9, @0xa];
+    <b>let</b> framework_reserved_addresses = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;[@0x2, @0x3, @0x4, @0x5, @0x6, @0x7, @0x8, @0x9, @0xa];
     <b>while</b> (!framework_reserved_addresses.is_empty()) {
         <b>let</b> <b>address</b> = framework_reserved_addresses.pop_back();
         <b>let</b> (_, framework_signer_cap) = <a href="account.md#0x1_account_create_framework_reserved_account">account::create_framework_reserved_account</a>(<b>address</b>);
@@ -411,7 +411,7 @@ After <code>create_initialize_validators_with_commission</code> completes, the f
 own mint cap is destroyed — no entity outside of the stored caps can mint TopoCoin.
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize_topo_coin">initialize_topo_coin</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize_topo_coin">initialize_topo_coin</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -420,7 +420,7 @@ own mint cap is destroyed — no entity outside of the stored caps can mint Topo
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize_topo_coin">initialize_topo_coin</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize_topo_coin">initialize_topo_coin</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <b>let</b> (burn_cap, mint_cap) = <a href="topo_coin.md#0x1_topo_coin_initialize">topo_coin::initialize</a>(topo_framework);
 
     <a href="coin.md#0x1_coin_create_coin_conversion_map">coin::create_coin_conversion_map</a>(topo_framework);
@@ -448,7 +448,7 @@ own mint cap is destroyed — no entity outside of the stored caps can mint Topo
 Only called for testnets and e2e tests.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="genesis.md#0x1_genesis_initialize_core_resources_and_topo_coin">initialize_core_resources_and_topo_coin</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="genesis.md#0x1_genesis_initialize_core_resources_and_topo_coin">initialize_core_resources_and_topo_coin</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -458,8 +458,8 @@ Only called for testnets and e2e tests.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="genesis.md#0x1_genesis_initialize_core_resources_and_topo_coin">initialize_core_resources_and_topo_coin</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    core_resources_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    core_resources_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
 ) {
     <b>let</b> (burn_cap, mint_cap) = <a href="topo_coin.md#0x1_topo_coin_initialize">topo_coin::initialize</a>(topo_framework);
 
@@ -492,7 +492,7 @@ Only called for testnets and e2e tests.
 
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_accounts">create_accounts</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, accounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_AccountMap">genesis::AccountMap</a>&gt;)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_accounts">create_accounts</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, accounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_AccountMap">genesis::AccountMap</a>&gt;)
 </code></pre>
 
 
@@ -501,13 +501,13 @@ Only called for testnets and e2e tests.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_accounts">create_accounts</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, accounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_AccountMap">AccountMap</a>&gt;) {
-    <b>let</b> unique_accounts = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_accounts">create_accounts</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, accounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_AccountMap">AccountMap</a>&gt;) {
+    <b>let</b> unique_accounts = <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
     accounts.for_each_ref(|account_map| {
         <b>let</b> account_map: &<a href="genesis.md#0x1_genesis_AccountMap">AccountMap</a> = account_map;
         <b>assert</b>!(
             !unique_accounts.contains(&account_map.account_address),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="genesis.md#0x1_genesis_EDUPLICATE_ACCOUNT">EDUPLICATE_ACCOUNT</a>),
+            <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="genesis.md#0x1_genesis_EDUPLICATE_ACCOUNT">EDUPLICATE_ACCOUNT</a>),
         );
         unique_accounts.push_back(account_map.account_address);
 
@@ -532,7 +532,7 @@ This creates an funds an account if it doesn't exist.
 If it exists, it just returns the signer.
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_account">create_account</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, account_address: <b>address</b>, balance: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_account">create_account</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, account_address: <b>address</b>, balance: u64): <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>
 </code></pre>
 
 
@@ -541,7 +541,7 @@ If it exists, it just returns the signer.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_account">create_account</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, account_address: <b>address</b>, balance: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a> {
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_account">create_account</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, account_address: <b>address</b>, balance: u64): <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a> {
     <b>let</b> <a href="account.md#0x1_account">account</a> = <b>if</b> (<a href="account.md#0x1_account_exists_at">account::exists_at</a>(account_address)) {
         <a href="create_signer.md#0x1_create_signer">create_signer</a>(account_address)
     } <b>else</b> {
@@ -577,7 +577,7 @@ the framework (via governance) can upload power updates initially. The operator 
 be changed later via <code><a href="poc_power_store.md#0x1_poc_power_store_set_operator">poc_power_store::set_operator</a></code>.
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">ensure_poc_staking_initialized</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">ensure_poc_staking_initialized</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -586,7 +586,7 @@ be changed later via <code><a href="poc_power_store.md#0x1_poc_power_store_set_o
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">ensure_poc_staking_initialized</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">ensure_poc_staking_initialized</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <b>if</b> (<a href="poc_power_store.md#0x1_poc_power_store_get_operator">poc_power_store::get_operator</a>() == @0x0) {
         <a href="poc_power_store.md#0x1_poc_power_store_initialize">poc_power_store::initialize</a>(topo_framework, @topo_framework);
     };
@@ -625,7 +625,7 @@ be changed later via <code><a href="poc_power_store.md#0x1_poc_power_store_set_o
 
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>&gt;)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>&gt;)
 </code></pre>
 
 
@@ -635,8 +635,8 @@ be changed later via <code><a href="poc_power_store.md#0x1_poc_power_store_set_o
 
 
 <pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">ValidatorConfigurationWithCommission</a>&gt;,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    validators: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">ValidatorConfigurationWithCommission</a>&gt;,
 ) {
     <a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">ensure_poc_staking_initialized</a>(topo_framework);
     validators.for_each_ref(|validator| {
@@ -672,7 +672,7 @@ Network address fields are a vector per account, where each entry is a vector of
 encoded in a single BCS byte array.
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators">create_initialize_validators</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfiguration">genesis::ValidatorConfiguration</a>&gt;)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators">create_initialize_validators</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfiguration">genesis::ValidatorConfiguration</a>&gt;)
 </code></pre>
 
 
@@ -681,8 +681,8 @@ encoded in a single BCS byte array.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators">create_initialize_validators</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfiguration">ValidatorConfiguration</a>&gt;) {
-    <b>let</b> validators_with_commission = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators">create_initialize_validators</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfiguration">ValidatorConfiguration</a>&gt;) {
+    <b>let</b> validators_with_commission = <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
     validators.for_each_reverse(|validator| {
         <b>let</b> validator_with_commission = <a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">ValidatorConfigurationWithCommission</a> {
             validator_config: validator,
@@ -724,7 +724,7 @@ Seeding from stake bootstraps the system so validators have non-zero effective p
 from day one, allowing the first epoch to proceed normally.
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, commission_config: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, commission_config: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>)
 </code></pre>
 
 
@@ -734,7 +734,7 @@ from day one, allowing the first epoch to proceed normally.
 
 
 <pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     commission_config: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">ValidatorConfigurationWithCommission</a>,
 ) {
     <b>let</b> validator = &commission_config.validator_config;
@@ -822,7 +822,7 @@ from day one, allowing the first epoch to proceed normally.
 The last step of genesis.
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_set_genesis_end">set_genesis_end</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_set_genesis_end">set_genesis_end</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -831,7 +831,7 @@ The last step of genesis.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_set_genesis_end">set_genesis_end</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_set_genesis_end">set_genesis_end</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="chain_status.md#0x1_chain_status_set_genesis_end">chain_status::set_genesis_end</a>(topo_framework);
 }
 </code></pre>
@@ -915,7 +915,7 @@ The last step of genesis.
 ### Function `initialize`
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize">initialize</a>(<a href="gas_schedule.md#0x1_gas_schedule">gas_schedule</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, initial_version: u64, <a href="consensus_config.md#0x1_consensus_config">consensus_config</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="execution_config.md#0x1_execution_config">execution_config</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, epoch_interval_microsecs: u64, minimum_stake: u64, maximum_stake: u64, recurring_lockup_duration_secs: u64, allow_validator_set_change: bool, rewards_rate: u64, rewards_rate_denominator: u64, voting_power_increase_limit: u64)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize">initialize</a>(<a href="gas_schedule.md#0x1_gas_schedule">gas_schedule</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="chain_id.md#0x1_chain_id">chain_id</a>: u8, initial_version: u64, <a href="consensus_config.md#0x1_consensus_config">consensus_config</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="execution_config.md#0x1_execution_config">execution_config</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, epoch_interval_microsecs: u64, minimum_stake: u64, maximum_stake: u64, recurring_lockup_duration_secs: u64, allow_validator_set_change: bool, rewards_rate: u64, rewards_rate_denominator: u64, voting_power_increase_limit: u64)
 </code></pre>
 
 
@@ -973,7 +973,7 @@ The last step of genesis.
 ### Function `initialize_topo_coin`
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize_topo_coin">initialize_topo_coin</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_initialize_topo_coin">initialize_topo_coin</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -993,7 +993,7 @@ The last step of genesis.
 ### Function `create_initialize_validators_with_commission`
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>&gt;)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators_with_commission">create_initialize_validators_with_commission</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>&gt;)
 </code></pre>
 
 
@@ -1013,7 +1013,7 @@ The last step of genesis.
 ### Function `create_initialize_validators`
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators">create_initialize_validators</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfiguration">genesis::ValidatorConfiguration</a>&gt;)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validators">create_initialize_validators</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validators: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="genesis.md#0x1_genesis_ValidatorConfiguration">genesis::ValidatorConfiguration</a>&gt;)
 </code></pre>
 
 
@@ -1033,7 +1033,7 @@ The last step of genesis.
 ### Function `create_initialize_validator`
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, commission_config: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_create_initialize_validator">create_initialize_validator</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, commission_config: &<a href="genesis.md#0x1_genesis_ValidatorConfigurationWithCommission">genesis::ValidatorConfigurationWithCommission</a>)
 </code></pre>
 
 
@@ -1066,7 +1066,7 @@ The last step of genesis.
 ### Function `set_genesis_end`
 
 
-<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_set_genesis_end">set_genesis_end</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>fun</b> <a href="genesis.md#0x1_genesis_set_genesis_end">set_genesis_end</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1089,7 +1089,7 @@ The last step of genesis.
 
 
 <pre><code><b>schema</b> <a href="genesis.md#0x1_genesis_InitalizeRequires">InitalizeRequires</a> {
-    <a href="execution_config.md#0x1_execution_config">execution_config</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
+    <a href="execution_config.md#0x1_execution_config">execution_config</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
     <b>requires</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_Account">account::Account</a>&gt;(@topo_framework);
     <b>requires</b> <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>();
     <b>requires</b> len(<a href="execution_config.md#0x1_execution_config">execution_config</a>) &gt; 0;

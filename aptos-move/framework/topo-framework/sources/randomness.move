@@ -13,9 +13,9 @@ module topo_framework::randomness {
     use topo_framework::system_addresses;
     use topo_framework::transaction_context;
     #[test_only]
-    use aptos_std::debug;
+    use topo_std::debug;
     #[test_only]
-    use aptos_std::table_with_length;
+    use topo_std::table_with_length;
 
     friend topo_framework::block;
 

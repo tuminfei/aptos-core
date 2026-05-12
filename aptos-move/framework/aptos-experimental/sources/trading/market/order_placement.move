@@ -61,7 +61,7 @@ module aptos_experimental::order_placement {
     use std::signer;
     use std::string::String;
     use std::vector;
-    use aptos_trading::order_book_types::{
+    use topo_trading::order_book_types::{
         OrderId,
         TriggerCondition,
         TimeInForce,
@@ -70,8 +70,8 @@ module aptos_experimental::order_placement {
         single_order_type,
         OrderType
     };
-    use aptos_trading::order_match_types::OrderMatchDetails;
-    use aptos_trading::single_order_types::new_single_order_request;
+    use topo_trading::order_match_types::OrderMatchDetails;
+    use topo_trading::single_order_types::new_single_order_request;
     use aptos_experimental::order_id_generation::next_order_id;
     use aptos_experimental::market_clearinghouse_order_info::new_clearinghouse_order_info;
     use aptos_experimental::pre_cancellation_tracker::{is_pre_cancelled};

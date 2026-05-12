@@ -97,7 +97,7 @@ fn move_framework_unit_tests() {
 
 #[test]
 fn move_aptos_stdlib_unit_tests() {
-    run_tests_for_pkg("aptos-stdlib", false);
+    run_tests_for_pkg("topo-stdlib", false);
 }
 
 #[test]
@@ -117,7 +117,7 @@ fn move_token_objects_unit_tests() {
 
 #[test]
 fn move_trading_unit_tests() {
-    run_tests_for_pkg("aptos-trading", false);
+    run_tests_for_pkg("topo-trading", false);
 }
 
 #[test]

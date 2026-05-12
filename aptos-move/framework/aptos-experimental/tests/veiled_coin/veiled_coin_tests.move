@@ -11,15 +11,15 @@ module aptos_experimental::veiled_coin_tests {
     use std::string::utf8;
 
     #[test_only]
-    use aptos_std::ristretto255_bulletproofs as bulletproofs;
+    use topo_std::ristretto255_bulletproofs as bulletproofs;
     #[test_only]
-    use aptos_std::debug::print;
+    use topo_std::debug::print;
     #[test_only]
-    use aptos_std::ristretto255_elgamal as elgamal;
+    use topo_std::ristretto255_elgamal as elgamal;
     #[test_only]
-    use aptos_std::ristretto255;
+    use topo_std::ristretto255;
     #[test_only]
-    use aptos_std::ristretto255_pedersen as pedersen;
+    use topo_std::ristretto255_pedersen as pedersen;
 
     #[test_only]
     use topo_framework::account;

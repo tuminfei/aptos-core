@@ -6,8 +6,8 @@ module topo_framework::staking_config {
     use topo_framework::system_addresses;
     use topo_framework::timestamp;
 
-    use aptos_std::fixed_point64::{Self, FixedPoint64};
-    use aptos_std::math_fixed64;
+    use topo_std::fixed_point64::{Self, FixedPoint64};
+    use topo_std::math_fixed64;
 
     friend topo_framework::genesis;
     friend topo_framework::stake;
@@ -397,7 +397,7 @@ module topo_framework::staking_config {
     }
 
     #[test_only]
-    use aptos_std::fixed_point64::create_from_rational;
+    use topo_std::fixed_point64::create_from_rational;
 
     #[test(topo_framework = @topo_framework)]
     public entry fun test_change_staking_configs(topo_framework: signer) acquires StakingConfig {

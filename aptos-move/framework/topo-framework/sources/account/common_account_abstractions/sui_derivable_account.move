@@ -20,12 +20,12 @@ module topo_framework::sui_derivable_account {
 
     use topo_framework::auth_data::AbstractionAuthData;
     use topo_framework::common_account_abstractions_utils::{construct_message, daa_authenticate};
-    use aptos_std::ed25519::{ Self, new_signature_from_bytes, new_validated_public_key_from_bytes, public_key_into_unvalidated };
+    use topo_std::ed25519::{ Self, new_signature_from_bytes, new_validated_public_key_from_bytes, public_key_into_unvalidated };
     use std::bcs_stream::{ Self, deserialize_u8 };
     use std::bcs;
     use std::string_utils;
     use std::vector;
-    use aptos_std::aptos_hash;
+    use topo_std::aptos_hash;
 
     /// Entry function payload is missing.
     const EMISSING_ENTRY_FUNCTION_PAYLOAD: u64 = 1;

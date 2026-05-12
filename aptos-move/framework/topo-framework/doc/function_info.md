@@ -25,8 +25,8 @@ The <code><a href="function_info.md#0x1_function_info">function_info</a></code> 
     -  [Function `load_function_impl`](#@Specification_1_load_function_impl)
 
 
-<pre><code><b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
+<pre><code><b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 </code></pre>
 
 
@@ -55,13 +55,13 @@ A <code>String</code> holds a sequence of bytes which is guaranteed to be in utf
 
 </dd>
 <dt>
-<code>module_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
+<code>module_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>function_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
+<code>function_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
 </dt>
 <dd>
 
@@ -103,7 +103,7 @@ String is not a valid Move identifier
 Creates a new function info from names.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="function_info.md#0x1_function_info_new_function_info">new_function_info</a>(module_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, module_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, function_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
+<pre><code><b>public</b> <b>fun</b> <a href="function_info.md#0x1_function_info_new_function_info">new_function_info</a>(module_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, module_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, function_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
 </code></pre>
 
 
@@ -113,12 +113,12 @@ Creates a new function info from names.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="function_info.md#0x1_function_info_new_function_info">new_function_info</a>(
-    module_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    module_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     module_name: String,
     function_name: String,
 ): <a href="function_info.md#0x1_function_info_FunctionInfo">FunctionInfo</a> {
     <a href="function_info.md#0x1_function_info_new_function_info_from_address">new_function_info_from_address</a>(
-        <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(module_signer),
+        <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(module_signer),
         module_name,
         function_name,
     )
@@ -135,7 +135,7 @@ Creates a new function info from names.
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="function_info.md#0x1_function_info_new_function_info_from_address">new_function_info_from_address</a>(module_address: <b>address</b>, module_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, function_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
+<pre><code><b>public</b> <b>fun</b> <a href="function_info.md#0x1_function_info_new_function_info_from_address">new_function_info_from_address</a>(module_address: <b>address</b>, module_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, function_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
 </code></pre>
 
 
@@ -268,7 +268,7 @@ if such module isn't accessed previously in the transaction.
 
 
 
-<pre><code><b>fun</b> <a href="function_info.md#0x1_function_info_is_identifier">is_identifier</a>(s: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;): bool
+<pre><code><b>fun</b> <a href="function_info.md#0x1_function_info_is_identifier">is_identifier</a>(s: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;): bool
 </code></pre>
 
 
@@ -277,7 +277,7 @@ if such module isn't accessed previously in the transaction.
 <summary>Implementation</summary>
 
 
-<pre><code><b>native</b> <b>fun</b> <a href="function_info.md#0x1_function_info_is_identifier">is_identifier</a>(s: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;): bool;
+<pre><code><b>native</b> <b>fun</b> <a href="function_info.md#0x1_function_info_is_identifier">is_identifier</a>(s: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;): bool;
 </code></pre>
 
 
@@ -315,7 +315,7 @@ if such module isn't accessed previously in the transaction.
 <a id="0x1_function_info_spec_is_identifier"></a>
 
 
-<pre><code><b>fun</b> <a href="function_info.md#0x1_function_info_spec_is_identifier">spec_is_identifier</a>(s: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;): bool;
+<pre><code><b>fun</b> <a href="function_info.md#0x1_function_info_spec_is_identifier">spec_is_identifier</a>(s: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;): bool;
 </code></pre>
 
 
@@ -325,16 +325,16 @@ if such module isn't accessed previously in the transaction.
 ### Function `new_function_info`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="function_info.md#0x1_function_info_new_function_info">new_function_info</a>(module_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, module_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, function_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
+<pre><code><b>public</b> <b>fun</b> <a href="function_info.md#0x1_function_info_new_function_info">new_function_info</a>(module_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, module_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, function_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
 </code></pre>
 
 
 
 
-<pre><code><b>aborts_if</b> !<a href="function_info.md#0x1_function_info_spec_is_identifier">spec_is_identifier</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_bytes">string::bytes</a>(module_name));
-<b>aborts_if</b> !<a href="function_info.md#0x1_function_info_spec_is_identifier">spec_is_identifier</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_bytes">string::bytes</a>(function_name));
+<pre><code><b>aborts_if</b> !<a href="function_info.md#0x1_function_info_spec_is_identifier">spec_is_identifier</a>(<a href="../../move-stdlib/doc/string.md#0x1_string_bytes">string::bytes</a>(module_name));
+<b>aborts_if</b> !<a href="function_info.md#0x1_function_info_spec_is_identifier">spec_is_identifier</a>(<a href="../../move-stdlib/doc/string.md#0x1_string_bytes">string::bytes</a>(function_name));
 <b>ensures</b> result == <a href="function_info.md#0x1_function_info_FunctionInfo">FunctionInfo</a> {
-    module_address: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(module_signer),
+    module_address: <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(module_signer),
     module_name,
     function_name,
 };
@@ -347,14 +347,14 @@ if such module isn't accessed previously in the transaction.
 ### Function `new_function_info_from_address`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="function_info.md#0x1_function_info_new_function_info_from_address">new_function_info_from_address</a>(module_address: <b>address</b>, module_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, function_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
+<pre><code><b>public</b> <b>fun</b> <a href="function_info.md#0x1_function_info_new_function_info_from_address">new_function_info_from_address</a>(module_address: <b>address</b>, module_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, function_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="function_info.md#0x1_function_info_FunctionInfo">function_info::FunctionInfo</a>
 </code></pre>
 
 
 
 
-<pre><code><b>aborts_if</b> !<a href="function_info.md#0x1_function_info_spec_is_identifier">spec_is_identifier</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_bytes">string::bytes</a>(module_name));
-<b>aborts_if</b> !<a href="function_info.md#0x1_function_info_spec_is_identifier">spec_is_identifier</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_bytes">string::bytes</a>(function_name));
+<pre><code><b>aborts_if</b> !<a href="function_info.md#0x1_function_info_spec_is_identifier">spec_is_identifier</a>(<a href="../../move-stdlib/doc/string.md#0x1_string_bytes">string::bytes</a>(module_name));
+<b>aborts_if</b> !<a href="function_info.md#0x1_function_info_spec_is_identifier">spec_is_identifier</a>(<a href="../../move-stdlib/doc/string.md#0x1_string_bytes">string::bytes</a>(function_name));
 <b>ensures</b> result == <a href="function_info.md#0x1_function_info_FunctionInfo">FunctionInfo</a> {
     module_address,
     module_name,
@@ -419,7 +419,7 @@ if such module isn't accessed previously in the transaction.
 ### Function `is_identifier`
 
 
-<pre><code><b>fun</b> <a href="function_info.md#0x1_function_info_is_identifier">is_identifier</a>(s: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;): bool
+<pre><code><b>fun</b> <a href="function_info.md#0x1_function_info_is_identifier">is_identifier</a>(s: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;): bool
 </code></pre>
 
 

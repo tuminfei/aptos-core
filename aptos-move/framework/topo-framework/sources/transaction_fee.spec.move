@@ -73,7 +73,7 @@ spec topo_framework::transaction_fee {
     /// `TopoCoinCapabilities` should be exists.
     spec burn_fee(account: address, fee: u64) {
         use std::option;
-        use aptos_std::type_info;
+        use topo_std::type_info;
         use topo_framework::optional_aggregator;
         use topo_framework::coin;
         use topo_framework::coin::{CoinInfo, CoinStore};
@@ -116,7 +116,7 @@ spec topo_framework::transaction_fee {
     }
 
     spec mint_and_refund(account: address, refund: u64) {
-        use aptos_std::type_info;
+        use topo_std::type_info;
         use topo_framework::topo_coin::TopoCoin;
         use topo_framework::coin::{CoinInfo, CoinStore};
         use topo_framework::coin;

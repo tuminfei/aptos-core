@@ -48,17 +48,17 @@ module aptos_experimental::bulk_order_book {
     friend aptos_experimental::bulk_order_book_tests;
 
     use topo_framework::big_ordered_map::BigOrderedMap;
-    use aptos_trading::order_book_types::{
+    use topo_trading::order_book_types::{
         bulk_order_type,
         OrderId,
         next_increasing_idx_type
     };
-    use aptos_trading::order_match_types::{
+    use topo_trading::order_match_types::{
         ActiveMatchedOrder,
         OrderMatch,
         OrderMatchDetails
     };
-    use aptos_trading::bulk_order_types::{
+    use topo_trading::bulk_order_types::{
         BulkOrder,
         BulkOrderPlaceResponse,
         BulkOrderRequest,

@@ -1,7 +1,7 @@
 #[test_only]
 module aptos_experimental::bulk_order_types_tests {
     use aptos_experimental::bulk_order_utils::new_bulk_order_request_with_sanitization;
-    use aptos_trading::order_book_types::new_test_metadata;
+    use topo_trading::order_book_types::new_test_metadata;
 
     // Test accounts
     const TEST_ACCOUNT_1: address = @0x1;

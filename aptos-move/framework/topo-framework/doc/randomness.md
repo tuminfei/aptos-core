@@ -59,11 +59,11 @@ Security holds under the same proof-of-stake assumption that secures the Aptos n
 
 
 <pre><code><b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/hash.md#0x1_hash">0x1::hash</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../move-stdlib/doc/hash.md#0x1_hash">0x1::hash</a>;
+<b>use</b> <a href="../../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
 <b>use</b> <a href="transaction_context.md#0x1_transaction_context">0x1::transaction_context</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<b>use</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 </code></pre>
 
 
@@ -99,7 +99,7 @@ This resource is updated in every block prologue.
 
 </dd>
 <dt>
-<code>seed: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;</code>
+<code>seed: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;</code>
 </dt>
 <dd>
 
@@ -155,7 +155,7 @@ Event emitted every time a public randomness API in this module is called.
 
 <dl>
 <dt>
-<code>v: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>v: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
@@ -183,7 +183,7 @@ Event emitted every time a public randomness API in this module is called.
 
 
 
-<pre><code><b>const</b> <a href="randomness.md#0x1_randomness_DST">DST</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; = [65, 80, 84, 79, 83, 95, 82, 65, 78, 68, 79, 77, 78, 69, 83, 83];
+<pre><code><b>const</b> <a href="randomness.md#0x1_randomness_DST">DST</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; = [65, 80, 84, 79, 83, 95, 82, 65, 78, 68, 79, 77, 78, 69, 83, 83];
 </code></pre>
 
 
@@ -207,7 +207,7 @@ Called in genesis.move.
 Must be called in tests to initialize the <code><a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a></code> resource.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_initialize">initialize</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_initialize">initialize</a>(framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -216,12 +216,12 @@ Must be called in tests to initialize the <code><a href="randomness.md#0x1_rando
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_initialize">initialize</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_initialize">initialize</a>(framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
     <b>if</b> (!<b>exists</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework)) {
         <b>move_to</b>(
             framework,
-            <a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a> { epoch: 0, round: 0, seed: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>() }
+            <a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a> { epoch: 0, round: 0, seed: <a href="../../move-stdlib/doc/option.md#0x1_option_none">option::none</a>() }
         );
     }
 }
@@ -238,7 +238,7 @@ Must be called in tests to initialize the <code><a href="randomness.md#0x1_rando
 Invoked in block prologues to update the block-level randomness seed.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="randomness.md#0x1_randomness_on_new_block">on_new_block</a>(vm: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, epoch: u64, round: u64, seed_for_new_block: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="randomness.md#0x1_randomness_on_new_block">on_new_block</a>(vm: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, epoch: u64, round: u64, seed_for_new_block: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
 </code></pre>
 
 
@@ -248,10 +248,10 @@ Invoked in block prologues to update the block-level randomness seed.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="randomness.md#0x1_randomness_on_new_block">on_new_block</a>(
-    vm: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    vm: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     epoch: u64,
     round: u64,
-    seed_for_new_block: Option&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;
+    seed_for_new_block: Option&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;
 ) <b>acquires</b> <a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_vm">system_addresses::assert_vm</a>(vm);
     <b>if</b> (<b>exists</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework)) {
@@ -275,7 +275,7 @@ Generate the next 32 random bytes. Repeated calls will yield different results (
 of the hash function).
 
 
-<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_next_32_bytes">next_32_bytes</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_next_32_bytes">next_32_bytes</a>(): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -284,7 +284,7 @@ of the hash function).
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_next_32_bytes">next_32_bytes</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; <b>acquires</b> <a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a> {
+<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_next_32_bytes">next_32_bytes</a>(): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; <b>acquires</b> <a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a> {
     <b>assert</b>!(<a href="randomness.md#0x1_randomness_is_unbiasable">is_unbiasable</a>(), <a href="randomness.md#0x1_randomness_E_API_USE_IS_BIASIBLE">E_API_USE_IS_BIASIBLE</a>);
 
     <b>let</b> input = <a href="randomness.md#0x1_randomness_DST">DST</a>;
@@ -294,7 +294,7 @@ of the hash function).
     input.append(seed);
     input.append(<a href="transaction_context.md#0x1_transaction_context_get_transaction_hash">transaction_context::get_transaction_hash</a>());
     input.append(<a href="randomness.md#0x1_randomness_fetch_and_increment_txn_counter">fetch_and_increment_txn_counter</a>());
-    <a href="../../aptos-stdlib/../move-stdlib/doc/hash.md#0x1_hash_sha3_256">hash::sha3_256</a>(input)
+    <a href="../../move-stdlib/doc/hash.md#0x1_hash_sha3_256">hash::sha3_256</a>(input)
 }
 </code></pre>
 
@@ -309,7 +309,7 @@ of the hash function).
 Generates a sequence of bytes uniformly at random
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_bytes">bytes</a>(n: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_bytes">bytes</a>(n: u64): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -318,8 +318,8 @@ Generates a sequence of bytes uniformly at random
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_bytes">bytes</a>(n: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; <b>acquires</b> <a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a> {
-    <b>let</b> v = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_bytes">bytes</a>(n: u64): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; <b>acquires</b> <a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a> {
+    <b>let</b> v = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> c = 0;
     <b>while</b> (c &lt; n) {
         <b>let</b> blob = <a href="randomness.md#0x1_randomness_next_32_bytes">next_32_bytes</a>();
@@ -820,7 +820,7 @@ Generate a permutation of <code>[0, 1, ..., n-1]</code> uniformly at random.
 If n is 0, returns the empty vector.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_permutation">permutation</a>(n: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_permutation">permutation</a>(n: u64): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -829,13 +829,13 @@ If n is 0, returns the empty vector.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_permutation">permutation</a>(n: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; <b>acquires</b> <a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a> {
+<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_permutation">permutation</a>(n: u64): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt; <b>acquires</b> <a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a> {
     <a href="event.md#0x1_event_emit">event::emit</a>(<a href="randomness.md#0x1_randomness_RandomnessGeneratedEvent">RandomnessGeneratedEvent</a> {});
 
-    <b>let</b> values = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> values = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
 
     <b>if</b> (n == 0) {
-        <b>return</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+        <b>return</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
     };
 
     // Initialize into [0, 1, ..., n-1].
@@ -946,7 +946,7 @@ Fetches and increments a transaction-specific 32-byte randomness-related counter
 Aborts with <code>E_API_USE_SUSCEPTIBLE_TO_TEST_AND_ABORT</code> if randomness is not unbiasable.
 
 
-<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_fetch_and_increment_txn_counter">fetch_and_increment_txn_counter</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_fetch_and_increment_txn_counter">fetch_and_increment_txn_counter</a>(): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -955,7 +955,7 @@ Aborts with <code>E_API_USE_SUSCEPTIBLE_TO_TEST_AND_ABORT</code> if randomness i
 <summary>Implementation</summary>
 
 
-<pre><code><b>native</b> <b>fun</b> <a href="randomness.md#0x1_randomness_fetch_and_increment_txn_counter">fetch_and_increment_txn_counter</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
+<pre><code><b>native</b> <b>fun</b> <a href="randomness.md#0x1_randomness_fetch_and_increment_txn_counter">fetch_and_increment_txn_counter</a>(): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
 </code></pre>
 
 
@@ -997,7 +997,7 @@ function as its payload.
 <pre><code><b>pragma</b> verify = <b>true</b>;
 <b>invariant</b> [suspendable] <a href="chain_status.md#0x1_chain_status_is_operating">chain_status::is_operating</a>() ==&gt; <b>exists</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework);
 <a id="0x1_randomness_var"></a>
-<b>global</b> <a href="randomness.md#0x1_randomness_var">var</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
+<b>global</b> <a href="randomness.md#0x1_randomness_var">var</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
 </code></pre>
 
 
@@ -1007,13 +1007,13 @@ function as its payload.
 ### Function `initialize`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_initialize">initialize</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_initialize">initialize</a>(framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
 
 
-<pre><code><b>let</b> framework_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(framework);
+<pre><code><b>let</b> framework_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(framework);
 <b>aborts_if</b> framework_addr != @topo_framework;
 </code></pre>
 
@@ -1024,13 +1024,13 @@ function as its payload.
 ### Function `on_new_block`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="randomness.md#0x1_randomness_on_new_block">on_new_block</a>(vm: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, epoch: u64, round: u64, seed_for_new_block: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="randomness.md#0x1_randomness_on_new_block">on_new_block</a>(vm: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, epoch: u64, round: u64, seed_for_new_block: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
 </code></pre>
 
 
 
 
-<pre><code><b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(vm) != @vm;
+<pre><code><b>aborts_if</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(vm) != @vm;
 <b>ensures</b> <b>exists</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework) ==&gt; <b>global</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework).seed == seed_for_new_block;
 <b>ensures</b> <b>exists</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework) ==&gt; <b>global</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework).epoch == epoch;
 <b>ensures</b> <b>exists</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework) ==&gt; <b>global</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework).round == round;
@@ -1043,7 +1043,7 @@ function as its payload.
 ### Function `next_32_bytes`
 
 
-<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_next_32_bytes">next_32_bytes</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_next_32_bytes">next_32_bytes</a>(): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -1052,11 +1052,11 @@ function as its payload.
 <pre><code><b>include</b> <a href="randomness.md#0x1_randomness_NextBlobAbortsIf">NextBlobAbortsIf</a>;
 <b>let</b> input = b"APTOS_RANDOMNESS";
 <b>let</b> <a href="randomness.md#0x1_randomness">randomness</a> = <b>global</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework);
-<b>let</b> seed = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(<a href="randomness.md#0x1_randomness">randomness</a>.seed);
+<b>let</b> seed = <a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(<a href="randomness.md#0x1_randomness">randomness</a>.seed);
 <b>let</b> txn_hash = <a href="transaction_context.md#0x1_transaction_context_spec_get_txn_hash">transaction_context::spec_get_txn_hash</a>();
 <b>let</b> txn_counter = <a href="randomness.md#0x1_randomness_spec_fetch_and_increment_txn_counter">spec_fetch_and_increment_txn_counter</a>();
 <b>ensures</b> len(result) == 32;
-<b>ensures</b> result == <a href="../../aptos-stdlib/../move-stdlib/doc/hash.md#0x1_hash_sha3_256">hash::sha3_256</a>(concat(concat(concat(input, seed), txn_hash), txn_counter));
+<b>ensures</b> result == <a href="../../move-stdlib/doc/hash.md#0x1_hash_sha3_256">hash::sha3_256</a>(concat(concat(concat(input, seed), txn_hash), txn_counter));
 </code></pre>
 
 
@@ -1067,7 +1067,7 @@ function as its payload.
 
 <pre><code><b>schema</b> <a href="randomness.md#0x1_randomness_NextBlobAbortsIf">NextBlobAbortsIf</a> {
     <b>let</b> <a href="randomness.md#0x1_randomness">randomness</a> = <b>global</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework);
-    <b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_none">option::is_none</a>(<a href="randomness.md#0x1_randomness">randomness</a>.seed);
+    <b>aborts_if</b> <a href="../../move-stdlib/doc/option.md#0x1_option_is_none">option::is_none</a>(<a href="randomness.md#0x1_randomness">randomness</a>.seed);
     <b>aborts_if</b> !<a href="randomness.md#0x1_randomness_spec_is_unbiasable">spec_is_unbiasable</a>();
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="randomness.md#0x1_randomness_PerBlockRandomness">PerBlockRandomness</a>&gt;(@topo_framework);
 }
@@ -1268,7 +1268,7 @@ function as its payload.
 ### Function `permutation`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_permutation">permutation</a>(n: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="randomness.md#0x1_randomness_permutation">permutation</a>(n: u64): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -1299,7 +1299,7 @@ function as its payload.
 ### Function `fetch_and_increment_txn_counter`
 
 
-<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_fetch_and_increment_txn_counter">fetch_and_increment_txn_counter</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_fetch_and_increment_txn_counter">fetch_and_increment_txn_counter</a>(): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -1316,7 +1316,7 @@ function as its payload.
 <a id="0x1_randomness_spec_fetch_and_increment_txn_counter"></a>
 
 
-<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_spec_fetch_and_increment_txn_counter">spec_fetch_and_increment_txn_counter</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
+<pre><code><b>fun</b> <a href="randomness.md#0x1_randomness_spec_fetch_and_increment_txn_counter">spec_fetch_and_increment_txn_counter</a>(): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;;
 </code></pre>
 
 

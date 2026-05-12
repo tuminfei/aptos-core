@@ -83,11 +83,11 @@ TimeBased(time): The order is triggered when the current time is greater than or
 -  [Function `place_order_with_order_id`](#0x7_order_placement_place_order_with_order_id)
 
 
-<pre><code><b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
-<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
-<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
-<b>use</b> <a href="../../aptos-trading/../topo-framework/doc/transaction_context.md#0x1_transaction_context">0x1::transaction_context</a>;
-<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<pre><code><b>use</b> <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
+<b>use</b> <a href="../../topo-framework/doc/transaction_context.md#0x1_transaction_context">0x1::transaction_context</a>;
+<b>use</b> <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 <b>use</b> <a href="">0x5::bulk_order_types</a>;
 <b>use</b> <a href="">0x5::order_book_types</a>;
 <b>use</b> <a href="">0x5::order_match_types</a>;
@@ -139,19 +139,19 @@ TimeBased(time): The order is triggered when the current time is greater than or
 
 </dd>
 <dt>
-<code>cancel_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;</code>
+<code>cancel_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>callback_results: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;</code>
+<code>callback_results: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>fill_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>fill_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
@@ -227,7 +227,7 @@ TimeBased(time): The order is triggered when the current time is greater than or
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_destroy_order_match_result">destroy_order_match_result</a>&lt;R: <b>copy</b>, drop, store&gt;(self: <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;): (<a href="_OrderId">order_book_types::OrderId</a>, u64, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u32)
+<pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_destroy_order_match_result">destroy_order_match_result</a>&lt;R: <b>copy</b>, drop, store&gt;(self: <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;): (<a href="_OrderId">order_book_types::OrderId</a>, u64, <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u32)
 </code></pre>
 
 
@@ -238,7 +238,7 @@ TimeBased(time): The order is triggered when the current time is greater than or
 
 <pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_destroy_order_match_result">destroy_order_match_result</a>&lt;R: store + <b>copy</b> + drop&gt;(
     self: <a href="order_placement.md#0x7_order_placement_OrderMatchResult">OrderMatchResult</a>&lt;R&gt;
-): (OrderId, u64, Option&lt;OrderCancellationReason&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u32) {
+): (OrderId, u64, Option&lt;OrderCancellationReason&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u32) {
     <b>let</b> OrderMatchResult::V1 {
         order_id,
         remaining_size,
@@ -347,7 +347,7 @@ Includes fills and cancels
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_get_cancel_reason">get_cancel_reason</a>&lt;R: <b>copy</b>, drop, store&gt;(self: &<a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_get_cancel_reason">get_cancel_reason</a>&lt;R: <b>copy</b>, drop, store&gt;(self: &<a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;
 </code></pre>
 
 
@@ -555,7 +555,7 @@ interface. This is used to validate the order and settle the trade.
 Returns the order id, remaining size, cancel reason and number of fills for the order.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_place_limit_order">place_limit_order</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, limit_price: u64, orig_size: u64, is_bid: bool, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, trigger_condition: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, metadata: M, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, max_match_limit: u32, cancel_on_match_limit: bool, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_place_limit_order">place_limit_order</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user: &<a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, limit_price: u64, orig_size: u64, is_bid: bool, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, trigger_condition: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, metadata: M, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, max_match_limit: u32, cancel_on_match_limit: bool, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;
 </code></pre>
 
 
@@ -566,7 +566,7 @@ Returns the order id, remaining size, cancel reason and number of fills for the 
 
 <pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_place_limit_order">place_limit_order</a>&lt;M: store + <b>copy</b> + drop, R: store + <b>copy</b> + drop&gt;(
     market: &<b>mut</b> Market&lt;M&gt;,
-    user: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    user: &<a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     limit_price: u64,
     orig_size: u64,
     is_bid: bool,
@@ -580,7 +580,7 @@ Returns the order id, remaining size, cancel reason and number of fills for the 
 ): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">OrderMatchResult</a>&lt;R&gt; {
     <a href="order_placement.md#0x7_order_placement_place_order_with_order_id">place_order_with_order_id</a>(
         market,
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user),
+        <a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user),
         limit_price,
         orig_size,
         orig_size,
@@ -588,7 +588,7 @@ Returns the order id, remaining size, cancel reason and number of fills for the 
         time_in_force,
         trigger_condition,
         metadata,
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // order_id
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // order_id
         client_order_id,
         max_match_limit,
         cancel_on_match_limit,
@@ -609,7 +609,7 @@ Returns the order id, remaining size, cancel reason and number of fills for the 
 Places a market order - The order is guaranteed to be a taker order and will be matched immediately.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_place_market_order">place_market_order</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, orig_size: u64, is_bid: bool, metadata: M, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, max_match_limit: u32, cancel_on_match_limit: bool, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_place_market_order">place_market_order</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user: &<a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, orig_size: u64, is_bid: bool, metadata: M, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, max_match_limit: u32, cancel_on_match_limit: bool, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;
 </code></pre>
 
 
@@ -620,7 +620,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
 
 <pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_place_market_order">place_market_order</a>&lt;M: store + <b>copy</b> + drop, R: store + <b>copy</b> + drop&gt;(
     market: &<b>mut</b> Market&lt;M&gt;,
-    user: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    user: &<a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     orig_size: u64,
     is_bid: bool,
     metadata: M,
@@ -631,7 +631,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
 ): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">OrderMatchResult</a>&lt;R&gt; {
     <a href="order_placement.md#0x7_order_placement_place_order_with_order_id">place_order_with_order_id</a>(
         market,
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user),
+        <a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user),
         <b>if</b> (is_bid) {
             <a href="order_placement.md#0x7_order_placement_U64_MAX">U64_MAX</a>
         } <b>else</b> { 1 },
@@ -639,9 +639,9 @@ Places a market order - The order is guaranteed to be a taker order and will be 
         orig_size,
         is_bid,
         immediate_or_cancel(), // market orders are always IOC
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
         metadata,
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // order_id
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // order_id
         client_order_id,
         max_match_limit,
         cancel_on_match_limit,
@@ -661,7 +661,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
 
 
 
-<pre><code><b>fun</b> <a href="order_placement.md#0x7_order_placement_place_maker_order_internal">place_maker_order_internal</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user_addr: <b>address</b>, limit_price: u64, orig_size: u64, remaining_size: u64, fill_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, match_count: u32, is_bid: bool, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, trigger_condition: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, metadata: M, order_id: <a href="_OrderId">order_book_types::OrderId</a>, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, emit_open_for_cancellation: bool, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, callback_results: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;
+<pre><code><b>fun</b> <a href="order_placement.md#0x7_order_placement_place_maker_order_internal">place_maker_order_internal</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user_addr: <b>address</b>, limit_price: u64, orig_size: u64, remaining_size: u64, fill_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, match_count: u32, is_bid: bool, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, trigger_condition: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, metadata: M, order_id: <a href="_OrderId">order_book_types::OrderId</a>, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, emit_open_for_cancellation: bool, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, callback_results: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;
 </code></pre>
 
 
@@ -676,7 +676,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
     limit_price: u64,
     orig_size: u64,
     remaining_size: u64,
-    fill_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    fill_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     match_count: u32,
     is_bid: bool,
     time_in_force: TimeInForce,
@@ -686,7 +686,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
     client_order_id: Option&lt;String&gt;,
     emit_open_for_cancellation: bool,
     callbacks: &MarketClearinghouseCallbacks&lt;M, R&gt;,
-    callback_results: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;
+    callback_results: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;
 ): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">OrderMatchResult</a>&lt;R&gt; {
     <b>if</b> (time_in_force == immediate_or_cancel() && trigger_condition.is_none()) {
         <b>return</b> <a href="order_placement.md#0x7_order_placement_cancel_taker_order_internal">cancel_taker_order_internal</a>(
@@ -712,7 +712,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
     };
 
     <b>if</b> (trigger_condition.is_some()) {
-        // Do not emit an open <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a> for orders <b>with</b> trigger conditions <b>as</b> they are not live in the order book yet
+        // Do not emit an open <a href="../../topo-framework/doc/event.md#0x1_event">event</a> for orders <b>with</b> trigger conditions <b>as</b> they are not live in the order book yet
         market.get_order_book_mut().place_maker_order(
             new_single_order_request(
                 user_addr,
@@ -730,7 +730,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
         <b>return</b> OrderMatchResult::V1 {
             order_id,
             remaining_size,
-            cancel_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+            cancel_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
             callback_results,
             fill_sizes,
             match_count
@@ -747,7 +747,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
                 limit_price,
                 time_in_force,
                 single_order_type(),
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+                <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
                 metadata
             ),
             remaining_size
@@ -766,7 +766,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
             is_bid,
             <a href="market_types.md#0x7_market_types_order_cancellation_reason_place_maker_order_violation">market_types::order_cancellation_reason_place_maker_order_violation</a>(),
             result.get_place_maker_order_cancellation_reason().destroy_some(),
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
             metadata,
             time_in_force,
             emit_open_for_cancellation,
@@ -775,7 +775,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
         );
     };
 
-    // Emit order open <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a> for the maker order
+    // Emit order open <a href="../../topo-framework/doc/event.md#0x1_event">event</a> for the maker order
     market.emit_event_for_order(
         order_id,
         client_order_id,
@@ -791,7 +791,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
         metadata,
         trigger_condition,
         time_in_force,
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
         callbacks
     );
 
@@ -816,7 +816,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
     <b>return</b> OrderMatchResult::V1 {
         order_id,
         remaining_size,
-        cancel_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+        cancel_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
         callback_results,
         fill_sizes,
         match_count
@@ -864,7 +864,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
                 maker_address, price, is_bid
             )
         } <b>else</b> {
-            // If remaining size is 0, just get the current order state for <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a> emission
+            // If remaining size is 0, just get the current order state for <a href="../../topo-framework/doc/event.md#0x1_event">event</a> emission
             (0, market.get_order_book().get_bulk_order(maker_address))
         };
 
@@ -876,7 +876,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
         cancelled_size
     );
 
-    // Emit <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a> <b>with</b> the cancelled price level
+    // Emit <a href="../../topo-framework/doc/event.md#0x1_event">event</a> <b>with</b> the cancelled price level
     <b>let</b> (
         modified_order_request, _order_id, _unique_priority_idx, _creation_time_micros
     ) = modified_order.destroy_bulk_order();
@@ -898,9 +898,9 @@ Places a market order - The order is guaranteed to be a taker order and will be 
         cancelled_ask_sizes
     ) =
         <b>if</b> (is_bid) {
-            (<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[price], <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[cancelled_size], <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[])
+            (<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[price], <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[cancelled_size], <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[])
         } <b>else</b> {
-            (<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[price], <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[cancelled_size])
+            (<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[price], <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[cancelled_size])
         };
 
     market.emit_event_for_bulk_order_modified(
@@ -915,7 +915,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
         cancelled_bid_sizes,
         cancelled_ask_prices,
         cancelled_ask_sizes,
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(cancellation_reason)
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(cancellation_reason)
     );
 }
 </code></pre>
@@ -930,7 +930,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
 
 
 
-<pre><code><b>fun</b> <a href="order_placement.md#0x7_order_placement_cancel_maker_order_internal">cancel_maker_order_internal</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, maker_order: &<a href="_OrderMatchDetails">order_match_types::OrderMatchDetails</a>&lt;M&gt;, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, maker_address: <b>address</b>, order_id: <a href="_OrderId">order_book_types::OrderId</a>, cancellation_reason: <a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>, maker_cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, unsettled_size: u64, metadata: M, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;)
+<pre><code><b>fun</b> <a href="order_placement.md#0x7_order_placement_cancel_maker_order_internal">cancel_maker_order_internal</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, maker_order: &<a href="_OrderMatchDetails">order_match_types::OrderMatchDetails</a>&lt;M&gt;, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, maker_address: <b>address</b>, order_id: <a href="_OrderId">order_book_types::OrderId</a>, cancellation_reason: <a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>, maker_cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, unsettled_size: u64, metadata: M, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;)
 </code></pre>
 
 
@@ -978,9 +978,9 @@ Places a market order - The order is guaranteed to be a taker order and will be 
         <a href="market_types.md#0x7_market_types_order_status_cancelled">market_types::order_status_cancelled</a>(),
         maker_cancellation_reason,
         metadata,
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
         time_in_force,
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(cancellation_reason),
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(cancellation_reason),
         callbacks
     );
     // If the maker is invalid cancel the maker order and <b>continue</b> <b>to</b> the next maker order
@@ -996,7 +996,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
         time_in_force,
         maker_cancel_size,
         maker_order.get_price_from_match_details(),
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
         metadata,
         callbacks,
         <b>false</b> // is_taker is <b>false</b> <b>as</b> this is a maker order
@@ -1015,7 +1015,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
 
 
 <pre><code>#[lint::skip(#[needless_mutable_reference])]
-<b>fun</b> <a href="order_placement.md#0x7_order_placement_cancel_taker_order_internal">cancel_taker_order_internal</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user_addr: <b>address</b>, limit_price: u64, order_id: <a href="_OrderId">order_book_types::OrderId</a>, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, orig_size: u64, size_delta: u64, fill_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, match_count: u32, is_bid: bool, cancel_reason: <a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>, cancel_details: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, trigger_condition: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, metadata: M, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, emit_order_open: bool, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, callback_results: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;
+<b>fun</b> <a href="order_placement.md#0x7_order_placement_cancel_taker_order_internal">cancel_taker_order_internal</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user_addr: <b>address</b>, limit_price: u64, order_id: <a href="_OrderId">order_book_types::OrderId</a>, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, orig_size: u64, size_delta: u64, fill_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, match_count: u32, is_bid: bool, cancel_reason: <a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>, cancel_details: <a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, trigger_condition: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, metadata: M, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, emit_order_open: bool, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, callback_results: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;
 </code></pre>
 
 
@@ -1032,7 +1032,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
     client_order_id: Option&lt;String&gt;,
     orig_size: u64,
     size_delta: u64,
-    fill_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    fill_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     match_count: u32,
     is_bid: bool,
     cancel_reason: OrderCancellationReason,
@@ -1042,7 +1042,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
     time_in_force: TimeInForce,
     emit_order_open: bool,
     callbacks: &MarketClearinghouseCallbacks&lt;M, R&gt;,
-    callback_results: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;
+    callback_results: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;R&gt;
 ): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">OrderMatchResult</a>&lt;R&gt; {
     <b>if</b> (emit_order_open) {
         market.emit_event_for_order(
@@ -1058,9 +1058,9 @@ Places a market order - The order is guaranteed to be a taker order and will be 
             <a href="market_types.md#0x7_market_types_order_status_open">market_types::order_status_open</a>(),
             std::string::utf8(b""),
             metadata,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
             time_in_force,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
             callbacks
         );
     };
@@ -1077,9 +1077,9 @@ Places a market order - The order is guaranteed to be a taker order and will be 
         <a href="market_types.md#0x7_market_types_order_status_cancelled">market_types::order_status_cancelled</a>(),
         cancel_details,
         metadata,
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
         time_in_force,
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(cancel_reason),
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(cancel_reason),
         callbacks
     );
     callbacks.cleanup_order(
@@ -1100,7 +1100,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
     OrderMatchResult::V1 {
         order_id,
         remaining_size: 0,
-        cancel_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(cancel_reason),
+        cancel_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(cancel_reason),
         fill_sizes,
         callback_results,
         match_count
@@ -1118,7 +1118,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="order_placement.md#0x7_order_placement_cleanup_order_internal">cleanup_order_internal</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(user_addr: <b>address</b>, order_id: <a href="_OrderId">order_book_types::OrderId</a>, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, order_type: <a href="_OrderType">order_book_types::OrderType</a>, is_bid: bool, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, cleanup_size: u64, price: u64, trigger_condition: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, metadata: M, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, is_taker: bool)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="order_placement.md#0x7_order_placement_cleanup_order_internal">cleanup_order_internal</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(user_addr: <b>address</b>, order_id: <a href="_OrderId">order_book_types::OrderId</a>, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, order_type: <a href="_OrderType">order_book_types::OrderType</a>, is_bid: bool, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, cleanup_size: u64, price: u64, trigger_condition: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, metadata: M, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, is_taker: bool)
 </code></pre>
 
 
@@ -1179,7 +1179,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
 
 
 
-<pre><code><b>fun</b> <a href="order_placement.md#0x7_order_placement_settle_single_trade">settle_single_trade</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user_addr: <b>address</b>, price: u64, orig_size: u64, remaining_size: &<b>mut</b> u64, is_bid: bool, metadata: M, order_id: <a href="_OrderId">order_book_types::OrderId</a>, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, fill_sizes: &<b>mut</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;): (<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;, <a href="market_types.md#0x7_market_types_CallbackResult">market_types::CallbackResult</a>&lt;R&gt;)
+<pre><code><b>fun</b> <a href="order_placement.md#0x7_order_placement_settle_single_trade">settle_single_trade</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user_addr: <b>address</b>, price: u64, orig_size: u64, remaining_size: &<b>mut</b> u64, is_bid: bool, metadata: M, order_id: <a href="_OrderId">order_book_types::OrderId</a>, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, fill_sizes: &<b>mut</b> <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;): (<a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;, <a href="market_types.md#0x7_market_types_CallbackResult">market_types::CallbackResult</a>&lt;R&gt;)
 </code></pre>
 
 
@@ -1200,12 +1200,12 @@ Places a market order - The order is guaranteed to be a taker order and will be 
     client_order_id: Option&lt;String&gt;,
     callbacks: &MarketClearinghouseCallbacks&lt;M, R&gt;,
     time_in_force: TimeInForce,
-    fill_sizes: &<b>mut</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+    fill_sizes: &<b>mut</b> <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 ): (Option&lt;OrderCancellationReason&gt;, CallbackResult&lt;R&gt;) {
     <b>let</b> dead_mans_switch_enabled = market.is_dead_mans_switch_enabled();
     <b>if</b> (dead_mans_switch_enabled
         && !is_order_valid(
-            market.get_dead_mans_switch_tracker(), user_addr, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+            market.get_dead_mans_switch_tracker(), user_addr, <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
         )) {
         <b>let</b> taker_cancellation_reason =
             std::string::utf8(b"Order invalidated due <b>to</b> dead man's switch expiry");
@@ -1222,15 +1222,15 @@ Places a market order - The order is guaranteed to be a taker order and will be 
             is_bid,
             <a href="market_types.md#0x7_market_types_order_cancellation_reason_dead_mans_switch_expired">market_types::order_cancellation_reason_dead_mans_switch_expired</a>(),
             taker_cancellation_reason,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
             metadata,
             time_in_force,
             <b>false</b>, // emit_order_open is <b>false</b> <b>as</b> the order was already open
             callbacks,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+            <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
         );
         <b>return</b> (
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(
                 <a href="market_types.md#0x7_market_types_order_cancellation_reason_dead_mans_switch_expired">market_types::order_cancellation_reason_dead_mans_switch_expired</a>()
             ),
             new_callback_result_not_available()
@@ -1256,13 +1256,13 @@ Places a market order - The order is guaranteed to be a taker order and will be 
             maker_order.get_time_in_force_from_match_details(),
             callbacks
         );
-        <b>return</b> (<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), new_callback_result_not_available());
+        <b>return</b> (<a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), new_callback_result_not_available());
     };
     <b>if</b> (dead_mans_switch_enabled
         && !is_order_valid(
             market.get_dead_mans_switch_tracker(),
             maker_order.get_account_from_match_details(),
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(
                 maker_order.get_creation_time_micros_from_match_details() / 1000000
             )
         )) {
@@ -1279,9 +1279,9 @@ Places a market order - The order is guaranteed to be a taker order and will be 
             maker_order.get_time_in_force_from_match_details(),
             callbacks
         );
-        <b>return</b> (<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), new_callback_result_not_available());
+        <b>return</b> (<a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), new_callback_result_not_available());
     };
-    <b>let</b> fill_id = <a href="../../aptos-trading/../topo-framework/doc/transaction_context.md#0x1_transaction_context_monotonically_increasing_counter">transaction_context::monotonically_increasing_counter</a>();
+    <b>let</b> fill_id = <a href="../../topo-framework/doc/transaction_context.md#0x1_transaction_context_monotonically_increasing_counter">transaction_context::monotonically_increasing_counter</a>();
     <b>let</b> settle_result =
         callbacks.settle_trade(
             market,
@@ -1293,7 +1293,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
                 price,
                 time_in_force,
                 single_order_type(),
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+                <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
                 metadata
             ),
             new_clearinghouse_order_info(
@@ -1304,7 +1304,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
                 maker_order.get_price_from_match_details(),
                 maker_order.get_time_in_force_from_match_details(),
                 maker_order.get_book_type_from_match_details(),
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+                <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
                 maker_order.get_metadata_from_match_details()
             ),
             fill_id,
@@ -1332,9 +1332,9 @@ Places a market order - The order is guaranteed to be a taker order and will be 
             <a href="market_types.md#0x7_market_types_order_status_filled">market_types::order_status_filled</a>(),
             std::string::utf8(b""),
             metadata,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
             time_in_force,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
             callbacks
         );
         // Event for maker fill
@@ -1364,9 +1364,9 @@ Places a market order - The order is guaranteed to be a taker order and will be 
                 <a href="market_types.md#0x7_market_types_order_status_filled">market_types::order_status_filled</a>(),
                 std::string::utf8(b""),
                 maker_order.get_metadata_from_match_details(),
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+                <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
                 maker_order.get_time_in_force_from_match_details(),
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+                <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
                 callbacks
             );
         };
@@ -1398,18 +1398,18 @@ Places a market order - The order is guaranteed to be a taker order and will be 
                 is_bid,
                 <a href="market_types.md#0x7_market_types_order_cancellation_reason_clearinghouse_settle_violation">market_types::order_cancellation_reason_clearinghouse_settle_violation</a>(),
                 taker_cancellation_reason_str.destroy_some(),
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+                <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
                 metadata,
                 time_in_force,
                 <b>false</b>, // emit_order_open is <b>false</b> <b>as</b> the order was already open
                 callbacks,
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+                <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
             );
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(
                 <a href="market_types.md#0x7_market_types_order_cancellation_reason_clearinghouse_settle_violation">market_types::order_cancellation_reason_clearinghouse_settle_violation</a>()
             )
         } <b>else</b> {
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
         };
     <b>if</b> (maker_cancellation_reason_str.is_some()) {
         <a href="order_placement.md#0x7_order_placement_cancel_maker_order_internal">cancel_maker_order_internal</a>(
@@ -1445,7 +1445,7 @@ Places a market order - The order is guaranteed to be a taker order and will be 
                 maker_order.get_time_in_force_from_match_details(),
                 0, // 0 because the order is fully filled
                 maker_order.get_price_from_match_details(),
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+                <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
                 maker_order.get_metadata_from_match_details(),
                 callbacks,
                 <b>false</b> // is_taker is <b>false</b> for maker orders
@@ -1469,7 +1469,7 @@ The function itself doesn't do any validation of the user_address, it's up to th
 is done before calling this function if needed.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_place_order_with_order_id">place_order_with_order_id</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user_addr: <b>address</b>, limit_price: u64, orig_size: u64, remaining_size: u64, is_bid: bool, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, trigger_condition: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, metadata: M, order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_OrderId">order_book_types::OrderId</a>&gt;, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, max_match_limit: u32, cancel_on_match_limit: bool, emit_taker_order_open: bool, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="order_placement.md#0x7_order_placement_place_order_with_order_id">place_order_with_order_id</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(market: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user_addr: <b>address</b>, limit_price: u64, orig_size: u64, remaining_size: u64, is_bid: bool, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, trigger_condition: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, metadata: M, order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_OrderId">order_book_types::OrderId</a>&gt;, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, max_match_limit: u32, cancel_on_match_limit: bool, emit_taker_order_open: bool, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;): <a href="order_placement.md#0x7_order_placement_OrderMatchResult">order_placement::OrderMatchResult</a>&lt;R&gt;
 </code></pre>
 
 
@@ -1511,10 +1511,10 @@ is done before calling this function if needed.
     };
     <b>if</b> (order_id.is_none()) {
         // If order id is not provided, generate a new order id
-        order_id = <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(next_order_id());
+        order_id = <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(next_order_id());
     };
     <b>let</b> order_id = order_id.destroy_some();
-    <b>let</b> callback_results = <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    <b>let</b> callback_results = <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
     <b>let</b> validation_result =
         callbacks.validate_order_placement(
             new_clearinghouse_order_info(
@@ -1539,7 +1539,7 @@ is done before calling this function if needed.
             client_order_id,
             orig_size,
             remaining_size,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
+            <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
             0, // match_count
             is_bid,
             <a href="market_types.md#0x7_market_types_order_cancellation_reason_position_update_violation">market_types::order_cancellation_reason_position_update_violation</a>(),
@@ -1549,7 +1549,7 @@ is done before calling this function if needed.
             time_in_force,
             <b>true</b>, // emit_order_open
             callbacks,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+            <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
         );
     };
 
@@ -1566,7 +1566,7 @@ is done before calling this function if needed.
                 client_order_id,
                 orig_size,
                 remaining_size,
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
+                <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
                 0, // match_count
                 is_bid,
                 <a href="market_types.md#0x7_market_types_order_cancellation_reason_duplicate_client_order_id">market_types::order_cancellation_reason_duplicate_client_order_id</a>(),
@@ -1576,7 +1576,7 @@ is done before calling this function if needed.
                 time_in_force,
                 <b>true</b>, // emit_order_open
                 callbacks,
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+                <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
             );
         };
 
@@ -1593,7 +1593,7 @@ is done before calling this function if needed.
                 client_order_id,
                 orig_size,
                 remaining_size,
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
+                <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
                 0, // match_count
                 is_bid,
                 <a href="market_types.md#0x7_market_types_order_cancellation_reason_order_pre_cancelled">market_types::order_cancellation_reason_order_pre_cancelled</a>(),
@@ -1603,7 +1603,7 @@ is done before calling this function if needed.
                 time_in_force,
                 <b>true</b>, // emit_order_open
                 callbacks,
-                <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+                <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
             );
         };
     };
@@ -1619,7 +1619,7 @@ is done before calling this function if needed.
             limit_price,
             orig_size,
             remaining_size,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
+            <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
             0, // match_count
             is_bid,
             time_in_force,
@@ -1629,7 +1629,7 @@ is done before calling this function if needed.
             client_order_id,
             emit_taker_order_open, // order_open_emitted
             callbacks,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+            <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
         );
     };
 
@@ -1644,17 +1644,17 @@ is done before calling this function if needed.
             client_order_id,
             orig_size,
             remaining_size,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
+            <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
             0, // match_count
             is_bid,
             <a href="market_types.md#0x7_market_types_order_cancellation_reason_post_only_violation">market_types::order_cancellation_reason_post_only_violation</a>(),
             std::string::utf8(b"Post Only violation"),
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
             metadata,
             time_in_force,
             <b>true</b>, // emit_order_open
             callbacks,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+            <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
         );
     };
 
@@ -1676,12 +1676,12 @@ is done before calling this function if needed.
             metadata,
             trigger_condition,
             time_in_force,
-            <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+            <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
             callbacks
         );
     };
 
-    <b>let</b> fill_sizes = <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    <b>let</b> fill_sizes = <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
     <b>let</b> match_count = 0;
     <b>loop</b> {
         match_count += 1;
@@ -1736,7 +1736,7 @@ is done before calling this function if needed.
             <b>return</b> OrderMatchResult::V1 {
                 order_id,
                 remaining_size,
-                cancel_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(
+                cancel_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(
                     order_cancellation_reason_clearinghouse_stopped_matching()
                 ),
                 fill_sizes,
@@ -1746,7 +1746,7 @@ is done before calling this function if needed.
         };
         // Check <b>if</b> the next iteration will still match
         <b>let</b> is_taker_order = market.is_taker_order(
-            limit_price, is_bid, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+            limit_price, is_bid, <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
         );
         <b>if</b> (!is_taker_order) {
             <b>if</b> (time_in_force == immediate_or_cancel()) {
@@ -1763,7 +1763,7 @@ is done before calling this function if needed.
                     is_bid,
                     <a href="market_types.md#0x7_market_types_order_cancellation_reason_ioc_violation">market_types::order_cancellation_reason_ioc_violation</a>(),
                     std::string::utf8(b"IOC_VIOLATION"),
-                    <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+                    <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
                     metadata,
                     time_in_force,
                     <b>false</b>, // emit_order_open is <b>false</b> <b>as</b> the order was already open
@@ -1782,7 +1782,7 @@ is done before calling this function if needed.
                     match_count,
                     is_bid,
                     time_in_force,
-                    <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+                    <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
                     metadata,
                     order_id,
                     client_order_id,
@@ -1808,7 +1808,7 @@ is done before calling this function if needed.
                     is_bid,
                     <a href="market_types.md#0x7_market_types_order_cancellation_reason_max_fill_limit_violation">market_types::order_cancellation_reason_max_fill_limit_violation</a>(),
                     std::string::utf8(b"Max fill limit reached"),
-                    <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
+                    <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), // trigger_condition
                     metadata,
                     time_in_force,
                     <b>false</b>, // emit_order_open is <b>false</b> <b>as</b> the order was already open
@@ -1819,7 +1819,7 @@ is done before calling this function if needed.
                 <b>return</b> OrderMatchResult::V1 {
                     order_id,
                     remaining_size,
-                    cancel_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(
+                    cancel_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(
                         <a href="market_types.md#0x7_market_types_order_cancellation_reason_max_fill_limit_violation">market_types::order_cancellation_reason_max_fill_limit_violation</a>()
                     ),
                     callback_results,
@@ -1832,7 +1832,7 @@ is done before calling this function if needed.
     OrderMatchResult::V1 {
         order_id,
         remaining_size,
-        cancel_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+        cancel_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
         fill_sizes,
         callback_results,
         match_count

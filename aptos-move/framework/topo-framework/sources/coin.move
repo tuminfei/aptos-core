@@ -4,7 +4,7 @@ module topo_framework::coin {
     use std::option::{Self, Option};
     use std::signer;
     use std::string::{Self, String};
-    use aptos_std::table::{Self, Table};
+    use topo_std::table::{Self, Table};
 
     use topo_framework::account;
     use topo_framework::aggregator::Aggregator;
@@ -24,7 +24,7 @@ module topo_framework::coin {
     };
     use topo_framework::object::{Self, Object};
     use topo_framework::primary_fungible_store;
-    use aptos_std::type_info::{Self, TypeInfo};
+    use topo_std::type_info::{Self, TypeInfo};
     use topo_framework::create_signer;
 
     friend topo_framework::topo_coin;

@@ -17,12 +17,12 @@
 -  [Function `check_and_insert_nonce`](#0x1_nonce_validation_check_and_insert_nonce)
 
 
-<pre><code><b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/hash.md#0x1_aptos_hash">0x1::aptos_hash</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/bcs.md#0x1_bcs">0x1::bcs</a>;
+<pre><code><b>use</b> <a href="../../move-stdlib/doc/hash.md#0x1_aptos_hash">0x1::aptos_hash</a>;
+<b>use</b> <a href="../../move-stdlib/doc/bcs.md#0x1_bcs">0x1::bcs</a>;
 <b>use</b> <a href="big_ordered_map.md#0x1_big_ordered_map">0x1::big_ordered_map</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
+<b>use</b> <a href="../../topo-stdlib/doc/table.md#0x1_table">0x1::table</a>;
 <b>use</b> <a href="timestamp.md#0x1_timestamp">0x1::timestamp</a>;
 </code></pre>
 
@@ -45,7 +45,7 @@
 
 <dl>
 <dt>
-<code>nonce_table: <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;u64, <a href="nonce_validation.md#0x1_nonce_validation_Bucket">nonce_validation::Bucket</a>&gt;</code>
+<code>nonce_table: <a href="../../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;u64, <a href="nonce_validation.md#0x1_nonce_validation_Bucket">nonce_validation::Bucket</a>&gt;</code>
 </dt>
 <dd>
 
@@ -222,7 +222,7 @@
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="nonce_validation.md#0x1_nonce_validation_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="nonce_validation.md#0x1_nonce_validation_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -231,7 +231,7 @@
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="nonce_validation.md#0x1_nonce_validation_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="nonce_validation.md#0x1_nonce_validation_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="nonce_validation.md#0x1_nonce_validation_initialize_nonce_table">initialize_nonce_table</a>(topo_framework);
 }
 </code></pre>
@@ -246,7 +246,7 @@
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="nonce_validation.md#0x1_nonce_validation_initialize_nonce_table">initialize_nonce_table</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="nonce_validation.md#0x1_nonce_validation_initialize_nonce_table">initialize_nonce_table</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -255,12 +255,12 @@
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="nonce_validation.md#0x1_nonce_validation_initialize_nonce_table">initialize_nonce_table</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>public</b> entry <b>fun</b> <a href="nonce_validation.md#0x1_nonce_validation_initialize_nonce_table">initialize_nonce_table</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>if</b> (!<b>exists</b>&lt;<a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a>&gt;(@topo_framework)) {
-        <b>let</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table">table</a> = <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>();
+        <b>let</b> <a href="../../topo-stdlib/doc/table.md#0x1_table">table</a> = <a href="../../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>();
         <b>let</b> nonce_history = <a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a> {
-            nonce_table: <a href="../../aptos-stdlib/doc/table.md#0x1_table">table</a>,
+            nonce_table: <a href="../../topo-stdlib/doc/table.md#0x1_table">table</a>,
             next_key: 0,
         };
         <b>move_to</b>&lt;<a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a>&gt;(topo_framework, nonce_history);
@@ -325,7 +325,7 @@
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="nonce_validation.md#0x1_nonce_validation_add_nonce_buckets">add_nonce_buckets</a>(count: u64) <b>acquires</b> <a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a> {
-    <b>assert</b>!(<b>exists</b>&lt;<a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a>&gt;(@topo_framework), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="nonce_validation.md#0x1_nonce_validation_E_NONCE_HISTORY_DOES_NOT_EXIST">E_NONCE_HISTORY_DOES_NOT_EXIST</a>));
+    <b>assert</b>!(<b>exists</b>&lt;<a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a>&gt;(@topo_framework), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="nonce_validation.md#0x1_nonce_validation_E_NONCE_HISTORY_DOES_NOT_EXIST">E_NONCE_HISTORY_DOES_NOT_EXIST</a>));
     <b>let</b> nonce_history = &<b>mut</b> <a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a>[@topo_framework];
     for (i in 0..count) {
         <b>if</b> (nonce_history.next_key &lt;= <a href="nonce_validation.md#0x1_nonce_validation_NUM_BUCKETS">NUM_BUCKETS</a>) {
@@ -365,9 +365,9 @@
     nonce: u64,
     txn_expiration_time: u64,
 ): bool <b>acquires</b> <a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a> {
-    <b>assert</b>!(<b>exists</b>&lt;<a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a>&gt;(@topo_framework), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="nonce_validation.md#0x1_nonce_validation_E_NONCE_HISTORY_DOES_NOT_EXIST">E_NONCE_HISTORY_DOES_NOT_EXIST</a>));
+    <b>assert</b>!(<b>exists</b>&lt;<a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a>&gt;(@topo_framework), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="nonce_validation.md#0x1_nonce_validation_E_NONCE_HISTORY_DOES_NOT_EXIST">E_NONCE_HISTORY_DOES_NOT_EXIST</a>));
     // Check <b>if</b> the transaction expiration time is too far in the future.
-    <b>assert</b>!(txn_expiration_time &lt;= <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() + <a href="nonce_validation.md#0x1_nonce_validation_NONCE_REPLAY_PROTECTION_OVERLAP_INTERVAL_SECONDS">NONCE_REPLAY_PROTECTION_OVERLAP_INTERVAL_SECONDS</a>, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="nonce_validation.md#0x1_nonce_validation_ETRANSACTION_EXPIRATION_TOO_FAR_IN_FUTURE">ETRANSACTION_EXPIRATION_TOO_FAR_IN_FUTURE</a>));
+    <b>assert</b>!(txn_expiration_time &lt;= <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() + <a href="nonce_validation.md#0x1_nonce_validation_NONCE_REPLAY_PROTECTION_OVERLAP_INTERVAL_SECONDS">NONCE_REPLAY_PROTECTION_OVERLAP_INTERVAL_SECONDS</a>, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="nonce_validation.md#0x1_nonce_validation_ETRANSACTION_EXPIRATION_TOO_FAR_IN_FUTURE">ETRANSACTION_EXPIRATION_TOO_FAR_IN_FUTURE</a>));
     <b>let</b> nonce_history = &<b>mut</b> <a href="nonce_validation.md#0x1_nonce_validation_NonceHistory">NonceHistory</a>[@topo_framework];
     <b>let</b> nonce_key = <a href="nonce_validation.md#0x1_nonce_validation_NonceKey">NonceKey</a> {
         sender_address,

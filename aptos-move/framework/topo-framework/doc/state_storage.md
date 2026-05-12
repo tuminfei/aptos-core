@@ -144,7 +144,7 @@ usage after the last txn of the previous epoch is committed.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="state_storage.md#0x1_state_storage_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="state_storage.md#0x1_state_storage_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -153,11 +153,11 @@ usage after the last txn of the previous epoch is committed.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="state_storage.md#0x1_state_storage_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="state_storage.md#0x1_state_storage_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>assert</b>!(
         !<b>exists</b>&lt;<a href="state_storage.md#0x1_state_storage_StateStorageUsage">StateStorageUsage</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="state_storage.md#0x1_state_storage_ESTATE_STORAGE_USAGE">ESTATE_STORAGE_USAGE</a>)
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="state_storage.md#0x1_state_storage_ESTATE_STORAGE_USAGE">ESTATE_STORAGE_USAGE</a>)
     );
     <b>move_to</b>(topo_framework, <a href="state_storage.md#0x1_state_storage_StateStorageUsage">StateStorageUsage</a> {
         epoch: 0,
@@ -191,7 +191,7 @@ usage after the last txn of the previous epoch is committed.
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="state_storage.md#0x1_state_storage_on_new_block">on_new_block</a>(epoch: u64) <b>acquires</b> <a href="state_storage.md#0x1_state_storage_StateStorageUsage">StateStorageUsage</a> {
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="state_storage.md#0x1_state_storage_StateStorageUsage">StateStorageUsage</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="state_storage.md#0x1_state_storage_ESTATE_STORAGE_USAGE">ESTATE_STORAGE_USAGE</a>)
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="state_storage.md#0x1_state_storage_ESTATE_STORAGE_USAGE">ESTATE_STORAGE_USAGE</a>)
     );
     <b>let</b> usage = <b>borrow_global_mut</b>&lt;<a href="state_storage.md#0x1_state_storage_StateStorageUsage">StateStorageUsage</a>&gt;(@topo_framework);
     <b>if</b> (epoch != usage.epoch) {
@@ -223,7 +223,7 @@ usage after the last txn of the previous epoch is committed.
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="state_storage.md#0x1_state_storage_current_items_and_bytes">current_items_and_bytes</a>(): (u64, u64) <b>acquires</b> <a href="state_storage.md#0x1_state_storage_StateStorageUsage">StateStorageUsage</a> {
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="state_storage.md#0x1_state_storage_StateStorageUsage">StateStorageUsage</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="state_storage.md#0x1_state_storage_ESTATE_STORAGE_USAGE">ESTATE_STORAGE_USAGE</a>)
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="state_storage.md#0x1_state_storage_ESTATE_STORAGE_USAGE">ESTATE_STORAGE_USAGE</a>)
     );
     <b>let</b> usage = <b>borrow_global</b>&lt;<a href="state_storage.md#0x1_state_storage_StateStorageUsage">StateStorageUsage</a>&gt;(@topo_framework);
     (usage.usage.items, usage.usage.bytes)
@@ -364,7 +364,7 @@ guarantees a fresh state view then.
 ### Function `initialize`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="state_storage.md#0x1_state_storage_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="state_storage.md#0x1_state_storage_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -372,7 +372,7 @@ ensure caller is admin.
 aborts if StateStorageUsage already exists.
 
 
-<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<pre><code><b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 // This enforces <a id="high-level-req-4" href="#high-level-req">high-level requirement 4</a>:
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(addr);
 // This enforces <a id="high-level-req-3" href="#high-level-req">high-level requirement 3</a>:

@@ -19,7 +19,7 @@
 module topo_framework::solana_derivable_account {
     use topo_framework::auth_data::AbstractionAuthData;
     use topo_framework::common_account_abstractions_utils::{construct_message, daa_authenticate};
-    use aptos_std::ed25519::{
+    use topo_std::ed25519::{
         Self,
         new_signature_from_bytes,
         new_validated_public_key_from_bytes,

@@ -45,7 +45,7 @@
 module aptos_experimental::large_packages {
     use std::error;
     use std::signer;
-    use aptos_std::smart_table::{Self, SmartTable};
+    use topo_std::smart_table::{Self, SmartTable};
 
     use topo_framework::code::{Self, PackageRegistry};
     use topo_framework::object::{Object};

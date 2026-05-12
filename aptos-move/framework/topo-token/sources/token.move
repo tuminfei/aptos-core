@@ -10,7 +10,7 @@ module topo_token::token {
     use topo_framework::account;
     use topo_framework::event::{Self, EventHandle};
     use topo_framework::timestamp;
-    use aptos_std::table::{Self, Table};
+    use topo_std::table::{Self, Table};
     use topo_token::property_map::{Self, PropertyMap, PropertyValue};
     use topo_token::token_event_store;
 

@@ -47,18 +47,18 @@ This module supports functionality related to code management.
     -  [Function `request_publish_with_allowed_deps`](#@Specification_1_request_publish_with_allowed_deps)
 
 
-<pre><code><b>use</b> <a href="../../aptos-stdlib/doc/copyable_any.md#0x1_copyable_any">0x1::copyable_any</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">0x1::error</a>;
+<pre><code><b>use</b> <a href="../../topo-stdlib/doc/copyable_any.md#0x1_copyable_any">0x1::copyable_any</a>;
+<b>use</b> <a href="../../move-stdlib/doc/error.md#0x1_error">0x1::error</a>;
 <b>use</b> <a href="event.md#0x1_event">0x1::event</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features">0x1::features</a>;
+<b>use</b> <a href="../../move-stdlib/doc/features.md#0x1_features">0x1::features</a>;
 <b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="permissioned_signer.md#0x1_permissioned_signer">0x1::permissioned_signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
 <b>use</b> <a href="util.md#0x1_util">0x1::util</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<b>use</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 </code></pre>
 
 
@@ -81,7 +81,7 @@ The package registry at the given address.
 
 <dl>
 <dt>
-<code>packages: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>&gt;</code>
+<code>packages: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>&gt;</code>
 </dt>
 <dd>
  Packages installed at this address.
@@ -109,7 +109,7 @@ Metadata for a package. All byte blobs are represented as base64-of-gzipped-byte
 
 <dl>
 <dt>
-<code>name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
+<code>name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
 </dt>
 <dd>
  Name of this package.
@@ -128,32 +128,32 @@ Metadata for a package. All byte blobs are represented as base64-of-gzipped-byte
  This field will be automatically assigned on successful upgrade.
 </dd>
 <dt>
-<code>source_digest: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
+<code>source_digest: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
 </dt>
 <dd>
  The source digest of the sources in the package. This is constructed by first building the
  sha256 of each individual source, than sorting them alphabetically, and sha256 them again.
 </dd>
 <dt>
-<code>manifest: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>manifest: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
  The package manifest, in the Move.toml format. Gzipped text.
 </dd>
 <dt>
-<code>modules: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_ModuleMetadata">code::ModuleMetadata</a>&gt;</code>
+<code>modules: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_ModuleMetadata">code::ModuleMetadata</a>&gt;</code>
 </dt>
 <dd>
  The list of modules installed by this package.
 </dd>
 <dt>
-<code>deps: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_PackageDep">code::PackageDep</a>&gt;</code>
+<code>deps: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_PackageDep">code::PackageDep</a>&gt;</code>
 </dt>
 <dd>
  Holds PackageDeps.
 </dd>
 <dt>
-<code>extension: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/doc/copyable_any.md#0x1_copyable_any_Any">copyable_any::Any</a>&gt;</code>
+<code>extension: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-stdlib/doc/copyable_any.md#0x1_copyable_any_Any">copyable_any::Any</a>&gt;</code>
 </dt>
 <dd>
  For future extension
@@ -187,7 +187,7 @@ A dependency to a package published at address
 
 </dd>
 <dt>
-<code>package_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
+<code>package_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
 </dt>
 <dd>
 
@@ -215,25 +215,25 @@ Metadata about a module in a package.
 
 <dl>
 <dt>
-<code>name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
+<code>name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
 </dt>
 <dd>
  Name of the module.
 </dd>
 <dt>
-<code>source: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>source: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
  Source text, gzipped String. Empty if not provided.
 </dd>
 <dt>
-<code>source_map: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>source_map: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
  Source map, in compressed BCS. Empty if not provided.
 </dd>
 <dt>
-<code>extension: <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-stdlib/doc/copyable_any.md#0x1_copyable_any_Any">copyable_any::Any</a>&gt;</code>
+<code>extension: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-stdlib/doc/copyable_any.md#0x1_copyable_any_Any">copyable_any::Any</a>&gt;</code>
 </dt>
 <dd>
  For future extensions.
@@ -357,7 +357,7 @@ A helper type for request_publish_with_allowed_deps
  Address of the module.
 </dd>
 <dt>
-<code>module_name: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
+<code>module_name: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
 </dt>
 <dd>
  Name of the module. If this is the empty string, then this serves as a wildcard for
@@ -491,7 +491,7 @@ Cannot downgrade a package's upgradability policy
 Permissions
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="code.md#0x1_code_check_code_publishing_permission">check_code_publishing_permission</a>(s: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="code.md#0x1_code_check_code_publishing_permission">check_code_publishing_permission</a>(s: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -500,10 +500,10 @@ Permissions
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="code.md#0x1_code_check_code_publishing_permission">check_code_publishing_permission</a>(s: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="code.md#0x1_code_check_code_publishing_permission">check_code_publishing_permission</a>(s: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <b>assert</b>!(
         <a href="permissioned_signer.md#0x1_permissioned_signer_check_permission_exists">permissioned_signer::check_permission_exists</a>(s, <a href="code.md#0x1_code_CodePublishingPermission">CodePublishingPermission</a> {}),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="code.md#0x1_code_ENO_CODE_PERMISSION">ENO_CODE_PERMISSION</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="code.md#0x1_code_ENO_CODE_PERMISSION">ENO_CODE_PERMISSION</a>),
     );
 }
 </code></pre>
@@ -519,7 +519,7 @@ Permissions
 Grant permission to publish code on behalf of the master signer.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_grant_permission">grant_permission</a>(master: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_grant_permission">grant_permission</a>(master: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -528,7 +528,7 @@ Grant permission to publish code on behalf of the master signer.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_grant_permission">grant_permission</a>(master: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_grant_permission">grant_permission</a>(master: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="permissioned_signer.md#0x1_permissioned_signer_authorize_unlimited">permissioned_signer::authorize_unlimited</a>(master, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>, <a href="code.md#0x1_code_CodePublishingPermission">CodePublishingPermission</a> {})
 }
 </code></pre>
@@ -649,7 +649,7 @@ strengthened but not weakened.
 Initialize package metadata for Genesis.
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>)
 </code></pre>
 
 
@@ -658,12 +658,12 @@ Initialize package metadata for Genesis.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>)
 <b>acquires</b> <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
-    <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(package_owner);
+    <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(package_owner);
     <b>if</b> (!<b>exists</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(addr)) {
-        <b>move_to</b>(package_owner, <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> { packages: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[metadata] })
+        <b>move_to</b>(package_owner, <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> { packages: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[metadata] })
     } <b>else</b> {
         <b>borrow_global_mut</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(addr).packages.push_back(metadata)
     }
@@ -682,7 +682,7 @@ Publishes a package at the given signer's address. The caller must provide packa
 package.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_publish_package">publish_package</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, pack: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, <a href="code.md#0x1_code">code</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_publish_package">publish_package</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, pack: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, <a href="code.md#0x1_code">code</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
 </code></pre>
 
 
@@ -691,24 +691,24 @@ package.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_publish_package">publish_package</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, pack: <a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>, <a href="code.md#0x1_code">code</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;) <b>acquires</b> <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> {
+<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_publish_package">publish_package</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, pack: <a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>, <a href="code.md#0x1_code">code</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;) <b>acquires</b> <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> {
     <a href="code.md#0x1_code_check_code_publishing_permission">check_code_publishing_permission</a>(owner);
     // Disallow incompatible upgrade mode. Governance can decide later <b>if</b> this should be reconsidered.
     <b>assert</b>!(
         pack.upgrade_policy.policy &gt; <a href="code.md#0x1_code_upgrade_policy_arbitrary">upgrade_policy_arbitrary</a>().policy,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="code.md#0x1_code_EINCOMPATIBLE_POLICY_DISABLED">EINCOMPATIBLE_POLICY_DISABLED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="code.md#0x1_code_EINCOMPATIBLE_POLICY_DISABLED">EINCOMPATIBLE_POLICY_DISABLED</a>),
     );
 
-    <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner);
+    <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner);
     <b>if</b> (!<b>exists</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(addr)) {
-        <b>move_to</b>(owner, <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> { packages: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>() })
+        <b>move_to</b>(owner, <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> { packages: <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>() })
     };
 
     // Checks for valid dependencies <b>to</b> other packages
     <b>let</b> allowed_deps = <a href="code.md#0x1_code_check_dependencies">check_dependencies</a>(addr, &pack);
 
     // Check <b>package</b> against conflicts
-    // To avoid prover compiler <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">error</a> on <b>spec</b>
+    // To avoid prover compiler <a href="../../move-stdlib/doc/error.md#0x1_error">error</a> on <b>spec</b>
     // the <b>package</b> need <b>to</b> be an immutable variable
     <b>let</b> module_names = <a href="code.md#0x1_code_get_module_names">get_module_names</a>(&pack);
     <b>let</b> package_immutable = &<b>borrow_global</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(addr).packages;
@@ -744,7 +744,7 @@ package.
     });
 
     // Request publish
-    <b>if</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/features.md#0x1_features_code_dependency_check_enabled">features::code_dependency_check_enabled</a>())
+    <b>if</b> (<a href="../../move-stdlib/doc/features.md#0x1_features_code_dependency_check_enabled">features::code_dependency_check_enabled</a>())
         <a href="code.md#0x1_code_request_publish_with_allowed_deps">request_publish_with_allowed_deps</a>(addr, module_names, allowed_deps, <a href="code.md#0x1_code">code</a>, policy.policy)
     <b>else</b>
     // The new `request_publish_with_allowed_deps` <b>has</b> not yet rolled out, so call downwards
@@ -763,7 +763,7 @@ package.
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_freeze_code_object">freeze_code_object</a>(publisher: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, code_object: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="code.md#0x1_code_PackageRegistry">code::PackageRegistry</a>&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_freeze_code_object">freeze_code_object</a>(publisher: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, code_object: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="code.md#0x1_code_PackageRegistry">code::PackageRegistry</a>&gt;)
 </code></pre>
 
 
@@ -772,13 +772,13 @@ package.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_freeze_code_object">freeze_code_object</a>(publisher: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, code_object: Object&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;) <b>acquires</b> <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> {
+<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_freeze_code_object">freeze_code_object</a>(publisher: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, code_object: Object&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;) <b>acquires</b> <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> {
     <a href="code.md#0x1_code_check_code_publishing_permission">check_code_publishing_permission</a>(publisher);
     <b>let</b> code_object_addr = code_object.object_address();
-    <b>assert</b>!(<b>exists</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(code_object_addr), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="code.md#0x1_code_ECODE_OBJECT_DOES_NOT_EXIST">ECODE_OBJECT_DOES_NOT_EXIST</a>));
+    <b>assert</b>!(<b>exists</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(code_object_addr), <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="code.md#0x1_code_ECODE_OBJECT_DOES_NOT_EXIST">ECODE_OBJECT_DOES_NOT_EXIST</a>));
     <b>assert</b>!(
-        code_object.is_owner(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(publisher)),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="code.md#0x1_code_ENOT_PACKAGE_OWNER">ENOT_PACKAGE_OWNER</a>)
+        code_object.is_owner(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(publisher)),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="code.md#0x1_code_ENOT_PACKAGE_OWNER">ENOT_PACKAGE_OWNER</a>)
     );
 
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(code_object_addr);
@@ -809,7 +809,7 @@ Same as <code>publish_package</code> but as an entry function which can be calle
 of current restrictions for txn parameters, the metadata needs to be passed in serialized form.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="code.md#0x1_code_publish_package_txn">publish_package_txn</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata_serialized: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="code.md#0x1_code">code</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="code.md#0x1_code_publish_package_txn">publish_package_txn</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata_serialized: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="code.md#0x1_code">code</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
 </code></pre>
 
 
@@ -818,7 +818,7 @@ of current restrictions for txn parameters, the metadata needs to be passed in s
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="code.md#0x1_code_publish_package_txn">publish_package_txn</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata_serialized: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="code.md#0x1_code">code</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="code.md#0x1_code_publish_package_txn">publish_package_txn</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata_serialized: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="code.md#0x1_code">code</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
 <b>acquires</b> <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> {
     <a href="code.md#0x1_code_publish_package">publish_package</a>(owner, <a href="util.md#0x1_util_from_bytes">util::from_bytes</a>&lt;<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>&gt;(metadata_serialized), <a href="code.md#0x1_code">code</a>)
 }
@@ -835,7 +835,7 @@ of current restrictions for txn parameters, the metadata needs to be passed in s
 Checks whether the given package is upgradable, and returns true if a compatibility check is needed.
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_check_upgradability">check_upgradability</a>(old_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_modules: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_check_upgradability">check_upgradability</a>(old_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_modules: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;)
 </code></pre>
 
 
@@ -845,16 +845,16 @@ Checks whether the given package is upgradable, and returns true if a compatibil
 
 
 <pre><code><b>fun</b> <a href="code.md#0x1_code_check_upgradability">check_upgradability</a>(
-    old_pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>, new_pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>, new_modules: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;String&gt;) {
+    old_pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>, new_pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>, new_modules: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;String&gt;) {
     <b>assert</b>!(old_pack.upgrade_policy.policy &lt; <a href="code.md#0x1_code_upgrade_policy_immutable">upgrade_policy_immutable</a>().policy,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="code.md#0x1_code_EUPGRADE_IMMUTABLE">EUPGRADE_IMMUTABLE</a>));
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="code.md#0x1_code_EUPGRADE_IMMUTABLE">EUPGRADE_IMMUTABLE</a>));
     <b>assert</b>!(<a href="code.md#0x1_code_can_change_upgrade_policy_to">can_change_upgrade_policy_to</a>(old_pack.upgrade_policy, new_pack.upgrade_policy),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="code.md#0x1_code_EUPGRADE_WEAKER_POLICY">EUPGRADE_WEAKER_POLICY</a>));
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="code.md#0x1_code_EUPGRADE_WEAKER_POLICY">EUPGRADE_WEAKER_POLICY</a>));
     <b>let</b> old_modules = <a href="code.md#0x1_code_get_module_names">get_module_names</a>(old_pack);
 
     old_modules.for_each_ref(|old_module| {
         <b>assert</b>!(
-            <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_contains">vector::contains</a>(new_modules, old_module),
+            <a href="../../move-stdlib/doc/vector.md#0x1_vector_contains">vector::contains</a>(new_modules, old_module),
             <a href="code.md#0x1_code_EMODULE_MISSING">EMODULE_MISSING</a>
         );
     });
@@ -872,7 +872,7 @@ Checks whether the given package is upgradable, and returns true if a compatibil
 Checks whether a new package with given names can co-exist with old package.
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_check_coexistence">check_coexistence</a>(old_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_modules: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_check_coexistence">check_coexistence</a>(old_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_modules: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;)
 </code></pre>
 
 
@@ -881,14 +881,14 @@ Checks whether a new package with given names can co-exist with old package.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_check_coexistence">check_coexistence</a>(old_pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>, new_modules: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;String&gt;) {
+<pre><code><b>fun</b> <a href="code.md#0x1_code_check_coexistence">check_coexistence</a>(old_pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>, new_modules: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;String&gt;) {
     // The modules introduced by each <b>package</b> must not overlap <b>with</b> `names`.
     old_pack.modules.for_each_ref(|old_mod| {
         <b>let</b> old_mod: &<a href="code.md#0x1_code_ModuleMetadata">ModuleMetadata</a> = old_mod;
         <b>let</b> j = 0;
-        <b>while</b> (j &lt; <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(new_modules)) {
-            <b>let</b> name = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_borrow">vector::borrow</a>(new_modules, j);
-            <b>assert</b>!(&old_mod.name != name, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="code.md#0x1_code_EMODULE_NAME_CLASH">EMODULE_NAME_CLASH</a>));
+        <b>while</b> (j &lt; <a href="../../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(new_modules)) {
+            <b>let</b> name = <a href="../../move-stdlib/doc/vector.md#0x1_vector_borrow">vector::borrow</a>(new_modules, j);
+            <b>assert</b>!(&old_mod.name != name, <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="code.md#0x1_code_EMODULE_NAME_CLASH">EMODULE_NAME_CLASH</a>));
             j += 1;
         };
     });
@@ -908,7 +908,7 @@ compute the list of module dependencies which are allowed by the package metadat
 is passed on to the native layer to verify that bytecode dependencies are actually what is pretended here.
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_check_dependencies">check_dependencies</a>(publish_address: <b>address</b>, pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">code::AllowedDep</a>&gt;
+<pre><code><b>fun</b> <a href="code.md#0x1_code_check_dependencies">check_dependencies</a>(publish_address: <b>address</b>, pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">code::AllowedDep</a>&gt;
 </code></pre>
 
 
@@ -917,41 +917,41 @@ is passed on to the native layer to verify that bytecode dependencies are actual
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_check_dependencies">check_dependencies</a>(publish_address: <b>address</b>, pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">AllowedDep</a>&gt;
+<pre><code><b>fun</b> <a href="code.md#0x1_code_check_dependencies">check_dependencies</a>(publish_address: <b>address</b>, pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">AllowedDep</a>&gt;
 <b>acquires</b> <a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a> {
-    <b>let</b> allowed_module_deps = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    <b>let</b> allowed_module_deps = <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
     <b>let</b> deps = &pack.deps;
     deps.for_each_ref(|dep| {
         <b>let</b> dep: &<a href="code.md#0x1_code_PackageDep">PackageDep</a> = dep;
-        <b>assert</b>!(<b>exists</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(dep.<a href="account.md#0x1_account">account</a>), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="code.md#0x1_code_EPACKAGE_DEP_MISSING">EPACKAGE_DEP_MISSING</a>));
+        <b>assert</b>!(<b>exists</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(dep.<a href="account.md#0x1_account">account</a>), <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="code.md#0x1_code_EPACKAGE_DEP_MISSING">EPACKAGE_DEP_MISSING</a>));
         <b>if</b> (<a href="code.md#0x1_code_is_policy_exempted_address">is_policy_exempted_address</a>(dep.<a href="account.md#0x1_account">account</a>)) {
             // Allow all modules from this <b>address</b>, by using "" <b>as</b> a wildcard in the <a href="code.md#0x1_code_AllowedDep">AllowedDep</a>
             <b>let</b> <a href="account.md#0x1_account">account</a>: <b>address</b> = dep.<a href="account.md#0x1_account">account</a>;
-            <b>let</b> module_name = <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"");
-            <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> allowed_module_deps, <a href="code.md#0x1_code_AllowedDep">AllowedDep</a> { <a href="account.md#0x1_account">account</a>, module_name });
+            <b>let</b> module_name = <a href="../../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"");
+            <a href="../../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> allowed_module_deps, <a href="code.md#0x1_code_AllowedDep">AllowedDep</a> { <a href="account.md#0x1_account">account</a>, module_name });
         } <b>else</b> {
             <b>let</b> registry = <b>borrow_global</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(dep.<a href="account.md#0x1_account">account</a>);
-            <b>let</b> found = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_any">vector::any</a>(&registry.packages, |dep_pack| {
+            <b>let</b> found = <a href="../../move-stdlib/doc/vector.md#0x1_vector_any">vector::any</a>(&registry.packages, |dep_pack| {
                 <b>let</b> dep_pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a> = dep_pack;
                 <b>if</b> (dep_pack.name == dep.package_name) {
                     // Check policy
                     <b>assert</b>!(
                         dep_pack.upgrade_policy.policy &gt;= pack.upgrade_policy.policy,
-                        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="code.md#0x1_code_EDEP_WEAKER_POLICY">EDEP_WEAKER_POLICY</a>)
+                        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="code.md#0x1_code_EDEP_WEAKER_POLICY">EDEP_WEAKER_POLICY</a>)
                     );
                     <b>if</b> (dep_pack.upgrade_policy == <a href="code.md#0x1_code_upgrade_policy_arbitrary">upgrade_policy_arbitrary</a>()) {
                         <b>assert</b>!(
                             dep.<a href="account.md#0x1_account">account</a> == publish_address,
-                            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="code.md#0x1_code_EDEP_ARBITRARY_NOT_SAME_ADDRESS">EDEP_ARBITRARY_NOT_SAME_ADDRESS</a>)
+                            <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="code.md#0x1_code_EDEP_ARBITRARY_NOT_SAME_ADDRESS">EDEP_ARBITRARY_NOT_SAME_ADDRESS</a>)
                         )
                     };
                     // Add allowed deps
                     <b>let</b> <a href="account.md#0x1_account">account</a> = dep.<a href="account.md#0x1_account">account</a>;
                     <b>let</b> k = 0;
-                    <b>let</b> r = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(&dep_pack.modules);
+                    <b>let</b> r = <a href="../../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(&dep_pack.modules);
                     <b>while</b> (k &lt; r) {
-                        <b>let</b> module_name = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_borrow">vector::borrow</a>(&dep_pack.modules, k).name;
-                        <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> allowed_module_deps, <a href="code.md#0x1_code_AllowedDep">AllowedDep</a> { <a href="account.md#0x1_account">account</a>, module_name });
+                        <b>let</b> module_name = <a href="../../move-stdlib/doc/vector.md#0x1_vector_borrow">vector::borrow</a>(&dep_pack.modules, k).name;
+                        <a href="../../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> allowed_module_deps, <a href="code.md#0x1_code_AllowedDep">AllowedDep</a> { <a href="account.md#0x1_account">account</a>, module_name });
                         k += 1;
                     };
                     <b>true</b>
@@ -959,7 +959,7 @@ is passed on to the native layer to verify that bytecode dependencies are actual
                     <b>false</b>
                 }
             });
-            <b>assert</b>!(found, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="code.md#0x1_code_EPACKAGE_DEP_MISSING">EPACKAGE_DEP_MISSING</a>));
+            <b>assert</b>!(found, <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="code.md#0x1_code_EPACKAGE_DEP_MISSING">EPACKAGE_DEP_MISSING</a>));
         };
     });
     allowed_module_deps
@@ -1005,7 +1005,7 @@ requires to be upgradable for maintenance and evolution, and is configured to be
 Get the names of the modules in a package.
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_get_module_names">get_module_names</a>(pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
+<pre><code><b>fun</b> <a href="code.md#0x1_code_get_module_names">get_module_names</a>(pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
 </code></pre>
 
 
@@ -1014,11 +1014,11 @@ Get the names of the modules in a package.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_get_module_names">get_module_names</a>(pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;String&gt; {
-    <b>let</b> module_names = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+<pre><code><b>fun</b> <a href="code.md#0x1_code_get_module_names">get_module_names</a>(pack: &<a href="code.md#0x1_code_PackageMetadata">PackageMetadata</a>): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;String&gt; {
+    <b>let</b> module_names = <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
     pack.modules.for_each_ref(|pack_module| {
         <b>let</b> pack_module: &<a href="code.md#0x1_code_ModuleMetadata">ModuleMetadata</a> = pack_module;
-        <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> module_names, pack_module.name);
+        <a href="../../move-stdlib/doc/vector.md#0x1_vector_push_back">vector::push_back</a>(&<b>mut</b> module_names, pack_module.name);
     });
     module_names
 }
@@ -1035,7 +1035,7 @@ Get the names of the modules in a package.
 Native function to initiate module loading
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_request_publish">request_publish</a>(owner: <b>address</b>, expected_modules: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, bundle: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, policy: u8)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_request_publish">request_publish</a>(owner: <b>address</b>, expected_modules: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, bundle: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, policy: u8)
 </code></pre>
 
 
@@ -1046,8 +1046,8 @@ Native function to initiate module loading
 
 <pre><code><b>native</b> <b>fun</b> <a href="code.md#0x1_code_request_publish">request_publish</a>(
     owner: <b>address</b>,
-    expected_modules: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;String&gt;,
-    bundle: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    expected_modules: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;String&gt;,
+    bundle: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     policy: u8
 );
 </code></pre>
@@ -1063,7 +1063,7 @@ Native function to initiate module loading
 Native function to initiate module loading, including a list of allowed dependencies.
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_request_publish_with_allowed_deps">request_publish_with_allowed_deps</a>(owner: <b>address</b>, expected_modules: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, allowed_deps: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">code::AllowedDep</a>&gt;, bundle: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, policy: u8)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_request_publish_with_allowed_deps">request_publish_with_allowed_deps</a>(owner: <b>address</b>, expected_modules: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, allowed_deps: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">code::AllowedDep</a>&gt;, bundle: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, policy: u8)
 </code></pre>
 
 
@@ -1074,9 +1074,9 @@ Native function to initiate module loading, including a list of allowed dependen
 
 <pre><code><b>native</b> <b>fun</b> <a href="code.md#0x1_code_request_publish_with_allowed_deps">request_publish_with_allowed_deps</a>(
     owner: <b>address</b>,
-    expected_modules: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;String&gt;,
-    allowed_deps: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">AllowedDep</a>&gt;,
-    bundle: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
+    expected_modules: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;String&gt;,
+    allowed_deps: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">AllowedDep</a>&gt;,
+    bundle: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;,
     policy: u8
 );
 </code></pre>
@@ -1178,14 +1178,14 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `initialize`
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, package_owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>)
 </code></pre>
 
 
 
 
-<pre><code><b>let</b> aptos_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
-<b>let</b> owner_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(package_owner);
+<pre><code><b>let</b> aptos_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<b>let</b> owner_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(package_owner);
 <b>aborts_if</b> !<a href="system_addresses.md#0x1_system_addresses_is_aptos_framework_address">system_addresses::is_aptos_framework_address</a>(aptos_addr);
 <b>ensures</b> <b>exists</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(owner_addr);
 </code></pre>
@@ -1197,14 +1197,14 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `publish_package`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_publish_package">publish_package</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, pack: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, <a href="code.md#0x1_code">code</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_publish_package">publish_package</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, pack: <a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, <a href="code.md#0x1_code">code</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> aborts_if_is_partial;
-<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner);
+<b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner);
 <b>modifies</b> <b>global</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(addr);
 <b>aborts_if</b> pack.upgrade_policy.policy &lt;= <a href="code.md#0x1_code_upgrade_policy_arbitrary">upgrade_policy_arbitrary</a>().policy;
 </code></pre>
@@ -1216,7 +1216,7 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `freeze_code_object`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_freeze_code_object">freeze_code_object</a>(publisher: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, code_object: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="code.md#0x1_code_PackageRegistry">code::PackageRegistry</a>&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="code.md#0x1_code_freeze_code_object">freeze_code_object</a>(publisher: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, code_object: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="code.md#0x1_code_PackageRegistry">code::PackageRegistry</a>&gt;)
 </code></pre>
 
 
@@ -1226,7 +1226,7 @@ Native function to initiate module loading, including a list of allowed dependen
 <b>let</b> code_object_addr = code_object.inner;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="object.md#0x1_object_ObjectCore">object::ObjectCore</a>&gt;(code_object_addr);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(code_object_addr);
-<b>aborts_if</b> !<a href="object.md#0x1_object_is_owner">object::is_owner</a>(code_object, <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(publisher));
+<b>aborts_if</b> !<a href="object.md#0x1_object_is_owner">object::is_owner</a>(code_object, <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(publisher));
 <b>modifies</b> <b>global</b>&lt;<a href="code.md#0x1_code_PackageRegistry">PackageRegistry</a>&gt;(code_object_addr);
 </code></pre>
 
@@ -1237,7 +1237,7 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `publish_package_txn`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="code.md#0x1_code_publish_package_txn">publish_package_txn</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata_serialized: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="code.md#0x1_code">code</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="code.md#0x1_code_publish_package_txn">publish_package_txn</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata_serialized: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="code.md#0x1_code">code</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
 </code></pre>
 
 
@@ -1253,7 +1253,7 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `check_upgradability`
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_check_upgradability">check_upgradability</a>(old_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_modules: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_check_upgradability">check_upgradability</a>(old_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_modules: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;)
 </code></pre>
 
 
@@ -1271,7 +1271,7 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `check_coexistence`
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_check_coexistence">check_coexistence</a>(old_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_modules: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_check_coexistence">check_coexistence</a>(old_pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>, new_modules: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;)
 </code></pre>
 
 
@@ -1287,7 +1287,7 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `check_dependencies`
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_check_dependencies">check_dependencies</a>(publish_address: <b>address</b>, pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">code::AllowedDep</a>&gt;
+<pre><code><b>fun</b> <a href="code.md#0x1_code_check_dependencies">check_dependencies</a>(publish_address: <b>address</b>, pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">code::AllowedDep</a>&gt;
 </code></pre>
 
 
@@ -1303,7 +1303,7 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `get_module_names`
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_get_module_names">get_module_names</a>(pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
+<pre><code><b>fun</b> <a href="code.md#0x1_code_get_module_names">get_module_names</a>(pack: &<a href="code.md#0x1_code_PackageMetadata">code::PackageMetadata</a>): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
 </code></pre>
 
 
@@ -1322,7 +1322,7 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `request_publish`
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_request_publish">request_publish</a>(owner: <b>address</b>, expected_modules: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, bundle: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, policy: u8)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_request_publish">request_publish</a>(owner: <b>address</b>, expected_modules: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, bundle: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, policy: u8)
 </code></pre>
 
 
@@ -1338,7 +1338,7 @@ Native function to initiate module loading, including a list of allowed dependen
 ### Function `request_publish_with_allowed_deps`
 
 
-<pre><code><b>fun</b> <a href="code.md#0x1_code_request_publish_with_allowed_deps">request_publish_with_allowed_deps</a>(owner: <b>address</b>, expected_modules: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, allowed_deps: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">code::AllowedDep</a>&gt;, bundle: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, policy: u8)
+<pre><code><b>fun</b> <a href="code.md#0x1_code_request_publish_with_allowed_deps">request_publish_with_allowed_deps</a>(owner: <b>address</b>, expected_modules: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, allowed_deps: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="code.md#0x1_code_AllowedDep">code::AllowedDep</a>&gt;, bundle: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;, policy: u8)
 </code></pre>
 
 
@@ -1354,7 +1354,7 @@ Native function to initiate module loading, including a list of allowed dependen
 
 
 <pre><code><b>schema</b> <a href="code.md#0x1_code_AbortsIfPermissionedSigner">AbortsIfPermissionedSigner</a> {
-    s: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
+    s: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
     <b>let</b> perm = <a href="code.md#0x1_code_CodePublishingPermission">CodePublishingPermission</a> {};
     <b>aborts_if</b> !<a href="permissioned_signer.md#0x1_permissioned_signer_spec_check_permission_exists">permissioned_signer::spec_check_permission_exists</a>(s, perm);
 }

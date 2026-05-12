@@ -2,8 +2,8 @@
 module topo_token::token_coin_swap {
     use std::string::String;
     use std::error;
-    use aptos_std::table::Table;
-    use aptos_std::type_info::TypeInfo;
+    use topo_std::table::Table;
+    use topo_std::type_info::TypeInfo;
     use topo_framework::event::EventHandle;
     use topo_token::token::{Token, TokenId};
 

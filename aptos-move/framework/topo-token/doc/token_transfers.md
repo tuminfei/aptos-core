@@ -41,7 +41,7 @@ This module provides the foundation for transferring of Tokens
 <b>use</b> <a href="../../topo-framework/doc/event.md#0x1_event">0x1::event</a>;
 <b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 <b>use</b> <a href="../../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
-<b>use</b> <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
+<b>use</b> <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table">0x1::table</a>;
 <b>use</b> <a href="token.md#0x3_token">0x3::token</a>;
 </code></pre>
 
@@ -64,7 +64,7 @@ This module provides the foundation for transferring of Tokens
 
 <dl>
 <dt>
-<code>pending_claims: <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="token_transfers.md#0x3_token_transfers_TokenOfferId">token_transfers::TokenOfferId</a>, <a href="token.md#0x3_token_Token">token::Token</a>&gt;</code>
+<code>pending_claims: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="token_transfers.md#0x3_token_transfers_TokenOfferId">token_transfers::TokenOfferId</a>, <a href="token.md#0x3_token_Token">token::Token</a>&gt;</code>
 </dt>
 <dd>
 
@@ -541,7 +541,7 @@ Token offer doesn't exist
     <b>move_to</b>(
         <a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
         <a href="token_transfers.md#0x3_token_transfers_PendingClaims">PendingClaims</a> {
-            pending_claims: <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>&lt;<a href="token_transfers.md#0x3_token_transfers_TokenOfferId">TokenOfferId</a>, Token&gt;(),
+            pending_claims: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>&lt;<a href="token_transfers.md#0x3_token_transfers_TokenOfferId">TokenOfferId</a>, Token&gt;(),
             offer_events: <a href="../../topo-framework/doc/account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="token_transfers.md#0x3_token_transfers_TokenOfferEvent">TokenOfferEvent</a>&gt;(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>),
             cancel_offer_events: <a href="../../topo-framework/doc/account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="token_transfers.md#0x3_token_transfers_TokenCancelOfferEvent">TokenCancelOfferEvent</a>&gt;(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>),
             claim_events: <a href="../../topo-framework/doc/account.md#0x1_account_new_event_handle">account::new_event_handle</a>&lt;<a href="token_transfers.md#0x3_token_transfers_TokenClaimEvent">TokenClaimEvent</a>&gt;(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>),
@@ -841,13 +841,13 @@ Get the amount from sender token
    amount: u64
 ): u64 {
    <b>use</b> topo_token::token::{TokenStore};
-   <b>use</b> aptos_std::table::{<b>Self</b>};
+   <b>use</b> topo_std::table::{<b>Self</b>};
    <b>let</b> tokens = <b>global</b>&lt;TokenStore&gt;(account_addr).tokens;
-   <b>let</b> balance = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(tokens, id).amount;
+   <b>let</b> balance = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(tokens, id).amount;
    <b>if</b> (balance &gt; amount) {
        amount
    } <b>else</b> {
-       <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(tokens, id).amount
+       <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(tokens, id).amount
    }
 }
 </code></pre>
@@ -941,10 +941,10 @@ Abort according to the code
 <b>aborts_if</b> amount &lt;= 0;
 <b>aborts_if</b> <a href="token.md#0x3_token_spec_balance_of">token::spec_balance_of</a>(sender_addr, token_id) &lt; amount;
 <b>aborts_if</b> !<b>exists</b>&lt;TokenStore&gt;(sender_addr);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(tokens, token_id);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
-<b>let</b> a = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
-<b>let</b> dst_token = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(pending_claims, token_offer_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(tokens, token_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
+<b>let</b> a = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
+<b>let</b> dst_token = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(pending_claims, token_offer_id);
 <b>aborts_if</b> dst_token.amount + <a href="token_transfers.md#0x3_token_transfers_spce_get">spce_get</a>(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(sender), token_id, amount) &gt; MAX_U64;
 </code></pre>
 
@@ -966,14 +966,14 @@ Abort according to the code
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token_transfers.md#0x3_token_transfers_PendingClaims">PendingClaims</a>&gt;(sender);
 <b>let</b> pending_claims = <b>global</b>&lt;<a href="token_transfers.md#0x3_token_transfers_PendingClaims">PendingClaims</a>&gt;(sender).pending_claims;
 <b>let</b> token_offer_id = <a href="token_transfers.md#0x3_token_transfers_create_token_offer_id">create_token_offer_id</a>(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(receiver), token_id);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
-<b>let</b> tokens = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(pending_claims, token_offer_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
+<b>let</b> tokens = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(pending_claims, token_offer_id);
 <b>include</b> <a href="token.md#0x3_token_InitializeTokenStore">token::InitializeTokenStore</a>{<a href="../../topo-framework/doc/account.md#0x1_account">account</a>: receiver };
 <b>let</b> account_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(receiver);
 <b>let</b> <a href="token.md#0x3_token">token</a> = tokens;
 <b>let</b> token_store = <b>global</b>&lt;TokenStore&gt;(account_addr);
-<b>let</b> recipient_token = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
-<b>let</b> b = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
+<b>let</b> recipient_token = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
+<b>let</b> b = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
 <b>aborts_if</b> <a href="token.md#0x3_token">token</a>.amount &lt;= 0;
 </code></pre>
 
@@ -994,14 +994,14 @@ Abort according to the code
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token_transfers.md#0x3_token_transfers_PendingClaims">PendingClaims</a>&gt;(sender);
 <b>let</b> pending_claims = <b>global</b>&lt;<a href="token_transfers.md#0x3_token_transfers_PendingClaims">PendingClaims</a>&gt;(sender).pending_claims;
 <b>let</b> token_offer_id = <a href="token_transfers.md#0x3_token_transfers_create_token_offer_id">create_token_offer_id</a>(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(receiver), token_id);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
-<b>let</b> tokens = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(pending_claims, token_offer_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
+<b>let</b> tokens = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(pending_claims, token_offer_id);
 <b>include</b> <a href="token.md#0x3_token_InitializeTokenStore">token::InitializeTokenStore</a>{<a href="../../topo-framework/doc/account.md#0x1_account">account</a>: receiver };
 <b>let</b> account_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(receiver);
 <b>let</b> <a href="token.md#0x3_token">token</a> = tokens;
 <b>let</b> token_store = <b>global</b>&lt;TokenStore&gt;(account_addr);
-<b>let</b> recipient_token = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
-<b>let</b> b = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
+<b>let</b> recipient_token = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
+<b>let</b> b = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
 <b>aborts_if</b> <a href="token.md#0x3_token">token</a>.amount &lt;= 0;
 </code></pre>
 
@@ -1024,14 +1024,14 @@ Abort according to the code
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token_transfers.md#0x3_token_transfers_PendingClaims">PendingClaims</a>&gt;(sender_addr);
 <b>let</b> pending_claims = <b>global</b>&lt;<a href="token_transfers.md#0x3_token_transfers_PendingClaims">PendingClaims</a>&gt;(sender_addr).pending_claims;
 <b>let</b> token_offer_id = <a href="token_transfers.md#0x3_token_transfers_create_token_offer_id">create_token_offer_id</a>(receiver, token_id);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
 <b>include</b> <a href="token.md#0x3_token_InitializeTokenStore">token::InitializeTokenStore</a>{<a href="../../topo-framework/doc/account.md#0x1_account">account</a>: sender };
-<b>let</b> dst_token = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(pending_claims, token_offer_id);
+<b>let</b> dst_token = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(pending_claims, token_offer_id);
 <b>let</b> account_addr = sender_addr;
 <b>let</b> <a href="token.md#0x3_token">token</a> = dst_token;
 <b>let</b> token_store = <b>global</b>&lt;TokenStore&gt;(account_addr);
-<b>let</b> recipient_token = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
-<b>let</b> b = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
+<b>let</b> recipient_token = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
+<b>let</b> b = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
 <b>aborts_if</b> <a href="token.md#0x3_token">token</a>.amount &lt;= 0;
 </code></pre>
 
@@ -1053,14 +1053,14 @@ Abort according to the code
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="token_transfers.md#0x3_token_transfers_PendingClaims">PendingClaims</a>&gt;(sender_addr);
 <b>let</b> pending_claims = <b>global</b>&lt;<a href="token_transfers.md#0x3_token_transfers_PendingClaims">PendingClaims</a>&gt;(sender_addr).pending_claims;
 <b>let</b> token_offer_id = <a href="token_transfers.md#0x3_token_transfers_create_token_offer_id">create_token_offer_id</a>(receiver, token_id);
-<b>aborts_if</b> !<a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
+<b>aborts_if</b> !<a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(pending_claims, token_offer_id);
 <b>include</b> <a href="token.md#0x3_token_InitializeTokenStore">token::InitializeTokenStore</a>{<a href="../../topo-framework/doc/account.md#0x1_account">account</a>: sender };
-<b>let</b> dst_token = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(pending_claims, token_offer_id);
+<b>let</b> dst_token = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(pending_claims, token_offer_id);
 <b>let</b> account_addr = sender_addr;
 <b>let</b> <a href="token.md#0x3_token">token</a> = dst_token;
 <b>let</b> token_store = <b>global</b>&lt;TokenStore&gt;(account_addr);
-<b>let</b> recipient_token = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
-<b>let</b> b = <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
+<b>let</b> recipient_token = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_get">table::spec_get</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
+<b>let</b> b = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_spec_contains">table::spec_contains</a>(token_store.tokens, <a href="token.md#0x3_token">token</a>.id);
 <b>aborts_if</b> <a href="token.md#0x3_token">token</a>.amount &lt;= 0;
 </code></pre>
 

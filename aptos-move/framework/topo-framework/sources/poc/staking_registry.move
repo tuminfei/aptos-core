@@ -48,9 +48,9 @@ module topo_framework::staking_registry {
     use std::error;
     use std::signer;
 
-    use aptos_std::simple_map::{Self, SimpleMap};
-    use aptos_std::smart_table::{Self, SmartTable};
-    use aptos_std::table::{Self, Table};
+    use topo_std::simple_map::{Self, SimpleMap};
+    use topo_std::smart_table::{Self, SmartTable};
+    use topo_std::table::{Self, Table};
 
     use topo_framework::coin::{Self, Coin, MintCapability};
     use topo_framework::poc_power_store;

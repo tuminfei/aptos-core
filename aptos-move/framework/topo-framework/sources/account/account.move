@@ -12,13 +12,13 @@ module topo_framework::account {
     use topo_framework::guid;
     use topo_framework::permissioned_signer;
     use topo_framework::system_addresses;
-    use aptos_std::ed25519;
-    use aptos_std::from_bcs;
-    use aptos_std::multi_ed25519;
-    use aptos_std::single_key;
-    use aptos_std::multi_key;
-    use aptos_std::table::{Self, Table};
-    use aptos_std::type_info::{Self, TypeInfo};
+    use topo_std::ed25519;
+    use topo_std::from_bcs;
+    use topo_std::multi_ed25519;
+    use topo_std::single_key;
+    use topo_std::multi_key;
+    use topo_std::table::{Self, Table};
+    use topo_std::type_info::{Self, TypeInfo};
 
     friend topo_framework::topo_account;
     friend topo_framework::coin;

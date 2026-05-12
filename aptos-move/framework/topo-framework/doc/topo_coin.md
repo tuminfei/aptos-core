@@ -36,12 +36,12 @@ modified from https://github.com/move-language/move/tree/main/language/documenta
 <b>use</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">0x1::dispatchable_fungible_asset</a>;
 <b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
 <b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="primary_fungible_store.md#0x1_primary_fungible_store">0x1::primary_fungible_store</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<b>use</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 </code></pre>
 
 
@@ -146,7 +146,7 @@ The container stores the current pending delegations.
 
 <dl>
 <dt>
-<code>inner: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="topo_coin.md#0x1_topo_coin_DelegatedMintCapability">topo_coin::DelegatedMintCapability</a>&gt;</code>
+<code>inner: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="topo_coin.md#0x1_topo_coin_DelegatedMintCapability">topo_coin::DelegatedMintCapability</a>&gt;</code>
 </dt>
 <dd>
 
@@ -198,7 +198,7 @@ Account does not have mint capability
 Can only called during genesis to initialize the Topo coin.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;, <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;, <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -207,13 +207,13 @@ Can only called during genesis to initialize the Topo coin.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (BurnCapability&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;, MintCapability&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;) {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (BurnCapability&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;, MintCapability&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
 
     <b>let</b> (burn_cap, freeze_cap, mint_cap) = <a href="coin.md#0x1_coin_initialize_with_parallelizable_supply">coin::initialize_with_parallelizable_supply</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;(
         topo_framework,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"Topo Coin"),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"TOPO"),
+        <a href="../../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"Topo Coin"),
+        <a href="../../move-stdlib/doc/string.md#0x1_string_utf8">string::utf8</a>(b"TOPO"),
         8, // decimals
         <b>true</b>, // monitor_supply
     );
@@ -237,7 +237,7 @@ Can only called during genesis to initialize the Topo coin.
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_has_mint_capability">has_mint_capability</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): bool
+<pre><code><b>public</b> <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_has_mint_capability">has_mint_capability</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>): bool
 </code></pre>
 
 
@@ -246,8 +246,8 @@ Can only called during genesis to initialize the Topo coin.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_has_mint_capability">has_mint_capability</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): bool {
-    <b>exists</b>&lt;<a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>))
+<pre><code><b>public</b> <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_has_mint_capability">has_mint_capability</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>): bool {
+    <b>exists</b>&lt;<a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a>&gt;(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>))
 }
 </code></pre>
 
@@ -263,7 +263,7 @@ Only called during genesis to destroy the aptos framework account's mint capabil
 and accounts have been initialized during genesis.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_destroy_mint_cap">destroy_mint_cap</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_destroy_mint_cap">destroy_mint_cap</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -272,7 +272,7 @@ and accounts have been initialized during genesis.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_destroy_mint_cap">destroy_mint_cap</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a> {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_destroy_mint_cap">destroy_mint_cap</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>let</b> <a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a> { mint_cap } = <b>move_from</b>&lt;<a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a>&gt;(@topo_framework);
     <a href="coin.md#0x1_coin_destroy_mint_cap">coin::destroy_mint_cap</a>(mint_cap);
@@ -292,7 +292,7 @@ accounts.
 Expects account and TOPO store to be registered before calling.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_configure_accounts_for_test">configure_accounts_for_test</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_configure_accounts_for_test">configure_accounts_for_test</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -302,8 +302,8 @@ Expects account and TOPO store to be registered before calling.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_configure_accounts_for_test">configure_accounts_for_test</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    core_resources: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     mint_cap: MintCapability&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;,
 ) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
@@ -313,10 +313,10 @@ Expects account and TOPO store to be registered before calling.
         18446744073709551615,
         &mint_cap,
     );
-    <a href="coin.md#0x1_coin_deposit">coin::deposit</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(core_resources), coins);
+    <a href="coin.md#0x1_coin_deposit">coin::deposit</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(core_resources), coins);
 
     <b>move_to</b>(core_resources, <a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a> { mint_cap });
-    <b>move_to</b>(core_resources, <a href="topo_coin.md#0x1_topo_coin_Delegations">Delegations</a> { inner: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>() });
+    <b>move_to</b>(core_resources, <a href="topo_coin.md#0x1_topo_coin_Delegations">Delegations</a> { inner: <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>() });
 }
 </code></pre>
 
@@ -332,7 +332,7 @@ Only callable in tests and testnets where the core resources account exists.
 Create new coins and deposit them into dst_addr's account.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_mint">mint</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, dst_addr: <b>address</b>, amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_mint">mint</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, dst_addr: <b>address</b>, amount: u64)
 </code></pre>
 
 
@@ -342,15 +342,15 @@ Create new coins and deposit them into dst_addr's account.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_mint">mint</a>(
-    <a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    <a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     dst_addr: <b>address</b>,
     amount: u64,
 ) <b>acquires</b> <a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a> {
-    <b>let</b> account_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
+    <b>let</b> account_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
 
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a>&gt;(account_addr),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="topo_coin.md#0x1_topo_coin_ENO_CAPABILITIES">ENO_CAPABILITIES</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="topo_coin.md#0x1_topo_coin_ENO_CAPABILITIES">ENO_CAPABILITIES</a>),
     );
 
     <b>let</b> mint_cap = &<b>borrow_global</b>&lt;<a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a>&gt;(account_addr).mint_cap;
@@ -371,7 +371,7 @@ Only callable in tests and testnets where the core resources account exists.
 Create delegated token for the address so the account could claim MintCapability later.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_delegate_mint_capability">delegate_mint_capability</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_delegate_mint_capability">delegate_mint_capability</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>)
 </code></pre>
 
 
@@ -380,12 +380,12 @@ Create delegated token for the address so the account could claim MintCapability
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_delegate_mint_capability">delegate_mint_capability</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>) <b>acquires</b> <a href="topo_coin.md#0x1_topo_coin_Delegations">Delegations</a> {
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_delegate_mint_capability">delegate_mint_capability</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>) <b>acquires</b> <a href="topo_coin.md#0x1_topo_coin_Delegations">Delegations</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_core_resource">system_addresses::assert_core_resource</a>(&<a href="account.md#0x1_account">account</a>);
     <b>let</b> delegations = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="topo_coin.md#0x1_topo_coin_Delegations">Delegations</a>&gt;(@core_resources).inner;
     delegations.for_each_ref(|element| {
         <b>let</b> element: &<a href="topo_coin.md#0x1_topo_coin_DelegatedMintCapability">DelegatedMintCapability</a> = element;
-        <b>assert</b>!(element.<b>to</b> != <b>to</b>, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_coin.md#0x1_topo_coin_EALREADY_DELEGATED">EALREADY_DELEGATED</a>));
+        <b>assert</b>!(element.<b>to</b> != <b>to</b>, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_coin.md#0x1_topo_coin_EALREADY_DELEGATED">EALREADY_DELEGATED</a>));
     });
     delegations.push_back(<a href="topo_coin.md#0x1_topo_coin_DelegatedMintCapability">DelegatedMintCapability</a> { <b>to</b> });
 }
@@ -403,7 +403,7 @@ Only callable in tests and testnets where the core resources account exists.
 Claim the delegated mint capability and destroy the delegated token.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_claim_mint_capability">claim_mint_capability</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_claim_mint_capability">claim_mint_capability</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -412,8 +412,8 @@ Claim the delegated mint capability and destroy the delegated token.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_claim_mint_capability">claim_mint_capability</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="topo_coin.md#0x1_topo_coin_Delegations">Delegations</a>, <a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a> {
-    <b>let</b> maybe_index = <a href="topo_coin.md#0x1_topo_coin_find_delegation">find_delegation</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>));
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_claim_mint_capability">claim_mint_capability</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="topo_coin.md#0x1_topo_coin_Delegations">Delegations</a>, <a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a> {
+    <b>let</b> maybe_index = <a href="topo_coin.md#0x1_topo_coin_find_delegation">find_delegation</a>(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>));
     <b>assert</b>!(maybe_index.is_some(), <a href="topo_coin.md#0x1_topo_coin_EDELEGATION_NOT_FOUND">EDELEGATION_NOT_FOUND</a>);
     <b>let</b> idx = *maybe_index.borrow();
     <b>let</b> delegations = &<b>mut</b> <b>borrow_global_mut</b>&lt;<a href="topo_coin.md#0x1_topo_coin_Delegations">Delegations</a>&gt;(@core_resources).inner;
@@ -435,7 +435,7 @@ Claim the delegated mint capability and destroy the delegated token.
 
 
 
-<pre><code><b>fun</b> <a href="topo_coin.md#0x1_topo_coin_find_delegation">find_delegation</a>(addr: <b>address</b>): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+<pre><code><b>fun</b> <a href="topo_coin.md#0x1_topo_coin_find_delegation">find_delegation</a>(addr: <b>address</b>): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -448,11 +448,11 @@ Claim the delegated mint capability and destroy the delegated token.
     <b>let</b> delegations = &<b>borrow_global</b>&lt;<a href="topo_coin.md#0x1_topo_coin_Delegations">Delegations</a>&gt;(@core_resources).inner;
     <b>let</b> i = 0;
     <b>let</b> len = delegations.length();
-    <b>let</b> index = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>();
+    <b>let</b> index = <a href="../../move-stdlib/doc/option.md#0x1_option_none">option::none</a>();
     <b>while</b> (i &lt; len) {
         <b>let</b> element = delegations.borrow(i);
         <b>if</b> (element.<b>to</b> == addr) {
-            index = <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(i);
+            index = <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(i);
             <b>break</b>
         };
         i += 1;
@@ -534,7 +534,7 @@ Claim the delegated mint capability and destroy the delegated token.
 ### Function `initialize`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;, <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>): (<a href="coin.md#0x1_coin_BurnCapability">coin::BurnCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;, <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -542,10 +542,10 @@ Claim the delegated mint capability and destroy the delegated token.
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
 <b>aborts_if</b> <a href="permissioned_signer.md#0x1_permissioned_signer_spec_is_permissioned_signer">permissioned_signer::spec_is_permissioned_signer</a>(topo_framework);
-<b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 <b>aborts_if</b> addr != @topo_framework;
-<b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"Topo Coin");
-<b>aborts_if</b> !<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"TOPO");
+<b>aborts_if</b> !<a href="../../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"Topo Coin");
+<b>aborts_if</b> !<a href="../../move-stdlib/doc/string.md#0x1_string_spec_internal_check_utf8">string::spec_internal_check_utf8</a>(b"TOPO");
 <b>aborts_if</b> <b>exists</b>&lt;<a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a>&gt;(addr);
 <b>aborts_if</b> <b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinInfo">coin::CoinInfo</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">TopoCoin</a>&gt;&gt;(addr);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="aggregator_factory.md#0x1_aggregator_factory_AggregatorFactory">aggregator_factory::AggregatorFactory</a>&gt;(addr);
@@ -565,13 +565,13 @@ Claim the delegated mint capability and destroy the delegated token.
 ### Function `destroy_mint_cap`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_destroy_mint_cap">destroy_mint_cap</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_destroy_mint_cap">destroy_mint_cap</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
 
 
-<pre><code><b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
+<pre><code><b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(topo_framework);
 <b>aborts_if</b> addr != @topo_framework;
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="topo_coin.md#0x1_topo_coin_MintCapStore">MintCapStore</a>&gt;(@topo_framework);
 </code></pre>
@@ -583,7 +583,7 @@ Claim the delegated mint capability and destroy the delegated token.
 ### Function `configure_accounts_for_test`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_configure_accounts_for_test">configure_accounts_for_test</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_configure_accounts_for_test">configure_accounts_for_test</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, core_resources: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -599,7 +599,7 @@ Claim the delegated mint capability and destroy the delegated token.
 ### Function `mint`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_mint">mint</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, dst_addr: <b>address</b>, amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_mint">mint</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, dst_addr: <b>address</b>, amount: u64)
 </code></pre>
 
 
@@ -615,7 +615,7 @@ Claim the delegated mint capability and destroy the delegated token.
 ### Function `delegate_mint_capability`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_delegate_mint_capability">delegate_mint_capability</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_delegate_mint_capability">delegate_mint_capability</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>)
 </code></pre>
 
 
@@ -631,7 +631,7 @@ Claim the delegated mint capability and destroy the delegated token.
 ### Function `claim_mint_capability`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_claim_mint_capability">claim_mint_capability</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_coin.md#0x1_topo_coin_claim_mint_capability">claim_mint_capability</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -647,7 +647,7 @@ Claim the delegated mint capability and destroy the delegated token.
 ### Function `find_delegation`
 
 
-<pre><code><b>fun</b> <a href="topo_coin.md#0x1_topo_coin_find_delegation">find_delegation</a>(addr: <b>address</b>): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+<pre><code><b>fun</b> <a href="topo_coin.md#0x1_topo_coin_find_delegation">find_delegation</a>(addr: <b>address</b>): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 

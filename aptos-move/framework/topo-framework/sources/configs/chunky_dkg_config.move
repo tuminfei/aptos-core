@@ -1,8 +1,8 @@
 /// Structs and functions for on-chain chunky DKG configurations.
 module topo_framework::chunky_dkg_config {
-    use aptos_std::copyable_any;
-    use aptos_std::copyable_any::Any;
-    use aptos_std::fixed_point64::FixedPoint64;
+    use topo_std::copyable_any;
+    use topo_std::copyable_any::Any;
+    use topo_std::fixed_point64::FixedPoint64;
     use topo_framework::config_buffer;
     use topo_framework::system_addresses;
 
@@ -97,7 +97,7 @@ module topo_framework::chunky_dkg_config {
     }
 
     #[test_only]
-    use aptos_std::fixed_point64;
+    use topo_std::fixed_point64;
 
     #[test_only]
     fun initialize_for_testing(framework: &signer) {

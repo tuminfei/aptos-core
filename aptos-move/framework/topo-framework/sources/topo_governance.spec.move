@@ -65,7 +65,7 @@ spec topo_framework::topo_governance {
         required_proposer_stake: u64,
         voting_duration_secs: u64,
     ) {
-        use aptos_std::type_info::Self;
+        use topo_std::type_info::Self;
         pragma aborts_if_is_partial;
 
         let addr = signer::address_of(topo_framework);
@@ -233,7 +233,7 @@ spec topo_framework::topo_governance {
         include CreateProposalMetadataAbortsIf;
 
         let addr =
-            aptos_std::type_info::type_of<topo_framework::topo_coin::TopoCoin>().account_address;
+            topo_std::type_info::type_of<topo_framework::topo_coin::TopoCoin>().account_address;
         aborts_if !exists<topo_framework::coin::CoinInfo<topo_framework::topo_coin::TopoCoin>>(addr);
         let maybe_supply =
             global<topo_framework::coin::CoinInfo<topo_framework::topo_coin::TopoCoin>>(addr).supply;
@@ -486,8 +486,8 @@ spec topo_framework::topo_governance {
 
         let multi_step_key = utf8(voting::IS_MULTI_STEP_PROPOSAL_KEY);
         let has_multi_step_key = simple_map::spec_contains_key(proposal.metadata, multi_step_key);
-        let is_multi_step_proposal = aptos_std::from_bcs::deserialize<bool>(simple_map::spec_get(proposal.metadata, multi_step_key));
-        aborts_if has_multi_step_key && !aptos_std::from_bcs::deserializable<bool>(simple_map::spec_get(proposal.metadata, multi_step_key));
+        let is_multi_step_proposal = topo_std::from_bcs::deserialize<bool>(simple_map::spec_get(proposal.metadata, multi_step_key));
+        aborts_if has_multi_step_key && !topo_std::from_bcs::deserializable<bool>(simple_map::spec_get(proposal.metadata, multi_step_key));
         aborts_if !string::spec_internal_check_utf8(voting::IS_MULTI_STEP_PROPOSAL_KEY);
         aborts_if has_multi_step_key && is_multi_step_proposal;
 
@@ -654,9 +654,9 @@ spec topo_framework::topo_governance {
         aborts_if !string::spec_internal_check_utf8(voting::IS_MULTI_STEP_PROPOSAL_KEY);
         let multi_step_key = utf8(voting::IS_MULTI_STEP_PROPOSAL_KEY);
         aborts_if simple_map::spec_contains_key(proposal.metadata, multi_step_key) &&
-            !aptos_std::from_bcs::deserializable<bool>(simple_map::spec_get(proposal.metadata, multi_step_key));
+            !topo_std::from_bcs::deserializable<bool>(simple_map::spec_get(proposal.metadata, multi_step_key));
         let is_multi_step = simple_map::spec_contains_key(proposal.metadata, multi_step_key) &&
-                            aptos_std::from_bcs::deserialize<bool>(simple_map::spec_get(proposal.metadata, multi_step_key));
+                            topo_std::from_bcs::deserialize<bool>(simple_map::spec_get(proposal.metadata, multi_step_key));
         let next_execution_hash_is_empty = len(next_execution_hash) == 0;
         aborts_if !is_multi_step && !next_execution_hash_is_empty;
         aborts_if next_execution_hash_is_empty && is_multi_step && !simple_map::spec_contains_key(proposal.metadata, multi_step_in_execution_key); // ?
@@ -705,8 +705,8 @@ spec topo_framework::topo_governance {
         aborts_if proposal.is_resolved;
         aborts_if !string::spec_internal_check_utf8(voting::RESOLVABLE_TIME_METADATA_KEY);
         aborts_if !simple_map::spec_contains_key(proposal.metadata, utf8(voting::RESOLVABLE_TIME_METADATA_KEY));
-        let resolvable_time = aptos_std::from_bcs::deserialize<u64>(simple_map::spec_get(proposal.metadata, utf8(voting::RESOLVABLE_TIME_METADATA_KEY)));
-        aborts_if !aptos_std::from_bcs::deserializable<u64>(simple_map::spec_get(proposal.metadata, utf8(voting::RESOLVABLE_TIME_METADATA_KEY)));
+        let resolvable_time = topo_std::from_bcs::deserialize<u64>(simple_map::spec_get(proposal.metadata, utf8(voting::RESOLVABLE_TIME_METADATA_KEY)));
+        aborts_if !topo_std::from_bcs::deserializable<u64>(simple_map::spec_get(proposal.metadata, utf8(voting::RESOLVABLE_TIME_METADATA_KEY)));
         aborts_if timestamp::now_seconds() <= resolvable_time;
         aborts_if topo_framework::transaction_context::spec_get_script_hash() != proposal.execution_hash;
     }

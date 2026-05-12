@@ -43,8 +43,8 @@ module topo_framework::multisig_account {
     use topo_framework::coin;
     use topo_framework::event::{EventHandle, emit};
     use topo_framework::timestamp::now_seconds;
-    use aptos_std::simple_map::{Self, SimpleMap};
-    use aptos_std::table::{Self, Table};
+    use topo_std::simple_map::{Self, SimpleMap};
+    use topo_std::table::{Self, Table};
     use std::bcs::to_bytes;
     use std::error;
     use std::hash::sha3_256;
@@ -1433,9 +1433,9 @@ module topo_framework::multisig_account {
     #[test_only]
     use topo_framework::timestamp;
     #[test_only]
-    use aptos_std::from_bcs;
+    use topo_std::from_bcs;
     #[test_only]
-    use aptos_std::multi_ed25519;
+    use topo_std::multi_ed25519;
     #[test_only]
     use std::string::utf8;
     use std::features;

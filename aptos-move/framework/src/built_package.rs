@@ -60,7 +60,7 @@ pub const UPGRADE_POLICY_CUSTOM_FIELD: &str = "upgrade_policy";
 pub const APTOS_PACKAGES: [&str; 6] = [
     "TopoFramework",
     "MoveStdlib",
-    "AptosStdlib",
+    "TopoStdlib",
     "TopoToken",
     "TopoTokenObjects",
     "AptosExperimental",

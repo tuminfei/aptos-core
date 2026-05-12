@@ -16,7 +16,7 @@ module aptos_experimental::confidential_balance {
     use std::error;
     use std::option::{Self, Option};
     use std::vector;
-    use aptos_std::ristretto255::{Self, RistrettoPoint, Scalar};
+    use topo_std::ristretto255::{Self, RistrettoPoint, Scalar};
 
     use aptos_experimental::ristretto255_twisted_elgamal as twisted_elgamal;
 

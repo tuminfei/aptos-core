@@ -15,10 +15,10 @@ module topo_framework::topo_governance {
     use std::string::{Self, String, utf8};
     use std::features;
 
-    use aptos_std::math64::min;
-    use aptos_std::simple_map::{Self, SimpleMap};
-    use aptos_std::smart_table::{Self, SmartTable};
-    use aptos_std::table::{Self, Table};
+    use topo_std::math64::min;
+    use topo_std::simple_map::{Self, SimpleMap};
+    use topo_std::smart_table::{Self, SmartTable};
+    use topo_std::table::{Self, Table};
 
     use topo_framework::account::{Self, SignerCapability, create_signer_with_capability};
     use topo_framework::poc_power_store;

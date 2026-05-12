@@ -13,10 +13,10 @@
 
 
 <pre><code><b>use</b> <a href="chain_id.md#0x1_chain_id">0x1::chain_id</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/string_utils.md#0x1_string_utils">0x1::string_utils</a>;
+<b>use</b> <a href="../../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
+<b>use</b> <a href="../../topo-stdlib/doc/string_utils.md#0x1_string_utils">0x1::string_utils</a>;
 <b>use</b> <a href="transaction_context.md#0x1_transaction_context">0x1::transaction_context</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<b>use</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 </code></pre>
 
 
@@ -42,7 +42,7 @@ Entry function payload is missing.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_network_name">network_name</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_network_name">network_name</a>(): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -51,7 +51,7 @@ Entry function payload is missing.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_network_name">network_name</a>(): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_network_name">network_name</a>(): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; {
     <b>let</b> <a href="chain_id.md#0x1_chain_id">chain_id</a> = <a href="chain_id.md#0x1_chain_id_get">chain_id::get</a>();
     <b>if</b> (<a href="chain_id.md#0x1_chain_id">chain_id</a> == 1 || <a href="chain_id.md#0x1_chain_id">chain_id</a> == 161) {
         b"mainnet"
@@ -62,9 +62,9 @@ Entry function payload is missing.
     } <b>else</b> <b>if</b> (<a href="chain_id.md#0x1_chain_id">chain_id</a> == 4 || <a href="chain_id.md#0x1_chain_id">chain_id</a> == 164) {
         b"<b>local</b>"
     } <b>else</b> {
-        <b>let</b> network_name = &<b>mut</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+        <b>let</b> network_name = &<b>mut</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
         network_name.append(b"custom network: ");
-        network_name.append(*<a href="../../aptos-stdlib/doc/string_utils.md#0x1_string_utils_to_string">string_utils::to_string</a>(&<a href="chain_id.md#0x1_chain_id">chain_id</a>).bytes());
+        network_name.append(*<a href="../../topo-stdlib/doc/string_utils.md#0x1_string_utils_to_string">string_utils::to_string</a>(&<a href="chain_id.md#0x1_chain_id">chain_id</a>).bytes());
         *network_name
     }
 }
@@ -80,7 +80,7 @@ Entry function payload is missing.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_entry_function_name">entry_function_name</a>(entry_function_payload: &<a href="transaction_context.md#0x1_transaction_context_EntryFunctionPayload">transaction_context::EntryFunctionPayload</a>): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_entry_function_name">entry_function_name</a>(entry_function_payload: &<a href="transaction_context.md#0x1_transaction_context_EntryFunctionPayload">transaction_context::EntryFunctionPayload</a>): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -89,9 +89,9 @@ Entry function payload is missing.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_entry_function_name">entry_function_name</a>(entry_function_payload: &EntryFunctionPayload): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; {
-    <b>let</b> entry_function_name = &<b>mut</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> addr_str = <a href="../../aptos-stdlib/doc/string_utils.md#0x1_string_utils_to_string">string_utils::to_string</a>(
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_entry_function_name">entry_function_name</a>(entry_function_payload: &EntryFunctionPayload): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; {
+    <b>let</b> entry_function_name = &<b>mut</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> addr_str = <a href="../../topo-stdlib/doc/string_utils.md#0x1_string_utils_to_string">string_utils::to_string</a>(
         &<a href="transaction_context.md#0x1_transaction_context_account_address">transaction_context::account_address</a>(entry_function_payload)
     ).bytes();
     // .slice(1) <b>to</b> remove the leading '@' char
@@ -118,7 +118,7 @@ Entry function payload is missing.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_construct_message">construct_message</a>(chain_name: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, account_address: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, domain: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, entry_function_name: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, digest_utf8: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_construct_message">construct_message</a>(chain_name: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, account_address: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, domain: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, entry_function_name: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, digest_utf8: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -128,13 +128,13 @@ Entry function payload is missing.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_construct_message">construct_message</a>(
-    chain_name: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    account_address: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    domain: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    entry_function_name: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    digest_utf8: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; {
-    <b>let</b> message = &<b>mut</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    chain_name: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    account_address: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    domain: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    entry_function_name: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    digest_utf8: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; {
+    <b>let</b> message = &<b>mut</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     message.append(*domain);
     message.append(b" wants you <b>to</b> sign in <b>with</b> your ");
     message.append(*chain_name);
@@ -167,7 +167,7 @@ Entry function payload is missing.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_daa_authenticate">daa_authenticate</a>(<a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, aa_auth_data: <a href="auth_data.md#0x1_auth_data_AbstractionAuthData">auth_data::AbstractionAuthData</a>, auth_fn: |<a href="auth_data.md#0x1_auth_data_AbstractionAuthData">auth_data::AbstractionAuthData</a>, &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;|): <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_daa_authenticate">daa_authenticate</a>(<a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, aa_auth_data: <a href="auth_data.md#0x1_auth_data_AbstractionAuthData">auth_data::AbstractionAuthData</a>, auth_fn: |<a href="auth_data.md#0x1_auth_data_AbstractionAuthData">auth_data::AbstractionAuthData</a>, &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;|): <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>
 </code></pre>
 
 
@@ -177,10 +177,10 @@ Entry function payload is missing.
 
 
 <pre><code><b>public</b>(<b>friend</b>) inline <b>fun</b> <a href="common_account_abstractions_utils.md#0x1_common_account_abstractions_utils_daa_authenticate">daa_authenticate</a>(
-    <a href="account.md#0x1_account">account</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    <a href="account.md#0x1_account">account</a>: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     aa_auth_data: AbstractionAuthData,
-    auth_fn: |AbstractionAuthData, &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;|,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a> {
+    auth_fn: |AbstractionAuthData, &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;|,
+): <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a> {
     <b>let</b> maybe_entry_function_payload = <a href="transaction_context.md#0x1_transaction_context_entry_function_payload">transaction_context::entry_function_payload</a>();
     <b>if</b> (maybe_entry_function_payload.is_some()) {
         <b>let</b> entry_function_payload = maybe_entry_function_payload.destroy_some();

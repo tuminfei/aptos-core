@@ -70,7 +70,7 @@ read, read_snapshot, read_derived_string
     -  [Function `string_concat`](#@Specification_1_string_concat)
 
 
-<pre><code><b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
+<pre><code><b>use</b> <a href="../../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 </code></pre>
 
 
@@ -159,13 +159,13 @@ while storing snapshot of aggregator state elsewhere.
 
 <dl>
 <dt>
-<code>value: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
+<code>value: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>padding: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>padding: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
@@ -427,7 +427,7 @@ Parallelism info: This operation enables speculative parallelism.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_add">add</a>&lt;IntElement&gt;(self: &<b>mut</b> <a href="aggregator_v2.md#0x1_aggregator_v2_Aggregator">Aggregator</a>&lt;IntElement&gt;, value: IntElement) {
-    <b>assert</b>!(self.<a href="aggregator_v2.md#0x1_aggregator_v2_try_add">try_add</a>(value), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="aggregator_v2.md#0x1_aggregator_v2_EAGGREGATOR_OVERFLOW">EAGGREGATOR_OVERFLOW</a>));
+    <b>assert</b>!(self.<a href="aggregator_v2.md#0x1_aggregator_v2_try_add">try_add</a>(value), <a href="../../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="aggregator_v2.md#0x1_aggregator_v2_EAGGREGATOR_OVERFLOW">EAGGREGATOR_OVERFLOW</a>));
 }
 </code></pre>
 
@@ -479,7 +479,7 @@ Parallelism info: This operation enables speculative parallelism.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_sub">sub</a>&lt;IntElement&gt;(self: &<b>mut</b> <a href="aggregator_v2.md#0x1_aggregator_v2_Aggregator">Aggregator</a>&lt;IntElement&gt;, value: IntElement) {
-    <b>assert</b>!(self.<a href="aggregator_v2.md#0x1_aggregator_v2_try_sub">try_sub</a>(value), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="aggregator_v2.md#0x1_aggregator_v2_EAGGREGATOR_UNDERFLOW">EAGGREGATOR_UNDERFLOW</a>));
+    <b>assert</b>!(self.<a href="aggregator_v2.md#0x1_aggregator_v2_try_sub">try_sub</a>(value), <a href="../../move-stdlib/doc/error.md#0x1_error_out_of_range">error::out_of_range</a>(<a href="aggregator_v2.md#0x1_aggregator_v2_EAGGREGATOR_UNDERFLOW">EAGGREGATOR_UNDERFLOW</a>));
 }
 </code></pre>
 
@@ -663,7 +663,7 @@ or has other read/write conflicts)
 Parallelism info: This operation *prevents* speculative parallelism.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_read_derived_string">read_derived_string</a>(self: &<a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>): <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>
+<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_read_derived_string">read_derived_string</a>(self: &<a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>): <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>
 </code></pre>
 
 
@@ -687,7 +687,7 @@ Creates a DerivedStringSnapshot of a given value.
 Useful for when object is sometimes created via string_concat(), and sometimes directly.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_create_derived_string">create_derived_string</a>(value: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>
+<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_create_derived_string">create_derived_string</a>(value: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>
 </code></pre>
 
 
@@ -715,7 +715,7 @@ If length of prefix and suffix together exceeds 1024 bytes, ECONCAT_STRING_LENGT
 Parallelism info: This operation enables parallelism.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_derive_string_concat">derive_string_concat</a>&lt;IntElement&gt;(before: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, snapshot: &<a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;IntElement&gt;, after: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>
+<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_derive_string_concat">derive_string_concat</a>&lt;IntElement&gt;(before: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, snapshot: &<a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;IntElement&gt;, after: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>
 </code></pre>
 
 
@@ -763,7 +763,7 @@ DEPRECATED, use derive_string_concat() instead. always raises EAGGREGATOR_FUNCTI
 
 
 <pre><code>#[deprecated]
-<b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_string_concat">string_concat</a>&lt;IntElement&gt;(before: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, snapshot: &<a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;IntElement&gt;, after: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
+<b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_string_concat">string_concat</a>&lt;IntElement&gt;(before: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, snapshot: &<a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;IntElement&gt;, after: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
 </code></pre>
 
 
@@ -1068,7 +1068,7 @@ DEPRECATED, use derive_string_concat() instead. always raises EAGGREGATOR_FUNCTI
 ### Function `read_derived_string`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_read_derived_string">read_derived_string</a>(self: &<a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>): <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>
+<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_read_derived_string">read_derived_string</a>(self: &<a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>): <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>
 </code></pre>
 
 
@@ -1086,7 +1086,7 @@ DEPRECATED, use derive_string_concat() instead. always raises EAGGREGATOR_FUNCTI
 ### Function `create_derived_string`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_create_derived_string">create_derived_string</a>(value: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>
+<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_create_derived_string">create_derived_string</a>(value: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>
 </code></pre>
 
 
@@ -1104,7 +1104,7 @@ DEPRECATED, use derive_string_concat() instead. always raises EAGGREGATOR_FUNCTI
 ### Function `derive_string_concat`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_derive_string_concat">derive_string_concat</a>&lt;IntElement&gt;(before: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, snapshot: &<a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;IntElement&gt;, after: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>
+<pre><code><b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_derive_string_concat">derive_string_concat</a>&lt;IntElement&gt;(before: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, snapshot: &<a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;IntElement&gt;, after: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_DerivedStringSnapshot">aggregator_v2::DerivedStringSnapshot</a>
 </code></pre>
 
 
@@ -1123,7 +1123,7 @@ DEPRECATED, use derive_string_concat() instead. always raises EAGGREGATOR_FUNCTI
 
 
 <pre><code><b>schema</b> <a href="aggregator_v2.md#0x1_aggregator_v2_AbortsIfIntElement">AbortsIfIntElement</a>&lt;IntElement&gt; {
-    <b>aborts_if</b> [abstract] <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_name">type_info::type_name</a>&lt;IntElement&gt;().bytes != b"u64" && <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_name">type_info::type_name</a>&lt;IntElement&gt;().bytes != b"u128";
+    <b>aborts_if</b> [abstract] <a href="../../topo-stdlib/doc/type_info.md#0x1_type_info_type_name">type_info::type_name</a>&lt;IntElement&gt;().bytes != b"u64" && <a href="../../topo-stdlib/doc/type_info.md#0x1_type_info_type_name">type_info::type_name</a>&lt;IntElement&gt;().bytes != b"u128";
 }
 </code></pre>
 
@@ -1153,7 +1153,7 @@ DEPRECATED, use derive_string_concat() instead. always raises EAGGREGATOR_FUNCTI
 
 
 <pre><code>#[deprecated]
-<b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_string_concat">string_concat</a>&lt;IntElement&gt;(before: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, snapshot: &<a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;IntElement&gt;, after: <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
+<b>public</b> <b>fun</b> <a href="aggregator_v2.md#0x1_aggregator_v2_string_concat">string_concat</a>&lt;IntElement&gt;(before: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, snapshot: &<a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;IntElement&gt;, after: <a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="aggregator_v2.md#0x1_aggregator_v2_AggregatorSnapshot">aggregator_v2::AggregatorSnapshot</a>&lt;<a href="../../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
 </code></pre>
 
 

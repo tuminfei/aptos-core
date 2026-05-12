@@ -6,7 +6,7 @@ module aptos_experimental::order_book_utils {
     friend aptos_experimental::pre_cancellation_tracker;
     friend aptos_experimental::dead_mans_switch_tracker;
 
-    use aptos_std::big_ordered_map::{Self, BigOrderedMap};
+    use topo_framework::big_ordered_map::{Self, BigOrderedMap};
 
     const BIG_MAP_INNER_DEGREE: u16 = 64;
     const BIG_MAP_LEAF_DEGREE: u16 = 32;

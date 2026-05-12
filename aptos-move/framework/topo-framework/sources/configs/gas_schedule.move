@@ -4,7 +4,7 @@ module topo_framework::gas_schedule {
     use std::bcs;
     use std::error;
     use std::string::String;
-    use aptos_std::aptos_hash;
+    use topo_std::aptos_hash;
     use topo_framework::chain_status;
     use topo_framework::config_buffer;
 

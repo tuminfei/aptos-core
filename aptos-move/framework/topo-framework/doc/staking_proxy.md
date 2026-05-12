@@ -20,7 +20,7 @@
 
 
 <pre><code><b>use</b> <a href="permissioned_signer.md#0x1_permissioned_signer">0x1::permissioned_signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 <b>use</b> <a href="stake.md#0x1_stake">0x1::stake</a>;
 </code></pre>
 
@@ -75,7 +75,7 @@ Signer does not have permission to perform stake proxy logic.
 Permissions
 
 
-<pre><code><b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_check_stake_proxy_permission">check_stake_proxy_permission</a>(s: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_check_stake_proxy_permission">check_stake_proxy_permission</a>(s: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -84,10 +84,10 @@ Permissions
 <summary>Implementation</summary>
 
 
-<pre><code>inline <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_check_stake_proxy_permission">check_stake_proxy_permission</a>(s: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code>inline <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_check_stake_proxy_permission">check_stake_proxy_permission</a>(s: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <b>assert</b>!(
         <a href="permissioned_signer.md#0x1_permissioned_signer_check_permission_exists">permissioned_signer::check_permission_exists</a>(s, <a href="staking_proxy.md#0x1_staking_proxy_StakeProxyPermission">StakeProxyPermission</a> {}),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="staking_proxy.md#0x1_staking_proxy_ENO_STAKE_PERMISSION">ENO_STAKE_PERMISSION</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="staking_proxy.md#0x1_staking_proxy_ENO_STAKE_PERMISSION">ENO_STAKE_PERMISSION</a>),
     );
 }
 </code></pre>
@@ -103,7 +103,7 @@ Permissions
 Grant permission to mutate staking on behalf of the master signer.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_grant_permission">grant_permission</a>(master: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_grant_permission">grant_permission</a>(master: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -112,7 +112,7 @@ Grant permission to mutate staking on behalf of the master signer.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_grant_permission">grant_permission</a>(master: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+<pre><code><b>public</b> <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_grant_permission">grant_permission</a>(master: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
     <a href="permissioned_signer.md#0x1_permissioned_signer_authorize_unlimited">permissioned_signer::authorize_unlimited</a>(master, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>, <a href="staking_proxy.md#0x1_staking_proxy_StakeProxyPermission">StakeProxyPermission</a> {})
 }
 </code></pre>
@@ -127,7 +127,7 @@ Grant permission to mutate staking on behalf of the master signer.
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_operator">set_operator</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_operator">set_operator</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>)
 </code></pre>
 
 
@@ -136,7 +136,7 @@ Grant permission to mutate staking on behalf of the master signer.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_operator">set_operator</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>) {
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_operator">set_operator</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>) {
     <a href="staking_proxy.md#0x1_staking_proxy_set_stake_pool_operator">set_stake_pool_operator</a>(owner, new_operator);
 }
 </code></pre>
@@ -151,7 +151,7 @@ Grant permission to mutate staking on behalf of the master signer.
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_stake_pool_operator">set_stake_pool_operator</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_stake_pool_operator">set_stake_pool_operator</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>)
 </code></pre>
 
 
@@ -160,9 +160,9 @@ Grant permission to mutate staking on behalf of the master signer.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_stake_pool_operator">set_stake_pool_operator</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>) {
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_stake_pool_operator">set_stake_pool_operator</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>) {
     <a href="staking_proxy.md#0x1_staking_proxy_check_stake_proxy_permission">check_stake_proxy_permission</a>(owner);
-    <b>let</b> owner_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner);
+    <b>let</b> owner_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner);
     <b>if</b> (<a href="stake.md#0x1_stake_stake_pool_exists">stake::stake_pool_exists</a>(owner_address)) {
         <a href="stake.md#0x1_stake_set_operator">stake::set_operator</a>(owner, new_operator);
     };
@@ -225,7 +225,7 @@ Grant permission to mutate staking on behalf of the master signer.
 ### Function `grant_permission`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_grant_permission">grant_permission</a>(master: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_grant_permission">grant_permission</a>(master: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -234,7 +234,7 @@ Grant permission to mutate staking on behalf of the master signer.
 <pre><code><b>pragma</b> aborts_if_is_partial;
 <b>aborts_if</b> !<a href="permissioned_signer.md#0x1_permissioned_signer_spec_is_permissioned_signer">permissioned_signer::spec_is_permissioned_signer</a>(<a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>);
 <b>aborts_if</b> <a href="permissioned_signer.md#0x1_permissioned_signer_spec_is_permissioned_signer">permissioned_signer::spec_is_permissioned_signer</a>(master);
-<b>aborts_if</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(master) != <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>);
+<b>aborts_if</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(master) != <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="permissioned_signer.md#0x1_permissioned_signer">permissioned_signer</a>);
 </code></pre>
 
 
@@ -244,7 +244,7 @@ Grant permission to mutate staking on behalf of the master signer.
 ### Function `set_operator`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_operator">set_operator</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_operator">set_operator</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>)
 </code></pre>
 
 
@@ -261,14 +261,14 @@ Grant permission to mutate staking on behalf of the master signer.
 ### Function `set_stake_pool_operator`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_stake_pool_operator">set_stake_pool_operator</a>(owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_proxy.md#0x1_staking_proxy_set_stake_pool_operator">set_stake_pool_operator</a>(owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_operator: <b>address</b>)
 </code></pre>
 
 
 
 
 <pre><code><b>include</b> <a href="staking_proxy.md#0x1_staking_proxy_SetStakePoolOperator">SetStakePoolOperator</a>;
-<b>include</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner)) ==&gt; <a href="stake.md#0x1_stake_AbortsIfSignerPermissionStake">stake::AbortsIfSignerPermissionStake</a> {
+<b>include</b> <b>exists</b>&lt;<a href="stake.md#0x1_stake_StakePool">stake::StakePool</a>&gt;(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner)) ==&gt; <a href="stake.md#0x1_stake_AbortsIfSignerPermissionStake">stake::AbortsIfSignerPermissionStake</a> {
     s: owner
 };
 </code></pre>
@@ -280,12 +280,12 @@ Grant permission to mutate staking on behalf of the master signer.
 
 
 <pre><code><b>schema</b> <a href="staking_proxy.md#0x1_staking_proxy_SetStakePoolOperator">SetStakePoolOperator</a> {
-    owner: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
+    owner: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
     new_operator: <b>address</b>;
     <b>include</b> <a href="staking_proxy.md#0x1_staking_proxy_AbortsIfSignerPermissionStakeProxy">AbortsIfSignerPermissionStakeProxy</a> {
         s: owner
     };
-    <b>let</b> owner_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner);
+    <b>let</b> owner_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(owner);
     <b>let</b> ownership_cap = <b>borrow_global</b>&lt;<a href="stake.md#0x1_stake_OwnerCapability">stake::OwnerCapability</a>&gt;(owner_address);
     <b>let</b> pool_address = ownership_cap.pool_address;
     <b>aborts_if</b> <a href="stake.md#0x1_stake_stake_pool_exists">stake::stake_pool_exists</a>(owner_address)
@@ -302,7 +302,7 @@ Grant permission to mutate staking on behalf of the master signer.
 
 
 <pre><code><b>schema</b> <a href="staking_proxy.md#0x1_staking_proxy_AbortsIfSignerPermissionStakeProxy">AbortsIfSignerPermissionStakeProxy</a> {
-    s: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
+    s: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
     <b>let</b> perm = <a href="staking_proxy.md#0x1_staking_proxy_StakeProxyPermission">StakeProxyPermission</a> {};
     <b>aborts_if</b> !<a href="permissioned_signer.md#0x1_permissioned_signer_spec_check_permission_exists">permissioned_signer::spec_check_permission_exists</a>(s, perm);
 }

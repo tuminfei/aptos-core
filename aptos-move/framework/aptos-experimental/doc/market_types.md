@@ -101,11 +101,11 @@
 -  [Function `get_market`](#0x7_market_types_get_market)
 
 
-<pre><code><b>use</b> <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">0x1::event</a>;
-<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
-<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
-<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
-<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
+<pre><code><b>use</b> <a href="../../topo-framework/doc/event.md#0x1_event">0x1::event</a>;
+<b>use</b> <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
+<b>use</b> <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table">0x1::table</a>;
 <b>use</b> <a href="">0x5::order_book_types</a>;
 <b>use</b> <a href="">0x5::single_order_types</a>;
 <b>use</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker">0x7::dead_mans_switch_tracker</a>;
@@ -595,13 +595,13 @@ Reasons why an order was cancelled
 
 </dd>
 <dt>
-<code>maker_cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;</code>
+<code>maker_cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>taker_cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;</code>
+<code>taker_cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;</code>
 </dt>
 <dd>
 
@@ -646,7 +646,7 @@ Reasons why an order was cancelled
 
 <dl>
 <dt>
-<code>failure_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;</code>
+<code>failure_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;</code>
 </dt>
 <dd>
 
@@ -685,13 +685,13 @@ Reasons why an order was cancelled
 
 <dl>
 <dt>
-<code>cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;</code>
+<code>cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>action: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;R&gt;</code>
+<code>action: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;R&gt;</code>
 </dt>
 <dd>
 
@@ -742,7 +742,7 @@ Reasons why an order was cancelled
  validate_settlement_update_f arguments: order_info, size
 </dd>
 <dt>
-<code>validate_bulk_order_placement_f: |<b>address</b>, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &M|<a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a> <b>has</b> <b>copy</b> + drop</code>
+<code>validate_bulk_order_placement_f: |<b>address</b>, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &M|<a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a> <b>has</b> <b>copy</b> + drop</code>
 </dt>
 <dd>
  Validate the bulk order placement arguments: account, bids_prices, bids_sizes, asks_prices, asks_sizes
@@ -766,7 +766,7 @@ Reasons why an order was cancelled
  cleanup_bulk_orders_f arguments: account, is_bid, remaining_sizes
 </dd>
 <dt>
-<code>place_bulk_order_f: |<b>address</b>, <a href="_OrderId">order_book_types::OrderId</a>, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &M| <b>has</b> <b>copy</b> + drop</code>
+<code>place_bulk_order_f: |<b>address</b>, <a href="_OrderId">order_book_types::OrderId</a>, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &M| <b>has</b> <b>copy</b> + drop</code>
 </dt>
 <dd>
  place_bulk_order_f arguments: account, order_id, bid_prices, bid_sizes, ask_prices, ask_sizes,
@@ -779,7 +779,7 @@ Reasons why an order was cancelled
  decrease_order_size_f arguments: order_info, size
 </dd>
 <dt>
-<code>get_order_metadata_bytes: |&M|<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; <b>has</b> <b>copy</b> + drop</code>
+<code>get_order_metadata_bytes: |&M|<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; <b>has</b> <b>copy</b> + drop</code>
 </dt>
 <dd>
  get a string representation of order metadata to be used in events
@@ -843,7 +843,7 @@ Reasons why an order was cancelled
 
 </dd>
 <dt>
-<code><a href="pre_cancellation_tracker.md#0x7_pre_cancellation_tracker">pre_cancellation_tracker</a>: <a href="../../aptos-trading/../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;u8, <a href="pre_cancellation_tracker.md#0x7_pre_cancellation_tracker_PreCancellationTracker">pre_cancellation_tracker::PreCancellationTracker</a>&gt;</code>
+<code><a href="pre_cancellation_tracker.md#0x7_pre_cancellation_tracker">pre_cancellation_tracker</a>: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;u8, <a href="pre_cancellation_tracker.md#0x7_pre_cancellation_tracker_PreCancellationTracker">pre_cancellation_tracker::PreCancellationTracker</a>&gt;</code>
 </dt>
 <dd>
  Pre cancellation tracker for the market, it is wrapped inside a table
@@ -851,7 +851,7 @@ Reasons why an order was cancelled
  with the order book.
 </dd>
 <dt>
-<code><a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker">dead_mans_switch_tracker</a>: <a href="../../aptos-trading/../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;u8, <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">dead_mans_switch_tracker::DeadMansSwitchTracker</a>&gt;</code>
+<code><a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker">dead_mans_switch_tracker</a>: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;u8, <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">dead_mans_switch_tracker::DeadMansSwitchTracker</a>&gt;</code>
 </dt>
 <dd>
 
@@ -934,7 +934,7 @@ Reasons why an order was cancelled
 
 
 
-<pre><code>#[<a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a>]
+<pre><code>#[<a href="../../topo-framework/doc/event.md#0x1_event">event</a>]
 enum <a href="market_types.md#0x7_market_types_OrderEvent">OrderEvent</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
@@ -972,7 +972,7 @@ enum <a href="market_types.md#0x7_market_types_OrderEvent">OrderEvent</a> <b>has
 
 </dd>
 <dt>
-<code>client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;</code>
+<code>client_order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;</code>
 </dt>
 <dd>
 
@@ -1029,13 +1029,13 @@ enum <a href="market_types.md#0x7_market_types_OrderEvent">OrderEvent</a> <b>has
 
 </dd>
 <dt>
-<code>details: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
+<code>details: <a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a></code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>metadata_bytes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
+<code>metadata_bytes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;</code>
 </dt>
 <dd>
 
@@ -1047,13 +1047,13 @@ enum <a href="market_types.md#0x7_market_types_OrderEvent">OrderEvent</a> <b>has
 
 </dd>
 <dt>
-<code>trigger_condition: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;</code>
+<code>trigger_condition: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;</code>
+<code>cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;</code>
 </dt>
 <dd>
 
@@ -1073,7 +1073,7 @@ enum <a href="market_types.md#0x7_market_types_OrderEvent">OrderEvent</a> <b>has
 
 
 
-<pre><code>#[<a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a>]
+<pre><code>#[<a href="../../topo-framework/doc/event.md#0x1_event">event</a>]
 enum <a href="market_types.md#0x7_market_types_BulkOrderPlacedEvent">BulkOrderPlacedEvent</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
@@ -1123,49 +1123,49 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderPlacedEvent">BulkOrderPl
 
 </dd>
 <dt>
-<code>bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
@@ -1191,7 +1191,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderPlacedEvent">BulkOrderPl
 
 
 
-<pre><code>#[<a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a>]
+<pre><code>#[<a href="../../topo-framework/doc/event.md#0x1_event">event</a>]
 enum <a href="market_types.md#0x7_market_types_BulkOrderModifiedEvent">BulkOrderModifiedEvent</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
@@ -1241,49 +1241,49 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderModifiedEvent">BulkOrder
 
 </dd>
 <dt>
-<code>bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>cancelled_ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
+<code>cancelled_ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>
 </dt>
 <dd>
 
@@ -1295,7 +1295,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderModifiedEvent">BulkOrder
 
 </dd>
 <dt>
-<code>cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;</code>
+<code>cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;</code>
 </dt>
 <dd>
 
@@ -1315,7 +1315,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderModifiedEvent">BulkOrder
 
 
 
-<pre><code>#[<a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a>]
+<pre><code>#[<a href="../../topo-framework/doc/event.md#0x1_event">event</a>]
 enum <a href="market_types.md#0x7_market_types_BulkOrderFilledEvent">BulkOrderFilledEvent</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
@@ -1409,7 +1409,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderFilledEvent">BulkOrderFi
 
 
 
-<pre><code>#[<a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a>]
+<pre><code>#[<a href="../../topo-framework/doc/event.md#0x1_event">event</a>]
 enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrderRejectionEvent</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
@@ -2020,7 +2020,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_settle_trade_result">new_settle_trade_result</a>&lt;R: <b>copy</b>, drop, store&gt;(settled_size: u64, maker_cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, taker_cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, callback_result: <a href="market_types.md#0x7_market_types_CallbackResult">market_types::CallbackResult</a>&lt;R&gt;): <a href="market_types.md#0x7_market_types_SettleTradeResult">market_types::SettleTradeResult</a>&lt;R&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_settle_trade_result">new_settle_trade_result</a>&lt;R: <b>copy</b>, drop, store&gt;(settled_size: u64, maker_cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, taker_cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, callback_result: <a href="market_types.md#0x7_market_types_CallbackResult">market_types::CallbackResult</a>&lt;R&gt;): <a href="market_types.md#0x7_market_types_SettleTradeResult">market_types::SettleTradeResult</a>&lt;R&gt;
 </code></pre>
 
 
@@ -2054,7 +2054,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_validation_result">new_validation_result</a>(cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;): <a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a>
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_validation_result">new_validation_result</a>(cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;): <a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a>
 </code></pre>
 
 
@@ -2080,7 +2080,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_place_maker_order_result">new_place_maker_order_result</a>&lt;R: <b>copy</b>, drop, store&gt;(cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, actions: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;R&gt;): <a href="market_types.md#0x7_market_types_PlaceMakerOrderResult">market_types::PlaceMakerOrderResult</a>&lt;R&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_place_maker_order_result">new_place_maker_order_result</a>&lt;R: <b>copy</b>, drop, store&gt;(cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, actions: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;R&gt;): <a href="market_types.md#0x7_market_types_PlaceMakerOrderResult">market_types::PlaceMakerOrderResult</a>&lt;R&gt;
 </code></pre>
 
 
@@ -2106,7 +2106,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_market_clearinghouse_callbacks">new_market_clearinghouse_callbacks</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(settle_trade_f: |&<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, <a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, <a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, u128, u64, u64|<a href="market_types.md#0x7_market_types_SettleTradeResult">market_types::SettleTradeResult</a>&lt;R&gt; <b>has</b> <b>copy</b> + drop, validate_order_placement_f: |<a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, u64|<a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a> <b>has</b> <b>copy</b> + drop, validate_bulk_order_placement_f: |<b>address</b>, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &M|<a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a> <b>has</b> <b>copy</b> + drop, place_maker_order_f: |<a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, u64|<a href="market_types.md#0x7_market_types_PlaceMakerOrderResult">market_types::PlaceMakerOrderResult</a>&lt;R&gt; <b>has</b> <b>copy</b> + drop, cleanup_order_f: |<a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, u64, bool| <b>has</b> <b>copy</b> + drop, cleanup_bulk_order_at_price_f: |<b>address</b>, <a href="_OrderId">order_book_types::OrderId</a>, bool, u64, u64| <b>has</b> <b>copy</b> + drop, place_bulk_order_f: |<b>address</b>, <a href="_OrderId">order_book_types::OrderId</a>, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &M| <b>has</b> <b>copy</b> + drop, decrease_order_size_f: |<a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, u64| <b>has</b> <b>copy</b> + drop, get_order_metadata_bytes: |&M|<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; <b>has</b> <b>copy</b> + drop): <a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_market_clearinghouse_callbacks">new_market_clearinghouse_callbacks</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(settle_trade_f: |&<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, <a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, <a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, u128, u64, u64|<a href="market_types.md#0x7_market_types_SettleTradeResult">market_types::SettleTradeResult</a>&lt;R&gt; <b>has</b> <b>copy</b> + drop, validate_order_placement_f: |<a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, u64|<a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a> <b>has</b> <b>copy</b> + drop, validate_bulk_order_placement_f: |<b>address</b>, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &M|<a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a> <b>has</b> <b>copy</b> + drop, place_maker_order_f: |<a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, u64|<a href="market_types.md#0x7_market_types_PlaceMakerOrderResult">market_types::PlaceMakerOrderResult</a>&lt;R&gt; <b>has</b> <b>copy</b> + drop, cleanup_order_f: |<a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, u64, bool| <b>has</b> <b>copy</b> + drop, cleanup_bulk_order_at_price_f: |<b>address</b>, <a href="_OrderId">order_book_types::OrderId</a>, bool, u64, u64| <b>has</b> <b>copy</b> + drop, place_bulk_order_f: |<b>address</b>, <a href="_OrderId">order_book_types::OrderId</a>, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, &M| <b>has</b> <b>copy</b> + drop, decrease_order_size_f: |<a href="market_clearinghouse_order_info.md#0x7_market_clearinghouse_order_info_MarketClearinghouseOrderInfo">market_clearinghouse_order_info::MarketClearinghouseOrderInfo</a>&lt;M&gt;, u64| <b>has</b> <b>copy</b> + drop, get_order_metadata_bytes: |&M|<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; <b>has</b> <b>copy</b> + drop): <a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;
 </code></pre>
 
 
@@ -2130,10 +2130,10 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
     | <a href="market_types.md#0x7_market_types_ValidationResult">ValidationResult</a> <b>has</b> drop + <b>copy</b>,
     validate_bulk_order_placement_f: |
         <b>address</b>,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
         &M
     | <a href="market_types.md#0x7_market_types_ValidationResult">ValidationResult</a> <b>has</b> drop + <b>copy</b>,
     place_maker_order_f: |MarketClearinghouseOrderInfo&lt;M&gt;, u64| <a href="market_types.md#0x7_market_types_PlaceMakerOrderResult">PlaceMakerOrderResult</a>&lt;R&gt; <b>has</b> drop
@@ -2153,21 +2153,21 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
     place_bulk_order_f: |
         <b>address</b>,
         OrderId,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-        &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+        &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
         &M
     | <b>has</b> drop + <b>copy</b>,
     decrease_order_size_f: |
         MarketClearinghouseOrderInfo&lt;M&gt;,
         u64
     | <b>has</b> drop + <b>copy</b>,
-    get_order_metadata_bytes: |&M| <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; <b>has</b> drop + <b>copy</b>
+    get_order_metadata_bytes: |&M| <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; <b>has</b> drop + <b>copy</b>
 ): <a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">MarketClearinghouseCallbacks</a>&lt;M, R&gt; {
     MarketClearinghouseCallbacks::V1 {
         settle_trade_f,
@@ -2219,7 +2219,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_maker_cancellation_reason">get_maker_cancellation_reason</a>&lt;R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_SettleTradeResult">market_types::SettleTradeResult</a>&lt;R&gt;): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_maker_cancellation_reason">get_maker_cancellation_reason</a>&lt;R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_SettleTradeResult">market_types::SettleTradeResult</a>&lt;R&gt;): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
 </code></pre>
 
 
@@ -2245,7 +2245,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_taker_cancellation_reason">get_taker_cancellation_reason</a>&lt;R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_SettleTradeResult">market_types::SettleTradeResult</a>&lt;R&gt;): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_taker_cancellation_reason">get_taker_cancellation_reason</a>&lt;R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_SettleTradeResult">market_types::SettleTradeResult</a>&lt;R&gt;): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
 </code></pre>
 
 
@@ -2321,7 +2321,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_validation_failure_reason">get_validation_failure_reason</a>(self: &<a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a>): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_validation_failure_reason">get_validation_failure_reason</a>(self: &<a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a>): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
 </code></pre>
 
 
@@ -2345,7 +2345,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_place_maker_order_actions">get_place_maker_order_actions</a>&lt;R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_PlaceMakerOrderResult">market_types::PlaceMakerOrderResult</a>&lt;R&gt;): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;R&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_place_maker_order_actions">get_place_maker_order_actions</a>&lt;R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_PlaceMakerOrderResult">market_types::PlaceMakerOrderResult</a>&lt;R&gt;): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;R&gt;
 </code></pre>
 
 
@@ -2371,7 +2371,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_place_maker_order_cancellation_reason">get_place_maker_order_cancellation_reason</a>&lt;R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_PlaceMakerOrderResult">market_types::PlaceMakerOrderResult</a>&lt;R&gt;): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_place_maker_order_cancellation_reason">get_place_maker_order_cancellation_reason</a>&lt;R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_PlaceMakerOrderResult">market_types::PlaceMakerOrderResult</a>&lt;R&gt;): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;
 </code></pre>
 
 
@@ -2397,7 +2397,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_extract_results">extract_results</a>&lt;R: <b>copy</b>, drop, store&gt;(self: <a href="market_types.md#0x7_market_types_CallbackResult">market_types::CallbackResult</a>&lt;R&gt;): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;R&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_extract_results">extract_results</a>&lt;R: <b>copy</b>, drop, store&gt;(self: <a href="market_types.md#0x7_market_types_CallbackResult">market_types::CallbackResult</a>&lt;R&gt;): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;R&gt;
 </code></pre>
 
 
@@ -2410,9 +2410,9 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
     self: <a href="market_types.md#0x7_market_types_CallbackResult">CallbackResult</a>&lt;R&gt;
 ): Option&lt;R&gt; {
     match(self) {
-        CallbackResult::NOT_AVAILABLE =&gt; <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
-        CallbackResult::CONTINUE_MATCHING { result } =&gt; <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(result),
-        CallbackResult::STOP_MATCHING { result } =&gt; <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(result)
+        CallbackResult::NOT_AVAILABLE =&gt; <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(),
+        CallbackResult::CONTINUE_MATCHING { result } =&gt; <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(result),
+        CallbackResult::STOP_MATCHING { result } =&gt; <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(result)
     }
 }
 </code></pre>
@@ -2591,7 +2591,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_validate_bulk_order_placement">validate_bulk_order_placement</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, bids_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bids_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, asks_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, asks_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, order_metadata: &M): <a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a>
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_validate_bulk_order_placement">validate_bulk_order_placement</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, bids_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bids_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, asks_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, asks_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, order_metadata: &M): <a href="market_types.md#0x7_market_types_ValidationResult">market_types::ValidationResult</a>
 </code></pre>
 
 
@@ -2602,15 +2602,15 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 <pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_validate_bulk_order_placement">validate_bulk_order_placement</a>&lt;M: store + <b>copy</b> + drop, R: store + <b>copy</b> + drop&gt;(
     self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">MarketClearinghouseCallbacks</a>&lt;M, R&gt;,
-    <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
-    bids_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    bids_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    asks_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    asks_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
+    bids_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bids_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    asks_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    asks_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     order_metadata: &M
 ): <a href="market_types.md#0x7_market_types_ValidationResult">ValidationResult</a> {
     (self.validate_bulk_order_placement_f) (
-        <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>, bids_prices, bids_sizes, asks_prices, asks_sizes, order_metadata
+        <a href="../../topo-framework/doc/account.md#0x1_account">account</a>, bids_prices, bids_sizes, asks_prices, asks_sizes, order_metadata
     )
 }
 </code></pre>
@@ -2682,7 +2682,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_cleanup_bulk_order_at_price">cleanup_bulk_order_at_price</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, order_id: <a href="_OrderId">order_book_types::OrderId</a>, is_bid: bool, price: u64, cleanup_size: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_cleanup_bulk_order_at_price">cleanup_bulk_order_at_price</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, order_id: <a href="_OrderId">order_book_types::OrderId</a>, is_bid: bool, price: u64, cleanup_size: u64)
 </code></pre>
 
 
@@ -2693,14 +2693,14 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 <pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_cleanup_bulk_order_at_price">cleanup_bulk_order_at_price</a>&lt;M: store + <b>copy</b> + drop, R: store + <b>copy</b> + drop&gt;(
     self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">MarketClearinghouseCallbacks</a>&lt;M, R&gt;,
-    <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
+    <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
     order_id: OrderId,
     is_bid: bool,
     price: u64,
     cleanup_size: u64
 ) {
     (self.cleanup_bulk_order_at_price_f) (
-        <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>, order_id, is_bid, price, cleanup_size
+        <a href="../../topo-framework/doc/account.md#0x1_account">account</a>, order_id, is_bid, price, cleanup_size
     )
 }
 </code></pre>
@@ -2715,7 +2715,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_place_bulk_order">place_bulk_order</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, order_id: <a href="_OrderId">order_book_types::OrderId</a>, bid_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bid_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, metadata: &M)
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_place_bulk_order">place_bulk_order</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, order_id: <a href="_OrderId">order_book_types::OrderId</a>, bid_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bid_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, metadata: &M)
 </code></pre>
 
 
@@ -2726,20 +2726,20 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 <pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_place_bulk_order">place_bulk_order</a>&lt;M: store + <b>copy</b> + drop, R: store + <b>copy</b> + drop&gt;(
     self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">MarketClearinghouseCallbacks</a>&lt;M, R&gt;,
-    <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
+    <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
     order_id: OrderId,
-    bid_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    bid_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    ask_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    ask_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_bid_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_bid_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_ask_prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_ask_sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bid_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bid_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    ask_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    ask_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_bid_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_bid_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_ask_prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_ask_sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     metadata: &M
 ) {
     (self.place_bulk_order_f) (
-        <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>,
+        <a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
         order_id,
         bid_prices,
         bid_sizes,
@@ -2792,7 +2792,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_order_metadata_bytes">get_order_metadata_bytes</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, order_metadata: &M): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_order_metadata_bytes">get_order_metadata_bytes</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;, order_metadata: &M): <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 </code></pre>
 
 
@@ -2804,7 +2804,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 <pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_order_metadata_bytes">get_order_metadata_bytes</a>&lt;M: store + <b>copy</b> + drop, R: store + <b>copy</b> + drop&gt;(
     self: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">MarketClearinghouseCallbacks</a>&lt;M, R&gt;,
     order_metadata: &M
-): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; {
+): <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; {
     (self.get_order_metadata_bytes) (order_metadata)
 }
 </code></pre>
@@ -2855,7 +2855,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_market">new_market</a>&lt;M: <b>copy</b>, drop, store&gt;(parent: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, market: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, config: <a href="market_types.md#0x7_market_types_MarketConfig">market_types::MarketConfig</a>): <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_market">new_market</a>&lt;M: <b>copy</b>, drop, store&gt;(parent: &<a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, market: &<a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, config: <a href="market_types.md#0x7_market_types_MarketConfig">market_types::MarketConfig</a>): <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;
 </code></pre>
 
 
@@ -2865,24 +2865,24 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_new_market">new_market</a>&lt;M: store + <b>copy</b> + drop&gt;(
-    parent: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, market: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, config: <a href="market_types.md#0x7_market_types_MarketConfig">MarketConfig</a>
+    parent: &<a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, market: &<a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, config: <a href="market_types.md#0x7_market_types_MarketConfig">MarketConfig</a>
 ): <a href="market_types.md#0x7_market_types_Market">Market</a>&lt;M&gt; {
     // requiring signers, and not addresses, purely <b>to</b> guarantee different dexes
     // cannot polute events <b>to</b> each other, accidentally or maliciously.
     <b>let</b> pre_cancellation_window = config.pre_cancellation_window_secs;
-    <b>let</b> <a href="pre_cancellation_tracker.md#0x7_pre_cancellation_tracker">pre_cancellation_tracker</a> = <a href="../../aptos-trading/../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>();
+    <b>let</b> <a href="pre_cancellation_tracker.md#0x7_pre_cancellation_tracker">pre_cancellation_tracker</a> = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>();
     <a href="pre_cancellation_tracker.md#0x7_pre_cancellation_tracker">pre_cancellation_tracker</a>.add(
         <a href="market_types.md#0x7_market_types_PRE_CANCELLATION_TRACKER_KEY">PRE_CANCELLATION_TRACKER_KEY</a>,
         new_pre_cancellation_tracker(pre_cancellation_window)
     );
-    <b>let</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker">dead_mans_switch_tracker</a> = <a href="../../aptos-trading/../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>();
+    <b>let</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker">dead_mans_switch_tracker</a> = <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>();
     <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker">dead_mans_switch_tracker</a>.add(
         <a href="market_types.md#0x7_market_types_DEAD_MANS_SWITCH_TRACKER_KEY">DEAD_MANS_SWITCH_TRACKER_KEY</a>,
         new_dead_mans_switch_tracker(config.min_keep_alive_time_secs)
     );
     Market::V1 {
-        parent: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(parent),
-        market: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(market),
+        parent: <a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(parent),
+        market: <a href="../../topo-framework/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(market),
         config,
         <a href="order_book.md#0x7_order_book">order_book</a>: new_order_book(),
         <a href="pre_cancellation_tracker.md#0x7_pre_cancellation_tracker">pre_cancellation_tracker</a>,
@@ -3061,7 +3061,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_best_bid_price">best_bid_price</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_best_bid_price">best_bid_price</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -3085,7 +3085,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_best_ask_price">best_ask_price</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_best_ask_price">best_ask_price</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -3109,7 +3109,7 @@ enum <a href="market_types.md#0x7_market_types_BulkOrderRejectionEvent">BulkOrde
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_is_taker_order">is_taker_order</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, price: u64, is_bid: bool, trigger_condition: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;): bool
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_is_taker_order">is_taker_order</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, price: u64, is_bid: bool, trigger_condition: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;): bool
 </code></pre>
 
 
@@ -3215,7 +3215,7 @@ Remaining size of the order in the order book.
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_order_metadata">get_order_metadata</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_id: <a href="_OrderId">order_book_types::OrderId</a>): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;M&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_order_metadata">get_order_metadata</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_id: <a href="_OrderId">order_book_types::OrderId</a>): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;M&gt;
 </code></pre>
 
 
@@ -3269,7 +3269,7 @@ It is up to the caller to perform necessary permissions checks
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_order_metadata_by_client_id">get_order_metadata_by_client_id</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user: <b>address</b>, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;M&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_get_order_metadata_by_client_id">get_order_metadata_by_client_id</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user: <b>address</b>, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;M&gt;
 </code></pre>
 
 
@@ -3283,7 +3283,7 @@ It is up to the caller to perform necessary permissions checks
 ): Option&lt;M&gt; {
     <b>let</b> order_id = self.<a href="order_book.md#0x7_order_book">order_book</a>.get_order_id_by_client_id(user, client_order_id);
     <b>if</b> (order_id.is_none()) {
-        <b>return</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>();
+        <b>return</b> <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>();
     };
     <b>return</b> self.<a href="market_types.md#0x7_market_types_get_order_metadata">get_order_metadata</a>(order_id.destroy_some())
 }
@@ -3301,7 +3301,7 @@ Sets the order metadata for an order by client id. It is up to the caller to per
 around ownership of the order.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_set_order_metadata_by_client_id">set_order_metadata_by_client_id</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user: <b>address</b>, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, metadata: M)
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_set_order_metadata_by_client_id">set_order_metadata_by_client_id</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, user: <b>address</b>, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, metadata: M)
 </code></pre>
 
 
@@ -3334,7 +3334,7 @@ Returns all the pending order ready to be executed based on the oracle price. Th
 call the <code>place_order_with_order_id</code> API to place the order with the order id returned from this API.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_take_ready_price_based_orders">take_ready_price_based_orders</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, oracle_price: u64, order_limit: u64): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="_SingleOrder">single_order_types::SingleOrder</a>&lt;M&gt;&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_take_ready_price_based_orders">take_ready_price_based_orders</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, oracle_price: u64, order_limit: u64): <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="_SingleOrder">single_order_types::SingleOrder</a>&lt;M&gt;&gt;
 </code></pre>
 
 
@@ -3345,7 +3345,7 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_take_ready_price_based_orders">take_ready_price_based_orders</a>&lt;M: store + <b>copy</b> + drop&gt;(
     self: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">Market</a>&lt;M&gt;, oracle_price: u64, order_limit: u64
-): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;SingleOrder&lt;M&gt;&gt; {
+): <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;SingleOrder&lt;M&gt;&gt; {
     self.<a href="order_book.md#0x7_order_book">order_book</a>.<a href="market_types.md#0x7_market_types_take_ready_price_based_orders">take_ready_price_based_orders</a>(oracle_price, order_limit)
 }
 </code></pre>
@@ -3362,7 +3362,7 @@ Returns all the pending order that are ready to be executed based on current tim
 call the <code>place_order_with_order_id</code> API to place the order with the order id returned from this API.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_take_ready_time_based_orders">take_ready_time_based_orders</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_limit: u64): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="_SingleOrder">single_order_types::SingleOrder</a>&lt;M&gt;&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_take_ready_time_based_orders">take_ready_time_based_orders</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_limit: u64): <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="_SingleOrder">single_order_types::SingleOrder</a>&lt;M&gt;&gt;
 </code></pre>
 
 
@@ -3373,7 +3373,7 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
 
 <pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_take_ready_time_based_orders">take_ready_time_based_orders</a>&lt;M: store + <b>copy</b> + drop&gt;(
     self: &<b>mut</b> <a href="market_types.md#0x7_market_types_Market">Market</a>&lt;M&gt;, order_limit: u64
-): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;SingleOrder&lt;M&gt;&gt; {
+): <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;SingleOrder&lt;M&gt;&gt; {
     self.<a href="order_book.md#0x7_order_book">order_book</a>.<a href="market_types.md#0x7_market_types_take_ready_time_based_orders">take_ready_time_based_orders</a>(order_limit)
 }
 </code></pre>
@@ -3388,7 +3388,7 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_emit_event_for_order">emit_event_for_order</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_id: <a href="_OrderId">order_book_types::OrderId</a>, client_order_id: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, user: <b>address</b>, orig_size: u64, remaining_size: u64, size_delta: u64, price: u64, is_bid: bool, is_taker: bool, status: <a href="market_types.md#0x7_market_types_OrderStatus">market_types::OrderStatus</a>, details: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, metadata: M, trigger_condition: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_emit_event_for_order">emit_event_for_order</a>&lt;M: <b>copy</b>, drop, store, R: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_id: <a href="_OrderId">order_book_types::OrderId</a>, client_order_id: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>&gt;, user: <b>address</b>, orig_size: u64, remaining_size: u64, size_delta: u64, price: u64, is_bid: bool, is_taker: bool, status: <a href="market_types.md#0x7_market_types_OrderStatus">market_types::OrderStatus</a>, details: <a href="../../topo-framework/../move-stdlib/doc/string.md#0x1_string_String">string::String</a>, metadata: M, trigger_condition: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="_TriggerCondition">order_book_types::TriggerCondition</a>&gt;, time_in_force: <a href="_TimeInForce">order_book_types::TimeInForce</a>, cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;, callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">market_types::MarketClearinghouseCallbacks</a>&lt;M, R&gt;)
 </code></pre>
 
 
@@ -3416,10 +3416,10 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
     cancellation_reason: Option&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">OrderCancellationReason</a>&gt;,
     callbacks: &<a href="market_types.md#0x7_market_types_MarketClearinghouseCallbacks">MarketClearinghouseCallbacks</a>&lt;M, R&gt;
 ) {
-    // Final check whether <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
+    // Final check whether <a href="../../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
     <b>if</b> (self.config.allow_events_emission) {
         <b>let</b> metadata_bytes = callbacks.<a href="market_types.md#0x7_market_types_get_order_metadata_bytes">get_order_metadata_bytes</a>(&metadata);
-        <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
+        <a href="../../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
             OrderEvent::V1 {
                 parent: self.parent,
                 market: self.market,
@@ -3454,7 +3454,7 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_emit_event_for_bulk_order_placed">emit_event_for_bulk_order_placed</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_id: <a href="_OrderId">order_book_types::OrderId</a>, sequence_number: u64, user: <b>address</b>, bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, previous_seq_num: u64)
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_emit_event_for_bulk_order_placed">emit_event_for_bulk_order_placed</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_id: <a href="_OrderId">order_book_types::OrderId</a>, sequence_number: u64, user: <b>address</b>, bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, previous_seq_num: u64)
 </code></pre>
 
 
@@ -3468,19 +3468,19 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
     order_id: OrderId,
     sequence_number: u64,
     user: <b>address</b>,
-    bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     previous_seq_num: u64
 ) {
-    // Final check whether <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
+    // Final check whether <a href="../../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
     <b>if</b> (self.config.allow_events_emission) {
-        <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
+        <a href="../../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
             BulkOrderPlacedEvent::V1 {
                 parent: self.parent,
                 market: self.market,
@@ -3512,7 +3512,7 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_emit_event_for_bulk_order_cancelled">emit_event_for_bulk_order_cancelled</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_id: <a href="_OrderId">order_book_types::OrderId</a>, sequence_number: u64, user: <b>address</b>, cancelled_bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_emit_event_for_bulk_order_cancelled">emit_event_for_bulk_order_cancelled</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_id: <a href="_OrderId">order_book_types::OrderId</a>, sequence_number: u64, user: <b>address</b>, cancelled_bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;)
 </code></pre>
 
 
@@ -3526,25 +3526,25 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
     order_id: OrderId,
     sequence_number: u64,
     user: <b>address</b>,
-    cancelled_bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     cancellation_reason: Option&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">OrderCancellationReason</a>&gt;
 ) {
-    // Final check whether <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
+    // Final check whether <a href="../../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
     <b>if</b> (self.config.allow_events_emission) {
-        <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
+        <a href="../../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
             BulkOrderModifiedEvent::V1 {
                 parent: self.parent,
                 market: self.market,
                 order_id: order_id.get_order_id_value(),
                 sequence_number,
                 user,
-                bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
-                bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
-                ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
-                ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
+                bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
+                bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
+                ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
+                ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
                 cancelled_bid_prices,
                 cancelled_bid_sizes,
                 cancelled_ask_prices,
@@ -3587,9 +3587,9 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
     is_bid: bool,
     fill_id: u128
 ) {
-    // Final check whether <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
+    // Final check whether <a href="../../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
     <b>if</b> (self.config.allow_events_emission) {
-        <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
+        <a href="../../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
             BulkOrderFilledEvent::V1 {
                 parent: self.parent,
                 market: self.market,
@@ -3617,7 +3617,7 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_emit_event_for_bulk_order_modified">emit_event_for_bulk_order_modified</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_id: <a href="_OrderId">order_book_types::OrderId</a>, sequence_number: u64, user: <b>address</b>, bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancellation_reason: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="market_types.md#0x7_market_types_emit_event_for_bulk_order_modified">emit_event_for_bulk_order_modified</a>&lt;M: <b>copy</b>, drop, store&gt;(self: &<a href="market_types.md#0x7_market_types_Market">market_types::Market</a>&lt;M&gt;, order_id: <a href="_OrderId">order_book_types::OrderId</a>, sequence_number: u64, user: <b>address</b>, bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancelled_ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, cancellation_reason: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">market_types::OrderCancellationReason</a>&gt;)
 </code></pre>
 
 
@@ -3631,19 +3631,19 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
     order_id: OrderId,
     sequence_number: u64,
     user: <b>address</b>,
-    bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    cancelled_ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    cancelled_ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     cancellation_reason: Option&lt;<a href="market_types.md#0x7_market_types_OrderCancellationReason">OrderCancellationReason</a>&gt;
 ) {
-    // Final check whether <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
+    // Final check whether <a href="../../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
     <b>if</b> (self.config.allow_events_emission) {
-        <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
+        <a href="../../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
             BulkOrderModifiedEvent::V1 {
                 parent: self.parent,
                 market: self.market,
@@ -3691,9 +3691,9 @@ call the <code>place_order_with_order_id</code> API to place the order with the 
     sequence_number: u64,
     existing_sequence_number: u64
 ) {
-    // Final check whether <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
+    // Final check whether <a href="../../topo-framework/doc/event.md#0x1_event">event</a> sending is enabled
     <b>if</b> (self.config.allow_events_emission) {
-        <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
+        <a href="../../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
             BulkOrderRejectionEvent::V1 {
                 parent: self.parent,
                 market: self.market,

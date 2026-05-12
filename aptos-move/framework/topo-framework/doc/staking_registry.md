@@ -171,17 +171,17 @@ Only ACTIVE and PENDING_INACTIVE validators contribute to effective power reads.
 
 <pre><code><b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
 <b>use</b> <a href="dispatchable_fungible_asset.md#0x1_dispatchable_fungible_asset">0x1::dispatchable_fungible_asset</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">0x1::error</a>;
+<b>use</b> <a href="../../move-stdlib/doc/error.md#0x1_error">0x1::error</a>;
 <b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
 <b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
 <b>use</b> <a href="poc_power_store.md#0x1_poc_power_store">0x1::poc_power_store</a>;
 <b>use</b> <a href="primary_fungible_store.md#0x1_primary_fungible_store">0x1::primary_fungible_store</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map">0x1::simple_map</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table">0x1::smart_table</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map">0x1::simple_map</a>;
+<b>use</b> <a href="../../topo-stdlib/doc/smart_table.md#0x1_smart_table">0x1::smart_table</a>;
 <b>use</b> <a href="staking_config.md#0x1_staking_config">0x1::staking_config</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
+<b>use</b> <a href="../../topo-stdlib/doc/table.md#0x1_table">0x1::table</a>;
 <b>use</b> <a href="timestamp.md#0x1_timestamp">0x1::timestamp</a>;
 <b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 </code></pre>
@@ -239,13 +239,13 @@ The <code>mint_cap</code> is used to mint new TOPO coins as epoch rewards and fe
 
 <dl>
 <dt>
-<code>validators: <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="staking_registry.md#0x1_staking_registry_ValidatorPool">staking_registry::ValidatorPool</a>&gt;</code>
+<code>validators: <a href="../../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="staking_registry.md#0x1_staking_registry_ValidatorPool">staking_registry::ValidatorPool</a>&gt;</code>
 </dt>
 <dd>
  Map from validator pool address → ValidatorPool
 </dd>
 <dt>
-<code>users: <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="staking_registry.md#0x1_staking_registry_UserStakeInfo">staking_registry::UserStakeInfo</a>&gt;</code>
+<code>users: <a href="../../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="staking_registry.md#0x1_staking_registry_UserStakeInfo">staking_registry::UserStakeInfo</a>&gt;</code>
 </dt>
 <dd>
  Map from user address → UserStakeInfo
@@ -365,13 +365,13 @@ A validator's delegation pool.
  The owner of this pool (receives commission rewards)
 </dd>
 <dt>
-<code>delegator_index: <a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_SmartTable">smart_table::SmartTable</a>&lt;<b>address</b>, u64&gt;</code>
+<code>delegator_index: <a href="../../topo-stdlib/doc/smart_table.md#0x1_smart_table_SmartTable">smart_table::SmartTable</a>&lt;<b>address</b>, u64&gt;</code>
 </dt>
 <dd>
  Maps delegator address → index in delegator_list (for O(1) removal)
 </dd>
 <dt>
-<code>delegator_list: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;</code>
+<code>delegator_list: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;</code>
 </dt>
 <dd>
  Ordered list of all current delegators
@@ -740,7 +740,7 @@ This two-step approach avoids a circular dependency: the registry needs the mint
 but the mint cap is created before the registry config parameters are known.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, mint_cap: <a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;)
 </code></pre>
 
 
@@ -750,14 +750,14 @@ but the mint cap is created before the registry config parameters are known.
 
 
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_store_topo_coin_mint_cap">store_topo_coin_mint_cap</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     mint_cap: MintCapability&lt;TopoCoin&gt;,
 ) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <b>assert</b>!(
         !<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a>&gt;(@topo_framework)
             && !<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="staking_registry.md#0x1_staking_registry_EALREADY_INITIALIZED">EALREADY_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="staking_registry.md#0x1_staking_registry_EALREADY_INITIALIZED">EALREADY_INITIALIZED</a>),
     );
     <b>move_to</b>(topo_framework, <a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a> { mint_cap });
 }
@@ -778,7 +778,7 @@ Idempotent: if the registry already exists, returns immediately without error.
 Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">genesis::ensure_poc_staking_initialized</a></code>.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_million_power: u64, max_delegators_per_validator: u64, cooldown_secs: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_million_power: u64, max_delegators_per_validator: u64, cooldown_secs: u64)
 </code></pre>
 
 
@@ -788,7 +788,7 @@ Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">
 
 
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_initialize">initialize</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     octas_per_million_power: u64,
     max_delegators_per_validator: u64,
     cooldown_secs: u64,
@@ -800,17 +800,17 @@ Called by <code><a href="genesis.md#0x1_genesis_ensure_poc_staking_initialized">
 
     <b>assert</b>!(
         max_delegators_per_validator &gt; 0,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>),
     );
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EMINT_CAP_NOT_STORED">EMINT_CAP_NOT_STORED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EMINT_CAP_NOT_STORED">EMINT_CAP_NOT_STORED</a>),
     );
 
     <b>let</b> <a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a> { mint_cap } = <b>move_from</b>&lt;<a href="staking_registry.md#0x1_staking_registry_PendingMintCapability">PendingMintCapability</a>&gt;(@topo_framework);
     <b>move_to</b>(topo_framework, <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-        validators: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
-        users: <a href="../../aptos-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+        validators: <a href="../../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
+        users: <a href="../../topo-stdlib/doc/table.md#0x1_table_new">table::new</a>(),
         total_staked_power: 0,
         mint_cap,
         config: <a href="staking_registry.md#0x1_staking_registry_StakingRegistryConfig">StakingRegistryConfig</a> {
@@ -842,7 +842,7 @@ Setting force_exit_power_bps = 8000 means users are ejected when power < 80% of 
 providing a hysteresis band to prevent thrashing at the boundary.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_active_power_thresholds">set_active_power_thresholds</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_active_power: u64, force_exit_power_bps: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_active_power_thresholds">set_active_power_thresholds</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_active_power: u64, force_exit_power_bps: u64)
 </code></pre>
 
 
@@ -852,7 +852,7 @@ providing a hysteresis band to prevent thrashing at the boundary.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_active_power_thresholds">set_active_power_thresholds</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     min_active_power: u64,
     force_exit_power_bps: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
@@ -880,7 +880,7 @@ Keeps the existing force-exit BPS unchanged. Only the framework account may chan
 this parameter.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_min_active_power">set_min_active_power</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_active_power: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_min_active_power">set_min_active_power</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_active_power: u64)
 </code></pre>
 
 
@@ -890,12 +890,12 @@ this parameter.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_min_active_power">set_min_active_power</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     min_active_power: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
-    <b>assert</b>!(min_active_power &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
+    <b>assert</b>!(min_active_power &gt; 0, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
 
     <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).config.min_active_power =
         min_active_power;
@@ -917,7 +917,7 @@ Users whose effective power falls below
 at epoch boundaries. Keeps the existing min_active_power unchanged.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_force_exit_power_bps">set_force_exit_power_bps</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, force_exit_power_bps: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_force_exit_power_bps">set_force_exit_power_bps</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, force_exit_power_bps: u64)
 </code></pre>
 
 
@@ -927,14 +927,14 @@ at epoch boundaries. Keeps the existing min_active_power unchanged.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_force_exit_power_bps">set_force_exit_power_bps</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     force_exit_power_bps: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
     <b>assert</b>!(
         force_exit_power_bps &gt; 0 && force_exit_power_bps &lt;= <a href="staking_registry.md#0x1_staking_registry_BPS_DENOMINATOR">BPS_DENOMINATOR</a>,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>),
     );
 
     <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework).config.force_exit_power_bps =
@@ -959,7 +959,7 @@ deposit; raising it can reduce effective power and may cause low-coverage delega
 to be force-undelegated at the next epoch boundary.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_octas_per_million_power">set_octas_per_million_power</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_million_power: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_octas_per_million_power">set_octas_per_million_power</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, octas_per_million_power: u64)
 </code></pre>
 
 
@@ -969,7 +969,7 @@ to be force-undelegated at the next epoch boundary.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_octas_per_million_power">set_octas_per_million_power</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     octas_per_million_power: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
@@ -990,7 +990,7 @@ to be force-undelegated at the next epoch boundary.
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_cooldown_secs">set_cooldown_secs</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, cooldown_secs: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_cooldown_secs">set_cooldown_secs</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, cooldown_secs: u64)
 </code></pre>
 
 
@@ -1000,7 +1000,7 @@ to be force-undelegated at the next epoch boundary.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_set_cooldown_secs">set_cooldown_secs</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     cooldown_secs: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
@@ -1026,7 +1026,7 @@ This prevents a user from undelegating, voting, and re-delegating within a singl
 governance proposal window — which would allow double-influence attacks.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">ensure_min_cooldown_secs</a>(topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_cooldown_secs: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">ensure_min_cooldown_secs</a>(topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, min_cooldown_secs: u64)
 </code></pre>
 
 
@@ -1036,7 +1036,7 @@ governance proposal window — which would allow double-influence attacks.
 
 
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_ensure_min_cooldown_secs">ensure_min_cooldown_secs</a>(
-    topo_framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    topo_framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     min_cooldown_secs: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(topo_framework);
@@ -1083,7 +1083,7 @@ before the first epoch begins.
     <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>let</b> wide_power =
         (stake_amount <b>as</b> u128) * (registry.config.genesis_stake_power_multiplier <b>as</b> u128);
-    <b>assert</b>!(wide_power &lt;= <a href="staking_registry.md#0x1_staking_registry_MAX_U64">MAX_U64</a>, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
+    <b>assert</b>!(wide_power &lt;= <a href="staking_registry.md#0x1_staking_registry_MAX_U64">MAX_U64</a>, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
     wide_power <b>as</b> u64
 }
 </code></pre>
@@ -1098,7 +1098,7 @@ before the first epoch begins.
 
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_register_validator">register_validator</a>(validator: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, commission_bps: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_register_validator">register_validator</a>(validator: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, commission_bps: u64)
 </code></pre>
 
 
@@ -1108,13 +1108,13 @@ before the first epoch begins.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_register_validator">register_validator</a>(
-    validator: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    validator: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     commission_bps: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
     <a href="staking_registry.md#0x1_staking_registry_register_validator_internal">register_validator_internal</a>(
-        <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(validator),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(validator),
+        <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(validator),
+        <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(validator),
         commission_bps,
     );
 }
@@ -1198,7 +1198,7 @@ Deposits auto-compound: epoch rewards and fee shares are minted directly into
 the user's deposit balance, increasing their deposit coverage over time.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_deposit">deposit</a>(user: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_deposit">deposit</a>(user: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, amount: u64)
 </code></pre>
 
 
@@ -1208,13 +1208,13 @@ the user's deposit balance, increasing their deposit coverage over time.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_deposit">deposit</a>(
-    user: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    user: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     amount: u64,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
-    <b>assert</b>!(amount &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EZERO_DEPOSIT">EZERO_DEPOSIT</a>));
+    <b>assert</b>!(amount &gt; 0, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EZERO_DEPOSIT">EZERO_DEPOSIT</a>));
 
-    <b>let</b> user_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user);
+    <b>let</b> user_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user);
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <a href="staking_registry.md#0x1_staking_registry_ensure_user_record">ensure_user_record</a>(registry, user_address);
 
@@ -1243,7 +1243,7 @@ After delegation, the user's deposit backs the validator's total power,
 and the user begins receiving a proportional share of epoch rewards and fees.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_delegate">delegate</a>(user: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validator_address: <b>address</b>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_delegate">delegate</a>(user: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, validator_address: <b>address</b>)
 </code></pre>
 
 
@@ -1253,11 +1253,11 @@ and the user begins receiving a proportional share of epoch rewards and fees.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_delegate">delegate</a>(
-    user: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    user: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     validator_address: <b>address</b>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
-    <b>let</b> user_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user);
+    <b>let</b> user_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user);
     <a href="staking_registry.md#0x1_staking_registry_delegate_internal">delegate_internal</a>(user_address, validator_address);
 }
 </code></pre>
@@ -1280,7 +1280,7 @@ This cooldown prevents rapid stake-hopping that could destabilize the validator 
 or enable governance manipulation (vote, undelegate, re-delegate, vote again).
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_undelegate">undelegate</a>(user: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_undelegate">undelegate</a>(user: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1290,10 +1290,10 @@ or enable governance manipulation (vote, undelegate, re-delegate, vote again).
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_undelegate">undelegate</a>(
-    user: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    user: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
-    <b>let</b> user_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user);
+    <b>let</b> user_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user);
     <a href="staking_registry.md#0x1_staking_registry_undelegate_internal">undelegate_internal</a>(user_address);
 }
 </code></pre>
@@ -1315,7 +1315,7 @@ Requirements:
 After withdrawal, the user's deposit balance becomes zero and cooldown is cleared.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_withdraw_deposit">withdraw_deposit</a>(user: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_withdraw_deposit">withdraw_deposit</a>(user: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1325,10 +1325,10 @@ After withdrawal, the user's deposit balance becomes zero and cooldown is cleare
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_withdraw_deposit">withdraw_deposit</a>(
-    user: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    user: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>();
-    <b>let</b> user_address = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user);
+    <b>let</b> user_address = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(user);
     <b>let</b> coins = <a href="staking_registry.md#0x1_staking_registry_extract_withdrawable_deposit">extract_withdrawable_deposit</a>(user_address);
     <a href="coin.md#0x1_coin_deposit">coin::deposit</a>&lt;TopoCoin&gt;(user_address, coins);
 }
@@ -1495,7 +1495,7 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_total_power_for_next_epoch">get_validator_total_power_for_next_epoch</a>(
     validator_address: <b>address</b>,
 ): u64 <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>let</b> extra_deposit_octas_by_user = <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_create">simple_map::create</a>&lt;<b>address</b>, u64&gt;();
+    <b>let</b> extra_deposit_octas_by_user = <a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map_create">simple_map::create</a>&lt;<b>address</b>, u64&gt;();
     <b>let</b> (_, _, total_power) = <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_for_next_epoch">get_validator_member_powers_for_next_epoch</a>(
         validator_address,
         &extra_deposit_octas_by_user,
@@ -1514,7 +1514,7 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_for_next_epoch">get_validator_member_powers_for_next_epoch</a>(validator_address: <b>address</b>, extra_deposit_octas_by_user: &<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_SimpleMap">simple_map::SimpleMap</a>&lt;<b>address</b>, u64&gt;): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_for_next_epoch">get_validator_member_powers_for_next_epoch</a>(validator_address: <b>address</b>, extra_deposit_octas_by_user: &<a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map_SimpleMap">simple_map::SimpleMap</a>&lt;<b>address</b>, u64&gt;): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64)
 </code></pre>
 
 
@@ -1526,14 +1526,14 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_for_next_epoch">get_validator_member_powers_for_next_epoch</a>(
     validator_address: <b>address</b>,
     extra_deposit_octas_by_user: &SimpleMap&lt;<b>address</b>, u64&gt;,
-): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
-        <b>return</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
+        <b>return</b> (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
     };
 
     <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
-        <b>return</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
+        <b>return</b> (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
     };
 
     <b>let</b> maintain_threshold = <a href="staking_registry.md#0x1_staking_registry_calculate_force_exit_power">calculate_force_exit_power</a>(
@@ -1541,8 +1541,8 @@ effective power floored to 1 so active stake cannot decay to zero.
         registry.config.force_exit_power_bps,
     );
     <b>let</b> pool = registry.validators.borrow(validator_address);
-    <b>let</b> addresses = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> addresses = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> total_power = 0u128;
     pool.delegator_list.for_each_ref(|member| {
         <b>let</b> extra_deposit_octas =
@@ -1576,7 +1576,7 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_with_current_power">get_validator_member_powers_with_current_power</a>(validator_address: <b>address</b>, extra_deposit_octas_by_user: &<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_SimpleMap">simple_map::SimpleMap</a>&lt;<b>address</b>, u64&gt;): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_with_current_power">get_validator_member_powers_with_current_power</a>(validator_address: <b>address</b>, extra_deposit_octas_by_user: &<a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map_SimpleMap">simple_map::SimpleMap</a>&lt;<b>address</b>, u64&gt;): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64)
 </code></pre>
 
 
@@ -1588,19 +1588,19 @@ effective power floored to 1 so active stake cannot decay to zero.
 <pre><code><b>friend</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_member_powers_with_current_power">get_validator_member_powers_with_current_power</a>(
     validator_address: <b>address</b>,
     extra_deposit_octas_by_user: &SimpleMap&lt;<b>address</b>, u64&gt;,
-): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, u64) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
-        <b>return</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
+        <b>return</b> (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
     };
 
     <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
-        <b>return</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
+        <b>return</b> (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[], 0)
     };
 
     <b>let</b> pool = registry.validators.borrow(validator_address);
-    <b>let</b> addresses = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> addresses = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> total_power = 0u128;
     pool.delegator_list.for_each_ref(|member| {
         <b>let</b> extra_deposit_octas =
@@ -1689,7 +1689,7 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_validators_exist">validators_exist</a>(validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt;
+<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_validators_exist">validators_exist</a>(validators: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt;
 </code></pre>
 
 
@@ -1699,9 +1699,9 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_validators_exist">validators_exist</a>(
-    validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>let</b> exists_flags = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    validators: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+    <b>let</b> exists_flags = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> exists_flags
     };
@@ -1758,7 +1758,7 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_views_by_addresses">get_validator_views_by_addresses</a>(validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_views_by_addresses">get_validator_views_by_addresses</a>(validators: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -1768,23 +1768,23 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_views_by_addresses">get_validator_views_by_addresses</a>(
-    validators: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    validators: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
 ): (
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>let</b> validator_addresses = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> owner_addresses = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> commission_bps_values = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> statuses = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> delegator_counts = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> joining_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> total_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> validator_addresses = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> owner_addresses = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> commission_bps_values = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> statuses = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> delegator_counts = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> joining_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> total_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> (
             validator_addresses,
@@ -1872,7 +1872,7 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_users_have_stake_records">users_have_stake_records</a>(users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt;
+<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_users_have_stake_records">users_have_stake_records</a>(users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt;
 </code></pre>
 
 
@@ -1882,9 +1882,9 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_users_have_stake_records">users_have_stake_records</a>(
-    users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>let</b> exists_flags = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;bool&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+    <b>let</b> exists_flags = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> exists_flags
     };
@@ -1910,7 +1910,7 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_user_stake_views_by_addresses">get_user_stake_views_by_addresses</a>(users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_user_stake_views_by_addresses">get_user_stake_views_by_addresses</a>(users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -1920,21 +1920,21 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_user_stake_views_by_addresses">get_user_stake_views_by_addresses</a>(
-    users: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
 ): (
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>let</b> returned_users = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> deposit_octas_values = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> delegated_to_values = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> cooldown_until_secs_values = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> committed_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> effective_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> returned_users = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> deposit_octas_values = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> delegated_to_values = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> cooldown_until_secs_values = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> committed_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> effective_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> (
             returned_users,
@@ -2021,7 +2021,7 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_delegators">get_validator_delegators</a>(validator_address: <b>address</b>, offset: u64, limit: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_delegators">get_validator_delegators</a>(validator_address: <b>address</b>, offset: u64, limit: u64): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
 </code></pre>
 
 
@@ -2034,13 +2034,13 @@ effective power floored to 1 so active stake cannot decay to zero.
     validator_address: <b>address</b>,
     offset: u64,
     limit: u64,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
-        <b>return</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+        <b>return</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
     };
     <b>let</b> registry = <b>borrow_global</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>if</b> (!registry.validators.contains(validator_address)) {
-        <b>return</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
+        <b>return</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[]
     };
     <b>let</b> pool = registry.validators.borrow(validator_address);
     <a href="staking_registry.md#0x1_staking_registry_copy_address_range">copy_address_range</a>(&pool.delegator_list, offset, limit)
@@ -2058,7 +2058,7 @@ effective power floored to 1 so active stake cannot decay to zero.
 
 
 <pre><code>#[view]
-<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_delegator_views">get_validator_delegator_views</a>(validator_address: <b>address</b>, offset: u64, limit: u64): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<b>public</b> <b>fun</b> <a href="staking_registry.md#0x1_staking_registry_get_validator_delegator_views">get_validator_delegator_views</a>(validator_address: <b>address</b>, offset: u64, limit: u64): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -2071,11 +2071,11 @@ effective power floored to 1 so active stake cannot decay to zero.
     validator_address: <b>address</b>,
     offset: u64,
     limit: u64,
-): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
-    <b>let</b> delegators = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> deposit_octas_values = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> committed_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
-    <b>let</b> effective_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
+    <b>let</b> delegators = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> deposit_octas_values = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> committed_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+    <b>let</b> effective_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>if</b> (!<b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework)) {
         <b>return</b> (delegators, deposit_octas_values, committed_powers, effective_powers)
     };
@@ -2623,7 +2623,7 @@ If pool_power == 0 or epoch_reward == 0, this is a no-op.
     <b>let</b> owner_address = pool.owner_address;
     <b>let</b> commission_bps = pool.commission_bps;
     <b>let</b> members = <a href="staking_registry.md#0x1_staking_registry_copy_addresses">copy_addresses</a>(&pool.delegator_list);
-    <b>let</b> member_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;[];
+    <b>let</b> member_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;[];
     <b>let</b> pool_power = 0u128;
     members.for_each_ref(|member| {
         <b>let</b> power = <a href="staking_registry.md#0x1_staking_registry_get_user_effective_power_for_validator">get_user_effective_power_for_validator</a>(registry, *member, validator_address);
@@ -2725,7 +2725,7 @@ this re-mints the validator's share as a reward).
     <b>let</b> owner_address = pool.owner_address;
     <b>let</b> commission_bps = pool.commission_bps;
     <b>let</b> members = <a href="staking_registry.md#0x1_staking_registry_copy_addresses">copy_addresses</a>(&pool.delegator_list);
-    <b>let</b> member_powers = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;[];
+    <b>let</b> member_powers = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;[];
     <b>let</b> pool_power = 0u128;
     members.for_each_ref(|member| {
         <b>let</b> power = <a href="staking_registry.md#0x1_staking_registry_get_user_effective_power_for_validator">get_user_effective_power_for_validator</a>(registry, *member, validator_address);
@@ -2796,15 +2796,15 @@ this re-mints the validator's share as a reward).
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>assert</b>!(
         !registry.validators.contains(validator_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="staking_registry.md#0x1_staking_registry_EALREADY_VALIDATOR">EALREADY_VALIDATOR</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="staking_registry.md#0x1_staking_registry_EALREADY_VALIDATOR">EALREADY_VALIDATOR</a>),
     );
 
     <a href="staking_registry.md#0x1_staking_registry_ensure_user_record">ensure_user_record</a>(registry, owner_address);
 
     registry.validators.add(validator_address, <a href="staking_registry.md#0x1_staking_registry_ValidatorPool">ValidatorPool</a> {
         owner_address,
-        delegator_index: <a href="../../aptos-stdlib/doc/smart_table.md#0x1_smart_table_new">smart_table::new</a>(),
-        delegator_list: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
+        delegator_index: <a href="../../topo-stdlib/doc/smart_table.md#0x1_smart_table_new">smart_table::new</a>(),
+        delegator_list: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[],
         commission_bps,
         status: <a href="staking_registry.md#0x1_staking_registry_VALIDATOR_STATUS_INACTIVE">VALIDATOR_STATUS_INACTIVE</a>,
     });
@@ -2848,17 +2848,17 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
     <b>assert</b>!(
         registry.validators.contains(validator_address),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_ENOT_VALIDATOR">ENOT_VALIDATOR</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_ENOT_VALIDATOR">ENOT_VALIDATOR</a>),
     );
 
     <a href="staking_registry.md#0x1_staking_registry_ensure_user_record">ensure_user_record</a>(registry, user_address);
 
     <b>let</b> now_seconds = <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>();
     <b>let</b> info = registry.users.borrow(user_address);
-    <b>assert</b>!(info.delegated_to == @0x0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_EALREADY_DELEGATED">EALREADY_DELEGATED</a>));
+    <b>assert</b>!(info.delegated_to == @0x0, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_EALREADY_DELEGATED">EALREADY_DELEGATED</a>));
     <b>assert</b>!(
         info.cooldown_until_secs == 0 || now_seconds &gt;= info.cooldown_until_secs,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_ECOOLDOWN_ACTIVE">ECOOLDOWN_ACTIVE</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_ECOOLDOWN_ACTIVE">ECOOLDOWN_ACTIVE</a>),
     );
     <b>let</b> effective_power = <a href="staking_registry.md#0x1_staking_registry_calculate_raw_effective_power">calculate_raw_effective_power</a>(
         info,
@@ -2867,7 +2867,7 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
     );
     <b>assert</b>!(
         effective_power &gt;= registry.config.min_active_power,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EPOWER_BELOW_MIN_ACTIVE">EPOWER_BELOW_MIN_ACTIVE</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EPOWER_BELOW_MIN_ACTIVE">EPOWER_BELOW_MIN_ACTIVE</a>),
     );
 
     <b>let</b> (_, maximum_stake) = <a href="staking_config.md#0x1_staking_config_get_required_stake">staking_config::get_required_stake</a>(&<a href="staking_config.md#0x1_staking_config_get">staking_config::get</a>());
@@ -2875,7 +2875,7 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
     <b>let</b> current_pool_power = <a href="staking_registry.md#0x1_staking_registry_calculate_validator_total_power">calculate_validator_total_power</a>(registry, pool, validator_address);
     <b>assert</b>!(
         (current_pool_power <b>as</b> u128) + (effective_power <b>as</b> u128) &lt;= (maximum_stake <b>as</b> u128),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EVALIDATOR_POWER_EXCEEDS_MAX">EVALIDATOR_POWER_EXCEEDS_MAX</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EVALIDATOR_POWER_EXCEEDS_MAX">EVALIDATOR_POWER_EXCEEDS_MAX</a>),
     );
 
     <b>let</b> max_delegators = registry.config.max_delegators_per_validator;
@@ -2911,10 +2911,10 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
     user_address: <b>address</b>,
 ) <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
-    <b>assert</b>!(registry.users.contains(user_address), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EUSER_NOT_FOUND">EUSER_NOT_FOUND</a>));
+    <b>assert</b>!(registry.users.contains(user_address), <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EUSER_NOT_FOUND">EUSER_NOT_FOUND</a>));
 
     <b>let</b> delegated_to = registry.users.borrow(user_address).delegated_to;
-    <b>assert</b>!(delegated_to != @0x0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_ENOT_DELEGATED">ENOT_DELEGATED</a>));
+    <b>assert</b>!(delegated_to != @0x0, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_ENOT_DELEGATED">ENOT_DELEGATED</a>));
 
     <b>let</b> pool = registry.validators.borrow_mut(delegated_to);
     <a href="staking_registry.md#0x1_staking_registry_remove_delegator">remove_delegator</a>(pool, user_address);
@@ -2947,7 +2947,7 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
 <pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_assert_registry_exists">assert_registry_exists</a>() {
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EREGISTRY_NOT_INITIALIZED">EREGISTRY_NOT_INITIALIZED</a>),
     );
 }
 </code></pre>
@@ -2972,7 +2972,7 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
 
 
 <pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_assert_valid_commission">assert_valid_commission</a>(commission_bps: u64) {
-    <b>assert</b>!(commission_bps &lt;= 10000, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_COMMISSION">EINVALID_COMMISSION</a>));
+    <b>assert</b>!(commission_bps &lt;= 10000, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_COMMISSION">EINVALID_COMMISSION</a>));
 }
 </code></pre>
 
@@ -2999,10 +2999,10 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
     min_active_power: u64,
     force_exit_power_bps: u64,
 ) {
-    <b>assert</b>!(min_active_power &gt; 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
+    <b>assert</b>!(min_active_power &gt; 0, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>));
     <b>assert</b>!(
         force_exit_power_bps &gt; 0 && force_exit_power_bps &lt;= <a href="staking_registry.md#0x1_staking_registry_BPS_DENOMINATOR">BPS_DENOMINATOR</a>,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EINVALID_CONFIG">EINVALID_CONFIG</a>),
     );
 }
 </code></pre>
@@ -3030,13 +3030,13 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
     user_address: <b>address</b>,
 ): Coin&lt;TopoCoin&gt; <b>acquires</b> <a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a> {
     <b>let</b> registry = <b>borrow_global_mut</b>&lt;<a href="staking_registry.md#0x1_staking_registry_StakingRegistry">StakingRegistry</a>&gt;(@topo_framework);
-    <b>assert</b>!(registry.users.contains(user_address), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EUSER_NOT_FOUND">EUSER_NOT_FOUND</a>));
+    <b>assert</b>!(registry.users.contains(user_address), <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="staking_registry.md#0x1_staking_registry_EUSER_NOT_FOUND">EUSER_NOT_FOUND</a>));
 
     <b>let</b> info = registry.users.borrow(user_address);
-    <b>assert</b>!(info.delegated_to == @0x0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_EDEPOSIT_LOCKED">EDEPOSIT_LOCKED</a>));
+    <b>assert</b>!(info.delegated_to == @0x0, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_EDEPOSIT_LOCKED">EDEPOSIT_LOCKED</a>));
     <b>assert</b>!(
         info.cooldown_until_secs == 0 || <a href="timestamp.md#0x1_timestamp_now_seconds">timestamp::now_seconds</a>() &gt;= info.cooldown_until_secs,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_ECOOLDOWN_ACTIVE">ECOOLDOWN_ACTIVE</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_ECOOLDOWN_ACTIVE">ECOOLDOWN_ACTIVE</a>),
     );
 
     <b>let</b> info = registry.users.borrow_mut(user_address);
@@ -3110,7 +3110,7 @@ On success: adds user to pool's delegator_list, sets delegated_to, clears cooldo
 
 
 
-<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_mint_to_user_deposit">mint_to_user_deposit</a>(users: &<b>mut</b> <a href="../../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="staking_registry.md#0x1_staking_registry_UserStakeInfo">staking_registry::UserStakeInfo</a>&gt;, mint_cap: &<a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;, user_address: <b>address</b>, amount: u64)
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_mint_to_user_deposit">mint_to_user_deposit</a>(users: &<b>mut</b> <a href="../../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<b>address</b>, <a href="staking_registry.md#0x1_staking_registry_UserStakeInfo">staking_registry::UserStakeInfo</a>&gt;, mint_cap: &<a href="coin.md#0x1_coin_MintCapability">coin::MintCapability</a>&lt;<a href="topo_coin.md#0x1_topo_coin_TopoCoin">topo_coin::TopoCoin</a>&gt;, user_address: <b>address</b>, amount: u64)
 </code></pre>
 
 
@@ -3167,11 +3167,11 @@ enabling O(1) removal via swap-remove without scanning the full list.
 ) {
     <b>assert</b>!(
         !pool.delegator_index.contains(delegator),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="staking_registry.md#0x1_staking_registry_EALREADY_DELEGATED">EALREADY_DELEGATED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_already_exists">error::already_exists</a>(<a href="staking_registry.md#0x1_staking_registry_EALREADY_DELEGATED">EALREADY_DELEGATED</a>),
     );
     <b>assert</b>!(
         pool.delegator_list.length() &lt; max_delegators,
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EMAX_DELEGATORS">EMAX_DELEGATORS</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="staking_registry.md#0x1_staking_registry_EMAX_DELEGATORS">EMAX_DELEGATORS</a>),
     );
     <b>let</b> index = pool.delegator_list.length();
     pool.delegator_list.push_back(delegator);
@@ -3209,7 +3209,7 @@ This avoids O(n) shifting while keeping the list compact.
 ) {
     <b>assert</b>!(
         pool.delegator_index.contains(delegator),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_ENOT_DELEGATED">ENOT_DELEGATED</a>),
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_state">error::invalid_state</a>(<a href="staking_registry.md#0x1_staking_registry_ENOT_DELEGATED">ENOT_DELEGATED</a>),
     );
     <b>let</b> index = pool.delegator_index.remove(delegator);
     <b>let</b> last_index = pool.delegator_list.length() - 1;
@@ -3702,7 +3702,7 @@ A user who withdraws their deposit loses deposit_cover and their effective power
 
 
 
-<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_copy_addresses">copy_addresses</a>(addresses: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_copy_addresses">copy_addresses</a>(addresses: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
 </code></pre>
 
 
@@ -3711,8 +3711,8 @@ A user who withdraws their deposit loses deposit_cover and their effective power
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_copy_addresses">copy_addresses</a>(addresses: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; {
-    <b>let</b> copied = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_copy_addresses">copy_addresses</a>(addresses: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; {
+    <b>let</b> copied = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     addresses.for_each_ref(|addr| copied.push_back(*addr));
     copied
 }
@@ -4032,7 +4032,7 @@ A user who withdraws their deposit loses deposit_cover and their effective power
 
 
 
-<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_copy_address_range">copy_address_range</a>(addresses: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, offset: u64, limit: u64): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
+<pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_copy_address_range">copy_address_range</a>(addresses: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, offset: u64, limit: u64): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;
 </code></pre>
 
 
@@ -4042,11 +4042,11 @@ A user who withdraws their deposit loses deposit_cover and their effective power
 
 
 <pre><code><b>fun</b> <a href="staking_registry.md#0x1_staking_registry_copy_address_range">copy_address_range</a>(
-    addresses: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    addresses: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
     offset: u64,
     limit: u64,
-): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; {
-    <b>let</b> copied = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
+): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt; {
+    <b>let</b> copied = <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>[];
     <b>let</b> len = addresses.length();
     <b>let</b> i = offset;
     <b>let</b> end = <a href="staking_registry.md#0x1_staking_registry_range_end">range_end</a>(offset, limit, len);

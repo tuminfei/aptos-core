@@ -110,13 +110,13 @@ module aptos_experimental::veiled_coin {
     use std::signer;
     use std::vector;
 
-    use aptos_std::ristretto255;
-    use aptos_std::ristretto255_bulletproofs as bulletproofs;
-    use aptos_std::ristretto255_bulletproofs::RangeProof;
-    use aptos_std::ristretto255_elgamal as elgamal;
-    use aptos_std::ristretto255_pedersen as pedersen;
+    use topo_std::ristretto255;
+    use topo_std::ristretto255_bulletproofs as bulletproofs;
+    use topo_std::ristretto255_bulletproofs::RangeProof;
+    use topo_std::ristretto255_elgamal as elgamal;
+    use topo_std::ristretto255_pedersen as pedersen;
     #[test_only]
-    use aptos_std::ristretto255::Scalar;
+    use topo_std::ristretto255::Scalar;
 
     use topo_framework::account;
     use topo_framework::coin::{Self, Coin};

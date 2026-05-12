@@ -58,7 +58,7 @@
 <b>use</b> <a href="fungible_asset.md#0x1_fungible_asset">0x1::fungible_asset</a>;
 <b>use</b> <a href="object.md#0x1_object">0x1::object</a>;
 <b>use</b> <a href="primary_fungible_store.md#0x1_primary_fungible_store">0x1::primary_fungible_store</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
 <b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 </code></pre>
 
@@ -250,7 +250,7 @@ Basic account creation methods.
 Batch version of TOPO transfer.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer">batch_transfer</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer">batch_transfer</a>(source: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -260,12 +260,12 @@ Batch version of TOPO transfer.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer">batch_transfer</a>(
-    source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+    source: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 ) {
     <b>let</b> recipients_len = recipients.length();
     <b>assert</b>!(
         recipients_len == amounts.length(),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_account.md#0x1_topo_account_EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH">EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH</a>)
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_account.md#0x1_topo_account_EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH">EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH</a>)
     );
 
     recipients.enumerate_ref(|i, <b>to</b>| {
@@ -287,7 +287,7 @@ Convenient function to transfer TOPO to a recipient account that might not exist
 This would create the recipient account first, which also registers it to receive TOPO, before transferring.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer">transfer</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer">transfer</a>(source: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
 </code></pre>
 
 
@@ -296,7 +296,7 @@ This would create the recipient account first, which also registers it to receiv
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer">transfer</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64) {
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer">transfer</a>(source: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64) {
     <b>if</b> (!<a href="account.md#0x1_account_exists_at">account::exists_at</a>(<b>to</b>)) {
         <a href="topo_account.md#0x1_topo_account_create_account">create_account</a>(<b>to</b>)
     };
@@ -316,7 +316,7 @@ This would create the recipient account first, which also registers it to receiv
 Batch version of transfer_coins.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer_coins">batch_transfer_coins</a>&lt;CoinType&gt;(from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer_coins">batch_transfer_coins</a>&lt;CoinType&gt;(from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -326,12 +326,12 @@ Batch version of transfer_coins.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer_coins">batch_transfer_coins</a>&lt;CoinType&gt;(
-    from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+    from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 ) <b>acquires</b> <a href="topo_account.md#0x1_topo_account_DirectTransferConfig">DirectTransferConfig</a> {
     <b>let</b> recipients_len = recipients.length();
     <b>assert</b>!(
         recipients_len == amounts.length(),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_account.md#0x1_topo_account_EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH">EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH</a>)
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_account.md#0x1_topo_account_EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH">EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH</a>)
     );
 
     recipients.enumerate_ref(|i, <b>to</b>| {
@@ -353,7 +353,7 @@ Convenient function to transfer a custom CoinType to a recipient account that mi
 This would create the recipient account first and register it to receive the CoinType, before transferring.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer_coins">transfer_coins</a>&lt;CoinType&gt;(from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer_coins">transfer_coins</a>&lt;CoinType&gt;(from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
 </code></pre>
 
 
@@ -363,7 +363,7 @@ This would create the recipient account first and register it to receive the Coi
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer_coins">transfer_coins</a>&lt;CoinType&gt;(
-    from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64
+    from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64
 ) <b>acquires</b> <a href="topo_account.md#0x1_topo_account_DirectTransferConfig">DirectTransferConfig</a> {
     <a href="topo_account.md#0x1_topo_account_deposit_coins">deposit_coins</a>(<b>to</b>, <a href="coin.md#0x1_coin_withdraw">coin::withdraw</a>&lt;CoinType&gt;(from, amount));
 }
@@ -398,14 +398,14 @@ This would create the recipient account first and register it to receive the Coi
         <b>spec</b> {
             // TODO(fa_migration)
             // <b>assert</b> <a href="coin.md#0x1_coin_spec_is_account_registered">coin::spec_is_account_registered</a>&lt;TopoCoin&gt;(<b>to</b>);
-            // <b>assume</b> aptos_std::type_info::type_of&lt;CoinType&gt;() == aptos_std::type_info::type_of&lt;TopoCoin&gt;() ==&gt;
+            // <b>assume</b> topo_std::type_info::type_of&lt;CoinType&gt;() == topo_std::type_info::type_of&lt;TopoCoin&gt;() ==&gt;
             //     <a href="coin.md#0x1_coin_spec_is_account_registered">coin::spec_is_account_registered</a>&lt;CoinType&gt;(<b>to</b>);
         };
     };
     <b>if</b> (!<a href="coin.md#0x1_coin_is_account_registered">coin::is_account_registered</a>&lt;CoinType&gt;(<b>to</b>)) {
         <b>assert</b>!(
             <a href="topo_account.md#0x1_topo_account_can_receive_direct_coin_transfers">can_receive_direct_coin_transfers</a>(<b>to</b>),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="topo_account.md#0x1_topo_account_EACCOUNT_DOES_NOT_ACCEPT_DIRECT_COIN_TRANSFERS">EACCOUNT_DOES_NOT_ACCEPT_DIRECT_COIN_TRANSFERS</a>)
+            <a href="../../move-stdlib/doc/error.md#0x1_error_permission_denied">error::permission_denied</a>(<a href="topo_account.md#0x1_topo_account_EACCOUNT_DOES_NOT_ACCEPT_DIRECT_COIN_TRANSFERS">EACCOUNT_DOES_NOT_ACCEPT_DIRECT_COIN_TRANSFERS</a>)
         );
         <a href="coin.md#0x1_coin_register">coin::register</a>&lt;CoinType&gt;(&<a href="create_signer.md#0x1_create_signer">create_signer</a>(<b>to</b>));
     };
@@ -424,7 +424,7 @@ This would create the recipient account first and register it to receive the Coi
 Batch version of transfer_fungible_assets.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer_fungible_assets">batch_transfer_fungible_assets</a>(from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, recipients: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer_fungible_assets">batch_transfer_fungible_assets</a>(from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, recipients: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -434,15 +434,15 @@ Batch version of transfer_fungible_assets.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer_fungible_assets">batch_transfer_fungible_assets</a>(
-    from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     metadata: Object&lt;Metadata&gt;,
-    recipients: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
-    amounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
+    recipients: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;,
+    amounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;
 ) {
     <b>let</b> recipients_len = recipients.length();
     <b>assert</b>!(
         recipients_len == amounts.length(),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_account.md#0x1_topo_account_EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH">EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH</a>)
+        <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="topo_account.md#0x1_topo_account_EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH">EMISMATCHING_RECIPIENTS_AND_AMOUNTS_LENGTH</a>)
     );
 
     recipients.enumerate_ref(|i, <b>to</b>| {
@@ -464,7 +464,7 @@ Convenient function to deposit fungible asset into a recipient account that migh
 This would create the recipient account first to receive the fungible assets.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer_fungible_assets">transfer_fungible_assets</a>(from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, <b>to</b>: <b>address</b>, amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer_fungible_assets">transfer_fungible_assets</a>(from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, <b>to</b>: <b>address</b>, amount: u64)
 </code></pre>
 
 
@@ -474,7 +474,7 @@ This would create the recipient account first to receive the fungible assets.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer_fungible_assets">transfer_fungible_assets</a>(
-    from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     metadata: Object&lt;Metadata&gt;,
     <b>to</b>: <b>address</b>,
     amount: u64
@@ -535,7 +535,7 @@ This would create the recipient account first to receive the fungible assets.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="topo_account.md#0x1_topo_account_assert_account_exists">assert_account_exists</a>(addr: <b>address</b>) {
-    <b>assert</b>!(<a href="account.md#0x1_account_exists_at">account::exists_at</a>(addr), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="topo_account.md#0x1_topo_account_EACCOUNT_NOT_FOUND">EACCOUNT_NOT_FOUND</a>));
+    <b>assert</b>!(<a href="account.md#0x1_account_exists_at">account::exists_at</a>(addr), <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="topo_account.md#0x1_topo_account_EACCOUNT_NOT_FOUND">EACCOUNT_NOT_FOUND</a>));
 }
 </code></pre>
 
@@ -562,7 +562,7 @@ This would create the recipient account first to receive the fungible assets.
     <a href="topo_account.md#0x1_topo_account_assert_account_exists">assert_account_exists</a>(addr);
     <b>assert</b>!(
         <a href="coin.md#0x1_coin_is_account_registered">coin::is_account_registered</a>&lt;TopoCoin&gt;(addr),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="topo_account.md#0x1_topo_account_EACCOUNT_NOT_REGISTERED_FOR_TOPO">EACCOUNT_NOT_REGISTERED_FOR_TOPO</a>)
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="topo_account.md#0x1_topo_account_EACCOUNT_NOT_REGISTERED_FOR_TOPO">EACCOUNT_NOT_REGISTERED_FOR_TOPO</a>)
     );
 }
 </code></pre>
@@ -578,7 +578,7 @@ This would create the recipient account first to receive the fungible assets.
 Set whether <code><a href="account.md#0x1_account">account</a></code> can receive direct transfers of coins that they have not explicitly registered to receive.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_set_allow_direct_coin_transfers">set_allow_direct_coin_transfers</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, allow: bool)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_set_allow_direct_coin_transfers">set_allow_direct_coin_transfers</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, allow: bool)
 </code></pre>
 
 
@@ -588,9 +588,9 @@ Set whether <code><a href="account.md#0x1_account">account</a></code> can receiv
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_set_allow_direct_coin_transfers">set_allow_direct_coin_transfers</a>(
-    <a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, allow: bool
+    <a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, allow: bool
 ) <b>acquires</b> <a href="topo_account.md#0x1_topo_account_DirectTransferConfig">DirectTransferConfig</a> {
-    <b>let</b> addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
+    <b>let</b> addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(<a href="account.md#0x1_account">account</a>);
     <b>if</b> (<b>exists</b>&lt;<a href="topo_account.md#0x1_topo_account_DirectTransferConfig">DirectTransferConfig</a>&gt;(addr)) {
         <b>let</b> direct_transfer_config = <b>borrow_global_mut</b>&lt;<a href="topo_account.md#0x1_topo_account_DirectTransferConfig">DirectTransferConfig</a>&gt;(addr);
         // Short-circuit <b>to</b> avoid emitting an <a href="event.md#0x1_event">event</a> <b>if</b> direct transfer config is not changing.
@@ -663,7 +663,7 @@ By default, this returns true if an account has not explicitly set whether the c
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_account.md#0x1_topo_account_register_topo">register_topo</a>(account_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_account.md#0x1_topo_account_register_topo">register_topo</a>(account_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -672,8 +672,8 @@ By default, this returns true if an account has not explicitly set whether the c
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_account.md#0x1_topo_account_register_topo">register_topo</a>(account_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
-    <a href="topo_account.md#0x1_topo_account_ensure_primary_fungible_store_exists">ensure_primary_fungible_store_exists</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(account_signer));
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_account.md#0x1_topo_account_register_topo">register_topo</a>(account_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) {
+    <a href="topo_account.md#0x1_topo_account_ensure_primary_fungible_store_exists">ensure_primary_fungible_store_exists</a>(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(account_signer));
 }
 </code></pre>
 
@@ -693,7 +693,7 @@ TODO: once migration is complete, rename to just "transfer_only" and make it an 
 to transfer TOPO) - if we want to allow TOPO PFS without account itself
 
 
-<pre><code><b>public</b>(<b>friend</b>) entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_fungible_transfer_only">fungible_transfer_only</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
+<pre><code><b>public</b>(<b>friend</b>) entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_fungible_transfer_only">fungible_transfer_only</a>(source: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
 </code></pre>
 
 
@@ -703,10 +703,10 @@ to transfer TOPO) - if we want to allow TOPO PFS without account itself
 
 
 <pre><code><b>public</b>(<b>friend</b>) entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_fungible_transfer_only">fungible_transfer_only</a>(
-    source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64
+    source: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64
 ) {
     <b>let</b> sender_store =
-        <a href="topo_account.md#0x1_topo_account_ensure_primary_fungible_store_exists">ensure_primary_fungible_store_exists</a>(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(source));
+        <a href="topo_account.md#0x1_topo_account_ensure_primary_fungible_store_exists">ensure_primary_fungible_store_exists</a>(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(source));
     <b>let</b> recipient_store = <a href="topo_account.md#0x1_topo_account_ensure_primary_fungible_store_exists">ensure_primary_fungible_store_exists</a>(<b>to</b>);
 
     // <b>use</b> <b>internal</b> APIs, <b>as</b> they skip:
@@ -774,7 +774,7 @@ Burn from TOPO Primary FungibleStore for gas charge
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_account.md#0x1_topo_account_burn_from_fungible_store_for_gas">burn_from_fungible_store_for_gas</a>(
     ref: &BurnRef, <a href="account.md#0x1_account">account</a>: <b>address</b>, amount: u64
 ) {
-    // Skip burning <b>if</b> amount is zero. This shouldn't <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error">error</a> out <b>as</b> it's called <b>as</b> part of transaction fee burning.
+    // Skip burning <b>if</b> amount is zero. This shouldn't <a href="../../move-stdlib/doc/error.md#0x1_error">error</a> out <b>as</b> it's called <b>as</b> part of transaction fee burning.
     <b>if</b> (amount != 0) {
         <b>let</b> store_addr = <a href="topo_account.md#0x1_topo_account_primary_fungible_store_address">primary_fungible_store_address</a>(<a href="account.md#0x1_account">account</a>);
         ref.address_burn_from_for_gas(store_addr, amount);
@@ -971,7 +971,7 @@ Limit the address of auth_key is not @vm_reserved / @topo_framework / @aptos_tok
 <pre><code><b>fun</b> <a href="topo_account.md#0x1_topo_account_length_judgment">length_judgment</a>(auth_key: <b>address</b>): bool {
    <b>use</b> std::bcs;
 
-   <b>let</b> authentication_key = <a href="../../aptos-stdlib/../move-stdlib/doc/bcs.md#0x1_bcs_to_bytes">bcs::to_bytes</a>(auth_key);
+   <b>let</b> authentication_key = <a href="../../move-stdlib/doc/bcs.md#0x1_bcs_to_bytes">bcs::to_bytes</a>(auth_key);
    len(authentication_key) != 32
 }
 </code></pre>
@@ -983,14 +983,14 @@ Limit the address of auth_key is not @vm_reserved / @topo_framework / @aptos_tok
 ### Function `batch_transfer`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer">batch_transfer</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer">batch_transfer</a>(source: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>let</b> account_addr_source = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(source);
+<b>let</b> account_addr_source = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(source);
 <b>let</b> coin_store_source = <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;TopoCoin&gt;&gt;(account_addr_source);
 <b>let</b> balance_source = coin_store_source.<a href="coin.md#0x1_coin">coin</a>.value;
 <b>aborts_if</b> len(recipients) != len(amounts);
@@ -1022,14 +1022,14 @@ Limit the address of auth_key is not @vm_reserved / @topo_framework / @aptos_tok
 ### Function `transfer`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer">transfer</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer">transfer</a>(source: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>let</b> account_addr_source = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(source);
+<b>let</b> account_addr_source = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(source);
 <b>include</b> <a href="topo_account.md#0x1_topo_account_CreateAccountTransferAbortsIf">CreateAccountTransferAbortsIf</a>;
 <b>include</b> <a href="topo_account.md#0x1_topo_account_GuidAbortsIf">GuidAbortsIf</a>&lt;TopoCoin&gt;;
 <b>include</b> <a href="topo_account.md#0x1_topo_account_WithdrawAbortsIf">WithdrawAbortsIf</a>&lt;TopoCoin&gt;{from: source};
@@ -1047,14 +1047,14 @@ Limit the address of auth_key is not @vm_reserved / @topo_framework / @aptos_tok
 ### Function `batch_transfer_coins`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer_coins">batch_transfer_coins</a>&lt;CoinType&gt;(from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer_coins">batch_transfer_coins</a>&lt;CoinType&gt;(from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, recipients: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>let</b> account_addr_source = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(from);
+<b>let</b> account_addr_source = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(from);
 <b>let</b> coin_store_source = <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;CoinType&gt;&gt;(account_addr_source);
 <b>let</b> balance_source = coin_store_source.<a href="coin.md#0x1_coin">coin</a>.value;
 // This enforces <a id="high-level-req-7" href="#high-level-req">high-level requirement 7</a>:
@@ -1087,14 +1087,14 @@ Limit the address of auth_key is not @vm_reserved / @topo_framework / @aptos_tok
 ### Function `transfer_coins`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer_coins">transfer_coins</a>&lt;CoinType&gt;(from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer_coins">transfer_coins</a>&lt;CoinType&gt;(from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>let</b> account_addr_source = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(from);
+<b>let</b> account_addr_source = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(from);
 <b>include</b> <a href="topo_account.md#0x1_topo_account_CreateAccountTransferAbortsIf">CreateAccountTransferAbortsIf</a>;
 <b>include</b> <a href="topo_account.md#0x1_topo_account_WithdrawAbortsIf">WithdrawAbortsIf</a>&lt;CoinType&gt;;
 <b>include</b> <a href="topo_account.md#0x1_topo_account_GuidAbortsIf">GuidAbortsIf</a>&lt;CoinType&gt;;
@@ -1139,7 +1139,7 @@ Limit the address of auth_key is not @vm_reserved / @topo_framework / @aptos_tok
 ### Function `batch_transfer_fungible_assets`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer_fungible_assets">batch_transfer_fungible_assets</a>(from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, recipients: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_batch_transfer_fungible_assets">batch_transfer_fungible_assets</a>(from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, recipients: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, amounts: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -1155,7 +1155,7 @@ Limit the address of auth_key is not @vm_reserved / @topo_framework / @aptos_tok
 ### Function `transfer_fungible_assets`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer_fungible_assets">transfer_fungible_assets</a>(from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, <b>to</b>: <b>address</b>, amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_transfer_fungible_assets">transfer_fungible_assets</a>(from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, metadata: <a href="object.md#0x1_object_Object">object::Object</a>&lt;<a href="fungible_asset.md#0x1_fungible_asset_Metadata">fungible_asset::Metadata</a>&gt;, <b>to</b>: <b>address</b>, amount: u64)
 </code></pre>
 
 
@@ -1221,7 +1221,7 @@ Check if the TopoCoin under the address existed.
 ### Function `set_allow_direct_coin_transfers`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_set_allow_direct_coin_transfers">set_allow_direct_coin_transfers</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, allow: bool)
+<pre><code><b>public</b> entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_set_allow_direct_coin_transfers">set_allow_direct_coin_transfers</a>(<a href="account.md#0x1_account">account</a>: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, allow: bool)
 </code></pre>
 
 
@@ -1259,7 +1259,7 @@ Check if the TopoCoin under the address existed.
 ### Function `register_topo`
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_account.md#0x1_topo_account_register_topo">register_topo</a>(account_signer: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="topo_account.md#0x1_topo_account_register_topo">register_topo</a>(account_signer: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -1275,7 +1275,7 @@ Check if the TopoCoin under the address existed.
 ### Function `fungible_transfer_only`
 
 
-<pre><code><b>public</b>(<b>friend</b>) entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_fungible_transfer_only">fungible_transfer_only</a>(source: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
+<pre><code><b>public</b>(<b>friend</b>) entry <b>fun</b> <a href="topo_account.md#0x1_topo_account_fungible_transfer_only">fungible_transfer_only</a>(source: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, <b>to</b>: <b>address</b>, amount: u64)
 </code></pre>
 
 
@@ -1336,9 +1336,9 @@ Check if the TopoCoin under the address existed.
 
 
 <pre><code><b>schema</b> <a href="topo_account.md#0x1_topo_account_WithdrawAbortsIf">WithdrawAbortsIf</a>&lt;CoinType&gt; {
-    from: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
+    from: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>;
     amount: u64;
-    <b>let</b> account_addr_source = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(from);
+    <b>let</b> account_addr_source = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(from);
     <b>let</b> coin_store_source = <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;CoinType&gt;&gt;(account_addr_source);
     <b>let</b> balance_source = coin_store_source.<a href="coin.md#0x1_coin">coin</a>.value;
     <b>aborts_if</b> !<b>exists</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;CoinType&gt;&gt;(account_addr_source);
@@ -1370,7 +1370,7 @@ Check if the TopoCoin under the address existed.
 <pre><code><b>schema</b> <a href="topo_account.md#0x1_topo_account_RegistCoinAbortsIf">RegistCoinAbortsIf</a>&lt;CoinType&gt; {
     <b>to</b>: <b>address</b>;
     <b>aborts_if</b> <b>exists</b>&lt;topo_framework::account::Account&gt;(<b>to</b>);
-    <b>aborts_if</b> <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;CoinType&gt;() != <a href="../../aptos-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;();
+    <b>aborts_if</b> <a href="../../topo-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;CoinType&gt;() != <a href="../../topo-stdlib/doc/type_info.md#0x1_type_info_type_of">type_info::type_of</a>&lt;TopoCoin&gt;();
 }
 </code></pre>
 

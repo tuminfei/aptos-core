@@ -3,13 +3,13 @@ module aptos_experimental::order_book_client_order_id {
     use std::option;
     use std::signer;
     use topo_framework::timestamp;
-    use aptos_trading::order_book_types::{
+    use topo_trading::order_book_types::{
         good_till_cancelled,
         new_order_id_type,
         price_move_up_condition,
         new_time_based_trigger_condition
     };
-    use aptos_trading::single_order_types::new_single_order_request;
+    use topo_trading::single_order_types::new_single_order_request;
     use aptos_experimental::order_book::set_up_test_with_id;
 
     #[test(user1 = @0x456)]

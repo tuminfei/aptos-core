@@ -1,10 +1,10 @@
 module aptos_experimental::bulk_order_utils {
     use std::option::{Self, Option};
     use std::vector;
-    use aptos_std::timestamp;
-    use aptos_trading::bulk_order_types::{Self, BulkOrder, BulkOrderRequest};
-    use aptos_trading::order_book_types::{OrderId, IncreasingIdx};
-    use aptos_trading::order_match_types::OrderMatchDetails;
+    use topo_framework::timestamp;
+    use topo_trading::bulk_order_types::{Self, BulkOrder, BulkOrderRequest};
+    use topo_trading::order_book_types::{OrderId, IncreasingIdx};
+    use topo_trading::order_match_types::OrderMatchDetails;
 
     friend aptos_experimental::bulk_order_book;
     friend aptos_experimental::market_bulk_order;

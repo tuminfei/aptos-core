@@ -27,8 +27,8 @@ module topo_framework::ethereum_derivable_account {
     use topo_framework::auth_data::AbstractionAuthData;
     use topo_framework::common_account_abstractions_utils::{network_name, daa_authenticate};
     use topo_framework::base16::base16_utf8_to_vec_u8;
-    use aptos_std::secp256k1;
-    use aptos_std::aptos_hash;
+    use topo_std::secp256k1;
+    use topo_std::aptos_hash;
     use std::bcs_stream::{Self, deserialize_u8};
     use std::chain_id;
     use std::string_utils;

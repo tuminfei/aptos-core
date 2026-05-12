@@ -74,7 +74,7 @@ spec topo_token::token_transfers {
         amount: u64
     ): u64 {
         use topo_token::token::{TokenStore};
-        use aptos_std::table::{Self};
+        use topo_std::table::{Self};
         let tokens = global<TokenStore>(account_addr).tokens;
         let balance = table::spec_get(tokens, id).amount;
         if (balance > amount) {

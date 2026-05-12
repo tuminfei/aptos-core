@@ -3,7 +3,7 @@ module topo_framework::block {
     use std::error;
     use std::vector;
     use std::option;
-    use aptos_std::table_with_length::{Self, TableWithLength};
+    use topo_std::table_with_length::{Self, TableWithLength};
     use std::option::Option;
     use topo_framework::randomness;
     use topo_framework::decryption;

@@ -6,9 +6,9 @@ module topo_token::property_map {
     use std::bcs;
     use std::error;
     use std::string::{Self, String};
-    use aptos_std::from_bcs;
-    use aptos_std::simple_map::{Self, SimpleMap};
-    use aptos_std::type_info::type_name;
+    use topo_std::from_bcs;
+    use topo_std::simple_map::{Self, SimpleMap};
+    use topo_std::type_info::type_name;
 
     //
     // Constants

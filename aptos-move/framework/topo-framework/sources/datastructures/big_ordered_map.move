@@ -35,9 +35,9 @@ module topo_framework::big_ordered_map {
     use std::vector;
     use std::option::{Self as option, Option};
     use std::bcs;
-    use aptos_std::cmp;
-    use aptos_std::storage_slots_allocator::{Self, StorageSlotsAllocator, StoredSlot};
-    use aptos_std::math64::{max, min};
+    use std::cmp;
+    use topo_std::storage_slots_allocator::{Self, StorageSlotsAllocator, StoredSlot};
+    use topo_std::math64::{max, min};
     use topo_framework::ordered_map::{Self, OrderedMap};
 
     #[test_only]
@@ -1667,8 +1667,8 @@ module topo_framework::big_ordered_map {
     #[test_only]
     public(friend) fun print_map<K: store, V: store>(self: &BigOrderedMap<K, V>) {
         // uncomment to debug:
-        // aptos_std::debug::print(&std::string::utf8(b"print map"));
-        // aptos_std::debug::print(self);
+        // topo_std::debug::print(&std::string::utf8(b"print map"));
+        // topo_std::debug::print(self);
         // self.print_map_for_node(ROOT_INDEX, 0);
     }
 
@@ -1676,9 +1676,9 @@ module topo_framework::big_ordered_map {
     fun print_map_for_node<K: store + copy + drop, V: store>(self: &BigOrderedMap<K, V>, node_index: u64, level: u64) {
         let node = self.borrow_node(node_index);
 
-        aptos_std::debug::print(&level);
-        aptos_std::debug::print(&node_index);
-        aptos_std::debug::print(node);
+        topo_std::debug::print(&level);
+        topo_std::debug::print(&node_index);
+        topo_std::debug::print(node);
 
         if (!node.is_leaf) {
             node.children.for_each_ref(|_key, node| {

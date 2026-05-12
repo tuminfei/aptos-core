@@ -139,9 +139,9 @@ A set of inline utility methods is provided instead, to provide guaranteed valid
     -  [Function `binary_search`](#@Specification_1_binary_search)
 
 
-<pre><code><b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/cmp.md#0x1_cmp">0x1::cmp</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<pre><code><b>use</b> <a href="../../move-stdlib/doc/cmp.md#0x1_cmp">0x1::cmp</a>;
+<b>use</b> <a href="../../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 </code></pre>
 
 
@@ -206,7 +206,7 @@ The OrderedMap datastructure.
 
 <dl>
 <dt>
-<code>entries: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;</code>
+<code>entries: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;</code>
 </dt>
 <dd>
  List of entries, sorted by key.
@@ -340,7 +340,7 @@ Create a new empty OrderedMap, using default (SortedVectorMap) implementation.
 
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_new">new</a>&lt;K, V&gt;(): <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt; {
     OrderedMap::SortedVectorMap {
-        entries: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>(),
+        entries: <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>(),
     }
 }
 </code></pre>
@@ -357,7 +357,7 @@ Create a OrderedMap from a vector of keys and values.
 Aborts with EKEY_ALREADY_EXISTS if duplicate keys are passed in.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_new_from">new_from</a>&lt;K, V&gt;(keys: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;): <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_new_from">new_from</a>&lt;K, V&gt;(keys: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;): <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;
 </code></pre>
 
 
@@ -366,7 +366,7 @@ Aborts with EKEY_ALREADY_EXISTS if duplicate keys are passed in.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_new_from">new_from</a>&lt;K, V&gt;(keys: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;): <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt; {
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_new_from">new_from</a>&lt;K, V&gt;(keys: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;): <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt; {
     <b>let</b> map = <a href="ordered_map.md#0x1_ordered_map_new">new</a>();
     map.<a href="ordered_map.md#0x1_ordered_map_add_all">add_all</a>(keys, values);
     map
@@ -449,7 +449,7 @@ Aborts with EKEY_ALREADY_EXISTS if key already exist.
     <b>let</b> index = <a href="ordered_map.md#0x1_ordered_map_binary_search">binary_search</a>(&key, &self.entries, 0, len);
 
     // key must not already be inside.
-    <b>assert</b>!(index &gt;= len || &self.entries[index].key != &key, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_ALREADY_EXISTS">EKEY_ALREADY_EXISTS</a>));
+    <b>assert</b>!(index &gt;= len || &self.entries[index].key != &key, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_ALREADY_EXISTS">EKEY_ALREADY_EXISTS</a>));
     self.entries.insert(index, <a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a> { key, value });
 }
 </code></pre>
@@ -466,7 +466,7 @@ If the key doesn't exist in the map, inserts the key/value, and returns none.
 Otherwise, updates the value under the given key, and returns the old value.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_upsert">upsert</a>&lt;K: drop, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: K, value: V): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_upsert">upsert</a>&lt;K: drop, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: K, value: V): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
 </code></pre>
 
 
@@ -484,10 +484,10 @@ Otherwise, updates the value under the given key, and returns the old value.
             key: _,
             value: old_value,
         } = self.entries.replace(index, <a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a> { key, value });
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(old_value)
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(old_value)
     } <b>else</b> {
         self.entries.insert(index, <a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a> { key, value });
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+        <a href="../../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
     }
 }
 </code></pre>
@@ -516,9 +516,9 @@ Aborts with EKEY_NOT_FOUND if <code>key</code> doesn't exist.
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_remove">remove</a>&lt;K: drop, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, key: &K): V {
     <b>let</b> len = self.entries.<a href="ordered_map.md#0x1_ordered_map_length">length</a>();
     <b>let</b> index = <a href="ordered_map.md#0x1_ordered_map_binary_search">binary_search</a>(key, &self.entries, 0, len);
-    <b>assert</b>!(index &lt; len, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_NOT_FOUND">EKEY_NOT_FOUND</a>));
+    <b>assert</b>!(index &lt; len, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_NOT_FOUND">EKEY_NOT_FOUND</a>));
     <b>let</b> <a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a> { key: old_key, value } = self.entries.<a href="ordered_map.md#0x1_ordered_map_remove">remove</a>(index);
-    <b>assert</b>!(key == &old_key, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_NOT_FOUND">EKEY_NOT_FOUND</a>));
+    <b>assert</b>!(key == &old_key, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_NOT_FOUND">EKEY_NOT_FOUND</a>));
     value
 }
 </code></pre>
@@ -535,7 +535,7 @@ Remove a key/value pair from the map.
 Returns none if <code>key</code> doesn't exist.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_remove_or_none">remove_or_none</a>&lt;K: drop, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_remove_or_none">remove_or_none</a>&lt;K: drop, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
 </code></pre>
 
 
@@ -549,9 +549,9 @@ Returns none if <code>key</code> doesn't exist.
     <b>let</b> index = <a href="ordered_map.md#0x1_ordered_map_binary_search">binary_search</a>(key, &self.entries, 0, len);
     <b>if</b> (index &lt; len && key == &self.entries[index].key) {
         <b>let</b> <a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a> { key: _, value } = self.entries.<a href="ordered_map.md#0x1_ordered_map_remove">remove</a>(index);
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(value)
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(value)
     } <b>else</b> {
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+        <a href="../../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
     }
 }
 </code></pre>
@@ -701,7 +701,7 @@ Returns whether map contains a given key.
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_get">get</a>&lt;K: <b>copy</b>, drop, store, V: <b>copy</b>, store&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_get">get</a>&lt;K: <b>copy</b>, drop, store, V: <b>copy</b>, store&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
 </code></pre>
 
 
@@ -713,9 +713,9 @@ Returns whether map contains a given key.
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_get">get</a>&lt;K: drop + <b>copy</b> + store, V: <b>copy</b> + store&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, key: &K): Option&lt;V&gt; {
     <b>let</b> iter = self.<a href="ordered_map.md#0x1_ordered_map_internal_find">internal_find</a>(key);
     <b>if</b> (iter.<a href="ordered_map.md#0x1_ordered_map_iter_is_end">iter_is_end</a>(self)) {
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+        <a href="../../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
     } <b>else</b> {
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(*iter.<a href="ordered_map.md#0x1_ordered_map_iter_borrow">iter_borrow</a>(self))
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(*iter.<a href="ordered_map.md#0x1_ordered_map_iter_borrow">iter_borrow</a>(self))
     }
 }
 </code></pre>
@@ -730,7 +730,7 @@ Returns whether map contains a given key.
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_get_and_map">get_and_map</a>&lt;K: <b>copy</b>, drop, store, V: <b>copy</b>, store, R&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K, f: |&V|R <b>has</b> drop): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;R&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_get_and_map">get_and_map</a>&lt;K: <b>copy</b>, drop, store, V: <b>copy</b>, store, R&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K, f: |&V|R <b>has</b> drop): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;R&gt;
 </code></pre>
 
 
@@ -742,9 +742,9 @@ Returns whether map contains a given key.
 <pre><code><b>public</b> inline <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_get_and_map">get_and_map</a>&lt;K: drop + <b>copy</b> + store, V: <b>copy</b> + store, R&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, key: &K, f: |&V|R <b>has</b> drop): Option&lt;R&gt; {
     <b>let</b> iter = self.<a href="ordered_map.md#0x1_ordered_map_internal_find">internal_find</a>(key);
     <b>if</b> (iter.<a href="ordered_map.md#0x1_ordered_map_iter_is_end">iter_is_end</a>(self)) {
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+        <a href="../../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
     } <b>else</b> {
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(f(iter.<a href="ordered_map.md#0x1_ordered_map_iter_borrow">iter_borrow</a>(self)))
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(f(iter.<a href="ordered_map.md#0x1_ordered_map_iter_borrow">iter_borrow</a>(self)))
     }
 }
 </code></pre>
@@ -774,17 +774,17 @@ Aborts with ENEW_KEY_NOT_IN_ORDER if <code>new_key</code> doesn't keep the order
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_replace_key_inplace">replace_key_inplace</a>&lt;K: drop, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, old_key: &K, new_key: K) {
     <b>let</b> len = self.entries.<a href="ordered_map.md#0x1_ordered_map_length">length</a>();
     <b>let</b> index = <a href="ordered_map.md#0x1_ordered_map_binary_search">binary_search</a>(old_key, &self.entries, 0, len);
-    <b>assert</b>!(index &lt; len, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_NOT_FOUND">EKEY_NOT_FOUND</a>));
+    <b>assert</b>!(index &lt; len, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_NOT_FOUND">EKEY_NOT_FOUND</a>));
 
-    <b>assert</b>!(old_key == &self.entries[index].key, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_NOT_FOUND">EKEY_NOT_FOUND</a>));
+    <b>assert</b>!(old_key == &self.entries[index].key, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_NOT_FOUND">EKEY_NOT_FOUND</a>));
 
     // check that after we <b>update</b> the key, order is going <b>to</b> be respected
     <b>if</b> (index &gt; 0) {
-        <b>assert</b>!(<a href="../../aptos-stdlib/../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&self.entries[index - 1].key, &new_key).is_lt(), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_ENEW_KEY_NOT_IN_ORDER">ENEW_KEY_NOT_IN_ORDER</a>))
+        <b>assert</b>!(<a href="../../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&self.entries[index - 1].key, &new_key).is_lt(), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_ENEW_KEY_NOT_IN_ORDER">ENEW_KEY_NOT_IN_ORDER</a>))
     };
 
     <b>if</b> (index + 1 &lt; len) {
-        <b>assert</b>!(<a href="../../aptos-stdlib/../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&new_key, &self.entries[index + 1].key).is_lt(), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_ENEW_KEY_NOT_IN_ORDER">ENEW_KEY_NOT_IN_ORDER</a>))
+        <b>assert</b>!(<a href="../../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&new_key, &self.entries[index + 1].key).is_lt(), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_ENEW_KEY_NOT_IN_ORDER">ENEW_KEY_NOT_IN_ORDER</a>))
     };
 
     self.entries[index].key = new_key;
@@ -803,7 +803,7 @@ Add multiple key/value pairs to the map. The keys must not already exist.
 Aborts with EKEY_ALREADY_EXISTS if key already exist, or duplicate keys are passed in.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_add_all">add_all</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_add_all">add_all</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
 </code></pre>
 
 
@@ -812,7 +812,7 @@ Aborts with EKEY_ALREADY_EXISTS if key already exist, or duplicate keys are pass
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_add_all">add_all</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;) {
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_add_all">add_all</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;) {
     // TODO: Can be optimized, by sorting keys and values, and then creating map.
     keys.zip(values, |key, value| {
         self.<a href="ordered_map.md#0x1_ordered_map_add">add</a>(key, value);
@@ -832,7 +832,7 @@ Add multiple key/value pairs to the map, overwrites values if they exist already
 or if duplicate keys are passed in.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_upsert_all">upsert_all</a>&lt;K: drop, V: drop&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_upsert_all">upsert_all</a>&lt;K: drop, V: drop&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
 </code></pre>
 
 
@@ -841,7 +841,7 @@ or if duplicate keys are passed in.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_upsert_all">upsert_all</a>&lt;K: drop, V: drop&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;) {
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_upsert_all">upsert_all</a>&lt;K: drop, V: drop&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;) {
     // TODO: Can be optimized, by sorting keys and values, and then creating map.
     keys.zip(values, |key, value| {
         self.<a href="ordered_map.md#0x1_ordered_map_upsert">upsert</a>(key, value);
@@ -898,7 +898,7 @@ Aborts with EKEY_ALREADY_EXISTS if <code>other</code> has a key already present 
 
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_append_disjoint">append_disjoint</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, other: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;) {
     <b>let</b> overwritten = self.<a href="ordered_map.md#0x1_ordered_map_append_impl">append_impl</a>(other);
-    <b>assert</b>!(overwritten.<a href="ordered_map.md#0x1_ordered_map_length">length</a>() == 0, <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_ALREADY_EXISTS">EKEY_ALREADY_EXISTS</a>));
+    <b>assert</b>!(overwritten.<a href="ordered_map.md#0x1_ordered_map_length">length</a>() == 0, <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EKEY_ALREADY_EXISTS">EKEY_ALREADY_EXISTS</a>));
     overwritten.<a href="ordered_map.md#0x1_ordered_map_destroy_empty">destroy_empty</a>();
 }
 </code></pre>
@@ -914,7 +914,7 @@ Aborts with EKEY_ALREADY_EXISTS if <code>other</code> has a key already present 
 Takes all elements from <code>other</code> and adds them to <code>self</code>, returning list of entries in self that were overwritten.
 
 
-<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_append_impl">append_impl</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, other: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;
+<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_append_impl">append_impl</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, other: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;
 </code></pre>
 
 
@@ -923,11 +923,11 @@ Takes all elements from <code>other</code> and adds them to <code>self</code>, r
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_append_impl">append_impl</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, other: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a>&lt;K,V&gt;&gt; {
+<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_append_impl">append_impl</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, other: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a>&lt;K,V&gt;&gt; {
     <b>let</b> OrderedMap::SortedVectorMap {
         entries: other_entries,
     } = other;
-    <b>let</b> overwritten = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    <b>let</b> overwritten = <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
 
     <b>if</b> (other_entries.<a href="ordered_map.md#0x1_ordered_map_is_empty">is_empty</a>()) {
         other_entries.<a href="ordered_map.md#0x1_ordered_map_destroy_empty">destroy_empty</a>();
@@ -940,25 +940,25 @@ Takes all elements from <code>other</code> and adds them to <code>self</code>, r
     };
 
     // Optimization: <b>if</b> all elements in `other` are larger than all elements in `self`, we can just <b>move</b> them over.
-    <b>if</b> (<a href="../../aptos-stdlib/../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&self.entries.<a href="ordered_map.md#0x1_ordered_map_borrow">borrow</a>(self.entries.<a href="ordered_map.md#0x1_ordered_map_length">length</a>() - 1).key, &other_entries.<a href="ordered_map.md#0x1_ordered_map_borrow">borrow</a>(0).key).is_lt()) {
+    <b>if</b> (<a href="../../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&self.entries.<a href="ordered_map.md#0x1_ordered_map_borrow">borrow</a>(self.entries.<a href="ordered_map.md#0x1_ordered_map_length">length</a>() - 1).key, &other_entries.<a href="ordered_map.md#0x1_ordered_map_borrow">borrow</a>(0).key).is_lt()) {
         self.entries.<a href="ordered_map.md#0x1_ordered_map_append">append</a>(other_entries);
         <b>return</b> overwritten;
     };
 
     // In O(n), traversing from the back, build reverse sorted result, and then reverse it back
-    <b>let</b> reverse_result = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    <b>let</b> reverse_result = <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
     <b>let</b> cur_i = self.entries.<a href="ordered_map.md#0x1_ordered_map_length">length</a>() - 1;
     <b>let</b> other_i = other_entries.<a href="ordered_map.md#0x1_ordered_map_length">length</a>() - 1;
 
-    // after the end of the <b>loop</b>, other_entries is empty, and <a href="../../aptos-stdlib/doc/any.md#0x1_any">any</a> leftover is in entries
+    // after the end of the <b>loop</b>, other_entries is empty, and <a href="../../topo-stdlib/doc/any.md#0x1_any">any</a> leftover is in entries
     <b>loop</b> {
-        <b>let</b> ord = <a href="../../aptos-stdlib/../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&self.entries[cur_i].key, &other_entries[other_i].key);
+        <b>let</b> ord = <a href="../../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&self.entries[cur_i].key, &other_entries[other_i].key);
         <b>if</b> (ord.is_gt()) {
             reverse_result.push_back(self.entries.<a href="ordered_map.md#0x1_ordered_map_pop_back">pop_back</a>());
             <b>if</b> (cur_i == 0) {
                 // make other_entries empty, and rest in entries.
-                // TODO cannot <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/mem.md#0x1_mem_swap">mem::swap</a> until it is <b>public</b>/released
-                // <a href="../../aptos-stdlib/../move-stdlib/doc/mem.md#0x1_mem_swap">mem::swap</a>(&<b>mut</b> self.entries, &<b>mut</b> other_entries);
+                // TODO cannot <b>use</b> <a href="../../move-stdlib/doc/mem.md#0x1_mem_swap">mem::swap</a> until it is <b>public</b>/released
+                // <a href="../../move-stdlib/doc/mem.md#0x1_mem_swap">mem::swap</a>(&<b>mut</b> self.entries, &<b>mut</b> other_entries);
                 self.entries.<a href="ordered_map.md#0x1_ordered_map_append">append</a>(other_entries);
                 <b>break</b>;
             } <b>else</b> {
@@ -972,8 +972,8 @@ Takes all elements from <code>other</code> and adds them to <code>self</code>, r
 
                 <b>if</b> (cur_i == 0) {
                     // make other_entries empty, and rest in entries.
-                    // TODO cannot <b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/mem.md#0x1_mem_swap">mem::swap</a> until it is <b>public</b>/released
-                    // <a href="../../aptos-stdlib/../move-stdlib/doc/mem.md#0x1_mem_swap">mem::swap</a>(&<b>mut</b> self.entries, &<b>mut</b> other_entries);
+                    // TODO cannot <b>use</b> <a href="../../move-stdlib/doc/mem.md#0x1_mem_swap">mem::swap</a> until it is <b>public</b>/released
+                    // <a href="../../move-stdlib/doc/mem.md#0x1_mem_swap">mem::swap</a>(&<b>mut</b> self.entries, &<b>mut</b> other_entries);
                     self.entries.<a href="ordered_map.md#0x1_ordered_map_append">append</a>(other_entries);
                     <b>break</b>;
                 } <b>else</b> {
@@ -1138,7 +1138,7 @@ After the call, the original map will be left containing the elements [0, at).
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_prev_key">prev_key</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;K&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_prev_key">prev_key</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;K&gt;
 </code></pre>
 
 
@@ -1150,9 +1150,9 @@ After the call, the original map will be left containing the elements [0, at).
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_prev_key">prev_key</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, key: &K): Option&lt;K&gt; {
     <b>let</b> it = self.<a href="ordered_map.md#0x1_ordered_map_internal_lower_bound">internal_lower_bound</a>(key);
     <b>if</b> (it.<a href="ordered_map.md#0x1_ordered_map_iter_is_begin">iter_is_begin</a>(self)) {
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+        <a href="../../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
     } <b>else</b> {
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(*it.<a href="ordered_map.md#0x1_ordered_map_iter_prev">iter_prev</a>(self).<a href="ordered_map.md#0x1_ordered_map_iter_borrow_key">iter_borrow_key</a>(self))
+        <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(*it.<a href="ordered_map.md#0x1_ordered_map_iter_prev">iter_prev</a>(self).<a href="ordered_map.md#0x1_ordered_map_iter_borrow_key">iter_borrow_key</a>(self))
     }
 }
 </code></pre>
@@ -1167,7 +1167,7 @@ After the call, the original map will be left containing the elements [0, at).
 
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_next_key">next_key</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;K&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_next_key">next_key</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;K&gt;
 </code></pre>
 
 
@@ -1179,18 +1179,18 @@ After the call, the original map will be left containing the elements [0, at).
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_next_key">next_key</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, key: &K): Option&lt;K&gt; {
     <b>let</b> it = self.<a href="ordered_map.md#0x1_ordered_map_internal_lower_bound">internal_lower_bound</a>(key);
     <b>if</b> (it.<a href="ordered_map.md#0x1_ordered_map_iter_is_end">iter_is_end</a>(self)) {
-        <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+        <a href="../../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
     } <b>else</b> {
         <b>let</b> cur_key = it.<a href="ordered_map.md#0x1_ordered_map_iter_borrow_key">iter_borrow_key</a>(self);
         <b>if</b> (key == cur_key) {
             <b>let</b> it = it.<a href="ordered_map.md#0x1_ordered_map_iter_next">iter_next</a>(self);
             <b>if</b> (it.<a href="ordered_map.md#0x1_ordered_map_iter_is_end">iter_is_end</a>(self)) {
-                <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+                <a href="../../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
             } <b>else</b> {
-                <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(*it.<a href="ordered_map.md#0x1_ordered_map_iter_borrow_key">iter_borrow_key</a>(self))
+                <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(*it.<a href="ordered_map.md#0x1_ordered_map_iter_borrow_key">iter_borrow_key</a>(self))
             }
         } <b>else</b> {
-            <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(*cur_key)
+            <a href="../../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(*cur_key)
         }
     }
 }
@@ -1351,7 +1351,7 @@ Note: Requires that the map is not changed after the input iterator is generated
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_iter_next">iter_next</a>&lt;K, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_IteratorPtr">IteratorPtr</a>, map: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): <a href="ordered_map.md#0x1_ordered_map_IteratorPtr">IteratorPtr</a> {
-    <b>assert</b>!(!self.<a href="ordered_map.md#0x1_ordered_map_iter_is_end">iter_is_end</a>(map), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
+    <b>assert</b>!(!self.<a href="ordered_map.md#0x1_ordered_map_iter_is_end">iter_is_end</a>(map), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
 
     <b>let</b> index = self.index + 1;
     <b>if</b> (index &lt; map.entries.<a href="ordered_map.md#0x1_ordered_map_length">length</a>()) {
@@ -1384,7 +1384,7 @@ Note: Requires that the map is not changed after the input iterator is generated
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_iter_prev">iter_prev</a>&lt;K, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_IteratorPtr">IteratorPtr</a>, map: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): <a href="ordered_map.md#0x1_ordered_map_IteratorPtr">IteratorPtr</a> {
-    <b>assert</b>!(!self.<a href="ordered_map.md#0x1_ordered_map_iter_is_begin">iter_is_begin</a>(map), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
+    <b>assert</b>!(!self.<a href="ordered_map.md#0x1_ordered_map_iter_is_begin">iter_is_begin</a>(map), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
 
     <b>let</b> index = <b>if</b> (self is IteratorPtr::End) {
         map.entries.<a href="ordered_map.md#0x1_ordered_map_length">length</a>() - 1
@@ -1504,7 +1504,7 @@ Note: Requires that the map is not changed after the input iterator is generated
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_iter_borrow_key">iter_borrow_key</a>&lt;K, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_IteratorPtr">IteratorPtr</a>, map: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): &K {
-    <b>assert</b>!(!(self is IteratorPtr::End), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
+    <b>assert</b>!(!(self is IteratorPtr::End), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
 
     &map.entries.<a href="ordered_map.md#0x1_ordered_map_borrow">borrow</a>(self.index).key
 }
@@ -1533,7 +1533,7 @@ Note: Requires that the map is not changed after the input iterator is generated
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_iter_borrow">iter_borrow</a>&lt;K, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_IteratorPtr">IteratorPtr</a>, map: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): &V {
-    <b>assert</b>!(!(self is IteratorPtr::End), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
+    <b>assert</b>!(!(self is IteratorPtr::End), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
     &map.entries.<a href="ordered_map.md#0x1_ordered_map_borrow">borrow</a>(self.index).value
 }
 </code></pre>
@@ -1561,7 +1561,7 @@ Note: Requires that the map is not changed after the input iterator is generated
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_iter_borrow_mut">iter_borrow_mut</a>&lt;K, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_IteratorPtr">IteratorPtr</a>, map: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): &<b>mut</b> V {
-    <b>assert</b>!(!(self is IteratorPtr::End), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
+    <b>assert</b>!(!(self is IteratorPtr::End), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
     &<b>mut</b> map.entries.<a href="ordered_map.md#0x1_ordered_map_borrow_mut">borrow_mut</a>(self.index).value
 }
 </code></pre>
@@ -1589,7 +1589,7 @@ Note: Requires that the map is not changed after the input iterator is generated
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_iter_remove">iter_remove</a>&lt;K: drop, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_IteratorPtr">IteratorPtr</a>, map: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): V {
-    <b>assert</b>!(!(self is IteratorPtr::End), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
+    <b>assert</b>!(!(self is IteratorPtr::End), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
 
     <b>let</b> <a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a> { key: _, value } = map.entries.<a href="ordered_map.md#0x1_ordered_map_remove">remove</a>(self.index);
     value
@@ -1619,11 +1619,11 @@ Note: Requires that the map is not changed after the input iterator is generated
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_iter_replace">iter_replace</a>&lt;K: <b>copy</b> + drop, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_IteratorPtr">IteratorPtr</a>, map: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;, value: V): V {
-    <b>assert</b>!(!(self is IteratorPtr::End), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
+    <b>assert</b>!(!(self is IteratorPtr::End), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_EITER_OUT_OF_BOUNDS">EITER_OUT_OF_BOUNDS</a>));
 
-    // TODO once <a href="../../aptos-stdlib/../move-stdlib/doc/mem.md#0x1_mem_replace">mem::replace</a> is <b>public</b>/released, <b>update</b> <b>to</b>:
+    // TODO once <a href="../../move-stdlib/doc/mem.md#0x1_mem_replace">mem::replace</a> is <b>public</b>/released, <b>update</b> <b>to</b>:
     // <b>let</b> entry = map.entries.<a href="ordered_map.md#0x1_ordered_map_borrow_mut">borrow_mut</a>(self.index);
-    // <a href="../../aptos-stdlib/../move-stdlib/doc/mem.md#0x1_mem_replace">mem::replace</a>(&<b>mut</b> entry.value, value)
+    // <a href="../../move-stdlib/doc/mem.md#0x1_mem_replace">mem::replace</a>(&<b>mut</b> entry.value, value)
     <b>let</b> key = map.entries[self.index].key;
     <b>let</b> <a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a> {
         key: _,
@@ -1664,11 +1664,11 @@ or smaller than the key at the iterator position.
     };
 
     <b>if</b> (insert_index &gt; 0) {
-        <b>assert</b>!(<a href="../../aptos-stdlib/../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&map.entries[insert_index - 1].key, &key).is_lt(), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_ENEW_KEY_NOT_IN_ORDER">ENEW_KEY_NOT_IN_ORDER</a>))
+        <b>assert</b>!(<a href="../../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&map.entries[insert_index - 1].key, &key).is_lt(), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_ENEW_KEY_NOT_IN_ORDER">ENEW_KEY_NOT_IN_ORDER</a>))
     };
 
     <b>if</b> (insert_index &lt; len) {
-        <b>assert</b>!(<a href="../../aptos-stdlib/../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&key, &map.entries[insert_index].key).is_lt(), <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_ENEW_KEY_NOT_IN_ORDER">ENEW_KEY_NOT_IN_ORDER</a>))
+        <b>assert</b>!(<a href="../../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&key, &map.entries[insert_index].key).is_lt(), <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="ordered_map.md#0x1_ordered_map_ENEW_KEY_NOT_IN_ORDER">ENEW_KEY_NOT_IN_ORDER</a>))
     };
 
     map.entries.insert(insert_index, <a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a> { key, value });
@@ -1714,7 +1714,7 @@ Aborts if <code>self</code> is not empty.
 Return all keys in the map. This requires keys to be copyable.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_keys">keys</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_keys">keys</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;
 </code></pre>
 
 
@@ -1723,7 +1723,7 @@ Return all keys in the map. This requires keys to be copyable.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_keys">keys</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt; {
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_keys">keys</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt; {
     self.entries.map_ref(|e| {
         <b>let</b> e: &<a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a>&lt;K, V&gt; = e;
         e.key
@@ -1742,7 +1742,7 @@ Return all keys in the map. This requires keys to be copyable.
 Return all values in the map. This requires values to be copyable.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_values">values</a>&lt;K, V: <b>copy</b>&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_values">values</a>&lt;K, V: <b>copy</b>&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;
 </code></pre>
 
 
@@ -1751,7 +1751,7 @@ Return all values in the map. This requires values to be copyable.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_values">values</a>&lt;K, V: <b>copy</b>&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt; {
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_values">values</a>&lt;K, V: <b>copy</b>&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt; {
     self.entries.map_ref(|e| {
         <b>let</b> e: &<a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a>&lt;K, V&gt; = e;
         e.value
@@ -1771,7 +1771,7 @@ Transform the map into two vectors with the keys and values respectively
 Primarily used to destroy a map
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_to_vec_pair">to_vec_pair</a>&lt;K, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_to_vec_pair">to_vec_pair</a>&lt;K, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
 </code></pre>
 
 
@@ -1780,9 +1780,9 @@ Primarily used to destroy a map
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_to_vec_pair">to_vec_pair</a>&lt;K, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;) {
-    <b>let</b> keys: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt; = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
-    <b>let</b> values: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt; = <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_to_vec_pair">to_vec_pair</a>&lt;K, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">OrderedMap</a>&lt;K, V&gt;): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;) {
+    <b>let</b> keys: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt; = <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    <b>let</b> values: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt; = <a href="../../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
     <b>let</b> OrderedMap::SortedVectorMap { entries } = self;
     entries.<a href="ordered_map.md#0x1_ordered_map_for_each">for_each</a>(|e| {
         <b>let</b> <a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a> { key, value } = e;
@@ -1882,7 +1882,7 @@ Apply the function to a reference of each key-value pair in the map.
     }
 
     // TODO: once <b>move</b> supports private functions <b>update</b> <b>to</b>:
-    // <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_for_each_ref">vector::for_each_ref</a>(
+    // <a href="../../move-stdlib/doc/vector.md#0x1_vector_for_each_ref">vector::for_each_ref</a>(
     //     &self.entries,
     //     |entry| {
     //         f(&entry.key, &entry.value)
@@ -1920,7 +1920,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
     }
 
     // TODO: once <b>move</b> supports private functions udpate <b>to</b>:
-    // <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_for_each_mut">vector::for_each_mut</a>(
+    // <a href="../../move-stdlib/doc/vector.md#0x1_vector_for_each_mut">vector::for_each_mut</a>(
     //     &<b>mut</b> self.entries,
     //     |entry| {
     //         f(&<b>mut</b> entry.key, &<b>mut</b> entry.value)
@@ -1965,7 +1965,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
 
 
 
-<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_binary_search">binary_search</a>&lt;K, V&gt;(key: &K, entries: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;, start: u64, end: u64): u64
+<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_binary_search">binary_search</a>&lt;K, V&gt;(key: &K, entries: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;, start: u64, end: u64): u64
 </code></pre>
 
 
@@ -1974,12 +1974,12 @@ Apply the function to a mutable reference of each key-value pair in the map.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_binary_search">binary_search</a>&lt;K, V&gt;(key: &K, entries: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a>&lt;K, V&gt;&gt;, start: u64, end: u64): u64 {
+<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_binary_search">binary_search</a>&lt;K, V&gt;(key: &K, entries: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">Entry</a>&lt;K, V&gt;&gt;, start: u64, end: u64): u64 {
     <b>let</b> l = start;
     <b>let</b> r = end;
     <b>while</b> (l != r) {
         <b>let</b> mid = l + ((r - l) &gt;&gt; 1);
-        <b>let</b> comparison = <a href="../../aptos-stdlib/../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&entries.<a href="ordered_map.md#0x1_ordered_map_borrow">borrow</a>(mid).key, key);
+        <b>let</b> comparison = <a href="../../move-stdlib/doc/cmp.md#0x1_cmp_compare">cmp::compare</a>(&entries.<a href="ordered_map.md#0x1_ordered_map_borrow">borrow</a>(mid).key, key);
         <b>if</b> (comparison.is_lt()) {
             l = mid + 1;
         } <b>else</b> {
@@ -2027,7 +2027,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
 
 <dl>
 <dt>
-<code>entries: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;</code>
+<code>entries: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;</code>
 </dt>
 <dd>
  List of entries, sorted by key.
@@ -2126,7 +2126,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
 ### Function `new_from`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_new_from">new_from</a>&lt;K, V&gt;(keys: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;): <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_new_from">new_from</a>&lt;K, V&gt;(keys: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;): <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;
 </code></pre>
 
 
@@ -2136,7 +2136,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
 <b>pragma</b> verify = <b>false</b>;
 <b>aborts_if</b> [abstract] <b>exists</b> i in 0..len(keys), j in 0..len(keys) <b>where</b> i != j : keys[i] == keys[j];
 <b>aborts_if</b> [abstract] len(keys) != len(values);
-<b>ensures</b> [abstract] <b>forall</b> k: K {<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(result, k)} : <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_spec_contains">vector::spec_contains</a>(keys,k) &lt;==&gt; <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(result, k);
+<b>ensures</b> [abstract] <b>forall</b> k: K {<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(result, k)} : <a href="../../move-stdlib/doc/vector.md#0x1_vector_spec_contains">vector::spec_contains</a>(keys,k) &lt;==&gt; <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(result, k);
 <b>ensures</b> [abstract] <b>forall</b> i in 0..len(keys) : <a href="ordered_map.md#0x1_ordered_map_spec_get">spec_get</a>(result, keys[i]) == values[i];
 <b>ensures</b> [abstract] <a href="ordered_map.md#0x1_ordered_map_spec_len">spec_len</a>(result) == len(keys);
 </code></pre>
@@ -2196,7 +2196,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
 ### Function `upsert`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_upsert">upsert</a>&lt;K: drop, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: K, value: V): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_upsert">upsert</a>&lt;K: drop, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: K, value: V): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
 </code></pre>
 
 
@@ -2204,10 +2204,10 @@ Apply the function to a mutable reference of each key-value pair in the map.
 
 <pre><code><b>pragma</b> opaque;
 <b>pragma</b> verify = <b>false</b>;
-<b>ensures</b> [abstract] !<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), key) ==&gt; <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_none">option::is_none</a>(result);
+<b>ensures</b> [abstract] !<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), key) ==&gt; <a href="../../move-stdlib/doc/option.md#0x1_option_is_none">option::is_none</a>(result);
 <b>ensures</b> [abstract] <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, key);
 <b>ensures</b> [abstract] <a href="ordered_map.md#0x1_ordered_map_spec_get">spec_get</a>(self, key) == value;
-<b>ensures</b> [abstract] <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), key) ==&gt; ((<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(result)) && (<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result) == <a href="ordered_map.md#0x1_ordered_map_spec_get">spec_get</a>(<b>old</b>(
+<b>ensures</b> [abstract] <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), key) ==&gt; ((<a href="../../move-stdlib/doc/option.md#0x1_option_is_some">option::is_some</a>(result)) && (<a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result) == <a href="ordered_map.md#0x1_ordered_map_spec_get">spec_get</a>(<b>old</b>(
     self), key)));
 <b>ensures</b> [abstract] !<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), key) ==&gt; <a href="ordered_map.md#0x1_ordered_map_spec_len">spec_len</a>(<b>old</b>(self)) + 1 == <a href="ordered_map.md#0x1_ordered_map_spec_len">spec_len</a>(self);
 <b>ensures</b> [abstract] <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), key) ==&gt; <a href="ordered_map.md#0x1_ordered_map_spec_len">spec_len</a>(<b>old</b>(self)) == <a href="ordered_map.md#0x1_ordered_map_spec_len">spec_len</a>(self);
@@ -2245,7 +2245,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
 ### Function `remove_or_none`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_remove_or_none">remove_or_none</a>&lt;K: drop, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_remove_or_none">remove_or_none</a>&lt;K: drop, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
 </code></pre>
 
 
@@ -2254,11 +2254,11 @@ Apply the function to a mutable reference of each key-value pair in the map.
 <pre><code><b>pragma</b> opaque;
 <b>pragma</b> verify = <b>false</b>;
 <b>aborts_if</b> [abstract] <b>false</b>;
-<b>ensures</b> [abstract] <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), key) ==&gt; result == <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(<a href="ordered_map.md#0x1_ordered_map_spec_get">spec_get</a>(<b>old</b>(self), key));
-<b>ensures</b> [abstract] !<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), key) ==&gt; result == <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_spec_none">option::spec_none</a>();
+<b>ensures</b> [abstract] <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), key) ==&gt; result == <a href="../../move-stdlib/doc/option.md#0x1_option_spec_some">option::spec_some</a>(<a href="ordered_map.md#0x1_ordered_map_spec_get">spec_get</a>(<b>old</b>(self), key));
+<b>ensures</b> [abstract] !<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), key) ==&gt; result == <a href="../../move-stdlib/doc/option.md#0x1_option_spec_none">option::spec_none</a>();
 <b>ensures</b> [abstract] !<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, key);
-<b>ensures</b> [abstract] <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_spec_is_none">option::spec_is_none</a>(result) ==&gt; self == <b>old</b>(self);
-<b>ensures</b> [abstract] <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_spec_is_some">option::spec_is_some</a>(result) ==&gt; <a href="ordered_map.md#0x1_ordered_map_spec_len">spec_len</a>(<b>old</b>(self)) == <a href="ordered_map.md#0x1_ordered_map_spec_len">spec_len</a>(self) + 1;
+<b>ensures</b> [abstract] <a href="../../move-stdlib/doc/option.md#0x1_option_spec_is_none">option::spec_is_none</a>(result) ==&gt; self == <b>old</b>(self);
+<b>ensures</b> [abstract] <a href="../../move-stdlib/doc/option.md#0x1_option_spec_is_some">option::spec_is_some</a>(result) ==&gt; <a href="ordered_map.md#0x1_ordered_map_spec_len">spec_len</a>(<b>old</b>(self)) == <a href="ordered_map.md#0x1_ordered_map_spec_len">spec_len</a>(self) + 1;
 <b>ensures</b> [abstract] <b>forall</b> k: K <b>where</b> k != key: <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k) ==&gt; <a href="ordered_map.md#0x1_ordered_map_spec_get">spec_get</a>(self, k) == <a href="ordered_map.md#0x1_ordered_map_spec_get">spec_get</a>(<b>old</b>(self), k);
 <b>ensures</b> [abstract] <b>forall</b> k: K <b>where</b> k != key: <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(<b>old</b>(self), k) == <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k);
 </code></pre>
@@ -2318,7 +2318,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
 ### Function `get`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_get">get</a>&lt;K: <b>copy</b>, drop, store, V: <b>copy</b>, store&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_get">get</a>&lt;K: <b>copy</b>, drop, store, V: <b>copy</b>, store&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;V&gt;
 </code></pre>
 
 
@@ -2352,7 +2352,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
 ### Function `add_all`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_add_all">add_all</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_add_all">add_all</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
 </code></pre>
 
 
@@ -2369,7 +2369,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
 ### Function `upsert_all`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_upsert_all">upsert_all</a>&lt;K: drop, V: drop&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_upsert_all">upsert_all</a>&lt;K: drop, V: drop&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, keys: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, values: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
 </code></pre>
 
 
@@ -2420,7 +2420,7 @@ Apply the function to a mutable reference of each key-value pair in the map.
 ### Function `append_impl`
 
 
-<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_append_impl">append_impl</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, other: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;
+<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_append_impl">append_impl</a>&lt;K, V&gt;(self: &<b>mut</b> <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, other: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;
 </code></pre>
 
 
@@ -2530,7 +2530,7 @@ std::cmp::compare(result_1, k) == std::cmp::Ordering::Greater;
 ### Function `prev_key`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_prev_key">prev_key</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;K&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_prev_key">prev_key</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;K&gt;
 </code></pre>
 
 
@@ -2542,11 +2542,11 @@ std::cmp::compare(result_1, k) == std::cmp::Ordering::Greater;
 (<b>forall</b> k: K {<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k)} <b>where</b> <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k)
 && k != key: std::cmp::compare(key, k) == std::cmp::Ordering::Less);
 <b>ensures</b> [abstract] result.is_some() &lt;==&gt;
-    <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result)) &&
-    (std::cmp::compare(<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result), key) == std::cmp::Ordering::Less)
-    && (<b>forall</b> k: K {<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k), std::cmp::compare(<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result), k), std::cmp::compare(key, k)} <b>where</b> k != <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result): ((<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k) &&
+    <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, <a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result)) &&
+    (std::cmp::compare(<a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result), key) == std::cmp::Ordering::Less)
+    && (<b>forall</b> k: K {<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k), std::cmp::compare(<a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result), k), std::cmp::compare(key, k)} <b>where</b> k != <a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result): ((<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k) &&
     std::cmp::compare(k, key) == std::cmp::Ordering::Less)) ==&gt;
-    std::cmp::compare(<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result), k) == std::cmp::Ordering::Greater);
+    std::cmp::compare(<a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result), k) == std::cmp::Ordering::Greater);
 </code></pre>
 
 
@@ -2556,7 +2556,7 @@ std::cmp::compare(result_1, k) == std::cmp::Ordering::Greater;
 ### Function `next_key`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_next_key">next_key</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;K&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_next_key">next_key</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;, key: &K): <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;K&gt;
 </code></pre>
 
 
@@ -2568,11 +2568,11 @@ std::cmp::compare(result_1, k) == std::cmp::Ordering::Greater;
 (<b>forall</b> k: K {<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k)} <b>where</b> <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k) && k != key:
 std::cmp::compare(key, k) == std::cmp::Ordering::Greater);
 <b>ensures</b> [abstract] result.is_some() &lt;==&gt;
-    <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result)) &&
-    (std::cmp::compare(<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result), key) == std::cmp::Ordering::Greater)
-    && (<b>forall</b> k: K {<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k)} <b>where</b> k != <a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result): ((<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k) &&
+    <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, <a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result)) &&
+    (std::cmp::compare(<a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result), key) == std::cmp::Ordering::Greater)
+    && (<b>forall</b> k: K {<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k)} <b>where</b> k != <a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result): ((<a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k) &&
     std::cmp::compare(k, key) == std::cmp::Ordering::Greater)) ==&gt;
-    std::cmp::compare(<a href="../../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result), k) == std::cmp::Ordering::Less);
+    std::cmp::compare(<a href="../../move-stdlib/doc/option.md#0x1_option_borrow">option::borrow</a>(result), k) == std::cmp::Ordering::Less);
 </code></pre>
 
 
@@ -2853,7 +2853,7 @@ std::cmp::compare(key, k) == std::cmp::Ordering::Greater);
 ### Function `keys`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_keys">keys</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_keys">keys</a>&lt;K: <b>copy</b>, V&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;
 </code></pre>
 
 
@@ -2861,7 +2861,7 @@ std::cmp::compare(key, k) == std::cmp::Ordering::Greater);
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
 <b>pragma</b> opaque;
-<b>ensures</b> [abstract] <b>forall</b> k: K: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_spec_contains">vector::spec_contains</a>(result, k) &lt;==&gt; <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k);
+<b>ensures</b> [abstract] <b>forall</b> k: K: <a href="../../move-stdlib/doc/vector.md#0x1_vector_spec_contains">vector::spec_contains</a>(result, k) &lt;==&gt; <a href="ordered_map.md#0x1_ordered_map_spec_contains_key">spec_contains_key</a>(self, k);
 </code></pre>
 
 
@@ -2871,7 +2871,7 @@ std::cmp::compare(key, k) == std::cmp::Ordering::Greater);
 ### Function `values`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_values">values</a>&lt;K, V: <b>copy</b>&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_values">values</a>&lt;K, V: <b>copy</b>&gt;(self: &<a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;
 </code></pre>
 
 
@@ -2888,7 +2888,7 @@ std::cmp::compare(key, k) == std::cmp::Ordering::Greater);
 ### Function `to_vec_pair`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_to_vec_pair">to_vec_pair</a>&lt;K, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): (<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
+<pre><code><b>public</b> <b>fun</b> <a href="ordered_map.md#0x1_ordered_map_to_vec_pair">to_vec_pair</a>&lt;K, V&gt;(self: <a href="ordered_map.md#0x1_ordered_map_OrderedMap">ordered_map::OrderedMap</a>&lt;K, V&gt;): (<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;K&gt;, <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;V&gt;)
 </code></pre>
 
 
@@ -2905,7 +2905,7 @@ std::cmp::compare(key, k) == std::cmp::Ordering::Greater);
 ### Function `binary_search`
 
 
-<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_binary_search">binary_search</a>&lt;K, V&gt;(key: &K, entries: &<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;, start: u64, end: u64): u64
+<pre><code><b>fun</b> <a href="ordered_map.md#0x1_ordered_map_binary_search">binary_search</a>&lt;K, V&gt;(key: &K, entries: &<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="ordered_map.md#0x1_ordered_map_Entry">ordered_map::Entry</a>&lt;K, V&gt;&gt;, start: u64, end: u64): u64
 </code></pre>
 
 

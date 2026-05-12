@@ -3,7 +3,7 @@ module topo_token::token_transfers {
     use std::signer;
     use std::string::String;
     use std::error;
-    use aptos_std::table::{Self, Table};
+    use topo_std::table::{Self, Table};
     use topo_token::token::{Self, Token, TokenId};
     use topo_framework::account;
     use topo_framework::event::{Self, EventHandle};

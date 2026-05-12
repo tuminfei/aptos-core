@@ -60,7 +60,7 @@ impl ReleaseTarget {
     pub fn packages(self) -> Vec<(&'static str, Option<&'static str>, bool)> {
         let result = vec![
             ("move-stdlib", None, false),
-            ("aptos-stdlib", None, false),
+            ("topo-stdlib", None, false),
             (
                 "topo-framework",
                 Some("cached-packages/src/aptos_framework_sdk_builder.rs"),
@@ -76,7 +76,7 @@ impl ReleaseTarget {
                 Some("cached-packages/src/topo_token_objects_sdk_builder.rs"),
                 false,
             ),
-            ("aptos-trading", None, false),
+            ("topo-trading", None, false),
             ("aptos-experimental", None, true),
         ];
         // Currently we don't have experimental packages only included in particular targets.

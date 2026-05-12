@@ -716,7 +716,7 @@ module topo_framework::ordered_map {
 
     #[test_only]
     public fun print_map<K, V>(self: &OrderedMap<K, V>) {
-        aptos_std::debug::print(&self.entries);
+        topo_std::debug::print(&self.entries);
     }
 
     #[test_only]

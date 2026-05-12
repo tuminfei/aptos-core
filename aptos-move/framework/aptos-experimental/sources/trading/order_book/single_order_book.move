@@ -18,7 +18,7 @@ module aptos_experimental::single_order_book {
     use std::option::{Self, Option};
     use std::string::String;
     use topo_framework::big_ordered_map::BigOrderedMap;
-    use aptos_trading::order_book_types::{
+    use topo_trading::order_book_types::{
         OrderId,
         AccountClientOrderId,
         new_account_client_order_id,
@@ -26,14 +26,14 @@ module aptos_experimental::single_order_book {
         single_order_type,
         next_increasing_idx_type
     };
-    use aptos_trading::order_match_types::{
+    use topo_trading::order_match_types::{
         ActiveMatchedOrder,
         OrderMatchDetails,
         OrderMatch,
         new_order_match,
         new_single_order_match_details
     };
-    use aptos_trading::single_order_types::{
+    use topo_trading::single_order_types::{
         OrderWithState,
         new_single_order,
         new_order_with_state,
@@ -49,7 +49,7 @@ module aptos_experimental::single_order_book {
     use aptos_experimental::order_book_utils;
 
     #[test_only]
-    use aptos_trading::order_book_types::{
+    use topo_trading::order_book_types::{
         TriggerCondition,
         new_order_id_type,
         new_time_based_trigger_condition,
@@ -61,7 +61,7 @@ module aptos_experimental::single_order_book {
     #[test_only]
     use topo_framework::account;
     #[test_only]
-    use aptos_trading::single_order_types::{
+    use topo_trading::single_order_types::{
         create_simple_test_order_request,
         create_test_order_request,
         create_test_order_request_with_client_id
@@ -69,7 +69,7 @@ module aptos_experimental::single_order_book {
     #[test_only]
     use aptos_experimental::price_time_index::new_price_time_idx;
     #[test_only]
-    use aptos_trading::order_book_types::{TestMetadata, new_test_metadata};
+    use topo_trading::order_book_types::{TestMetadata, new_test_metadata};
 
     const EORDER_ALREADY_EXISTS: u64 = 1;
     const EPOST_ONLY_FILLED: u64 = 2;
@@ -326,7 +326,7 @@ module aptos_experimental::single_order_book {
                 self.orders.modify_and_return(
                     &order_id,
                     |order_with_state| {
-                        aptos_trading::single_order_types::set_remaining_size_from_state(
+                        topo_trading::single_order_types::set_remaining_size_from_state(
                             order_with_state, remaining_size
                         );
                         // order_with_state.set_remaining_size_from_state(remaining_size);
@@ -403,7 +403,7 @@ module aptos_experimental::single_order_book {
                         EORDER_CREATOR_MISMATCH
                     );
                     // TODO should we be asserting that remaining size is greater than 0?
-                    aptos_trading::single_order_types::decrease_remaining_size_from_state(
+                    topo_trading::single_order_types::decrease_remaining_size_from_state(
                         order_with_state, size_delta
                     );
                     // order_with_state.decrease_remaining_size(size_delta);

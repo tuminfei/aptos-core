@@ -2,7 +2,7 @@
 module aptos_experimental::market_mixed_order_tests {
     use std::option;
     use std::signer;
-    use aptos_trading::order_book_types::{good_till_cancelled};
+    use topo_trading::order_book_types::{good_till_cancelled};
     use aptos_experimental::market_bulk_order::cancel_bulk_order;
     use aptos_experimental::clearinghouse_test;
     use aptos_experimental::market_types;

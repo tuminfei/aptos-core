@@ -9,14 +9,14 @@ module aptos_experimental::order_book {
 
     use std::option::Option;
     use std::string::String;
-    use aptos_trading::order_book_types::{OrderId, TriggerCondition};
-    use aptos_trading::bulk_order_types::{
+    use topo_trading::order_book_types::{OrderId, TriggerCondition};
+    use topo_trading::bulk_order_types::{
         BulkOrder,
         BulkOrderRequest,
         BulkOrderPlaceResponse
     };
-    use aptos_trading::order_match_types::{OrderMatch, OrderMatchDetails};
-    use aptos_trading::single_order_types::{SingleOrder, SingleOrderRequest};
+    use topo_trading::order_match_types::{OrderMatch, OrderMatchDetails};
+    use topo_trading::single_order_types::{SingleOrder, SingleOrderRequest};
     use aptos_experimental::bulk_order_book::{BulkOrderBook, new_bulk_order_book};
     use aptos_experimental::single_order_book::{SingleOrderBook, new_single_order_book};
     use aptos_experimental::price_time_index::{PriceTimeIndex, new_price_time_idx};
@@ -61,7 +61,7 @@ module aptos_experimental::order_book {
 
     public(friend) fun get_single_order<M: store + copy + drop>(
         self: &OrderBook<M>, order_id: OrderId
-    ): Option<aptos_trading::single_order_types::OrderWithState<M>> {
+    ): Option<topo_trading::single_order_types::OrderWithState<M>> {
         self.single_order_book.get_order(order_id)
     }
 

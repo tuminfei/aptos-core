@@ -12,11 +12,11 @@
 module topo_framework::config_buffer {
     use std::error;
     use std::string::String;
-    use aptos_std::any;
-    use aptos_std::any::Any;
-    use aptos_std::simple_map;
-    use aptos_std::simple_map::SimpleMap;
-    use aptos_std::type_info;
+    use topo_std::any;
+    use topo_std::any::Any;
+    use topo_std::simple_map;
+    use topo_std::simple_map::SimpleMap;
+    use topo_std::type_info;
     use topo_framework::system_addresses;
 
     friend topo_framework::chunky_dkg_config;

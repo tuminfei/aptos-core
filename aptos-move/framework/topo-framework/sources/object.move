@@ -19,7 +19,7 @@ module topo_framework::object {
     use std::error;
     use std::hash;
     use std::signer;
-    use aptos_std::from_bcs;
+    use topo_std::from_bcs;
 
     use topo_framework::account;
     use topo_framework::transaction_context;

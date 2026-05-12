@@ -47,7 +47,7 @@ This module provides utils to add and emit new token events that are not in toke
     -  [Function `emit_token_maximum_mutate_event`](#@Specification_0_emit_token_maximum_mutate_event)
 
 
-<pre><code><b>use</b> <a href="../../topo-framework/../aptos-stdlib/doc/any.md#0x1_any">0x1::any</a>;
+<pre><code><b>use</b> <a href="../../topo-framework/../topo-stdlib/doc/any.md#0x1_any">0x1::any</a>;
 <b>use</b> <a href="../../topo-framework/doc/event.md#0x1_event">0x1::event</a>;
 <b>use</b> <a href="../../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
@@ -1056,7 +1056,7 @@ Event emitted when the token maximum is mutated
 
 </dd>
 <dt>
-<code>extension: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../aptos-stdlib/doc/any.md#0x1_any_Any">any::Any</a>&gt;</code>
+<code>extension: <a href="../../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;<a href="../../topo-framework/../topo-stdlib/doc/any.md#0x1_any_Any">any::Any</a>&gt;</code>
 </dt>
 <dd>
  This is for adding new events in future

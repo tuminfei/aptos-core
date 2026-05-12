@@ -23,7 +23,7 @@ authentication key used in step 1.
 4. In the liquidity pool module's <code>init_module</code> function, call <code>retrieve_resource_account_cap</code>
 which will retrieve the <code>signer_cap</code> and rotate the resource account's authentication key to
 <code>0x0</code>, effectively locking it off.
-5. When adding a new coin, the liquidity pool will load the capability and hence the <code><a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a></code> to
+5. When adding a new coin, the liquidity pool will load the capability and hence the <code><a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a></code> to
 register and store new <code>LiquidityCoin</code> resources.
 
 Code snippets to help:
@@ -97,8 +97,8 @@ module.resource_signer_cap = option::some(resource_signer_cap);
 <pre><code><b>use</b> <a href="account.md#0x1_account">0x1::account</a>;
 <b>use</b> <a href="code.md#0x1_code">0x1::code</a>;
 <b>use</b> <a href="coin.md#0x1_coin">0x1::coin</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map">0x1::simple_map</a>;
+<b>use</b> <a href="../../move-stdlib/doc/signer.md#0x1_signer">0x1::signer</a>;
+<b>use</b> <a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map">0x1::simple_map</a>;
 <b>use</b> <a href="topo_coin.md#0x1_topo_coin">0x1::topo_coin</a>;
 </code></pre>
 
@@ -121,7 +121,7 @@ module.resource_signer_cap = option::some(resource_signer_cap);
 
 <dl>
 <dt>
-<code>store: <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_SimpleMap">simple_map::SimpleMap</a>&lt;<b>address</b>, <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>&gt;</code>
+<code>store: <a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map_SimpleMap">simple_map::SimpleMap</a>&lt;<b>address</b>, <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>&gt;</code>
 </dt>
 <dd>
 
@@ -140,7 +140,7 @@ module.resource_signer_cap = option::some(resource_signer_cap);
 
 
 
-<pre><code><b>const</b> <a href="resource_account.md#0x1_resource_account_ZERO_AUTH_KEY">ZERO_AUTH_KEY</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+<pre><code><b>const</b> <a href="resource_account.md#0x1_resource_account_ZERO_AUTH_KEY">ZERO_AUTH_KEY</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt; = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 </code></pre>
 
 
@@ -174,7 +174,7 @@ the optional auth key if it is non-empty (though auth keys are 32-bytes)
 or the source accounts current auth key.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account">create_resource_account</a>(origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, optional_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account">create_resource_account</a>(origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, optional_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -184,7 +184,7 @@ or the source accounts current auth key.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account">create_resource_account</a>(
-    origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, optional_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+    origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, optional_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 ) <b>acquires</b> <a href="resource_account.md#0x1_resource_account_Container">Container</a> {
     <b>let</b> (resource, resource_signer_cap) =
         <a href="account.md#0x1_account_create_resource_account">account::create_resource_account</a>(origin, seed);
@@ -212,7 +212,7 @@ this function adds additional resource ownership to the resource account and sho
 used for resource accounts that need access to <code>Coin&lt;TopoCoin&gt;</code>.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account_and_fund">create_resource_account_and_fund</a>(origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, optional_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, fund_amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account_and_fund">create_resource_account_and_fund</a>(origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, optional_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, fund_amount: u64)
 </code></pre>
 
 
@@ -222,15 +222,15 @@ used for resource accounts that need access to <code>Coin&lt;TopoCoin&gt;</code>
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account_and_fund">create_resource_account_and_fund</a>(
-    origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    seed: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    optional_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    seed: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    optional_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
     fund_amount: u64
 ) <b>acquires</b> <a href="resource_account.md#0x1_resource_account_Container">Container</a> {
     <b>let</b> (resource, resource_signer_cap) =
         <a href="account.md#0x1_account_create_resource_account">account::create_resource_account</a>(origin, seed);
     <a href="coin.md#0x1_coin_register">coin::register</a>&lt;TopoCoin&gt;(&resource);
-    <a href="coin.md#0x1_coin_transfer">coin::transfer</a>&lt;TopoCoin&gt;(origin, <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&resource), fund_amount);
+    <a href="coin.md#0x1_coin_transfer">coin::transfer</a>&lt;TopoCoin&gt;(origin, <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&resource), fund_amount);
     <a href="resource_account.md#0x1_resource_account_rotate_account_authentication_key_and_store_capability">rotate_account_authentication_key_and_store_capability</a>(
         origin,
         resource,
@@ -252,7 +252,7 @@ Creates a new resource account, publishes the package under this account transac
 this account and leaves the signer cap readily available for pickup.
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account_and_publish_package">create_resource_account_and_publish_package</a>(origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_serialized: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="code.md#0x1_code">code</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account_and_publish_package">create_resource_account_and_publish_package</a>(origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_serialized: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="code.md#0x1_code">code</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
 </code></pre>
 
 
@@ -262,10 +262,10 @@ this account and leaves the signer cap readily available for pickup.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account_and_publish_package">create_resource_account_and_publish_package</a>(
-    origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    seed: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    metadata_serialized: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
-    <a href="code.md#0x1_code">code</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;
+    origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    seed: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    metadata_serialized: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;,
+    <a href="code.md#0x1_code">code</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;
 ) <b>acquires</b> <a href="resource_account.md#0x1_resource_account_Container">Container</a> {
     <b>let</b> (resource, resource_signer_cap) =
         <a href="account.md#0x1_account_create_resource_account">account::create_resource_account</a>(origin, seed);
@@ -289,7 +289,7 @@ this account and leaves the signer cap readily available for pickup.
 
 
 
-<pre><code><b>fun</b> <a href="resource_account.md#0x1_resource_account_rotate_account_authentication_key_and_store_capability">rotate_account_authentication_key_and_store_capability</a>(origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, resource: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, resource_signer_cap: <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>, optional_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>fun</b> <a href="resource_account.md#0x1_resource_account_rotate_account_authentication_key_and_store_capability">rotate_account_authentication_key_and_store_capability</a>(origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, resource: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, resource_signer_cap: <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>, optional_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
@@ -299,18 +299,18 @@ this account and leaves the signer cap readily available for pickup.
 
 
 <pre><code><b>fun</b> <a href="resource_account.md#0x1_resource_account_rotate_account_authentication_key_and_store_capability">rotate_account_authentication_key_and_store_capability</a>(
-    origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
-    resource: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
+    resource: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>,
     resource_signer_cap: <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>,
-    optional_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
+    optional_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;
 ) <b>acquires</b> <a href="resource_account.md#0x1_resource_account_Container">Container</a> {
-    <b>let</b> origin_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin);
+    <b>let</b> origin_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin);
     <b>if</b> (!<b>exists</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(origin_addr)) {
-        <b>move_to</b>(origin, <a href="resource_account.md#0x1_resource_account_Container">Container</a> { store: <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_create">simple_map::create</a>() })
+        <b>move_to</b>(origin, <a href="resource_account.md#0x1_resource_account_Container">Container</a> { store: <a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map_create">simple_map::create</a>() })
     };
 
     <b>let</b> container = <b>borrow_global_mut</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(origin_addr);
-    <b>let</b> resource_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&resource);
+    <b>let</b> resource_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(&resource);
     container.store.add(resource_addr, resource_signer_cap);
 
     <b>let</b> auth_key =
@@ -336,7 +336,7 @@ account and rotate the account's auth key to 0x0 making the account inaccessible
 the SignerCapability.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="resource_account.md#0x1_resource_account_retrieve_resource_account_cap">retrieve_resource_account_cap</a>(resource: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, source_addr: <b>address</b>): <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>
+<pre><code><b>public</b> <b>fun</b> <a href="resource_account.md#0x1_resource_account_retrieve_resource_account_cap">retrieve_resource_account_cap</a>(resource: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, source_addr: <b>address</b>): <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>
 </code></pre>
 
 
@@ -346,19 +346,19 @@ the SignerCapability.
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="resource_account.md#0x1_resource_account_retrieve_resource_account_cap">retrieve_resource_account_cap</a>(
-    resource: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, source_addr: <b>address</b>
+    resource: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, source_addr: <b>address</b>
 ): <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a> <b>acquires</b> <a href="resource_account.md#0x1_resource_account_Container">Container</a> {
     <b>assert</b>!(
         <b>exists</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr),
-        <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="resource_account.md#0x1_resource_account_ECONTAINER_NOT_PUBLISHED">ECONTAINER_NOT_PUBLISHED</a>)
+        <a href="../../move-stdlib/doc/error.md#0x1_error_not_found">error::not_found</a>(<a href="resource_account.md#0x1_resource_account_ECONTAINER_NOT_PUBLISHED">ECONTAINER_NOT_PUBLISHED</a>)
     );
 
-    <b>let</b> resource_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(resource);
+    <b>let</b> resource_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(resource);
     <b>let</b> (resource_signer_cap, empty_container) = {
         <b>let</b> container = <b>borrow_global_mut</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr);
         <b>assert</b>!(
             container.store.contains_key(&resource_addr),
-            <a href="../../aptos-stdlib/../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="resource_account.md#0x1_resource_account_EUNAUTHORIZED_NOT_OWNER">EUNAUTHORIZED_NOT_OWNER</a>)
+            <a href="../../move-stdlib/doc/error.md#0x1_error_invalid_argument">error::invalid_argument</a>(<a href="resource_account.md#0x1_resource_account_EUNAUTHORIZED_NOT_OWNER">EUNAUTHORIZED_NOT_OWNER</a>)
         );
         <b>let</b> (_resource_addr, signer_cap) =
             container.store.remove(&resource_addr);
@@ -481,13 +481,13 @@ the SignerCapability.
 ### Function `create_resource_account`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account">create_resource_account</a>(origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, optional_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account">create_resource_account</a>(origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, optional_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
 
 
-<pre><code><b>let</b> source_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin);
+<pre><code><b>let</b> source_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin);
 <b>let</b> resource_addr = <a href="account.md#0x1_account_spec_create_resource_address">account::spec_create_resource_address</a>(source_addr, seed);
 <b>let</b> resource = <a href="create_signer.md#0x1_create_signer_spec_create_signer">create_signer::spec_create_signer</a>(resource_addr);
 <b>include</b> <a href="resource_account.md#0x1_resource_account_RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIfWithoutAccountLimit">RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIfWithoutAccountLimit</a>;
@@ -500,14 +500,14 @@ the SignerCapability.
 ### Function `create_resource_account_and_fund`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account_and_fund">create_resource_account_and_fund</a>(origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, optional_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, fund_amount: u64)
+<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account_and_fund">create_resource_account_and_fund</a>(origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, optional_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, fund_amount: u64)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>let</b> source_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin);
+<b>let</b> source_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin);
 <b>let</b> resource_addr = <a href="account.md#0x1_account_spec_create_resource_address">account::spec_create_resource_address</a>(source_addr, seed);
 <b>let</b> coin_store_resource = <b>global</b>&lt;<a href="coin.md#0x1_coin_CoinStore">coin::CoinStore</a>&lt;TopoCoin&gt;&gt;(resource_addr);
 <b>include</b> <a href="topo_account.md#0x1_topo_account_WithdrawAbortsIf">topo_account::WithdrawAbortsIf</a>&lt;TopoCoin&gt;{from: origin, amount: fund_amount};
@@ -524,14 +524,14 @@ the SignerCapability.
 ### Function `create_resource_account_and_publish_package`
 
 
-<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account_and_publish_package">create_resource_account_and_publish_package</a>(origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_serialized: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="code.md#0x1_code">code</a>: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
+<pre><code><b>public</b> entry <b>fun</b> <a href="resource_account.md#0x1_resource_account_create_resource_account_and_publish_package">create_resource_account_and_publish_package</a>(origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, seed: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, metadata_serialized: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;, <a href="code.md#0x1_code">code</a>: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;&gt;)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> verify = <b>false</b>;
-<b>let</b> source_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin);
+<b>let</b> source_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin);
 <b>let</b> resource_addr = <a href="account.md#0x1_account_spec_create_resource_address">account::spec_create_resource_address</a>(source_addr, seed);
 <b>let</b> optional_auth_key = <a href="resource_account.md#0x1_resource_account_ZERO_AUTH_KEY">ZERO_AUTH_KEY</a>;
 <b>include</b> <a href="resource_account.md#0x1_resource_account_RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIfWithoutAccountLimit">RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIfWithoutAccountLimit</a>;
@@ -544,20 +544,20 @@ the SignerCapability.
 ### Function `rotate_account_authentication_key_and_store_capability`
 
 
-<pre><code><b>fun</b> <a href="resource_account.md#0x1_resource_account_rotate_account_authentication_key_and_store_capability">rotate_account_authentication_key_and_store_capability</a>(origin: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, resource: <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, resource_signer_cap: <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>, optional_auth_key: <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
+<pre><code><b>fun</b> <a href="resource_account.md#0x1_resource_account_rotate_account_authentication_key_and_store_capability">rotate_account_authentication_key_and_store_capability</a>(origin: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, resource: <a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, resource_signer_cap: <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>, optional_auth_key: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u8&gt;)
 </code></pre>
 
 
 
 
 <pre><code><b>pragma</b> aborts_if_is_partial;
-<b>let</b> resource_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(resource);
+<b>let</b> resource_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(resource);
 // This enforces <a id="high-level-req-1" href="#high-level-req">high-level requirement 1</a>:
 <b>include</b> <a href="resource_account.md#0x1_resource_account_RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIf">RotateAccountAuthenticationKeyAndStoreCapabilityAbortsIf</a>;
 // This enforces <a id="high-level-req-2" href="#high-level-req">high-level requirement 2</a>:
-<b>ensures</b> <b>exists</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin));
+<b>ensures</b> <b>exists</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(<a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(origin));
 // This enforces <a id="high-level-req-5" href="#high-level-req">high-level requirement 5</a>:
-<b>ensures</b> <a href="../../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(optional_auth_key) != 0 ==&gt;
+<b>ensures</b> <a href="../../move-stdlib/doc/vector.md#0x1_vector_length">vector::length</a>(optional_auth_key) != 0 ==&gt;
     <b>global</b>&lt;topo_framework::account::Account&gt;(resource_addr).authentication_key == optional_auth_key;
 </code></pre>
 
@@ -568,7 +568,7 @@ the SignerCapability.
 ### Function `retrieve_resource_account_cap`
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="resource_account.md#0x1_resource_account_retrieve_resource_account_cap">retrieve_resource_account_cap</a>(resource: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, source_addr: <b>address</b>): <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>
+<pre><code><b>public</b> <b>fun</b> <a href="resource_account.md#0x1_resource_account_retrieve_resource_account_cap">retrieve_resource_account_cap</a>(resource: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, source_addr: <b>address</b>): <a href="account.md#0x1_account_SignerCapability">account::SignerCapability</a>
 </code></pre>
 
 
@@ -577,15 +577,15 @@ the SignerCapability.
 <pre><code><b>pragma</b> aborts_if_is_partial;
 // This enforces <a id="high-level-req-6" href="#high-level-req">high-level requirement 6</a>:
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr);
-<b>let</b> resource_addr = <a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(resource);
+<b>let</b> resource_addr = <a href="../../move-stdlib/doc/signer.md#0x1_signer_address_of">signer::address_of</a>(resource);
 <b>let</b> container = <b>global</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr);
 // This enforces <a id="high-level-req-7" href="#high-level-req">high-level requirement 7</a>:
-<b>aborts_if</b> !<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(container.store, resource_addr);
+<b>aborts_if</b> !<a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(container.store, resource_addr);
 <b>aborts_if</b> !<b>exists</b>&lt;<a href="account.md#0x1_account_Account">account::Account</a>&gt;(resource_addr);
 // This enforces <a id="high-level-req-8" href="#high-level-req">high-level requirement 8</a>:
-<b>ensures</b> <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(<b>old</b>(<b>global</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr)).store, resource_addr) &&
-    <a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_len">simple_map::spec_len</a>(<b>old</b>(<b>global</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr)).store) == 1 ==&gt; !<b>exists</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr);
-<b>ensures</b> <b>exists</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr) ==&gt; !<a href="../../aptos-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(<b>global</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr).store, resource_addr);
+<b>ensures</b> <a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(<b>old</b>(<b>global</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr)).store, resource_addr) &&
+    <a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map_spec_len">simple_map::spec_len</a>(<b>old</b>(<b>global</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr)).store) == 1 ==&gt; !<b>exists</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr);
+<b>ensures</b> <b>exists</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr) ==&gt; !<a href="../../topo-stdlib/doc/simple_map.md#0x1_simple_map_spec_contains_key">simple_map::spec_contains_key</a>(<b>global</b>&lt;<a href="resource_account.md#0x1_resource_account_Container">Container</a>&gt;(source_addr).store, resource_addr);
 </code></pre>
 
 

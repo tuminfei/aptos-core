@@ -27,8 +27,8 @@ Deprecated module
 
 <pre><code><b>use</b> <a href="../../topo-framework/doc/event.md#0x1_event">0x1::event</a>;
 <b>use</b> <a href="../../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
-<b>use</b> <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table">0x1::table</a>;
-<b>use</b> <a href="../../topo-framework/../aptos-stdlib/doc/type_info.md#0x1_type_info">0x1::type_info</a>;
+<b>use</b> <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table">0x1::table</a>;
+<b>use</b> <a href="../../topo-framework/../topo-stdlib/doc/type_info.md#0x1_type_info">0x1::type_info</a>;
 <b>use</b> <a href="token.md#0x3_token">0x3::token</a>;
 </code></pre>
 
@@ -86,7 +86,7 @@ The listing of all tokens for swapping stored at token owner's account
 
 <dl>
 <dt>
-<code>listings: <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="token.md#0x3_token_TokenId">token::TokenId</a>, <a href="token_coin_swap.md#0x3_token_coin_swap_TokenCoinSwap">token_coin_swap::TokenCoinSwap</a>&lt;CoinType&gt;&gt;</code>
+<code>listings: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="token.md#0x3_token_TokenId">token::TokenId</a>, <a href="token_coin_swap.md#0x3_token_coin_swap_TokenCoinSwap">token_coin_swap::TokenCoinSwap</a>&lt;CoinType&gt;&gt;</code>
 </dt>
 <dd>
 
@@ -160,7 +160,7 @@ TokenStoreEscrow holds a map of token id to their tokenEscrow
 
 <dl>
 <dt>
-<code>token_escrows: <a href="../../topo-framework/../aptos-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="token.md#0x3_token_TokenId">token::TokenId</a>, <a href="token_coin_swap.md#0x3_token_coin_swap_TokenEscrow">token_coin_swap::TokenEscrow</a>&gt;</code>
+<code>token_escrows: <a href="../../topo-framework/../topo-stdlib/doc/table.md#0x1_table_Table">table::Table</a>&lt;<a href="token.md#0x3_token_TokenId">token::TokenId</a>, <a href="token_coin_swap.md#0x3_token_coin_swap_TokenEscrow">token_coin_swap::TokenEscrow</a>&gt;</code>
 </dt>
 <dd>
 
@@ -211,7 +211,7 @@ TokenStoreEscrow holds a map of token id to their tokenEscrow
 
 </dd>
 <dt>
-<code>coin_type_info: <a href="../../topo-framework/../aptos-stdlib/doc/type_info.md#0x1_type_info_TypeInfo">type_info::TypeInfo</a></code>
+<code>coin_type_info: <a href="../../topo-framework/../topo-stdlib/doc/type_info.md#0x1_type_info_TypeInfo">type_info::TypeInfo</a></code>
 </dt>
 <dd>
 
@@ -262,7 +262,7 @@ TokenStoreEscrow holds a map of token id to their tokenEscrow
 
 </dd>
 <dt>
-<code>coin_type_info: <a href="../../topo-framework/../aptos-stdlib/doc/type_info.md#0x1_type_info_TypeInfo">type_info::TypeInfo</a></code>
+<code>coin_type_info: <a href="../../topo-framework/../topo-stdlib/doc/type_info.md#0x1_type_info_TypeInfo">type_info::TypeInfo</a></code>
 </dt>
 <dd>
 

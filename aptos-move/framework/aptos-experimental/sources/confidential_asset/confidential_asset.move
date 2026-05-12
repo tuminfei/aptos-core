@@ -6,9 +6,9 @@ module aptos_experimental::confidential_asset {
     use std::option::Option;
     use std::signer;
     use std::vector;
-    use aptos_std::ristretto255::Self;
-    use aptos_std::ristretto255_bulletproofs::Self as bulletproofs;
-    use aptos_std::string_utils;
+    use topo_std::ristretto255::Self;
+    use topo_std::ristretto255_bulletproofs::Self as bulletproofs;
+    use topo_std::string_utils;
     use topo_framework::chain_id;
     use topo_framework::coin;
     use topo_framework::event;
@@ -29,7 +29,7 @@ module aptos_experimental::confidential_asset {
     use aptos_experimental::ristretto255_twisted_elgamal as twisted_elgamal;
 
     #[test_only]
-    use aptos_std::ristretto255::Scalar;
+    use topo_std::ristretto255::Scalar;
 
     //
     // Errors

@@ -67,7 +67,7 @@ module topo_framework::resource_account {
     use topo_framework::account;
     use topo_framework::topo_coin::TopoCoin;
     use topo_framework::coin;
-    use aptos_std::simple_map::{Self, SimpleMap};
+    use topo_std::simple_map::{Self, SimpleMap};
 
     /// Container resource not found in account
     const ECONTAINER_NOT_PUBLISHED: u64 = 1;
@@ -214,7 +214,7 @@ module topo_framework::resource_account {
     }
 
     #[test(user = @0x1111)]
-    #[expected_failure(abort_code = 0x10002, location = aptos_std::simple_map)]
+    #[expected_failure(abort_code = 0x10002, location = topo_std::simple_map)]
     public entry fun test_create_account_and_retrieve_cap_resource_address_does_not_exist(
         user: signer
     ) acquires Container {

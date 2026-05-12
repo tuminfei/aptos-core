@@ -116,7 +116,7 @@ module topo_framework::topo_account {
             spec {
                 // TODO(fa_migration)
                 // assert coin::spec_is_account_registered<TopoCoin>(to);
-                // assume aptos_std::type_info::type_of<CoinType>() == aptos_std::type_info::type_of<TopoCoin>() ==>
+                // assume topo_std::type_info::type_of<CoinType>() == topo_std::type_info::type_of<TopoCoin>() ==>
                 //     coin::spec_is_account_registered<CoinType>(to);
             };
         };
@@ -300,7 +300,7 @@ module topo_framework::topo_account {
     // tests
 
     #[test_only]
-    use aptos_std::from_bcs;
+    use topo_std::from_bcs;
     #[test_only]
     use std::string::utf8;
     #[test_only]

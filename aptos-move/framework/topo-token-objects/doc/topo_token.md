@@ -61,7 +61,7 @@ The key features are:
 
 
 <pre><code><b>use</b> <a href="../../move-stdlib/doc/bcs.md#0x1_bcs">0x1::bcs</a>;
-<b>use</b> <a href="../../topo-framework/../aptos-stdlib/doc/from_bcs.md#0x1_from_bcs">0x1::from_bcs</a>;
+<b>use</b> <a href="../../topo-framework/../topo-stdlib/doc/from_bcs.md#0x1_from_bcs">0x1::from_bcs</a>;
 <b>use</b> <a href="../../move-stdlib/doc/hash.md#0x1_hash">0x1::hash</a>;
 <b>use</b> <a href="../../topo-framework/doc/object.md#0x1_object">0x1::object</a>;
 <b>use</b> <a href="../../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;

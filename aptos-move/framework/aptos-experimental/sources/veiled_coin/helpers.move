@@ -2,8 +2,8 @@ module aptos_experimental::helpers {
     use std::vector;
     use std::error;
 
-    use aptos_std::ristretto255_elgamal as elgamal;
-    use aptos_std::ristretto255;
+    use topo_std::ristretto255_elgamal as elgamal;
+    use topo_std::ristretto255;
 
     /// Tried cutting out more elements than are in the vector via `cut_vector`.
     const EVECTOR_CUT_TOO_LARGE: u64 = 1;

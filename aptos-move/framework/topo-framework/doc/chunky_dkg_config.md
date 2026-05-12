@@ -19,9 +19,9 @@ Structs and functions for on-chain chunky DKG configurations.
 
 
 <pre><code><b>use</b> <a href="config_buffer.md#0x1_config_buffer">0x1::config_buffer</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/copyable_any.md#0x1_copyable_any">0x1::copyable_any</a>;
-<b>use</b> <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64">0x1::fixed_point64</a>;
-<b>use</b> <a href="../../aptos-stdlib/../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
+<b>use</b> <a href="../../topo-stdlib/doc/copyable_any.md#0x1_copyable_any">0x1::copyable_any</a>;
+<b>use</b> <a href="../../topo-stdlib/doc/fixed_point64.md#0x1_fixed_point64">0x1::fixed_point64</a>;
+<b>use</b> <a href="../../move-stdlib/doc/string.md#0x1_string">0x1::string</a>;
 <b>use</b> <a href="system_addresses.md#0x1_system_addresses">0x1::system_addresses</a>;
 </code></pre>
 
@@ -45,7 +45,7 @@ The configuration of the on-chain chunky DKG feature.
 
 <dl>
 <dt>
-<code>variant: <a href="../../aptos-stdlib/doc/copyable_any.md#0x1_copyable_any_Any">copyable_any::Any</a></code>
+<code>variant: <a href="../../topo-stdlib/doc/copyable_any.md#0x1_copyable_any_Any">copyable_any::Any</a></code>
 </dt>
 <dd>
  A config variant packed as an <code>Any</code>.
@@ -104,13 +104,13 @@ A chunky DKG config variant indicating the feature is enabled.
 
 <dl>
 <dt>
-<code>secrecy_threshold: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a></code>
+<code>secrecy_threshold: <a href="../../topo-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a></code>
 </dt>
 <dd>
  Any validator subset should not be able to reconstruct randomness if <code>subset_power / total_power &lt;= secrecy_threshold</code>,
 </dd>
 <dt>
-<code>reconstruction_threshold: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a></code>
+<code>reconstruction_threshold: <a href="../../topo-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a></code>
 </dt>
 <dd>
  Any validator subset should be able to reconstruct randomness if <code>subset_power / total_power &gt; reconstruction_threshold</code>.
@@ -127,7 +127,7 @@ A chunky DKG config variant indicating the feature is enabled.
 Initialize the configuration. Used in genesis or governance.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_initialize">initialize</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, config: <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">chunky_dkg_config::ChunkyDKGConfig</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_initialize">initialize</a>(framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, config: <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">chunky_dkg_config::ChunkyDKGConfig</a>)
 </code></pre>
 
 
@@ -136,7 +136,7 @@ Initialize the configuration. Used in genesis or governance.
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_initialize">initialize</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, config: <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a>) {
+<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_initialize">initialize</a>(framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, config: <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a>) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
     <b>if</b> (!<b>exists</b>&lt;<a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a>&gt;(@topo_framework)) {
         <b>move_to</b>(framework, config)
@@ -155,7 +155,7 @@ Initialize the configuration. Used in genesis or governance.
 This can be called by on-chain governance to update on-chain consensus configs for the next epoch.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_set_for_next_epoch">set_for_next_epoch</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_config: <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">chunky_dkg_config::ChunkyDKGConfig</a>)
+<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_set_for_next_epoch">set_for_next_epoch</a>(framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_config: <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">chunky_dkg_config::ChunkyDKGConfig</a>)
 </code></pre>
 
 
@@ -165,7 +165,7 @@ This can be called by on-chain governance to update on-chain consensus configs f
 
 
 <pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_set_for_next_epoch">set_for_next_epoch</a>(
-    framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_config: <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a>
+    framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, new_config: <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a>
 ) {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
     <a href="config_buffer.md#0x1_config_buffer_upsert">config_buffer::upsert</a>(new_config);
@@ -183,7 +183,7 @@ This can be called by on-chain governance to update on-chain consensus configs f
 Only used in reconfigurations to apply the pending <code><a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a></code>, if there is any.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_on_new_epoch">on_new_epoch</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_on_new_epoch">on_new_epoch</a>(framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>)
 </code></pre>
 
 
@@ -192,7 +192,7 @@ Only used in reconfigurations to apply the pending <code><a href="chunky_dkg_con
 <summary>Implementation</summary>
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_on_new_epoch">on_new_epoch</a>(framework: &<a href="../../aptos-stdlib/../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a> {
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_on_new_epoch">on_new_epoch</a>(framework: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>) <b>acquires</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a> {
     <a href="system_addresses.md#0x1_system_addresses_assert_aptos_framework">system_addresses::assert_aptos_framework</a>(framework);
     <b>if</b> (<a href="config_buffer.md#0x1_config_buffer_does_exist">config_buffer::does_exist</a>&lt;<a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a>&gt;()) {
         <b>let</b> new_config = <a href="config_buffer.md#0x1_config_buffer_extract_v2">config_buffer::extract_v2</a>&lt;<a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a>&gt;();
@@ -259,7 +259,7 @@ Create a <code><a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ConfigOff">Co
 
 <pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_new_off">new_off</a>(): <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a> {
     <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a> {
-        variant: <a href="../../aptos-stdlib/doc/copyable_any.md#0x1_copyable_any_pack">copyable_any::pack</a>(<a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ConfigOff">ConfigOff</a> {})
+        variant: <a href="../../topo-stdlib/doc/copyable_any.md#0x1_copyable_any_pack">copyable_any::pack</a>(<a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ConfigOff">ConfigOff</a> {})
     }
 }
 </code></pre>
@@ -275,7 +275,7 @@ Create a <code><a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ConfigOff">Co
 Create a <code><a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ConfigV1">ConfigV1</a></code> variant.
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_new_v1">new_v1</a>(secrecy_threshold: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, reconstruction_threshold: <a href="../../aptos-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>): <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">chunky_dkg_config::ChunkyDKGConfig</a>
+<pre><code><b>public</b> <b>fun</b> <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_new_v1">new_v1</a>(secrecy_threshold: <a href="../../topo-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>, reconstruction_threshold: <a href="../../topo-stdlib/doc/fixed_point64.md#0x1_fixed_point64_FixedPoint64">fixed_point64::FixedPoint64</a>): <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">chunky_dkg_config::ChunkyDKGConfig</a>
 </code></pre>
 
 
@@ -288,7 +288,7 @@ Create a <code><a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ConfigV1">Con
     secrecy_threshold: FixedPoint64, reconstruction_threshold: FixedPoint64
 ): <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a> {
     <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ChunkyDKGConfig">ChunkyDKGConfig</a> {
-        variant: <a href="../../aptos-stdlib/doc/copyable_any.md#0x1_copyable_any_pack">copyable_any::pack</a>(
+        variant: <a href="../../topo-stdlib/doc/copyable_any.md#0x1_copyable_any_pack">copyable_any::pack</a>(
             <a href="chunky_dkg_config.md#0x1_chunky_dkg_config_ConfigV1">ConfigV1</a> { secrecy_threshold, reconstruction_threshold }
         )
     }

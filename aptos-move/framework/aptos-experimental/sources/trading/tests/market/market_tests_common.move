@@ -5,7 +5,7 @@ module aptos_experimental::market_tests_common {
     use std::signer;
     use std::vector;
     use topo_framework::timestamp;
-    use aptos_trading::order_book_types::{
+    use topo_trading::order_book_types::{
         OrderId,
         good_till_cancelled,
         post_only,

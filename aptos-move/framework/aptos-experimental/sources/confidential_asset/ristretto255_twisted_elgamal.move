@@ -11,7 +11,7 @@
 /// and `r, r'` are random scalars.
 module aptos_experimental::ristretto255_twisted_elgamal {
     use std::option::Option;
-    use aptos_std::ristretto255::{Self, CompressedRistretto, RistrettoPoint, Scalar};
+    use topo_std::ristretto255::{Self, CompressedRistretto, RistrettoPoint, Scalar};
 
     //
     // Structs

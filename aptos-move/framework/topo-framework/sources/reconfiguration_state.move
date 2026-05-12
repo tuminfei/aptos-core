@@ -3,8 +3,8 @@
 /// WARNING: `reconfiguration_state::initialize()` is required before `RECONFIGURE_WITH_DKG` can be enabled.
 module topo_framework::reconfiguration_state {
     use std::error;
-    use aptos_std::copyable_any;
-    use aptos_std::copyable_any::Any;
+    use topo_std::copyable_any;
+    use topo_std::copyable_any::Any;
     use topo_framework::system_addresses;
     use topo_framework::timestamp;
 

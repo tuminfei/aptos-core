@@ -122,7 +122,7 @@ spec topo_framework::permissioned_signer {
 
     // TODO(teng): add this back later
     // spec fun spec_check_permission_exists<PermKey: copy + drop + store>(s: signer, perm: PermKey): bool {
-    //     use aptos_std::type_info;
+    //     use topo_std::type_info;
     //     use std::bcs;
     //     let addr = spec_permission_address(s);
     //     let key = Any {

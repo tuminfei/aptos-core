@@ -112,10 +112,10 @@ An order is considered valid if:
     -  [Example](#@Example_19)
 
 
-<pre><code><b>use</b> <a href="../../aptos-trading/../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map">0x1::big_ordered_map</a>;
-<b>use</b> <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">0x1::event</a>;
-<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
-<b>use</b> <a href="../../aptos-trading/../topo-framework/doc/timestamp.md#0x1_timestamp">0x1::timestamp</a>;
+<pre><code><b>use</b> <a href="../../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map">0x1::big_ordered_map</a>;
+<b>use</b> <a href="../../topo-framework/doc/event.md#0x1_event">0x1::event</a>;
+<b>use</b> <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../topo-framework/doc/timestamp.md#0x1_timestamp">0x1::timestamp</a>;
 </code></pre>
 
 
@@ -126,7 +126,7 @@ An order is considered valid if:
 
 
 
-<pre><code>#[<a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a>]
+<pre><code>#[<a href="../../topo-framework/doc/event.md#0x1_event">event</a>]
 enum <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_KeepAliveUpdateEvent">KeepAliveUpdateEvent</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
@@ -158,7 +158,7 @@ enum <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_KeepAlive
 
 </dd>
 <dt>
-<code><a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b></code>
+<code><a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b></code>
 </dt>
 <dd>
 
@@ -190,7 +190,7 @@ enum <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_KeepAlive
 
 
 
-<pre><code>#[<a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a>]
+<pre><code>#[<a href="../../topo-framework/doc/event.md#0x1_event">event</a>]
 enum <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_KeepAliveDisabledEvent">KeepAliveDisabledEvent</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
@@ -222,7 +222,7 @@ enum <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_KeepAlive
 
 </dd>
 <dt>
-<code><a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b></code>
+<code><a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b></code>
 </dt>
 <dd>
 
@@ -248,7 +248,7 @@ enum <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_KeepAlive
 
 
 
-<pre><code>#[<a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event">event</a>]
+<pre><code>#[<a href="../../topo-framework/doc/event.md#0x1_event">event</a>]
 enum <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_MinKeepAliveTimeUpdatedEvent">MinKeepAliveTimeUpdatedEvent</a> <b>has</b> <b>copy</b>, drop, store
 </code></pre>
 
@@ -356,7 +356,7 @@ enum <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_MinKeepAl
 
 </dd>
 <dt>
-<code>state: <a href="../../aptos-trading/../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;<b>address</b>, <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_KeepAliveState">dead_mans_switch_tracker::KeepAliveState</a>&gt;</code>
+<code>state: <a href="../../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;<b>address</b>, <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_KeepAliveState">dead_mans_switch_tracker::KeepAliveState</a>&gt;</code>
 </dt>
 <dd>
 
@@ -458,7 +458,7 @@ let tracker = new_dead_mans_switch_tracker(60); // 60 second minimum
 ) {
     <b>let</b> old_min_keep_alive_time_secs = tracker.min_keep_alive_time_secs;
     tracker.min_keep_alive_time_secs = min_keep_alive_time_secs;
-    <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
+    <a href="../../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
         MinKeepAliveTimeUpdatedEvent::V1 {
             parent,
             market,
@@ -489,7 +489,7 @@ An order is valid if:
 ### Parameters
 
 - <code>tracker</code>: Reference to the dead man's switch tracker
-- <code><a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a></code>: The trader's address
+- <code><a href="../../topo-framework/doc/account.md#0x1_account">account</a></code>: The trader's address
 - <code>order_creation_time_secs</code>: When the order was created (in seconds since epoch)
 
 
@@ -528,7 +528,7 @@ if (!is_valid) {
 ```
 
 
-<pre><code><b>public</b> <b>fun</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_is_order_valid">is_order_valid</a>(tracker: &<a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">dead_mans_switch_tracker::DeadMansSwitchTracker</a>, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, order_creation_time_secs: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;): bool
+<pre><code><b>public</b> <b>fun</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_is_order_valid">is_order_valid</a>(tracker: &<a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">dead_mans_switch_tracker::DeadMansSwitchTracker</a>, <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, order_creation_time_secs: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;): bool
 </code></pre>
 
 
@@ -539,15 +539,15 @@ if (!is_valid) {
 
 <pre><code><b>public</b> <b>fun</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_is_order_valid">is_order_valid</a>(
     tracker: &<a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">DeadMansSwitchTracker</a>,
-    <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
+    <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
     order_creation_time_secs: Option&lt;u64&gt;
 ): bool {
-    <b>let</b> itr = tracker.state.internal_find(&<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>);
+    <b>let</b> itr = tracker.state.internal_find(&<a href="../../topo-framework/doc/account.md#0x1_account">account</a>);
     <b>if</b> (itr.iter_is_end(&tracker.state)) {
         // No keep-alive set, so all orders are valid
         <b>return</b> <b>true</b>;
     };
-    <b>let</b> current_time = aptos_std::timestamp::now_seconds();
+    <b>let</b> current_time = topo_framework::timestamp::now_seconds();
     <b>let</b> order_creation_time_secs =
         <b>if</b> (order_creation_time_secs.is_some()) {
             order_creation_time_secs.destroy_some()
@@ -573,7 +573,7 @@ if (!is_valid) {
 
 
 
-<pre><code><b>fun</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_disable_keep_alive">disable_keep_alive</a>(tracker: &<b>mut</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">dead_mans_switch_tracker::DeadMansSwitchTracker</a>, parent: <b>address</b>, market: <b>address</b>, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>)
+<pre><code><b>fun</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_disable_keep_alive">disable_keep_alive</a>(tracker: &<b>mut</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">dead_mans_switch_tracker::DeadMansSwitchTracker</a>, parent: <b>address</b>, market: <b>address</b>, <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>)
 </code></pre>
 
 
@@ -586,9 +586,9 @@ if (!is_valid) {
     tracker: &<b>mut</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">DeadMansSwitchTracker</a>,
     parent: <b>address</b>,
     market: <b>address</b>,
-    <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>
+    <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>
 ) {
-    <b>let</b> removed = tracker.state.remove_or_none(&<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>);
+    <b>let</b> removed = tracker.state.remove_or_none(&<a href="../../topo-framework/doc/account.md#0x1_account">account</a>);
     <b>let</b> was_registered = removed.is_some();
     <b>if</b> (was_registered) {
         <b>let</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_KeepAliveState">KeepAliveState</a> { session_start_time_secs: _, expiration_time_secs: _ } =
@@ -596,8 +596,8 @@ if (!is_valid) {
     } <b>else</b> {
         removed.destroy_none();
     };
-    <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
-        KeepAliveDisabledEvent::V1 { parent, market, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>, was_registered }
+    <a href="../../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
+        KeepAliveDisabledEvent::V1 { parent, market, <a href="../../topo-framework/doc/account.md#0x1_account">account</a>, was_registered }
     );
 }
 </code></pre>
@@ -636,7 +636,7 @@ their orders from expiring. Behavior depends on the current state:
 ### Parameters
 
 - <code>tracker</code>: Mutable reference to the dead man's switch tracker
-- <code><a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a></code>: The trader's address
+- <code><a href="../../topo-framework/doc/account.md#0x1_account">account</a></code>: The trader's address
 - <code>timeout_seconds</code>: Duration in seconds until the session expires.
 Must be >= <code>min_keep_alive_time_secs</code> or 0 to disable.
 
@@ -676,7 +676,7 @@ update_keep_alive_state(&mut tracker, trader_addr, 0);
 ```
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_keep_alive">keep_alive</a>(tracker: &<b>mut</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">dead_mans_switch_tracker::DeadMansSwitchTracker</a>, parent: <b>address</b>, market: <b>address</b>, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, timeout_seconds: u64)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_keep_alive">keep_alive</a>(tracker: &<b>mut</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">dead_mans_switch_tracker::DeadMansSwitchTracker</a>, parent: <b>address</b>, market: <b>address</b>, <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, timeout_seconds: u64)
 </code></pre>
 
 
@@ -689,33 +689,33 @@ update_keep_alive_state(&mut tracker, trader_addr, 0);
     tracker: &<b>mut</b> <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_DeadMansSwitchTracker">DeadMansSwitchTracker</a>,
     parent: <b>address</b>,
     market: <b>address</b>,
-    <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
+    <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
     timeout_seconds: u64
 ) {
     <b>if</b> (timeout_seconds == 0) {
-        <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_disable_keep_alive">disable_keep_alive</a>(tracker, parent, market, <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>);
+        <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_disable_keep_alive">disable_keep_alive</a>(tracker, parent, market, <a href="../../topo-framework/doc/account.md#0x1_account">account</a>);
         <b>return</b>;
     };
     <b>assert</b>!(
         timeout_seconds &gt;= tracker.min_keep_alive_time_secs,
         <a href="dead_mans_switch_tracker.md#0x7_dead_mans_switch_tracker_E_KEEP_ALIVE_TIMEOUT_TOO_SHORT">E_KEEP_ALIVE_TIMEOUT_TOO_SHORT</a> // ERROR_KEEP_ALIVE_TIMEOUT_TOO_SHORT
     );
-    <b>let</b> current_time = aptos_std::timestamp::now_seconds();
+    <b>let</b> current_time = topo_framework::timestamp::now_seconds();
     <b>let</b> expiration_time = current_time + timeout_seconds;
-    <b>let</b> itr = tracker.state.internal_find(&<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>);
+    <b>let</b> itr = tracker.state.internal_find(&<a href="../../topo-framework/doc/account.md#0x1_account">account</a>);
     <b>if</b> (!itr.iter_is_end(&tracker.state)) {
         <b>let</b> state = itr.iter_borrow_mut(&<b>mut</b> tracker.state);
         <b>if</b> (current_time &gt; state.expiration_time_secs) {
-            // Start a new session - this means <a href="../../aptos-trading/../aptos-stdlib/doc/any.md#0x1_any">any</a> order placed before this time is invalidated
+            // Start a new session - this means <a href="../../topo-framework/../topo-stdlib/doc/any.md#0x1_any">any</a> order placed before this time is invalidated
             state.session_start_time_secs = current_time;
         };
         // Update existing session
         state.expiration_time_secs = expiration_time;
-        <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
+        <a href="../../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
             KeepAliveUpdateEvent::V1 {
                 parent,
                 market,
-                <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>,
+                <a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
                 session_start_time_secs: state.session_start_time_secs,
                 expiration_time_secs: state.expiration_time_secs
             }
@@ -725,12 +725,12 @@ update_keep_alive_state(&mut tracker, trader_addr, 0);
             session_start_time_secs: 0, // this means that all existing orders are valid
             expiration_time_secs: expiration_time
         };
-        tracker.state.add(<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>, new_state);
-        <a href="../../aptos-trading/../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
+        tracker.state.add(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>, new_state);
+        <a href="../../topo-framework/doc/event.md#0x1_event_emit">event::emit</a>(
             KeepAliveUpdateEvent::V1 {
                 parent,
                 market,
-                <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>,
+                <a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
                 session_start_time_secs: 0,
                 expiration_time_secs: expiration_time
             }

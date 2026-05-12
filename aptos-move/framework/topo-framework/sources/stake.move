@@ -51,9 +51,9 @@ module topo_framework::stake {
     use std::option::{Self, Option};
     use std::signer;
     use std::vector;
-    use aptos_std::bls12381;
-    use aptos_std::big_ordered_map::{Self, BigOrderedMap};
-    use aptos_std::simple_map::{Self, SimpleMap};
+    use topo_std::bls12381;
+    use topo_framework::big_ordered_map::{Self, BigOrderedMap};
+    use topo_std::simple_map::{Self, SimpleMap};
     use topo_framework::aggregator_v2::{Self, Aggregator};
     use topo_framework::topo_coin::TopoCoin;
     use topo_framework::account;
@@ -2393,7 +2393,7 @@ module topo_framework::stake {
 
     #[test_only]
     use topo_framework::topo_coin;
-    use aptos_std::bls12381::proof_of_possession_from_bytes;
+    use topo_std::bls12381::proof_of_possession_from_bytes;
     use topo_framework::reconfiguration_state;
     use topo_framework::validator_consensus_info;
     #[test_only]

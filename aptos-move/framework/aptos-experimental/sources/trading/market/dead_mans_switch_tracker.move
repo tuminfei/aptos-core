@@ -52,7 +52,7 @@ module aptos_experimental::dead_mans_switch_tracker {
     friend aptos_experimental::market_types;
     friend aptos_experimental::dead_mans_switch_operations;
     use std::option::Option;
-    use aptos_std::big_ordered_map::BigOrderedMap;
+    use topo_framework::big_ordered_map::BigOrderedMap;
     use topo_framework::event;
     use aptos_experimental::order_book_utils;
 
@@ -214,7 +214,7 @@ module aptos_experimental::dead_mans_switch_tracker {
             // No keep-alive set, so all orders are valid
             return true;
         };
-        let current_time = aptos_std::timestamp::now_seconds();
+        let current_time = topo_framework::timestamp::now_seconds();
         let order_creation_time_secs =
             if (order_creation_time_secs.is_some()) {
                 order_creation_time_secs.destroy_some()
@@ -307,7 +307,7 @@ module aptos_experimental::dead_mans_switch_tracker {
             timeout_seconds >= tracker.min_keep_alive_time_secs,
             E_KEEP_ALIVE_TIMEOUT_TOO_SHORT // ERROR_KEEP_ALIVE_TIMEOUT_TOO_SHORT
         );
-        let current_time = aptos_std::timestamp::now_seconds();
+        let current_time = topo_framework::timestamp::now_seconds();
         let expiration_time = current_time + timeout_seconds;
         let itr = tracker.state.internal_find(&account);
         if (!itr.iter_is_end(&tracker.state)) {

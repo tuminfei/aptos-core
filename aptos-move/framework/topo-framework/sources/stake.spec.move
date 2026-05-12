@@ -807,7 +807,7 @@ spec topo_framework::stake {
             if (epoch_rewards_rate.value == 0) { 0 }
             else {
                 let denominator_0 =
-                    aptos_std::fixed_point64::spec_divide_u128(
+                    topo_std::fixed_point64::spec_divide_u128(
                         staking_config::MAX_REWARDS_RATE, epoch_rewards_rate
                     );
                 let denominator =
@@ -817,7 +817,7 @@ spec topo_framework::stake {
                         denominator_0
                     };
                 let nominator =
-                    aptos_std::fixed_point64::spec_multiply_u128(
+                    topo_std::fixed_point64::spec_multiply_u128(
                         denominator, epoch_rewards_rate
                     );
                 nominator
@@ -834,7 +834,7 @@ spec topo_framework::stake {
             if (epoch_rewards_rate.value == 0) { 1 }
             else {
                 let denominator_0 =
-                    aptos_std::fixed_point64::spec_divide_u128(
+                    topo_std::fixed_point64::spec_divide_u128(
                         staking_config::MAX_REWARDS_RATE, epoch_rewards_rate
                     );
                 let denominator =

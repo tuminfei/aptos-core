@@ -89,7 +89,7 @@ fn move_token_prover_tests() {
 
 #[test]
 fn move_aptos_stdlib_prover_tests() {
-    run_prover_for_pkg("aptos-stdlib", 1, None);
+    run_prover_for_pkg("topo-stdlib", 1, None);
 }
 
 #[test]

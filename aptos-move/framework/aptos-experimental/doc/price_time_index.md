@@ -33,8 +33,8 @@ This is internal module, which cannot be used directly, use OrderBook instead.
 -  [Function `place_maker_order`](#0x7_price_time_index_place_maker_order)
 
 
-<pre><code><b>use</b> <a href="../../aptos-trading/../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map">0x1::big_ordered_map</a>;
-<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<pre><code><b>use</b> <a href="../../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map">0x1::big_ordered_map</a>;
+<b>use</b> <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
 <b>use</b> <a href="">0x5::order_book_types</a>;
 <b>use</b> <a href="">0x5::order_match_types</a>;
 </code></pre>
@@ -176,13 +176,13 @@ that is taken first, is the one inserted first, amongst those with same bid pric
 
 <dl>
 <dt>
-<code>buys: <a href="../../aptos-trading/../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;<a href="price_time_index.md#0x7_price_time_index_PriceDescTime">price_time_index::PriceDescTime</a>, <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>&gt;</code>
+<code>buys: <a href="../../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;<a href="price_time_index.md#0x7_price_time_index_PriceDescTime">price_time_index::PriceDescTime</a>, <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>&gt;</code>
 </dt>
 <dd>
 
 </dd>
 <dt>
-<code>sells: <a href="../../aptos-trading/../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;<a href="price_time_index.md#0x7_price_time_index_PriceAscTime">price_time_index::PriceAscTime</a>, <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>&gt;</code>
+<code>sells: <a href="../../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;<a href="price_time_index.md#0x7_price_time_index_PriceAscTime">price_time_index::PriceAscTime</a>, <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>&gt;</code>
 </dt>
 <dd>
 
@@ -309,7 +309,7 @@ Picks the best (i.e. highest) bid (i.e. buy) price from the active order book.
 Returns None if there are no buys
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_best_bid_price">best_bid_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_best_bid_price">best_bid_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -320,10 +320,10 @@ Returns None if there are no buys
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_best_bid_price">best_bid_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">PriceTimeIndex</a>): Option&lt;u64&gt; {
     <b>if</b> (self.buys.is_empty()) {
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
     } <b>else</b> {
         <b>let</b> (back_key, _) = self.buys.borrow_back();
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(back_key.price)
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(back_key.price)
     }
 }
 </code></pre>
@@ -340,7 +340,7 @@ Picks the best (i.e. lowest) ask (i.e. sell) price from the active order book.
 Returns None if there are no sells
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_best_ask_price">best_ask_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_best_ask_price">best_ask_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -351,10 +351,10 @@ Returns None if there are no sells
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_best_ask_price">best_ask_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">PriceTimeIndex</a>): Option&lt;u64&gt; {
     <b>if</b> (self.sells.is_empty()) {
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()
     } <b>else</b> {
         <b>let</b> (front_key, _) = self.sells.borrow_front();
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(front_key.price)
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(front_key.price)
     }
 }
 </code></pre>
@@ -371,7 +371,7 @@ Returns the mid price (i.e. the average of the highest bid (buy) price and the l
 there are o buys / sells, returns None.
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_get_mid_price">get_mid_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_get_mid_price">get_mid_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -382,14 +382,14 @@ there are o buys / sells, returns None.
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_get_mid_price">get_mid_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">PriceTimeIndex</a>): Option&lt;u64&gt; {
     <b>if</b> (self.sells.is_empty() || self.buys.is_empty()) {
-        <b>return</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>();
+        <b>return</b> <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>();
     };
 
     <b>let</b> (front_key, _) = self.sells.borrow_front();
     <b>let</b> best_ask = front_key.price;
     <b>let</b> (back_key, _) = self.buys.borrow_back();
     <b>let</b> best_bid = back_key.price;
-    <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>((best_bid + best_ask) / 2)
+    <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>((best_bid + best_ask) / 2)
 }
 </code></pre>
 
@@ -403,7 +403,7 @@ there are o buys / sells, returns None.
 
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_get_slippage_price">get_slippage_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>, is_bid: bool, slippage_bps: u64): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="price_time_index.md#0x7_price_time_index_get_slippage_price">get_slippage_price</a>(self: &<a href="price_time_index.md#0x7_price_time_index_PriceTimeIndex">price_time_index::PriceTimeIndex</a>, is_bid: bool, slippage_bps: u64): <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;
 </code></pre>
 
 
@@ -423,16 +423,16 @@ there are o buys / sells, returns None.
     };
     <b>let</b> mid_price = self.<a href="price_time_index.md#0x7_price_time_index_get_mid_price">get_mid_price</a>();
     <b>if</b> (mid_price.is_none()) {
-        <b>return</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>();
+        <b>return</b> <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>();
     };
     <b>let</b> mid_price = mid_price.destroy_some();
     <b>let</b> slippage = mul_div(
         mid_price, slippage_bps, <a href="price_time_index.md#0x7_price_time_index_get_slippage_pct_precision">get_slippage_pct_precision</a>() * 100
     );
     <b>if</b> (is_bid) {
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(mid_price + slippage)
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(mid_price + slippage)
     } <b>else</b> {
-        <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(mid_price - slippage)
+        <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(mid_price - slippage)
     }
 }
 </code></pre>
@@ -518,7 +518,7 @@ Check if the order is a taker order - i.e. if it can be immediately matched with
 
 
 
-<pre><code><b>fun</b> <a href="price_time_index.md#0x7_price_time_index_single_match_with_current_active_order">single_match_with_current_active_order</a>&lt;K: <b>copy</b>, drop, store&gt;(remaining_size: u64, cur_key: K, cur_value: <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>, orders: &<b>mut</b> <a href="../../aptos-trading/../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;K, <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>&gt;): <a href="_ActiveMatchedOrder">order_match_types::ActiveMatchedOrder</a>
+<pre><code><b>fun</b> <a href="price_time_index.md#0x7_price_time_index_single_match_with_current_active_order">single_match_with_current_active_order</a>&lt;K: <b>copy</b>, drop, store&gt;(remaining_size: u64, cur_key: K, cur_value: <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>, orders: &<b>mut</b> <a href="../../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;K, <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>&gt;): <a href="_ActiveMatchedOrder">order_match_types::ActiveMatchedOrder</a>
 </code></pre>
 
 
@@ -635,7 +635,7 @@ Check if the order is a taker order - i.e. if it can be immediately matched with
 
 
 
-<pre><code><b>fun</b> <a href="price_time_index.md#0x7_price_time_index_modify_order_data">modify_order_data</a>&lt;K: <b>copy</b>, drop, store&gt;(orders: &<b>mut</b> <a href="../../aptos-trading/../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;K, <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>&gt;, key: &K, modify_fn: |&<b>mut</b> <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>|)
+<pre><code><b>fun</b> <a href="price_time_index.md#0x7_price_time_index_modify_order_data">modify_order_data</a>&lt;K: <b>copy</b>, drop, store&gt;(orders: &<b>mut</b> <a href="../../topo-framework/doc/big_ordered_map.md#0x1_big_ordered_map_BigOrderedMap">big_ordered_map::BigOrderedMap</a>&lt;K, <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>&gt;, key: &K, modify_fn: |&<b>mut</b> <a href="price_time_index.md#0x7_price_time_index_OrderData">price_time_index::OrderData</a>|)
 </code></pre>
 
 

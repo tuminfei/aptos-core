@@ -28,9 +28,9 @@
     -  [Returns:](#@Returns:_11)
 
 
-<pre><code><b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
-<b>use</b> <a href="../../aptos-trading/../topo-framework/doc/timestamp.md#0x1_timestamp">0x1::timestamp</a>;
-<b>use</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
+<pre><code><b>use</b> <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option">0x1::option</a>;
+<b>use</b> <a href="../../topo-framework/doc/timestamp.md#0x1_timestamp">0x1::timestamp</a>;
+<b>use</b> <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">0x1::vector</a>;
 <b>use</b> <a href="">0x5::bulk_order_types</a>;
 <b>use</b> <a href="">0x5::order_book_types</a>;
 <b>use</b> <a href="">0x5::order_match_types</a>;
@@ -168,7 +168,7 @@ This limit prevents gas DoS scenarios when cancelling bulk orders.
 - If bid_prices or ask_prices exceeds MAX_BULK_ORDER_DEPTH_PER_SIDE (30) levels
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_new_bulk_order_request_with_sanitization">new_bulk_order_request_with_sanitization</a>&lt;M: <b>copy</b>, drop, store&gt;(<a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, sequence_number: u64, bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, metadata: M): <a href="_BulkOrderRequest">bulk_order_types::BulkOrderRequest</a>&lt;M&gt;
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_new_bulk_order_request_with_sanitization">new_bulk_order_request_with_sanitization</a>&lt;M: <b>copy</b>, drop, store&gt;(<a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>, sequence_number: u64, bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, metadata: M): <a href="_BulkOrderRequest">bulk_order_types::BulkOrderRequest</a>&lt;M&gt;
 </code></pre>
 
 
@@ -178,12 +178,12 @@ This limit prevents gas DoS scenarios when cancelling bulk orders.
 
 
 <pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_new_bulk_order_request_with_sanitization">new_bulk_order_request_with_sanitization</a>&lt;M: store + <b>copy</b> + drop&gt;(
-    <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
+    <a href="../../topo-framework/doc/account.md#0x1_account">account</a>: <b>address</b>,
     sequence_number: u64,
-    bid_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    bid_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    ask_prices: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
-    ask_sizes: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bid_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    bid_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    ask_prices: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
+    ask_sizes: <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;,
     metadata: M
 ): BulkOrderRequest&lt;M&gt; {
     // Sequence number 0 is reserved <b>to</b> avoid ambiguity in events
@@ -210,7 +210,7 @@ This limit prevents gas DoS scenarios when cancelling bulk orders.
         <b>assert</b>!(bid_prices[0] &lt; ask_prices[0], <a href="bulk_order_utils.md#0x7_bulk_order_utils_EPRICE_CROSSING">EPRICE_CROSSING</a>);
     };
     <a href="_new_bulk_order_request">bulk_order_types::new_bulk_order_request</a>(
-        <a href="../../aptos-trading/../topo-framework/doc/account.md#0x1_account">account</a>,
+        <a href="../../topo-framework/doc/account.md#0x1_account">account</a>,
         sequence_number,
         bid_prices,
         bid_sizes,
@@ -249,13 +249,13 @@ Creates a new bulk order with the specified parameters.
 
 A tuple containing:
 - <code>BulkOrder&lt;M&gt;</code>: The created bulk order with non-crossing levels
-- <code><a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled bid prices (levels that crossed the spread)
-- <code><a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled bid sizes corresponding to cancelled prices
-- <code><a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled ask prices (levels that crossed the spread)
-- <code><a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled ask sizes corresponding to cancelled prices
+- <code><a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled bid prices (levels that crossed the spread)
+- <code><a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled bid sizes corresponding to cancelled prices
+- <code><a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled ask prices (levels that crossed the spread)
+- <code><a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;</code>: Cancelled ask sizes corresponding to cancelled prices
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_new_bulk_order_with_sanitization">new_bulk_order_with_sanitization</a>&lt;M: <b>copy</b>, drop, store&gt;(order_id: <a href="_OrderId">order_book_types::OrderId</a>, unique_priority_idx: <a href="_IncreasingIdx">order_book_types::IncreasingIdx</a>, order_req: <a href="_BulkOrderRequest">bulk_order_types::BulkOrderRequest</a>&lt;M&gt;, best_bid_price: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, best_ask_price: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;): (<a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_new_bulk_order_with_sanitization">new_bulk_order_with_sanitization</a>&lt;M: <b>copy</b>, drop, store&gt;(order_id: <a href="_OrderId">order_book_types::OrderId</a>, unique_priority_idx: <a href="_IncreasingIdx">order_book_types::IncreasingIdx</a>, order_req: <a href="_BulkOrderRequest">bulk_order_types::BulkOrderRequest</a>&lt;M&gt;, best_bid_price: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, best_ask_price: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;): (<a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -270,8 +270,8 @@ A tuple containing:
     order_req: BulkOrderRequest&lt;M&gt;,
     best_bid_price: Option&lt;u64&gt;,
     best_ask_price: Option&lt;u64&gt;
-): (BulkOrder&lt;M&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;) {
-    <b>let</b> creation_time_micros = <a href="../../aptos-trading/../topo-framework/doc/timestamp.md#0x1_timestamp_now_microseconds">timestamp::now_microseconds</a>();
+): (BulkOrder&lt;M&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;) {
+    <b>let</b> creation_time_micros = <a href="../../topo-framework/doc/timestamp.md#0x1_timestamp_now_microseconds">timestamp::now_microseconds</a>();
     <b>let</b> bid_price_crossing_idx =
         <a href="bulk_order_utils.md#0x7_bulk_order_utils_discard_price_crossing_levels">discard_price_crossing_levels</a>(
             &order_req.get_all_prices(<b>true</b>), best_ask_price, <b>true</b>
@@ -294,7 +294,7 @@ A tuple containing:
                 );
             (cancelled_bid_prices, cancelled_bid_sizes)
         } <b>else</b> {
-            (<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;())
+            (<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;())
         };
     <b>let</b> (cancelled_ask_prices, cancelled_ask_sizes) =
         <b>if</b> (ask_price_crossing_idx &gt; 0) {
@@ -308,7 +308,7 @@ A tuple containing:
                 );
             (cancelled_ask_prices, cancelled_ask_sizes)
         } <b>else</b> {
-            (<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;())
+            (<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;(), <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>&lt;u64&gt;())
         };
     <b>let</b> bulk_order =
         <a href="_new_bulk_order">bulk_order_types::new_bulk_order</a>(
@@ -345,7 +345,7 @@ Validates that all sizes in the vector are greater than 0.
 - <code>sizes</code>: Vector of sizes to validate
 
 
-<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_validate_not_zero_sizes">validate_not_zero_sizes</a>(sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;): bool
+<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_validate_not_zero_sizes">validate_not_zero_sizes</a>(sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;): bool
 </code></pre>
 
 
@@ -354,7 +354,7 @@ Validates that all sizes in the vector are greater than 0.
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_validate_not_zero_sizes">validate_not_zero_sizes</a>(sizes: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;): bool {
+<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_validate_not_zero_sizes">validate_not_zero_sizes</a>(sizes: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;): bool {
     <b>let</b> i = 0;
     <b>while</b> (i &lt; sizes.length()) {
         <b>if</b> (sizes[i] == 0) {
@@ -385,7 +385,7 @@ Validates that prices are in the correct order (descending for bids, ascending f
 - <code>is_descending</code>: True if prices should be in descending order, false for ascending
 
 
-<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_validate_price_ordering">validate_price_ordering</a>(prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, is_descending: bool): bool
+<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_validate_price_ordering">validate_price_ordering</a>(prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, is_descending: bool): bool
 </code></pre>
 
 
@@ -395,7 +395,7 @@ Validates that prices are in the correct order (descending for bids, ascending f
 
 
 <pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_validate_price_ordering">validate_price_ordering</a>(
-    prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, is_descending: bool
+    prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, is_descending: bool
 ): bool {
     <b>let</b> i = 0;
     <b>if</b> (prices.length() == 0) {
@@ -427,7 +427,7 @@ Validates that prices are in the correct order (descending for bids, ascending f
 
 
 
-<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_trim_start">trim_start</a>&lt;Element&gt;(v: &<b>mut</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Element&gt;, new_start: u64): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Element&gt;
+<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_trim_start">trim_start</a>&lt;Element&gt;(v: &<b>mut</b> <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Element&gt;, new_start: u64): <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Element&gt;
 </code></pre>
 
 
@@ -436,9 +436,9 @@ Validates that prices are in the correct order (descending for bids, ascending f
 <summary>Implementation</summary>
 
 
-<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_trim_start">trim_start</a>&lt;Element&gt;(v: &<b>mut</b> <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Element&gt;, new_start: u64): <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Element&gt; {
-    <b>let</b> other = <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
-    <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector_move_range">vector::move_range</a>(v, 0, new_start, &<b>mut</b> other, 0);
+<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_trim_start">trim_start</a>&lt;Element&gt;(v: &<b>mut</b> <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Element&gt;, new_start: u64): <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;Element&gt; {
+    <b>let</b> other = <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector_empty">vector::empty</a>();
+    <a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector_move_range">vector::move_range</a>(v, 0, new_start, &<b>mut</b> other, 0);
     other
 }
 </code></pre>
@@ -453,7 +453,7 @@ Validates that prices are in the correct order (descending for bids, ascending f
 
 
 
-<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_discard_price_crossing_levels">discard_price_crossing_levels</a>(prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, best_price: <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, is_bid: bool): u64
+<pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_discard_price_crossing_levels">discard_price_crossing_levels</a>(prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, best_price: <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, is_bid: bool): u64
 </code></pre>
 
 
@@ -463,7 +463,7 @@ Validates that prices are in the correct order (descending for bids, ascending f
 
 
 <pre><code><b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_discard_price_crossing_levels">discard_price_crossing_levels</a>(
-    prices: &<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, best_price: Option&lt;u64&gt;, is_bid: bool
+    prices: &<a href="../../topo-framework/../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;, best_price: Option&lt;u64&gt;, is_bid: bool
 ): u64 {
     // Discard bid levels that are &gt;= best ask price
     <b>let</b> i = 0;
@@ -572,7 +572,7 @@ A tuple containing the next active price and size as options.
 - If the matched size exceeds the available size at the first level
 
 
-<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_match_order_and_get_next_from_bulk_order">match_order_and_get_next_from_bulk_order</a>&lt;M: <b>copy</b>, drop, store&gt;(order: &<b>mut</b> <a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool, matched_size: u64): (<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;)
+<pre><code><b>public</b>(<b>friend</b>) <b>fun</b> <a href="bulk_order_utils.md#0x7_bulk_order_utils_match_order_and_get_next_from_bulk_order">match_order_and_get_next_from_bulk_order</a>&lt;M: <b>copy</b>, drop, store&gt;(order: &<b>mut</b> <a href="_BulkOrder">bulk_order_types::BulkOrder</a>&lt;M&gt;, is_bid: bool, matched_size: u64): (<a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;, <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_Option">option::Option</a>&lt;u64&gt;)
 </code></pre>
 
 
@@ -594,9 +594,9 @@ A tuple containing the next active price and size as options.
         sizes.remove(0);
     };
     <b>if</b> (sizes.length() == 0) {
-        (<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()) // No active price or size left
+        (<a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>(), <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_none">option::none</a>()) // No active price or size left
     } <b>else</b> {
-        (<a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(prices[0]), <a href="../../aptos-trading/../aptos-stdlib/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(sizes[0])) // Return the next active price and size
+        (<a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(prices[0]), <a href="../../topo-framework/../move-stdlib/doc/option.md#0x1_option_some">option::some</a>(sizes[0])) // Return the next active price and size
     }
 }
 </code></pre>

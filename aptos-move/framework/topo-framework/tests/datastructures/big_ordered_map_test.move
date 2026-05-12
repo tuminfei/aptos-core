@@ -426,7 +426,7 @@ module topo_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10002, location = aptos_std::ordered_map)] /// EKEY_NOT_FOUND
+    #[expected_failure(abort_code = 0x10002, location = topo_framework::ordered_map)] /// EKEY_NOT_FOUND
     fun test_abort_remove_missing_value() {
         let map = new_from(vector[1], vector[1]);
         map.remove(&2);
@@ -434,7 +434,7 @@ module topo_framework::big_ordered_map_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0x10002, location = aptos_std::big_ordered_map)] /// EKEY_NOT_FOUND
+    #[expected_failure(abort_code = 0x10002, location = topo_framework::big_ordered_map)] /// EKEY_NOT_FOUND
     fun test_abort_remove_missing_value_to_non_leaf() {
         let map = new_with_config(4, 4, false);
         map.add_all(vector_range(1, 10), vector_range(1, 10));
@@ -693,14 +693,14 @@ module topo_framework::big_ordered_map_test {
             assert!(!it.iter_is_end(&map), i);
             assert!(it.iter_borrow_key() == element, i);
 
-            // aptos_std::debug::print(&it);
+            // topo_std::debug::print(&it);
 
             let it_next = it.iter_next(&map);
             let it_after = map.internal_lower_bound(&(*element + 1));
 
-            // aptos_std::debug::print(&it_next);
-            // aptos_std::debug::print(&it_after);
-            // aptos_std::debug::print(&std::string::utf8(b"bla"));
+            // topo_std::debug::print(&it_next);
+            // topo_std::debug::print(&it_after);
+            // topo_std::debug::print(&std::string::utf8(b"bla"));
 
             assert!(it_next == it_after, i);
         };

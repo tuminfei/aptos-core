@@ -8,7 +8,7 @@ module topo_framework::aggregator_factory {
 
     use topo_framework::system_addresses;
     use topo_framework::aggregator::Aggregator;
-    use aptos_std::table::{Self, Table};
+    use topo_std::table::{Self, Table};
 
     friend topo_framework::genesis;
     friend topo_framework::optional_aggregator;
