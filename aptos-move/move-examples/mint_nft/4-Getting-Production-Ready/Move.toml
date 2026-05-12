@@ -3,8 +3,8 @@ name = "Examples"
 version = "0.0.0"
 
 [dependencies]
-TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
-TopoToken = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-token", rev = "mainnet" }
+TopoFramework = { git = "https://github.com/Topo-Labs/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
+TopoToken = { git = "https://github.com/Topo-Labs/topo_framework.git", subdir = "topo-token", rev = "mainnet" }
 
 [addresses]
 topo_framework = "0x1"

@@ -9,7 +9,7 @@ fixed_point64 = "0xdeadbeef"
 [dev-addresses]
 
 [dependencies.TopoFramework]
-git = "https://github.com/tuminfei/topo_framework.git"
+git = "https://github.com/Topo-Labs/topo_framework.git"
 rev = "mainnet"
 subdir = "topo-framework"
 

@@ -28,16 +28,6 @@ use aptos_cli_common::{
     PromptOptions, RestOptions, SaveFile, TransactionOptions, TransactionSummary, GIT_IGNORE,
 };
 use aptos_crypto::HashValue;
-use topo_framework::{
-    chunked_publish::{
-        chunk_package_and_create_payloads, large_packages_cleanup_staging_area, PublishType,
-    },
-    docgen::DocgenOptions,
-    extended_checks,
-    natives::code::{PackageRegistry, UpgradePolicy},
-    prover::ProverOptions,
-    BuildOptions, BuiltPackage,
-};
 use aptos_gas_schedule::{MiscGasParameters, NativeGasParameters};
 use aptos_rest_client::{
     aptos_api_types::{EntryFunctionId, HexEncodedBytes, IdentifierWrapper, MoveModuleId},
@@ -81,6 +71,16 @@ use std::{
     sync::Arc,
 };
 use tokio::task;
+use topo_framework::{
+    chunked_publish::{
+        chunk_package_and_create_payloads, large_packages_cleanup_staging_area, PublishType,
+    },
+    docgen::DocgenOptions,
+    extended_checks,
+    natives::code::{PackageRegistry, UpgradePolicy},
+    prover::ProverOptions,
+    BuildOptions, BuiltPackage,
+};
 use url::Url;
 
 const HELLO_BLOCKCHAIN_EXAMPLE: &str =
@@ -208,7 +208,7 @@ impl FrameworkPackageArgs {
         prompt_options: PromptOptions,
     ) -> CliTypedResult<()> {
         const APTOS_FRAMEWORK: &str = "TopoFramework";
-        const APTOS_GIT_PATH: &str = "https://github.com/tuminfei/topo_framework.git";
+        const APTOS_GIT_PATH: &str = "https://github.com/Topo-Labs/topo_framework.git";
         const SUBDIR_PATH: &str = "topo-framework";
         const DEFAULT_BRANCH: &str = "mainnet";
 
@@ -233,30 +233,24 @@ impl FrameworkPackageArgs {
         // Add the framework dependency if it's provided
         let mut dependencies = BTreeMap::new();
         if let Some(ref path) = self.framework_local_dir {
-            dependencies.insert(
-                APTOS_FRAMEWORK.to_string(),
-                Dependency {
-                    local: Some(path.display().to_string()),
-                    git: None,
-                    rev: None,
-                    subdir: None,
-                    aptos: None,
-                    address: None,
-                },
-            );
+            dependencies.insert(APTOS_FRAMEWORK.to_string(), Dependency {
+                local: Some(path.display().to_string()),
+                git: None,
+                rev: None,
+                subdir: None,
+                aptos: None,
+                address: None,
+            });
         } else {
             let git_rev = self.framework_git_rev.as_deref().unwrap_or(DEFAULT_BRANCH);
-            dependencies.insert(
-                APTOS_FRAMEWORK.to_string(),
-                Dependency {
-                    local: None,
-                    git: Some(APTOS_GIT_PATH.to_string()),
-                    rev: Some(git_rev.to_string()),
-                    subdir: Some(SUBDIR_PATH.to_string()),
-                    aptos: None,
-                    address: None,
-                },
-            );
+            dependencies.insert(APTOS_FRAMEWORK.to_string(), Dependency {
+                local: None,
+                git: Some(APTOS_GIT_PATH.to_string()),
+                rev: Some(git_rev.to_string()),
+                subdir: Some(SUBDIR_PATH.to_string()),
+                aptos: None,
+                address: None,
+            });
         }
 
         let manifest = MovePackageManifest {
@@ -1017,12 +1011,10 @@ fn create_package_publication_data(
     let metadata_serialized = bcs::to_bytes(&metadata).expect("PackageMetadata has BCS");
 
     let payload = match publish_type {
-        PublishType::AccountDeploy => {
-            aptos_cached_packages::topo_stdlib::code_publish_package_txn(
-                metadata_serialized.clone(),
-                compiled_units.clone(),
-            )
-        },
+        PublishType::AccountDeploy => aptos_cached_packages::topo_stdlib::code_publish_package_txn(
+            metadata_serialized.clone(),
+            compiled_units.clone(),
+        ),
         PublishType::ObjectDeploy => {
             aptos_cached_packages::topo_stdlib::object_code_deployment_publish(
                 metadata_serialized.clone(),

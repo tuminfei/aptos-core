@@ -16,11 +16,11 @@ swap = "0xcafe"
 
 
 [dependencies.TopoFramework]
-git = "https://github.com/tuminfei/topo_framework.git"
+git = "https://github.com/Topo-Labs/topo_framework.git"
 rev = "bbf569abd260d94bc30fe96da297d2aecb193644"
 subdir = "topo-framework"
 
 [dependencies.swap]
-git = "https://github.com/tuminfei/topo_framework.git"
+git = "https://github.com/Topo-Labs/topo_framework.git"
 rev = "bbf569abd260d94bc30fe96da297d2aecb193644"
 subdir = "aptos-move/move-examples/swap"

@@ -7,6 +7,6 @@ version = '1.0.0'
 upgrade_and_govern = '_'
 
 [dependencies.TopoFramework]
-git = "https://github.com/tuminfei/topo_framework.git"
+git = "https://github.com/Topo-Labs/topo_framework.git"
 subdir = "topo-framework"
 rev = "mainnet"

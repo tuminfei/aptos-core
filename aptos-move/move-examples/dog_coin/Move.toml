@@ -6,4 +6,4 @@ version = "0.0.0"
 DogCoin = "0x2"
 
 [dependencies]
-TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
+TopoFramework = { git = "https://github.com/Topo-Labs/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }

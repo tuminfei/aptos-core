@@ -7,5 +7,5 @@ version = '1.0.0'
 ambassador = "0xCAFE"
 
 [dependencies]
-TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
-TopoTokenObjects = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-token-objects", rev = "mainnet" }
+TopoFramework = { git = "https://github.com/Topo-Labs/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
+TopoTokenObjects = { git = "https://github.com/Topo-Labs/topo_framework.git", subdir = "topo-token-objects", rev = "mainnet" }

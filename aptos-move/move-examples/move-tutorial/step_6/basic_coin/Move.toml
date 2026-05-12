@@ -6,6 +6,6 @@ version = "0.0.0"
 named_addr = "0xCAFE"
 
 [dependencies.TopoStdlib]
-git = 'https://github.com/tuminfei/topo_framework.git'
+git = 'https://github.com/Topo-Labs/topo_framework.git'
 rev = 'main'
 subdir = 'topo-stdlib'

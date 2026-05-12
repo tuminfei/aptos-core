@@ -8,4 +8,4 @@ topo_framework = "0x1"
 event = "_"
 
 [dependencies]
-TopoFramework = { git = "https://github.com/tuminfei/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
+TopoFramework = { git = "https://github.com/Topo-Labs/topo_framework.git", subdir = "topo-framework", rev = "mainnet" }
