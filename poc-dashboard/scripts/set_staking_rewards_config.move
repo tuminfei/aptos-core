@@ -1,7 +1,7 @@
 script {
     use aptos_framework::staking_config;
     use aptos_framework::topo_governance;
-    use topo_std::fixed_point64;
+    use aptos_std::fixed_point64;
 
     fun main(
         core_resources: &signer,

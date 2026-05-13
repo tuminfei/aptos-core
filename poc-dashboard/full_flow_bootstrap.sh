@@ -137,7 +137,7 @@ _first_non_empty() {
 CLUSTER_DIR="${CLUSTER_DIR:-${CONFIG_CLUSTER_DIR:-$ROOT_DIR/poc-validator-cluster}}"
 CLUSTER_SCRIPT="${CLUSTER_SCRIPT:-$ROOT_DIR/scripts/poc_prod_like_validator_cluster.py}"
 APTOS_CLI="${APTOS_CLI:-$REPO_ROOT/target/debug/aptos}"
-FRAMEWORK_LOCAL_DIR="${FRAMEWORK_LOCAL_DIR:-$REPO_ROOT/aptos-move/framework/topo-framework}"
+FRAMEWORK_LOCAL_DIR="${FRAMEWORK_LOCAL_DIR:-$REPO_ROOT/aptos-move/framework/aptos-framework}"
 BACKEND_HOST="${BACKEND_HOST:-$CONFIG_BACKEND_HOST}"
 FRONTEND_HOST="${FRONTEND_HOST:-$CONFIG_FRONTEND_HOST}"
 BACKEND_PORT="${BACKEND_PORT:-$CONFIG_BACKEND_PORT}"

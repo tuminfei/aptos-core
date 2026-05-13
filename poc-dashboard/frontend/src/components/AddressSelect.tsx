@@ -32,11 +32,13 @@ export default function AddressSelect({ kind, value, onChange, placeholder, styl
     setLoading(true);
     try {
       if (kind === 'user') {
-        const data = await getWatchedUsers();
+        const data = await getWatchedUsers({ details: false });
         setOptions((data.users || []).map((u: any) => ({
           address: u.address,
           label: u.display_name || u.label,
-          extra: `${u.balance_topo?.toFixed(1) ?? 0} TOPO | 原始算力 ${u.raw_power ?? 0}`,
+          extra: u.balance_topo !== undefined || u.raw_power !== undefined
+            ? `${u.balance_topo?.toFixed(1) ?? 0} TOPO | 原始算力 ${u.raw_power ?? 0}`
+            : '',
         })));
       } else {
         const data = await getWatchedValidators();

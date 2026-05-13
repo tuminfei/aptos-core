@@ -85,6 +85,36 @@ async def test_update_watchlist_label_updates_user_display_name(client):
 
 
 @pytest.mark.asyncio
+async def test_watched_users_supports_pagination(client):
+    for idx in range(5):
+        await add_address("user", f"0xbulk{idx}", f"bulk-user-{idx:04d}")
+
+    resp = await client.get("/api/v1/watchlist/users", params={"offset": 2, "limit": 2})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total"] >= 5
+    assert data["offset"] == 2
+    assert data["limit"] == 2
+    assert data["count"] == 2
+    assert len(data["users"]) == 2
+    assert all("balance_topo" in user for user in data["users"])
+
+
+@pytest.mark.asyncio
+async def test_watched_users_light_mode_skips_chain_details(client):
+    await add_address("user", "0xlight", "light-user")
+
+    resp = await client.get("/api/v1/watchlist/users", params={"limit": 1, "details": "false"})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 1
+    assert "balance_topo" not in data["users"][0]
+    assert "raw_power" not in data["users"][0]
+
+
+@pytest.mark.asyncio
 async def test_address_book_matches_padded_and_unpadded_addresses(client):
     padded = "0x0abc"
     unpadded = "0xabc"

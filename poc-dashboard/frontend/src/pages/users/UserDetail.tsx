@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { Row, Col, Card, Statistic, Button, InputNumber, Space, Modal, message, Tag, Descriptions, Table, Tabs, Tooltip, Typography } from 'antd';
 import ReactECharts from 'echarts-for-react';
@@ -40,10 +40,12 @@ export default function UserDetail() {
   const [snapshotOffset, setSnapshotOffset] = useState(0);
   const [powerPeriodLimit, setPowerPeriodLimit] = useState(50);
   const [powerPeriodOffset, setPowerPeriodOffset] = useState(0);
+  const [contributionPage, setContributionPage] = useState(1);
+  const [contributionPageSize, setContributionPageSize] = useState(10);
   const fetchUser = useCallback(() => getUser(address!), [address]);
   const fetchSnapshotHistory = useCallback(() => getUserSnapshotHistory(address!, snapshotLimit, snapshotOffset), [address, snapshotLimit, snapshotOffset]);
   const fetchPowerPeriodHistory = useCallback(() => getUserPowerPeriodHistory(address!, powerPeriodLimit, powerPeriodOffset), [address, powerPeriodLimit, powerPeriodOffset]);
-  const fetchContributionHistory = useCallback(() => getUserContributionEvents(address!, 50), [address]);
+  const fetchContributionHistory = useCallback(() => getUserContributionEvents(address!, 50, 0), [address]);
   const { data, loading, refresh } = usePolling(fetchUser, 0, [address]);
   const { data: snapshotData, refresh: refreshSnapshotHistory } = usePolling(fetchSnapshotHistory, 0, [address, snapshotLimit, snapshotOffset]);
   const { data: powerPeriodData, refresh: refreshPowerPeriodHistory } = usePolling(fetchPowerPeriodHistory, 0, [address, powerPeriodLimit, powerPeriodOffset]);
@@ -66,6 +68,10 @@ export default function UserDetail() {
   const powerPeriods = powerPeriodData?.history || [];
   const cumulativeRewards = snapshotData?.cumulative_rewards || {};
   const contributionEvents = contributionData?.events || [];
+  const pagedContributionEvents = useMemo(() => {
+    const start = (contributionPage - 1) * contributionPageSize;
+    return contributionEvents.slice(start, start + contributionPageSize);
+  }, [contributionEvents, contributionPage, contributionPageSize]);
   const formatBps = (bps: number) => `${(Number(bps || 0) / 100).toFixed(2)}%`;
   const currentCalculation = powerStore.current_calculation || {};
   const nextEpochCalculation = powerStore.next_epoch_calculation || {};
@@ -288,6 +294,10 @@ export default function UserDetail() {
     { title: '基准原始算力', dataIndex: 'base_power', render: (v: number) => formatNumber(v || 0) },
     { title: '衰减周期数', dataIndex: 'periods_elapsed', render: (v: number) => formatNumber(v || 0) },
   ];
+  useEffect(() => {
+    setContributionPage(1);
+    setContributionPageSize(10);
+  }, [address]);
   useEventRefresh(['epoch_changed', 'power_period_advanced', 'history_sampled'], refresh);
   useEventRefresh(['history_sampled'], refreshSnapshotHistory);
   useEventRefresh(['history_sampled'], refreshPowerPeriodHistory);
@@ -532,10 +542,24 @@ export default function UserDetail() {
                     累计 {formatNumber(contributionData?.total_equity_amount || 0)} Equity / {formatNumber(contributionData?.total || 0)} 条
                   </div>
                   <Table
-                    dataSource={contributionEvents}
+                    dataSource={pagedContributionEvents}
                     rowKey={(row: any) => `${row.tx_hash}:${row.event_index}`}
                     size="small"
-                    pagination={{ pageSize: 10, showSizeChanger: false }}
+                    pagination={{
+                      current: contributionPage,
+                      total: contributionEvents.length,
+                      pageSize: contributionPageSize,
+                      showSizeChanger: true,
+                      pageSizeOptions: ['10', '50'],
+                      onChange: (page, pageSize) => {
+                        if (pageSize && pageSize !== contributionPageSize) {
+                          setContributionPageSize(pageSize);
+                          setContributionPage(1);
+                          return;
+                        }
+                        setContributionPage(page);
+                      },
+                    }}
                     scroll={{ x: 900 }}
                     columns={[
                       { title: '时间', dataIndex: 'created_at', width: 170, render: (v: string) => formatTimestamp(v) },

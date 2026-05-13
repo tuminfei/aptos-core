@@ -14,8 +14,13 @@ const { Text } = Typography;
 export default function UserSearch() {
   const navigate = useNavigate();
   const { refresh: refreshAddressBook } = useAddressBook();
-  const fetchUsers = useCallback(() => getWatchedUsers(), []);
-  const { data, loading, refresh } = usePolling(fetchUsers, 0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const fetchUsers = useCallback(
+    () => getWatchedUsers({ offset: (page - 1) * pageSize, limit: pageSize, details: true }),
+    [page, pageSize],
+  );
+  const { data, loading, refresh } = usePolling(fetchUsers, 0, [page, pageSize]);
   useEventRefresh(['epoch_changed', 'power_period_advanced', 'history_sampled', 'address_book_changed'], refresh);
 
   const [showAdd, setShowAdd] = useState(false);
@@ -140,6 +145,7 @@ export default function UserSearch() {
     <div>
       <Space style={{ marginBottom: 16 }}>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAdd(true)}>新增普通用户</Button>
+        <Text type="secondary">共 {data?.total || 0} 个用户</Text>
       </Space>
 
       <Table
@@ -148,6 +154,18 @@ export default function UserSearch() {
         rowKey="address"
         loading={loading}
         size="middle"
+        pagination={{
+          current: page,
+          pageSize,
+          total: data?.total || 0,
+          showSizeChanger: true,
+          pageSizeOptions: [20, 50, 100, 200],
+          showTotal: (total) => `共 ${total} 个用户`,
+          onChange: (nextPage, nextPageSize) => {
+            setPage(nextPage);
+            setPageSize(nextPageSize);
+          },
+        }}
         onRow={(r: any) => ({ onClick: () => navigate(`/users/${r.address}`), style: { cursor: 'pointer' } })}
       />
 

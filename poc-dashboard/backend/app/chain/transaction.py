@@ -1,9 +1,45 @@
+import asyncio
 import time
 from app.chain.client import ChainClient, ChainError
 from app.chain.keys import Ed25519Key
 
+_sender_locks: dict[tuple[int, str], asyncio.Lock] = {}
+
+
+def _sender_lock(sender_address: str) -> asyncio.Lock:
+    loop = asyncio.get_running_loop()
+    key = (id(loop), sender_address.lower())
+    lock = _sender_locks.get(key)
+    if lock is None:
+        lock = asyncio.Lock()
+        _sender_locks[key] = lock
+    return lock
+
 
 async def submit_entry_function(
+    client: ChainClient,
+    sender_key: Ed25519Key,
+    sender_address: str,
+    function_id: str,
+    type_args: list | None = None,
+    args: list | None = None,
+    max_gas: int = 200000,
+    gas_unit_price: int = 100,
+) -> str:
+    async with _sender_lock(sender_address):
+        return await _submit_entry_function_unlocked(
+            client,
+            sender_key,
+            sender_address,
+            function_id,
+            type_args=type_args,
+            args=args,
+            max_gas=max_gas,
+            gas_unit_price=gas_unit_price,
+        )
+
+
+async def _submit_entry_function_unlocked(
     client: ChainClient,
     sender_key: Ed25519Key,
     sender_address: str,

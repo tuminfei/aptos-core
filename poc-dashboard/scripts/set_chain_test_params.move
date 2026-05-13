@@ -4,7 +4,7 @@ script {
     use aptos_framework::poc_power_store;
     use aptos_framework::staking_config;
     use aptos_framework::topo_governance;
-    use topo_std::fixed_point64;
+    use aptos_std::fixed_point64;
 
     fun main(core_resources: &signer, power_period_in_epochs: u64) {
         let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @aptos_framework);

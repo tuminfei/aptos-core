@@ -25,8 +25,8 @@ export async function removeFromWatchlist(kind: string, address: string) {
   return data;
 }
 
-export async function getWatchedUsers() {
-  const { data } = await api.get('/watchlist/users');
+export async function getWatchedUsers(params?: { offset?: number; limit?: number; details?: boolean }) {
+  const { data } = await api.get('/watchlist/users', { params });
   return data;
 }
 

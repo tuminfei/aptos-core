@@ -21,8 +21,9 @@ from app.services.cache_svc import invalidate_many
 DEFAULT_MAX_GAS = 400_000
 DEFAULT_GAS_UNIT_PRICE = 100
 DEFAULT_DEMO_MODULE = "poc_demo"
-DEFAULT_BUYER_MINT_OCTAS = 100_000_000
+DEFAULT_BUYER_MINT_OCTAS = 0
 DEFAULT_AUTO_TRADE_CUSTODY_TOP_UP_TICKS = 10
+MIN_DEMO_EQUITY_AMOUNT = 10
 POC_FRAMEWORK_ADDRESS = "0x1"
 DEMO_GENERATED_ENV = "POC_DASHBOARD_GENERATED_DIR"
 
@@ -650,8 +651,8 @@ async def buy_equity(
     max_gas: int = DEFAULT_MAX_GAS,
     gas_unit_price: int = DEFAULT_GAS_UNIT_PRICE,
 ) -> dict:
-    if equity_amount <= 0:
-        raise ValueError("equity_amount 必须大于 0")
+    if equity_amount < MIN_DEMO_EQUITY_AMOUNT:
+        raise ValueError(f"equity_amount 必须至少为 {MIN_DEMO_EQUITY_AMOUNT}")
 
     module = module_address or (await dapp_demo.get_config(app_admin) or {}).get("module_address", "")
     if not module:
@@ -825,8 +826,8 @@ async def start_trade_task(
         raise ValueError("interval_secs 必须至少为 1")
     if tx_per_tick < 1:
         raise ValueError("tx_per_tick 必须至少为 1")
-    if amount_min <= 0 or amount_max <= 0 or amount_min > amount_max:
-        raise ValueError("交易金额区间不合法")
+    if amount_min < MIN_DEMO_EQUITY_AMOUNT or amount_max < MIN_DEMO_EQUITY_AMOUNT or amount_min > amount_max:
+        raise ValueError(f"交易金额区间不合法，最小 Equity 必须至少为 {MIN_DEMO_EQUITY_AMOUNT}")
     if max_runs < 0:
         raise ValueError("max_runs 不能为负数")
 
@@ -954,6 +955,37 @@ async def _ensure_demo_custody_inventory(task: DemoTradeTask, required_amount: i
         raise
 
 
+def _next_buyer_batch(task: DemoTradeTask, limit: int) -> list[str]:
+    buyers: list[str] = []
+    seen: set[str] = set()
+    attempts = max(len(task.buyer_addresses), limit) if task.buyer_addresses else limit
+    for _ in range(attempts):
+        buyer = _next_buyer(task)
+        key = buyer.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        buyers.append(buyer)
+        if len(buyers) >= limit:
+            break
+    return buyers
+
+
+async def _execute_trade_once(task: DemoTradeTask, buyer: str, amount: int) -> dict:
+    await _prepare_task_buyer(task, buyer)
+    result = await buy_equity(
+        app_admin=task.app_admin,
+        module_address=task.module_address,
+        buyer_address=buyer,
+        equity_amount=amount,
+        auto_create_buyer=False,
+        mint_octas=0,
+        max_gas=task.max_gas,
+        gas_unit_price=task.gas_unit_price,
+    )
+    return {"buyer": buyer, "amount": amount, "result": result}
+
+
 async def stop_trade_task(app_admin: str, missing_ok: bool = False, persist: bool = True) -> dict:
     task = _trade_tasks.get(app_admin)
     if not task:
@@ -1015,42 +1047,43 @@ async def _trade_loop(task: DemoTradeTask) -> None:
     await dapp_trade_task.update_task_state(task.app_admin, status=task.status)
     try:
         while task.status == "running":
-            for _ in range(task.tx_per_tick):
-                if task.max_runs and task.run_count >= task.max_runs:
-                    task.status = "completed"
-                    await dapp_trade_task.update_task_state(
-                        task.app_admin,
-                        status=task.status,
-                        run_count=task.run_count,
-                        success_count=task.success_count,
-                        failure_count=task.failure_count,
-                        last_tx_hash=task.last_tx_hash,
-                        last_error=task.last_error,
-                    )
-                    await broadcast("dapp_trade_task", task.public_status())
-                    return
-                buyer = _next_buyer(task)
+            remaining = task.tx_per_tick
+            if task.max_runs:
+                remaining = min(remaining, task.max_runs - task.run_count)
+            if remaining <= 0:
+                task.status = "completed"
+                await dapp_trade_task.update_task_state(
+                    task.app_admin,
+                    status=task.status,
+                    run_count=task.run_count,
+                    success_count=task.success_count,
+                    failure_count=task.failure_count,
+                    last_tx_hash=task.last_tx_hash,
+                    last_error=task.last_error,
+                )
+                await broadcast("dapp_trade_task", task.public_status())
+                return
+
+            buyers = _next_buyer_batch(task, remaining)
+            jobs = []
+            total_equity_amount = 0
+            for buyer in buyers:
                 amount = random.randint(task.amount_min, task.amount_max)
                 task.run_count += 1
-                try:
-                    await _prepare_task_buyer(task, buyer)
-                    await _ensure_demo_custody_inventory(task, amount)
-                    result = await buy_equity(
-                        app_admin=task.app_admin,
-                        module_address=task.module_address,
-                        buyer_address=buyer,
-                        equity_amount=amount,
-                        auto_create_buyer=False,
-                        mint_octas=0,
-                        max_gas=task.max_gas,
-                        gas_unit_price=task.gas_unit_price,
-                    )
+                total_equity_amount += amount
+                jobs.append(_execute_trade_once(task, buyer, amount))
+
+            if jobs:
+                await _ensure_demo_custody_inventory(task, total_equity_amount)
+                results = await asyncio.gather(*jobs, return_exceptions=True)
+                for result in results:
+                    if isinstance(result, Exception):
+                        task.failure_count += 1
+                        task.last_error = str(result)
+                        continue
                     task.success_count += 1
-                    task.last_tx_hash = result.get("tx_hash", "")
+                    task.last_tx_hash = result["result"].get("tx_hash", "")
                     task.last_error = ""
-                except Exception as e:
-                    task.failure_count += 1
-                    task.last_error = str(e)
                 await dapp_trade_task.update_task_state(
                     task.app_admin,
                     status=task.status,

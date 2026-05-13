@@ -124,7 +124,7 @@ async def test_demo_buy_equity_uses_configured_module(client, mock_client):
         json={
             "app_admin": "0xddd",
             "buyer_address": buyer,
-            "equity_amount": 7,
+            "equity_amount": 10,
             "mint_octas": 0,
         },
     )
@@ -132,7 +132,7 @@ async def test_demo_buy_equity_uses_configured_module(client, mock_client):
     tx = mock_client.submitted_txns[-1]
     assert tx["sender"] == buyer
     assert tx["payload"]["function"] == "0xabc::poc_demo::buy_equity"
-    assert tx["payload"]["arguments"] == ["0xddd", "7"]
+    assert tx["payload"]["arguments"] == ["0xddd", "10"]
 
     events_resp = await client.get("/api/v1/contributions", params={"contributor": buyer})
     assert events_resp.status_code == 200
@@ -141,7 +141,7 @@ async def test_demo_buy_equity_uses_configured_module(client, mock_client):
     assert events[0]["contributor"] == buyer
     assert events[0]["app_admin"] == "0xddd"
     assert events[0]["app_address"] == "0xabc"
-    assert events[0]["equity_amount"] == 7
+    assert events[0]["equity_amount"] == 10
     assert events[0]["period"] == 23
 
 
@@ -191,8 +191,8 @@ async def test_auto_trade_without_fixed_buyers_uses_watchlist_users(client, mock
             "app_admin": "0xddd",
             "interval_secs": 1,
             "tx_per_tick": 1,
-            "amount_min": 3,
-            "amount_max": 5,
+            "amount_min": 10,
+            "amount_max": 12,
             "max_runs": 1,
             "buyer_addresses": [],
             "auto_create_buyers": 0,
@@ -209,7 +209,7 @@ async def test_auto_trade_without_fixed_buyers_uses_watchlist_users(client, mock
     tx = next(t for t in reversed(mock_client.submitted_txns) if t["payload"]["function"] == "0xabc::poc_demo::buy_equity")
     assert tx["sender"] in {buyer1, buyer2}
     amount = int(tx["payload"]["arguments"][1])
-    assert 3 <= amount <= 5
+    assert 10 <= amount <= 12
 
 
 @pytest.mark.asyncio
@@ -234,8 +234,8 @@ async def test_auto_trade_tops_up_custody_inventory_before_buy(client, mock_clie
             "app_admin": app_admin,
             "interval_secs": 1,
             "tx_per_tick": 1,
-            "amount_min": 7,
-            "amount_max": 7,
+            "amount_min": 10,
+            "amount_max": 10,
             "max_runs": 1,
             "buyer_addresses": [buyer],
             "auto_create_buyers": 0,
@@ -251,9 +251,76 @@ async def test_auto_trade_tops_up_custody_inventory_before_buy(client, mock_clie
     mint_tx = next(t for t in txns if t["payload"]["function"] == "0xabc::poc_demo::mint_equity_to_custody")
     buy_tx = next(t for t in txns if t["payload"]["function"] == "0xabc::poc_demo::buy_equity")
     assert mint_tx["sender"] == app_admin
-    assert int(mint_tx["payload"]["arguments"][0]) >= 7
+    assert int(mint_tx["payload"]["arguments"][0]) >= 10
     assert txns.index(mint_tx) < txns.index(buy_tx)
     assert buy_tx["sender"] == buyer
+
+
+@pytest.mark.asyncio
+async def test_auto_trade_tick_submits_distinct_buyers_in_parallel(client, mock_client):
+    km = get_key_manager()
+    admin_key, app_admin = km.generate_account("parallel-trade-app")
+    buyers = []
+    for idx in range(3):
+        buyer_key, buyer = km.generate_account(f"parallel-trade-buyer-{idx}")
+        await km.persist_key(buyer_key, buyer, f"parallel-trade-buyer-{idx}")
+        await watchlist.add_address("user", buyer, f"parallel-trade-buyer-{idx}")
+        buyers.append(buyer)
+    await km.persist_key(admin_key, app_admin, "parallel-trade-app")
+    await dapp_demo.upsert_config(
+        app_admin=app_admin,
+        module_address="0xabc",
+        initial_supply=100,
+        price_per_equity=2,
+    )
+    mock_client.set_view_response("0xabc::poc_demo::custody_inventory", [100])
+
+    resp = await client.post(
+        "/api/v1/dapps/demo/auto-trade/start",
+        json={
+            "app_admin": app_admin,
+            "interval_secs": 1,
+            "tx_per_tick": 3,
+            "amount_min": 10,
+            "amount_max": 10,
+            "max_runs": 3,
+            "buyer_addresses": buyers,
+            "auto_create_buyers": 0,
+            "mint_octas": 0,
+        },
+    )
+    assert resp.status_code == 200
+
+    await asyncio.sleep(0.2)
+    await dapp_svc.stop_all_trade_tasks()
+
+    buy_txns = [t for t in mock_client.submitted_txns if t["payload"]["function"] == "0xabc::poc_demo::buy_equity"]
+    assert len(buy_txns) == 3
+    assert {tx["sender"] for tx in buy_txns} == set(buyers)
+    status = await dapp_svc.get_trade_task_status(app_admin)
+    assert status["success_count"] == 3
+    assert status["run_count"] == 3
+
+
+def test_next_buyer_batch_uses_distinct_addresses():
+    task = dapp_svc.DemoTradeTask(
+        task_id="task",
+        app_admin="0xapp",
+        module_address="0xabc",
+        interval_secs=1,
+        tx_per_tick=3,
+        amount_min=10,
+        amount_max=10,
+        max_runs=0,
+        buyer_addresses=["0x1", "0x1", "0x2", "0x3"],
+        buyer_selection_mode="fixed",
+        auto_create_buyers=0,
+        mint_octas=0,
+        max_gas=1,
+        gas_unit_price=1,
+    )
+
+    assert dapp_svc._next_buyer_batch(task, 3) == ["0x1", "0x2", "0x3"]
 
 
 @pytest.mark.asyncio
@@ -283,8 +350,8 @@ async def test_auto_trade_task_persists_and_survives_shutdown(client, monkeypatc
             "app_admin": "0xddd",
             "interval_secs": 1,
             "tx_per_tick": 1,
-            "amount_min": 3,
-            "amount_max": 5,
+            "amount_min": 10,
+            "amount_max": 12,
             "max_runs": 0,
             "buyer_addresses": [buyer],
             "auto_create_buyers": 0,

@@ -105,20 +105,28 @@ async def address_book():
 
 
 @router.get("/watchlist/users")
-async def list_watched_users():
+async def list_watched_users(
+    offset: int = Query(0, ge=0),
+    limit: int | None = Query(None, ge=1, le=1000),
+    details: bool = Query(True),
+):
     """返回所有可作为用户操作的地址，附带链上状态。"""
     client = get_chain_client()
     items = await _get_user_like_watch_items(client)
+    total = len(items)
+    page_items = items[offset: offset + limit] if limit is not None else items[offset:]
     address_book = await address_book_svc.build_address_book(client)
-    reward_context = await rewards_svc.get_reward_context(client)
-    try:
-        current_period = await view.get_current_period(client)
-    except Exception:
-        current_period = 0
+    reward_context = await rewards_svc.get_reward_context(client) if details else None
+    current_period = 0
+    if details:
+        try:
+            current_period = await view.get_current_period(client)
+        except Exception:
+            current_period = 0
     results = []
-    for item in items:
+    for item in page_items:
         addr = item["address"]
-        display_name = address_book.get(address_key(addr), {}).get("display_name", "")
+        display_name = address_book.get(address_key(addr), {}).get("display_name", "") or item.get("display_name", "")
         entry = {
             "address": addr,
             "label": item.get("label", ""),
@@ -129,6 +137,9 @@ async def list_watched_users():
             "in_user_watchlist": bool(item.get("in_user_watchlist", False)),
             "in_validator_watchlist": bool(item.get("in_validator_watchlist", False)),
         }
+        if not details:
+            results.append(entry)
+            continue
         try:
             balance = await view.get_topo_balance(client, addr)
             entry["balance_topo"] = balance / 1e8
@@ -163,7 +174,7 @@ async def list_watched_users():
         entry["estimated_epoch_total_topo"] = rewards["estimated_epoch_total_octas"] / 1e8
         entry["rewards"] = rewards
         results.append(entry)
-    return {"total": len(results), "users": results}
+    return {"total": total, "offset": offset, "limit": limit, "count": len(results), "users": results}
 
 
 async def _get_user_like_watch_items(client=None, include_chain_validators: bool = True) -> list[dict]:

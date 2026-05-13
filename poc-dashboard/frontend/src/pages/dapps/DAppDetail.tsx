@@ -53,7 +53,7 @@ import { getWatchedUsers } from '../../services/watchlist';
 import { APP_STATE_LABEL, APP_STATE_COLOR, POC_STATUS_LABEL, POC_STATUS_COLOR } from '../../utils/constants';
 import { formatNumber, formatTimestamp, formatTopo } from '../../utils/format';
 
-const DEFAULT_BUYER_MINT = 100_000_000;
+const DEFAULT_BUYER_MINT = 0;
 
 function valueFromInfo(info: any, key: string) {
   return info?.[key] ?? info?.[key.replace(/_([a-z])/g, (_, c) => c.toUpperCase())] ?? '-';
@@ -109,7 +109,7 @@ export default function DAppDetail() {
   const { admin } = useParams<{ admin: string }>();
   const fetchDApp = useCallback(() => getDApp(admin!), [admin]);
   const fetchContributions = useCallback(() => getContributionEvents({ app_admin: admin!, limit: 50 }), [admin]);
-  const fetchUsers = useCallback(() => getWatchedUsers(), []);
+  const fetchUsers = useCallback(() => getWatchedUsers({ details: false }), []);
   const { data, loading, refresh } = usePolling(fetchDApp, 0, [admin]);
   const { data: contributionData, refresh: refreshContributions } = usePolling(fetchContributions, 0, [admin]);
   const { data: usersData, refresh: refreshUsers } = usePolling(fetchUsers, 0);
@@ -387,7 +387,7 @@ export default function DAppDetail() {
                         form={buyForm}
                         layout="vertical"
                         initialValues={{
-                          equity_amount: 1,
+                          equity_amount: 10,
                           buyer_label: 'demo-buyer',
                           mint_octas: DEFAULT_BUYER_MINT,
                           max_gas: 400000,
@@ -405,7 +405,7 @@ export default function DAppDetail() {
                           </Col>
                           <Col xs={12} lg={4}>
                             <Form.Item name="equity_amount" label="Equity 数量" rules={[{ required: true }]}>
-                              <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+                              <InputNumber min={10} precision={0} style={{ width: '100%' }} />
                             </Form.Item>
                           </Col>
                           <Col xs={12} lg={4}>
@@ -437,7 +437,7 @@ export default function DAppDetail() {
                         initialValues={{
                           interval_secs: 5,
                           tx_per_tick: 1,
-                          amount_min: 1,
+                          amount_min: 10,
                           amount_max: 10,
                           max_runs: 0,
                           mint_octas: DEFAULT_BUYER_MINT,
@@ -448,8 +448,8 @@ export default function DAppDetail() {
                         <Row gutter={12}>
                           <Col xs={12} md={4}><Form.Item name="interval_secs" label="间隔秒" rules={[{ required: true }]}><InputNumber min={1} style={{ width: '100%' }} /></Form.Item></Col>
                           <Col xs={12} md={4}><Form.Item name="tx_per_tick" label="每轮交易数" rules={[{ required: true }]}><InputNumber min={1} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
-                          <Col xs={12} md={4}><Form.Item name="amount_min" label="最小 Equity" rules={[{ required: true }]}><InputNumber min={1} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
-                          <Col xs={12} md={4}><Form.Item name="amount_max" label="最大 Equity" rules={[{ required: true }]}><InputNumber min={1} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
+                          <Col xs={12} md={4}><Form.Item name="amount_min" label="最小 Equity" rules={[{ required: true }]}><InputNumber min={10} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
+                          <Col xs={12} md={4}><Form.Item name="amount_max" label="最大 Equity" rules={[{ required: true }]}><InputNumber min={10} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
                           <Col xs={12} md={4}><Form.Item name="max_runs" label="次数上限"><InputNumber min={0} precision={0} style={{ width: '100%' }} addonAfter="0不限" /></Form.Item></Col>
                           <Col xs={12} md={4}><Form.Item name="mint_octas" label="每个买家铸币"><InputNumber min={0} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
                           <Col xs={12} md={4}><Form.Item name="max_gas" label="max_gas"><InputNumber min={1} precision={0} style={{ width: '100%' }} /></Form.Item></Col>
