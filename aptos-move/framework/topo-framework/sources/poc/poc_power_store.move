@@ -262,8 +262,7 @@ module topo_framework::poc_power_store {
     ///   to prevent the operator from pre-loading multiple future periods at once.
     /// - `users` and `powers` must have the same length.
     ///
-    /// Idempotency: calling this multiple times for the same target_period overwrites the previous value.
-    /// This allows the operator to correct a mistake before the period boundary is crossed.
+    /// Idempotency: calling this multiple times for the same target_period keeps the first value.
     public entry fun stage_batch_update(
         operator: &signer,
         target_period: u64,
@@ -291,13 +290,14 @@ module topo_framework::poc_power_store {
         while (i < length) {
             let user = *users.borrow(i);
             let power = *powers.borrow(i);
-            upsert_power_version(store, user, effective_period, power);
-            event::emit(PowerUpdateStagedEvent {
-                target_period,
-                effective_period,
-                user,
-                power,
-            });
+            if (upsert_power_version(store, user, effective_period, power)) {
+                event::emit(PowerUpdateStagedEvent {
+                    target_period,
+                    effective_period,
+                    user,
+                    power,
+                });
+            };
             i += 1;
         };
     }
@@ -626,12 +626,12 @@ module topo_framework::poc_power_store {
         );
     }
 
-    /// Insert or update a user's power version in the two-slot window.
+    /// Insert a user's power version in the two-slot window.
     ///
     /// Slot selection logic:
     /// 1. User not yet in table → create a new entry with `newer` = this version (skip if power == 0)
-    /// 2. `effective_period` matches `newer` → overwrite `newer.power` in-place (idempotent update)
-    /// 3. `effective_period` matches `older` → overwrite `older.power` in-place (idempotent update)
+    /// 2. `effective_period` matches `newer` → return without changing power
+    /// 3. `effective_period` matches `older` → return without changing power
     /// 4. Neither slot matches → shift: `older = newer`, `newer = new version`
     ///    (the oldest slot is evicted; only the two most recent periods are retained)
     ///
@@ -641,10 +641,10 @@ module topo_framework::poc_power_store {
         user: address,
         effective_period: u64,
         power: u64,
-    ) {
+    ): bool {
         if (!store.users.contains(user)) {
             if (power == 0) {
-                return
+                return false
             };
             store.users.add(user, UserPowerInfo {
                 older: empty_power_version(),
@@ -653,20 +653,16 @@ module topo_framework::poc_power_store {
                     power,
                 },
             });
-            return
+            return true
         };
 
         let info = store.users.borrow_mut(user);
         if (info.newer.effective_period == effective_period) {
-            info.newer.power = power;
-            normalize_user_power_info(info);
-            return
+            return false
         };
 
         if (info.older.effective_period == effective_period) {
-            info.older.power = power;
-            normalize_user_power_info(info);
-            return
+            return false
         };
 
         // Evict the oldest slot and write the new version into `newer`
@@ -676,10 +672,11 @@ module topo_framework::poc_power_store {
             power,
         };
         normalize_user_power_info(info);
+        true
     }
 
     /// Ensure the two slots are ordered: older.effective_period <= newer.effective_period.
-    /// Swaps the slots if they are out of order (can happen after an in-place overwrite).
+    /// Swaps the slots if they are out of order.
     fun normalize_user_power_info(info: &mut UserPowerInfo) {
         if (info.older.effective_period > info.newer.effective_period) {
             let swapped = info.older;
@@ -861,7 +858,7 @@ module topo_framework::poc_power_store {
     }
 
     #[test(framework = @topo_framework, operator = @0xA, user1 = @0xB)]
-    public entry fun test_stage_update_overwrites_pending_value(
+    public entry fun test_stage_update_ignores_repeated_period_value(
         framework: signer,
         operator: signer,
         user1: signer,
@@ -885,7 +882,7 @@ module topo_framework::poc_power_store {
         commit_next_period_if_boundary();
         commit_next_period_if_boundary();
         assert!(get_current_period() == 1, 0);
-        assert!(get_user_committed_power(signer::address_of(&user1)) == 55, 1);
+        assert!(get_user_committed_power(signer::address_of(&user1)) == 70, 1);
     }
 
     #[test(framework = @topo_framework, operator = @0xA, new_operator = @0xD, user1 = @0xB)]
