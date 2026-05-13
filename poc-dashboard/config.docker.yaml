@@ -1,11 +1,11 @@
 # Docker deployment config. This file is mounted to /app/config.yaml by docker-compose.yml.
 
-cluster_dir: "/home/appuser/chain-data"
+cluster_dir: "/home/appuser/chain-test-data"
 
 chain:
   # The chain node runs on the Docker host.
   # For a remote chain node, replace host.docker.internal with the server IP or domain.
-  rest_url: "http://host.docker.internal:39090/v1"
+  rest_url: "http://120.26.182.36:8080/v1"
   chain_id: 164
 
 keys:

@@ -1350,7 +1350,7 @@ function FrameworkUpgradeTab() {
   const handleUpgrade = () => {
     Modal.confirm({
       title: '确认升级 Framework?',
-      content: '将编译并部署 aptos-framework 到链上，过程约需 5-10 分钟。',
+      content: '将编译并部署 topo-framework 到链上，过程约需 5-10 分钟。',
       okText: '开始升级',
       okType: 'danger',
       onOk: async () => {
@@ -1414,10 +1414,10 @@ function FrameworkUpgradeTab() {
             message="框架升级流程"
             description={
               <div>
-                <p style={{ margin: '4px 0' }}>升级 0x1 AptosFramework 合约。适用于修改了 <code>aptos-move/framework/aptos-framework/sources/</code> 下的 Move 源码后，需要将改动部署到链上的场景。</p>
+                <p style={{ margin: '4px 0' }}>升级 0x1 TopoFramework 合约。适用于修改了 <code>aptos-move/framework/topo-framework/sources/</code> 下的 Move 源码后，需要将改动部署到链上的场景。</p>
                 <ol style={{ margin: '8px 0', paddingLeft: 20 }}>
                   <li><b>预检查</b> — 确认链上无残留的 StagingArea</li>
-                  <li><b>编译</b> — 编译整个 aptos-framework 包，生成 metadata 和 module 字节码</li>
+                  <li><b>编译</b> — 编译整个 topo-framework 包，生成 metadata 和 module 字节码</li>
                   <li><b>分块</b> — 将包按 60KB 拆分为多个 chunk（单笔交易大小限制）</li>
                   <li><b>逐块提交</b> — 通过 <code>0x7::large_packages</code> 分块 stage 到链上，最后一块触发 publish</li>
                   <li><b>验证</b> — 确认 StagingArea 已清理、upgrade_number 递增</li>

@@ -23,10 +23,10 @@ Compose 默认挂载当前目录的 `config.docker.yaml` 到后端容器 `/app/c
 如果 Dashboard 需要自动读取本机测试集群目录，保留：
 
 ```yaml
-cluster_dir: "/app/poc-validator-cluster"
+cluster_dir: "/home/appuser/chain-test-data"
 ```
 
-`docker-compose.yml` 已将宿主机 `./poc-validator-cluster` 只读挂载到该路径。
+`docker-compose.yml` 已将宿主机 `/home/appuser/chain-test-data` 只读挂载到该路径。
 
 默认配置假设链节点运行在 Docker 宿主机上：
 

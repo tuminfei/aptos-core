@@ -9,7 +9,14 @@ from pathlib import Path
 from app.api.ws import broadcast
 from app.chain.client import get_chain_client
 from app.chain.keys import get_key_manager
-from app.services.dapp_svc import _aptos_cli, _extract_tx_hash, _repo_root
+from app.services.dapp_svc import (
+    FRAMEWORK_MODULE_ADDRESS,
+    FRAMEWORK_PACKAGE_NAME,
+    _aptos_cli,
+    _extract_tx_hash,
+    _repo_root,
+    framework_dir as _framework_dir,
+)
 
 META_CHUNK_SIZE = 60000
 MODULE_CHUNK_SIZE = 55000
@@ -28,7 +35,7 @@ async def _broadcast_progress(step: str, status: str, **kwargs):
 async def get_framework_status() -> dict:
     client = get_chain_client()
     repo_root = _repo_root()
-    framework_dir = repo_root / "aptos-move" / "framework" / "aptos-framework"
+    framework_dir = _framework_dir(repo_root)
 
     has_staging = False
     resource = await client.get_account_resource("0x1", "0x7::large_packages::StagingArea")
@@ -50,11 +57,11 @@ async def _get_upgrade_number(repo_root: Path, rest_url: str) -> int:
         subprocess.run, cmd, capture_output=True, text=True, timeout=60
     )
     output = proc.stdout or ""
-    in_aptos_framework = False
+    in_framework_package = False
     for line in output.splitlines():
-        if "AptosFramework" in line and "package" in line:
-            in_aptos_framework = True
-        if in_aptos_framework and "upgrade_number" in line:
+        if FRAMEWORK_PACKAGE_NAME in line and "package" in line:
+            in_framework_package = True
+        if in_framework_package and "upgrade_number" in line:
             parts = line.split(":")
             if len(parts) >= 2:
                 return int(parts[-1].strip())
@@ -90,7 +97,7 @@ async def _do_upgrade(*, max_gas: int, gas_unit_price: int):
     repo_root = _repo_root()
     client = get_chain_client()
     km = get_key_manager()
-    framework_dir = repo_root / "aptos-move" / "framework" / "aptos-framework"
+    framework_dir = _framework_dir(repo_root)
     experimental_dir = repo_root / "aptos-move" / "framework" / "aptos-experimental"
 
     # Step 1: Pre-flight
@@ -213,17 +220,16 @@ async def cleanup_staging_area(*, max_gas: int = 200_000, gas_unit_price: int = 
     repo_root = _repo_root()
     client = get_chain_client()
     km = get_key_manager()
-    framework_dir = repo_root / "aptos-move" / "framework" / "aptos-framework"
 
-    script = """script {
-    use aptos_framework::topo_governance;
+    script = f"""script {{
+    use {FRAMEWORK_MODULE_ADDRESS}::topo_governance;
     use aptos_experimental::large_packages;
 
-    fun main(core_resources: &signer) {
-        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @aptos_framework);
+    fun main(core_resources: &signer) {{
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @{FRAMEWORK_MODULE_ADDRESS});
         large_packages::cleanup_staging_area(&framework_signer);
-    }
-}
+    }}
+}}
 """
     tmp_dir = tempfile.mkdtemp(prefix="fw_cleanup_")
     try:
@@ -307,11 +313,11 @@ def _generate_chunk_script(
     lines = [
         "script {",
         "    use std::vector;",
-        "    use aptos_framework::topo_governance;",
+        f"    use {FRAMEWORK_MODULE_ADDRESS}::topo_governance;",
         "    use aptos_experimental::large_packages;",
         "",
         "    fun main(core_resources: &signer) {",
-        "        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @aptos_framework);",
+        f"        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @{FRAMEWORK_MODULE_ADDRESS});",
         "",
     ]
 

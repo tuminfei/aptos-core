@@ -3,6 +3,7 @@ import contextlib
 import os
 import random
 import re
+import shutil
 import subprocess
 import tempfile
 import time
@@ -26,6 +27,9 @@ DEFAULT_AUTO_TRADE_CUSTODY_TOP_UP_TICKS = 10
 MIN_DEMO_EQUITY_AMOUNT = 10
 POC_FRAMEWORK_ADDRESS = "0x1"
 DEMO_GENERATED_ENV = "POC_DASHBOARD_GENERATED_DIR"
+FRAMEWORK_PACKAGE_NAME = "TopoFramework"
+FRAMEWORK_MODULE_ADDRESS = "topo_framework"
+FRAMEWORK_LOCAL_SUBDIR = Path("aptos-move") / "framework" / "topo-framework"
 
 
 async def get_dapp_list(client: ChainClient) -> list[dict]:
@@ -71,6 +75,30 @@ def _aptos_cli(repo_root: Path) -> list[str]:
         if candidate.exists():
             return [str(candidate)]
     return ["cargo", "run", "-p", "aptos", "--"]
+
+
+def framework_dir(repo_root: Path) -> Path:
+    return repo_root / FRAMEWORK_LOCAL_SUBDIR
+
+
+def _script_package_dir(repo_root: Path, script_path: Path) -> str:
+    local_framework_dir = framework_dir(repo_root)
+    tmp_dir = tempfile.mkdtemp(prefix="poc_script_")
+    pkg_dir = Path(tmp_dir) / "pkg"
+    sources_dir = pkg_dir / "sources"
+    sources_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(script_path, sources_dir / script_path.name)
+    move_toml = f"""[package]
+name = "PocDashboardScript"
+version = "0.0.1"
+
+[addresses]
+
+[dependencies]
+{FRAMEWORK_PACKAGE_NAME} = {{ local = "{local_framework_dir}" }}
+"""
+    (pkg_dir / "Move.toml").write_text(move_toml)
+    return tmp_dir
 
 
 def _extract_tx_hash(output: str) -> str:
@@ -154,19 +182,19 @@ async def persist_contribution_events_from_tx(
 def _ensure_demo_package(repo_root: Path) -> Path:
     source_dir = repo_root / "aptos-move" / "move-examples" / "poc_demo"
     source_file = source_dir / "sources" / "poc_demo.move"
-    framework_dir = repo_root / "aptos-move" / "framework" / "aptos-framework"
+    local_framework_dir = framework_dir(repo_root)
     if not source_file.exists():
         raise RuntimeError(f"找不到 demo dapp 源码: {source_file}")
-    if not framework_dir.exists():
-        raise RuntimeError(f"找不到正式 AptosFramework: {framework_dir}")
+    if not local_framework_dir.exists():
+        raise RuntimeError(f"找不到正式 {FRAMEWORK_PACKAGE_NAME}: {local_framework_dir}")
 
     target_dir = _demo_package_dir(repo_root)
     sources_dir = target_dir / "sources"
     sources_dir.mkdir(parents=True, exist_ok=True)
 
     source = source_file.read_text()
-    source = source.replace("use poc_framework::poc_contribution;", "use aptos_framework::poc_contribution;")
-    source = source.replace("use poc_framework::poc_registry;", "use aptos_framework::poc_registry;")
+    source = source.replace("use poc_framework::poc_contribution;", f"use {FRAMEWORK_MODULE_ADDRESS}::poc_contribution;")
+    source = source.replace("use poc_framework::poc_registry;", f"use {FRAMEWORK_MODULE_ADDRESS}::poc_registry;")
     (sources_dir / "poc_demo.move").write_text(source)
     test_file = sources_dir / "poc_demo_test.move"
     if test_file.exists():
@@ -180,7 +208,7 @@ version = "0.0.0"
 poc_demo = "_"
 
 [dependencies]
-AptosFramework = {{ local = "{framework_dir}" }}
+{FRAMEWORK_PACKAGE_NAME} = {{ local = "{local_framework_dir}" }}
 """
     (target_dir / "Move.toml").write_text(move_toml)
     return target_dir
@@ -212,6 +240,7 @@ def _can_write_dir(path: Path) -> bool:
 async def deploy_demo_package(
     *,
     admin_key: Ed25519Key,
+    admin_address: str,
     rest_url: str,
     max_gas: int = DEFAULT_MAX_GAS,
     gas_unit_price: int = DEFAULT_GAS_UNIT_PRICE,
@@ -222,11 +251,13 @@ async def deploy_demo_package(
     cmd = [
         *aptos_cli,
         "move",
-        "create-object-and-publish-package",
-        "--address-name",
-        DEFAULT_DEMO_MODULE,
+        "publish",
         "--package-dir",
         str(package_dir),
+        "--named-addresses",
+        f"{DEFAULT_DEMO_MODULE}={admin_address}",
+        "--sender-account",
+        admin_address,
         "--url",
         rest_url,
         "--private-key",
@@ -249,7 +280,7 @@ async def deploy_demo_package(
     output = (proc.stdout or "") + (proc.stderr or "")
     if proc.returncode != 0 and '"success": true' not in output and '"Result": "Success"' not in output:
         raise RuntimeError(output[-1200:] or "部署 demo dapp 失败")
-    return _extract_object_address(output), _extract_tx_hash(output) or "cli:deploy-poc-demo"
+    return admin_address, _extract_tx_hash(output) or "cli:deploy-poc-demo"
 
 
 async def run_poc_framework_script(
@@ -268,48 +299,73 @@ async def run_poc_framework_script(
     if not dashboard_dir.exists():
         dashboard_dir = Path(__file__).resolve().parents[2]
     script_path = dashboard_dir / "scripts" / script_name
-    framework_dir = repo_root / "aptos-move" / "framework" / "aptos-framework"
+    local_framework_dir = framework_dir(repo_root)
     if not script_path.exists():
         raise RuntimeError(f"找不到 POC 管理脚本: {script_path}")
-    if not framework_dir.exists():
-        raise RuntimeError(f"找不到正式 AptosFramework: {framework_dir}")
+    if not local_framework_dir.exists():
+        raise RuntimeError(f"找不到正式 {FRAMEWORK_PACKAGE_NAME}: {local_framework_dir}")
 
-    cmd = [
-        *_aptos_cli(repo_root),
-        "move",
-        "run-script",
-        "--script-path",
-        str(script_path),
-        "--sender-account",
-        core_address,
-        "--framework-local-dir",
-        str(framework_dir),
-        "--skip-fetch-latest-git-deps",
-        "--url",
-        rest_url,
-        "--private-key",
-        core_key.private_key_hex,
-        "--assume-yes",
-        "--max-gas",
-        str(max_gas),
-        "--gas-unit-price",
-        str(gas_unit_price),
-    ]
-    for arg in args or []:
-        cmd.extend(["--args", arg])
+    tmp_dir = _script_package_dir(repo_root, script_path)
+    try:
+        pkg_dir = Path(tmp_dir) / "pkg"
+        bytecode_path = Path(tmp_dir) / "script.mv"
+        compile_cmd = [
+            *_aptos_cli(repo_root),
+            "move",
+            "compile-script",
+            "--package-dir",
+            str(pkg_dir),
+            "--output-file",
+            str(bytecode_path),
+            "--skip-fetch-latest-git-deps",
+        ]
+        compile_proc = await asyncio.to_thread(
+            subprocess.run,
+            compile_cmd,
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            timeout=timeout_secs,
+        )
+        compile_output = (compile_proc.stdout or "") + (compile_proc.stderr or "")
+        if compile_proc.returncode != 0:
+            raise RuntimeError(compile_output[-1200:] or f"编译 POC 管理脚本失败: {script_name}")
 
-    proc = await asyncio.to_thread(
-        subprocess.run,
-        cmd,
-        cwd=repo_root,
-        text=True,
-        capture_output=True,
-        timeout=timeout_secs,
-    )
-    output = (proc.stdout or "") + (proc.stderr or "")
-    if proc.returncode != 0 and '"success": true' not in output and '"Result": "Success"' not in output:
-        raise RuntimeError(output[-1200:] or f"执行 POC 管理脚本失败: {script_name}")
-    return _extract_tx_hash(output) or f"cli:{script_path.stem}"
+        cmd = [
+            *_aptos_cli(repo_root),
+            "move",
+            "run-script",
+            "--compiled-script-path",
+            str(bytecode_path),
+            "--sender-account",
+            core_address,
+            "--url",
+            rest_url,
+            "--private-key",
+            core_key.private_key_hex,
+            "--assume-yes",
+            "--max-gas",
+            str(max_gas),
+            "--gas-unit-price",
+            str(gas_unit_price),
+        ]
+        for arg in args or []:
+            cmd.extend(["--args", arg])
+
+        proc = await asyncio.to_thread(
+            subprocess.run,
+            cmd,
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            timeout=timeout_secs,
+        )
+        output = (proc.stdout or "") + (proc.stderr or "")
+        if proc.returncode != 0 and '"success": true' not in output and '"Result": "Success"' not in output:
+            raise RuntimeError(output[-1200:] or f"执行 POC 管理脚本失败: {script_name}")
+        return _extract_tx_hash(output) or f"cli:{script_path.stem}"
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 async def initialize_poc_registry_with_core_resources(
@@ -446,6 +502,7 @@ async def create_demo_dapp(
         {"poc_framework": POC_FRAMEWORK_ADDRESS},
         lambda: deploy_demo_package(
             admin_key=admin_key,
+            admin_address=admin_address,
             rest_url=client.base_url,
             max_gas=max_gas,
             gas_unit_price=gas_unit_price,

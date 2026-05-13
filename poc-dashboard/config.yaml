@@ -1,6 +1,6 @@
 # 集群目录路径（相对于本文件或绝对路径）
 # 启动时自动从此目录读取: API地址、chain_id、core_resources 密钥、validator/operator 密钥
-cluster_dir: "/home/appuser/chain-data"
+cluster_dir: "/home/appuser/chain-test-data"
 
 chain:
   # 留空时后端从 cluster_dir 下的 node.yaml 自动探测可用 REST 地址。

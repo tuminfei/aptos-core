@@ -535,7 +535,7 @@ def detect_framework_code_changes(repo_root: Path) -> bool:
         "--porcelain",
         "--untracked-files=all",
         "--",
-        "aptos-move/framework/aptos-framework",
+        "aptos-move/framework/topo-framework",
     ]
     try:
         result = run_command(cmd, cwd=repo_root, capture_output=True)

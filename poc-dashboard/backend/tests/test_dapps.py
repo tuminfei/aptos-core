@@ -1,5 +1,6 @@
 import asyncio
 import errno
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -48,6 +49,126 @@ def test_demo_package_dir_falls_back_when_dashboard_generated_is_read_only(tmp_p
     monkeypatch.setattr(dapp_svc.tempfile, "gettempdir", lambda: str(tmp_path / "tmp"))
 
     assert dapp_svc._demo_package_dir(repo_root) == tmp_path / "tmp" / "poc-dashboard-generated" / "poc_demo_formal"
+
+
+def test_ensure_demo_package_uses_topo_framework_package(tmp_path, monkeypatch):
+    repo_root = tmp_path / "topo-chain"
+    source_dir = repo_root / "aptos-move" / "move-examples" / "poc_demo" / "sources"
+    framework_dir = repo_root / "aptos-move" / "framework" / "topo-framework"
+    generated_dir = tmp_path / "generated"
+    source_dir.mkdir(parents=True)
+    framework_dir.mkdir(parents=True)
+    (source_dir / "poc_demo.move").write_text(
+        "\n".join([
+            "module poc_demo::poc_demo {",
+            "    use poc_framework::poc_contribution;",
+            "    use poc_framework::poc_registry;",
+            "}",
+        ]),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setenv(dapp_svc.DEMO_GENERATED_ENV, str(generated_dir))
+
+    package_dir = dapp_svc._ensure_demo_package(repo_root)
+    move_toml = (package_dir / "Move.toml").read_text(encoding="utf-8")
+    source = (package_dir / "sources" / "poc_demo.move").read_text(encoding="utf-8")
+
+    assert f'TopoFramework = {{ local = "{framework_dir}" }}' in move_toml
+    assert "use topo_framework::poc_contribution;" in source
+    assert "use topo_framework::poc_registry;" in source
+
+
+@pytest.mark.asyncio
+async def test_deploy_demo_package_publishes_under_admin_address(tmp_path, monkeypatch):
+    repo_root = tmp_path / "topo-chain"
+    source_dir = repo_root / "aptos-move" / "move-examples" / "poc_demo" / "sources"
+    framework_dir = repo_root / "aptos-move" / "framework" / "topo-framework"
+    generated_dir = tmp_path / "generated"
+    source_dir.mkdir(parents=True)
+    framework_dir.mkdir(parents=True)
+    (source_dir / "poc_demo.move").write_text("module poc_demo::poc_demo {}", encoding="utf-8")
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(
+            cmd,
+            0,
+            stdout='{"Result":"Success","hash":"0x' + "2" * 64 + '"}',
+            stderr="",
+        )
+
+    class FakeKey:
+        private_key_hex = "0xabc"
+
+    monkeypatch.setenv(dapp_svc.DEMO_GENERATED_ENV, str(generated_dir))
+    monkeypatch.setattr(dapp_svc, "_repo_root", lambda: repo_root)
+    monkeypatch.setattr(dapp_svc, "_aptos_cli", lambda _repo_root: ["aptos"])
+    monkeypatch.setattr(dapp_svc.subprocess, "run", fake_run)
+
+    module_address, tx_hash = await dapp_svc.deploy_demo_package(
+        admin_key=FakeKey(),
+        admin_address="0xabc",
+        rest_url="http://127.0.0.1:8080/v1",
+    )
+
+    assert module_address == "0xabc"
+    assert tx_hash == "0x" + "2" * 64
+    assert calls[0][:3] == ["aptos", "move", "publish"]
+    assert "create-object-and-publish-package" not in calls[0]
+    assert calls[0][calls[0].index("--named-addresses") + 1] == "poc_demo=0xabc"
+    assert calls[0][calls[0].index("--sender-account") + 1] == "0xabc"
+
+
+@pytest.mark.asyncio
+async def test_run_poc_framework_script_compiles_explicit_topo_framework_package(tmp_path, monkeypatch):
+    repo_root = tmp_path / "topo-chain"
+    dashboard_scripts = repo_root / "poc-dashboard" / "scripts"
+    framework_dir = repo_root / "aptos-move" / "framework" / "topo-framework"
+    dashboard_scripts.mkdir(parents=True)
+    framework_dir.mkdir(parents=True)
+    (dashboard_scripts / "initialize_poc_registry.move").write_text(
+        "script { fun main(_core_resources: &signer) {} }",
+        encoding="utf-8",
+    )
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        if "compile-script" in cmd:
+            output_file = Path(cmd[cmd.index("--output-file") + 1])
+            output_file.write_bytes(b"script")
+            return subprocess.CompletedProcess(cmd, 0, stdout="compiled", stderr="")
+        return subprocess.CompletedProcess(
+            cmd,
+            0,
+            stdout='{"Result":"Success","hash":"0x' + "1" * 64 + '"}',
+            stderr="",
+        )
+
+    class FakeKey:
+        private_key_hex = "0xabc"
+
+    key = FakeKey()
+    monkeypatch.setattr(dapp_svc, "_repo_root", lambda: repo_root)
+    monkeypatch.setattr(dapp_svc, "_aptos_cli", lambda _repo_root: ["aptos"])
+    monkeypatch.setattr(dapp_svc.subprocess, "run", fake_run)
+
+    tx_hash = await dapp_svc.run_poc_framework_script(
+        "initialize_poc_registry.move",
+        core_key=key,
+        core_address="0xa550c18",
+        rest_url="http://127.0.0.1:39090/v1",
+        args=["u64:5"],
+    )
+
+    assert tx_hash == "0x" + "1" * 64
+    assert calls[0][:3] == ["aptos", "move", "compile-script"]
+    assert "--script-path" not in calls[1]
+    assert "--framework-local-dir" not in calls[1]
+    assert "--compiled-script-path" in calls[1]
+    assert calls[1][-2:] == ["--args", "u64:5"]
 
 
 @pytest.mark.asyncio

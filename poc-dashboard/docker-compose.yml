@@ -20,7 +20,7 @@ services:
       - ./config.docker.yaml:/app/config.yaml:ro
       - ./data:/app/data
       - ./generated:/app/generated
-      - /home/appuser/chain-data:/home/appuser/chain-data:ro
+      - /home/appuser/chain-test-data:/home/appuser/chain-test-data:ro
       - /home/appuser/topo-chain:/home/appuser/topo-chain:ro
     ports:
       - "38000:38000"

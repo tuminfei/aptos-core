@@ -4,7 +4,7 @@ import urllib.request
 
 import yaml
 
-from app.config import _detect_api_info, load_settings
+from app.config import _detect_api_info, _load_cluster, load_settings
 
 
 class _FakeResponse:
@@ -102,6 +102,45 @@ def test_explicit_rest_url_is_not_overridden_by_cluster_detection(tmp_path, monk
     settings = load_settings(str(config_path))
 
     assert settings.chain.rest_url == "http://127.0.0.1:39091/v1"
+
+
+def test_load_cluster_uses_local_identity_when_node_yaml_has_container_path(tmp_path):
+    node_dir = tmp_path / "0"
+    node_dir.mkdir()
+    (node_dir / "node.yaml").write_text(
+        yaml.safe_dump({
+            "api": {"address": "127.0.0.1:39417"},
+            "consensus": {
+                "safety_rules": {
+                    "initial_safety_rules_config": {
+                        "from_file": {
+                            "identity_blob_path": "/root/topo-chain-data/0/validator-identity.yaml",
+                        },
+                    },
+                },
+            },
+            "validator_network": {},
+        }),
+        encoding="utf-8",
+    )
+    (node_dir / "validator-identity.yaml").write_text(
+        yaml.safe_dump({
+            "account_address": "abcd",
+            "account_private_key": "0x1234",
+        }),
+        encoding="utf-8",
+    )
+    (tmp_path / "root_key").write_text("0x99", encoding="utf-8")
+
+    cluster = _load_cluster(str(tmp_path))
+
+    assert cluster is not None
+    assert cluster.keys is not None
+    assert cluster.keys.core_resources.private_key == "0x99"
+    assert len(cluster.keys.operators) == 1
+    assert cluster.keys.operators[0].name == "validator-0"
+    assert cluster.keys.operators[0].address == "0xabcd"
+    assert cluster.keys.operators[0].private_key == "0x1234"
 
 
 def test_load_settings_reads_dashboard_frontend_config(tmp_path):

@@ -270,7 +270,7 @@ def _validator_identity_path(node_cfg: dict, node_dir: str) -> str:
     initial_config = safety_rules.get("initial_safety_rules_config") or {}
     from_file = initial_config.get("from_file") or {}
     identity_path = from_file.get("identity_blob_path")
-    if identity_path:
+    if identity_path and os.path.exists(identity_path):
         return identity_path
     return os.path.join(node_dir, "validator-identity.yaml")
 

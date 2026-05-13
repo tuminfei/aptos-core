@@ -92,7 +92,7 @@ class CleanupStagingReq(BaseModel):
 
 def _validate_u64(value: int, name: str) -> None:
     if value < 0 or value > U64_MAX:
-        raise ParamError(f"{name} 必须在 0 到 {U64_MAX} 之间")
+        raise ParamError(f"{name} 必须是 u64，范围为 0 到 {U64_MAX}")
 
 
 @router.post("/governance/force-end-epoch")
