@@ -1,0 +1,80 @@
+chain:
+  name: aptos-local
+  era: 1
+  chain_id: 4
+
+imageTag: devnet
+
+numValidators: 4
+numFullnodeGroups: 4
+
+haproxy:
+  enabled: false
+  replicas: 1
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+
+validator:
+  resources:
+    requests:
+      cpu: "300m"
+      memory: "768Mi"
+    limits:
+      cpu: "1"
+      memory: "1536Mi"
+  storage:
+    class: local-path
+    size: 5Gi
+  useConsensusHealthCheckAsStartupProbe: false
+
+fullnode:
+  groups:
+    - name: fullnode
+      dns_name: vfn
+      replicas: 0
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+  storage:
+    class: local-path
+    size: 5Gi
+  config:
+    full_node_networks:
+      - network_id: "public"
+
+service:
+  validator:
+    external:
+      type: ClusterIP
+    internal:
+      type: ClusterIP
+      headless: false
+    externalTrafficPolicy:
+    enableRestApi: true
+    enableMetricsPort: false
+    enableAdminPort: false
+  fullnode:
+    external:
+      type: ClusterIP
+    internal:
+      type: ClusterIP
+      headless: false
+    externalTrafficPolicy:
+    enableRestApi: true
+    enableMetricsPort: false
+    enableAdminPort: false
+
+metrics:
+  destination: dev
+
+genesis_blob_upload_url: ""
+cluster_name: aptos-local

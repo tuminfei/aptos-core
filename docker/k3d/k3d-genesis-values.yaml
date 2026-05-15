@@ -1,0 +1,41 @@
+enabled: true
+
+chain:
+  name: aptos-local
+  era: 1
+  chain_id: 4
+  is_test: true
+  allow_new_validators: false
+  epoch_duration_secs: 7200
+  min_stake: 100000000000000
+  min_voting_threshold: 100000000000000
+  required_proposer_stake: 100000000000000
+  max_stake: 100000000000000000
+  recurring_lockup_duration_secs: 86400
+  voting_duration_secs: 43200
+  voting_power_increase_limit: 20
+  rewards_apy_percentage: 10
+  min_price_per_gas_unit: 1
+
+imageTag: devnet
+
+genesis:
+  numValidators: 4
+  username_prefix: aptos-local-aptos-node
+  domain: ""
+  validator:
+    enable_onchain_discovery: false
+    internal_host_suffix: validator
+    stake_amount: "100000000000000"
+  fullnode:
+    enable_onchain_discovery: false
+    internal_host_suffix: fullnode
+  genesis_blob_upload_url: ""
+  cluster_name: aptos-local
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
