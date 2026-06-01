@@ -188,25 +188,33 @@ impl TransactionOptionsExt for TransactionOptions {
                 Ed25519Signature::try_from([0u8; 64].as_ref()).unwrap(),
             );
 
-            let txns = client
-                .simulate_with_gas_estimation(&signed_transaction, true, false)
+            let simulated_txn = client
+                .simulate_bcs_with_gas_estimation(&signed_transaction, true, false)
                 .await?
                 .into_inner();
-            let simulated_txn = txns.first().unwrap();
 
             // Check if the transaction will pass, if it doesn't then fail
-            if !simulated_txn.info.success {
-                return Err(CliError::SimulationError(
-                    simulated_txn.info.vm_status.clone(),
-                ));
+            if !simulated_txn.info.status().is_success() {
+                return Err(CliError::SimulationError(format!(
+                    "{:?}",
+                    simulated_txn.info.status()
+                )));
             }
 
             // Take the gas used and use a headroom factor on it
-            let gas_used = simulated_txn.info.gas_used.0;
+            let user_txn = simulated_txn
+                .transaction
+                .try_as_signed_user_txn()
+                .ok_or_else(|| {
+                    CliError::UnexpectedError(
+                        "Simulation transaction resulted in a non-user transaction".to_string(),
+                    )
+                })?;
+            let gas_used = simulated_txn.info.gas_used();
             // TODO: remove the hardcoded 530 as it's the minumum gas units required for the transaction that will
             // automatically create an account for stateless account.
             let adjusted_max_gas =
-                adjust_gas_headroom(gas_used, max(simulated_txn.request.max_gas_amount.0, 530));
+                adjust_gas_headroom(gas_used, max(user_txn.max_gas_amount(), 530));
 
             // Ask if you want to accept the estimate amount
             let upper_cost_bound = adjusted_max_gas * gas_unit_price;
