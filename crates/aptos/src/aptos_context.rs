@@ -376,21 +376,25 @@ async fn submit_to_chain(
         );
 
         let txns = client
-            .simulate_with_gas_estimation(&signed_transaction, true, false)
+            .simulate_bcs_with_gas_estimation(&signed_transaction, true, false)
             .await?
             .into_inner();
-        let simulated_txn = txns.first().unwrap();
+        let simulated_txn = txns
+            .transaction
+            .try_as_signed_user_txn()
+            .ok_or_else(|| {
+                CliError::UnexpectedError(
+                    "transaction simulation returned a non-user transaction".to_string(),
+                )
+            })?;
 
         // Check if the transaction will pass
-        if !simulated_txn.info.success {
-            return Err(CliError::SimulationError(
-                simulated_txn.info.vm_status.clone(),
-            ));
+        if !txns.info.status().is_success() {
+            return Err(CliError::SimulationError(format!("{:?}", txns.info.status())));
         }
 
-        let gas_used = simulated_txn.info.gas_used.0;
-        let adjusted_max_gas =
-            adjust_gas_headroom(gas_used, max(simulated_txn.request.max_gas_amount.0, 530));
+        let gas_used = txns.info.gas_used();
+        let adjusted_max_gas = adjust_gas_headroom(gas_used, max(simulated_txn.max_gas_amount(), 530));
 
         let upper_cost_bound = adjusted_max_gas * gas_unit_price;
         let lower_cost_bound = gas_used * gas_unit_price;
