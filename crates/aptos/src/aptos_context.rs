@@ -388,9 +388,19 @@ async fn submit_to_chain(
                 )
             })?;
 
-        // Check if the transaction will pass
+        // Preserve the fast BCS estimation path on success, but fall back to the JSON
+        // response format on failure so we keep the API's detailed vm_status message.
         if !txns.info.status().is_success() {
-            return Err(CliError::SimulationError(format!("{:?}", txns.info.status())));
+            let detailed_status = client
+                .simulate_with_gas_estimation(&signed_transaction, true, false)
+                .await
+                .ok()
+                .and_then(|response| response.into_inner().into_iter().next())
+                .map(|txn| txn.info.vm_status)
+                .filter(|status| !status.is_empty())
+                .unwrap_or_else(|| format!("{:?}", txns.info.status()));
+
+            return Err(CliError::SimulationError(detailed_status));
         }
 
         let gas_used = txns.info.gas_used();
