@@ -40,15 +40,12 @@ fn metadata_from_payload(payload: &TransactionPayload) -> PackageMetadata {
 
 #[test]
 fn publish_success_mock() {
-    let pkg = common::make_package(
+    let pkg = common::make_package("pub_mock", &[(
         "pub_mock",
-        &[(
-            "pub_mock",
-            "module 0xCAFE::pub_mock {
+        "module 0xCAFE::pub_mock {
     public fun hello(): u64 { 42 }
 }",
-        )],
-    );
+    )]);
     let dir = pkg.path().to_str().unwrap();
 
     let (env, buffer) = common::env_with_mock(|ctx| {
@@ -156,4 +153,39 @@ fn publish_hides_sources_for_selected_modules() {
         !visible_module.source.is_empty(),
         "non-matching module source should remain present"
     );
+}
+
+#[test]
+fn publish_rejects_unmatched_hidden_module_requests() {
+    let pkg = common::make_package("pub_mock", &[(
+        "poc_hidden",
+        "module 0xCAFE::poc_hidden {
+    public fun hello(): u64 { 7 }
+}",
+    )]);
+    let dir = pkg.path().to_str().unwrap();
+
+    let (env, buffer) = common::env_with_mock(|ctx| {
+        ctx.expect_submit_transaction().times(0);
+    });
+
+    let output = common::run_cli_with_env(
+        &[
+            "publish",
+            "--package-dir",
+            dir,
+            "--skip-fetch-latest-git-deps",
+            "--hide-source-for-module",
+            "topo_framework::poc_regsitry",
+            "--assume-yes",
+        ],
+        env,
+        buffer,
+    );
+
+    let err = output
+        .result
+        .expect_err("publish should fail before submitting a transaction");
+    assert!(err.contains("Requested modules to hide were not found"));
+    assert!(err.contains("topo_framework::poc_regsitry"));
 }

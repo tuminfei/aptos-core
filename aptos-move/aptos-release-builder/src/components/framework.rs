@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{aptos_core_path, components::get_execution_hash};
-use anyhow::Result;
+use anyhow::{bail, Result};
 use aptos_crypto::HashValue;
 use topo_framework::{new_release_package, BuildOptions, BuiltPackage};
 use topo_framework::natives::code::PackageMetadata;
@@ -182,7 +182,7 @@ pub fn generate_upgrade_proposals(
         selectively_hide_module_sources(
             release.package_metadata_mut(),
             config.hidden_modules.as_deref().unwrap_or(&[]),
-        );
+        )?;
 
         if is_multi_step {
             // If we're generating a multi-step proposal
@@ -220,24 +220,39 @@ pub fn generate_upgrade_proposals(
 fn selectively_hide_module_sources(
     metadata: &mut PackageMetadata,
     requested_modules: &[String],
-) -> Vec<String> {
+) -> Result<Vec<String>> {
     if requested_modules.is_empty() {
-        return vec![];
+        return Ok(vec![]);
     }
 
     let mut hidden_module_names = vec![];
+    let mut matched_requests = HashSet::new();
     for module in &mut metadata.modules {
-        if requested_modules
+        let matching_requests = requested_modules
             .iter()
-            .any(|module_id| module_name_matches(module_id, &module.name))
-        {
+            .filter(|module_id| module_name_matches(module_id, &module.name))
+            .collect::<Vec<_>>();
+        if !matching_requests.is_empty() {
             module.source.clear();
             module.source_map.clear();
             hidden_module_names.push(module.name.clone());
+            matched_requests.extend(matching_requests.into_iter().cloned());
         }
     }
 
-    hidden_module_names
+    let unmatched_requests = requested_modules
+        .iter()
+        .filter(|module_id| !matched_requests.contains(*module_id))
+        .cloned()
+        .collect::<Vec<_>>();
+    if !unmatched_requests.is_empty() {
+        bail!(
+            "Requested modules to hide were not found in the built package: {}",
+            unmatched_requests.join(", ")
+        );
+    }
+
+    Ok(hidden_module_names)
 }
 
 fn module_name_matches(requested_module: &str, actual_module_name: &str) -> bool {
@@ -307,7 +322,8 @@ packages:
         let hidden = selectively_hide_module_sources(
             &mut metadata,
             &["topo_framework::poc_registry".to_string()],
-        );
+        )
+        .expect("hide request should succeed");
 
         assert_eq!(hidden, vec!["poc_registry".to_string()]);
 
@@ -334,5 +350,22 @@ packages:
             .expect("visible module should exist");
         assert!(!visible_module.source.is_empty());
         assert!(!visible_module.source_map.is_empty());
+    }
+
+    #[test]
+    fn reject_unmatched_hidden_module_requests() {
+        let mut metadata = test_metadata();
+
+        let err = selectively_hide_module_sources(
+            &mut metadata,
+            &["topo_framework::poc_regsitry".to_string()],
+        )
+        .expect_err("misspelled module request should fail");
+
+        assert!(
+            err.to_string()
+                .contains("Requested modules to hide were not found in the built package")
+        );
+        assert!(err.to_string().contains("topo_framework::poc_regsitry"));
     }
 }

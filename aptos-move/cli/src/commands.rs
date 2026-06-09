@@ -64,7 +64,7 @@ use rand::SeedableRng;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     fmt::{Display, Formatter},
     path::{Path, PathBuf},
     str::FromStr,
@@ -1031,7 +1031,7 @@ fn create_package_publication_data(
     let hidden_modules = selectively_hide_module_sources(
         &mut metadata,
         &source_visibility_args.hide_source_for_modules,
-    );
+    )?;
     print_hidden_module_sources(&hidden_modules);
     let metadata_serialized = bcs::to_bytes(&metadata).expect("PackageMetadata has BCS");
 
@@ -1076,7 +1076,7 @@ fn create_chunked_publish_payloads(
     let hidden_modules = selectively_hide_module_sources(
         &mut metadata,
         &source_visibility_args.hide_source_for_modules,
-    );
+    )?;
     print_hidden_module_sources(&hidden_modules);
     let metadata_serialized = bcs::to_bytes(&metadata).expect("PackageMetadata has BCS");
 
@@ -1101,24 +1101,39 @@ fn create_chunked_publish_payloads(
 pub(crate) fn selectively_hide_module_sources(
     metadata: &mut PackageMetadata,
     requested_modules: &[String],
-) -> Vec<String> {
+) -> CliTypedResult<Vec<String>> {
     if requested_modules.is_empty() {
-        return vec![];
+        return Ok(vec![]);
     }
 
     let mut hidden_module_names = vec![];
+    let mut matched_requests = BTreeSet::new();
     for module in &mut metadata.modules {
-        if requested_modules
+        let matching_requests = requested_modules
             .iter()
-            .any(|module_id| module_name_matches(module_id, &module.name))
-        {
+            .filter(|module_id| module_name_matches(module_id, &module.name))
+            .collect_vec();
+        if !matching_requests.is_empty() {
             module.source.clear();
             module.source_map.clear();
             hidden_module_names.push(module.name.clone());
+            matched_requests.extend(matching_requests.into_iter().cloned());
         }
     }
 
-    hidden_module_names
+    let unmatched_requests = requested_modules
+        .iter()
+        .filter(|module_id| !matched_requests.contains(*module_id))
+        .cloned()
+        .collect_vec();
+    if !unmatched_requests.is_empty() {
+        return Err(CliError::CommandArgumentError(format!(
+            "Requested modules to hide were not found in the built package: {}",
+            unmatched_requests.join(", ")
+        )));
+    }
+
+    Ok(hidden_module_names)
 }
 
 fn module_name_matches(requested_module: &str, actual_module_name: &str) -> bool {
@@ -2059,7 +2074,7 @@ impl CliCommand<TransactionSummary> for CreateResourceAccountAndPublishPackage {
         let hidden_modules = selectively_hide_module_sources(
             &mut metadata,
             &source_visibility_args.hide_source_for_modules,
-        );
+        )?;
         print_hidden_module_sources(&hidden_modules);
 
         let message = format!(
@@ -2216,7 +2231,7 @@ impl CliCommand<&'static str> for VerifyPackage {
         selectively_hide_module_sources(
             &mut compiled_metadata,
             &self.source_visibility_args.hide_source_for_modules,
-        );
+        )?;
 
         // Now pull the compiled package
         let url = self.rest_options.url(&self.profile_options)?;
