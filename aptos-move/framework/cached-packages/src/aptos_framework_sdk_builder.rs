@@ -700,8 +700,7 @@ pub enum EntryFunctionCall {
     ///   to prevent the operator from pre-loading multiple future periods at once.
     /// - `users` and `powers` must have the same length.
     ///
-    /// Idempotency: calling this multiple times for the same target_period overwrites the previous value.
-    /// This allows the operator to correct a mistake before the period boundary is crossed.
+    /// Idempotency: calling this multiple times for the same target_period keeps the first value.
     PocPowerStoreStageBatchUpdate {
         target_period: u64,
         users: Vec<AccountAddress>,
@@ -3477,8 +3476,7 @@ pub fn poc_power_store_set_retention_bps_per_period(
 ///   to prevent the operator from pre-loading multiple future periods at once.
 /// - `users` and `powers` must have the same length.
 ///
-/// Idempotency: calling this multiple times for the same target_period overwrites the previous value.
-/// This allows the operator to correct a mistake before the period boundary is crossed.
+/// Idempotency: calling this multiple times for the same target_period keeps the first value.
 pub fn poc_power_store_stage_batch_update(
     target_period: u64,
     users: Vec<AccountAddress>,

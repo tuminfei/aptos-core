@@ -736,8 +736,7 @@ Constraints:
 to prevent the operator from pre-loading multiple future periods at once.
 - <code>users</code> and <code>powers</code> must have the same length.
 
-Idempotency: calling this multiple times for the same target_period overwrites the previous value.
-This allows the operator to correct a mistake before the period boundary is crossed.
+Idempotency: calling this multiple times for the same target_period keeps the first value.
 
 
 <pre><code><b>public</b> entry <b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_stage_batch_update">stage_batch_update</a>(operator: &<a href="../../move-stdlib/doc/signer.md#0x1_signer">signer</a>, target_period: u64, users: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;<b>address</b>&gt;, powers: <a href="../../move-stdlib/doc/vector.md#0x1_vector">vector</a>&lt;u64&gt;)
@@ -776,13 +775,14 @@ This allows the operator to correct a mistake before the period boundary is cros
     <b>while</b> (i &lt; length) {
         <b>let</b> user = *users.borrow(i);
         <b>let</b> power = *powers.borrow(i);
-        <a href="poc_power_store.md#0x1_poc_power_store_upsert_power_version">upsert_power_version</a>(store, user, effective_period, power);
-        <a href="event.md#0x1_event_emit">event::emit</a>(<a href="poc_power_store.md#0x1_poc_power_store_PowerUpdateStagedEvent">PowerUpdateStagedEvent</a> {
-            target_period,
-            effective_period,
-            user,
-            power,
-        });
+        <b>if</b> (<a href="poc_power_store.md#0x1_poc_power_store_upsert_power_version">upsert_power_version</a>(store, user, effective_period, power)) {
+            <a href="event.md#0x1_event_emit">event::emit</a>(<a href="poc_power_store.md#0x1_poc_power_store_PowerUpdateStagedEvent">PowerUpdateStagedEvent</a> {
+                target_period,
+                effective_period,
+                user,
+                power,
+            });
+        };
         i += 1;
     };
 }
@@ -1535,19 +1535,19 @@ next 60 committed epochs    → period 2
 
 ## Function `upsert_power_version`
 
-Insert or update a user's power version in the two-slot window.
+Insert a user's power version in the two-slot window.
 
 Slot selection logic:
 1. User not yet in table → create a new entry with <code>newer</code> = this version (skip if power == 0)
-2. <code>effective_period</code> matches <code>newer</code> → overwrite <code>newer.power</code> in-place (idempotent update)
-3. <code>effective_period</code> matches <code>older</code> → overwrite <code>older.power</code> in-place (idempotent update)
+2. <code>effective_period</code> matches <code>newer</code> → return without changing power
+3. <code>effective_period</code> matches <code>older</code> → return without changing power
 4. Neither slot matches → shift: <code>older = newer</code>, <code>newer = new <a href="version.md#0x1_version">version</a></code>
 (the oldest slot is evicted; only the two most recent periods are retained)
 
 After any write, <code>normalize_user_power_info</code> ensures older.effective_period <= newer.effective_period.
 
 
-<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_upsert_power_version">upsert_power_version</a>(store: &<b>mut</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">poc_power_store::PowerStore</a>, user: <b>address</b>, effective_period: u64, power: u64)
+<pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_upsert_power_version">upsert_power_version</a>(store: &<b>mut</b> <a href="poc_power_store.md#0x1_poc_power_store_PowerStore">poc_power_store::PowerStore</a>, user: <b>address</b>, effective_period: u64, power: u64): bool
 </code></pre>
 
 
@@ -1561,10 +1561,10 @@ After any write, <code>normalize_user_power_info</code> ensures older.effective_
     user: <b>address</b>,
     effective_period: u64,
     power: u64,
-) {
+): bool {
     <b>if</b> (!store.users.contains(user)) {
         <b>if</b> (power == 0) {
-            <b>return</b>
+            <b>return</b> <b>false</b>
         };
         store.users.add(user, <a href="poc_power_store.md#0x1_poc_power_store_UserPowerInfo">UserPowerInfo</a> {
             older: <a href="poc_power_store.md#0x1_poc_power_store_empty_power_version">empty_power_version</a>(),
@@ -1573,20 +1573,16 @@ After any write, <code>normalize_user_power_info</code> ensures older.effective_
                 power,
             },
         });
-        <b>return</b>
+        <b>return</b> <b>true</b>
     };
 
     <b>let</b> info = store.users.borrow_mut(user);
     <b>if</b> (info.newer.effective_period == effective_period) {
-        info.newer.power = power;
-        <a href="poc_power_store.md#0x1_poc_power_store_normalize_user_power_info">normalize_user_power_info</a>(info);
-        <b>return</b>
+        <b>return</b> <b>false</b>
     };
 
     <b>if</b> (info.older.effective_period == effective_period) {
-        info.older.power = power;
-        <a href="poc_power_store.md#0x1_poc_power_store_normalize_user_power_info">normalize_user_power_info</a>(info);
-        <b>return</b>
+        <b>return</b> <b>false</b>
     };
 
     // Evict the oldest slot and write the new <a href="version.md#0x1_version">version</a> into `newer`
@@ -1596,6 +1592,7 @@ After any write, <code>normalize_user_power_info</code> ensures older.effective_
         power,
     };
     <a href="poc_power_store.md#0x1_poc_power_store_normalize_user_power_info">normalize_user_power_info</a>(info);
+    <b>true</b>
 }
 </code></pre>
 
@@ -1608,7 +1605,7 @@ After any write, <code>normalize_user_power_info</code> ensures older.effective_
 ## Function `normalize_user_power_info`
 
 Ensure the two slots are ordered: older.effective_period <= newer.effective_period.
-Swaps the slots if they are out of order (can happen after an in-place overwrite).
+Swaps the slots if they are out of order.
 
 
 <pre><code><b>fun</b> <a href="poc_power_store.md#0x1_poc_power_store_normalize_user_power_info">normalize_user_power_info</a>(info: &<b>mut</b> <a href="poc_power_store.md#0x1_poc_power_store_UserPowerInfo">poc_power_store::UserPowerInfo</a>)
