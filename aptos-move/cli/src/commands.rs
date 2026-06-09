@@ -48,7 +48,7 @@ use aptos_types::{
 use aptos_vm::data_cache::AsMoveResolver;
 use aptos_vm_types::resolver::TResourceView;
 use async_trait::async_trait;
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use colored::Colorize;
 use itertools::Itertools;
 use move_command_line_common::{address::NumericalAddress, env::MOVE_HOME};
@@ -77,7 +77,7 @@ use topo_framework::{
     },
     docgen::DocgenOptions,
     extended_checks,
-    natives::code::{PackageRegistry, UpgradePolicy},
+    natives::code::{PackageMetadata, PackageRegistry, UpgradePolicy},
     prover::ProverOptions,
     BuildOptions, BuiltPackage,
 };
@@ -798,6 +798,18 @@ pub struct IncludedArtifactsArgs {
     pub included_artifacts: IncludedArtifacts,
 }
 
+#[derive(Args, Clone, Debug, Default)]
+pub struct SourceVisibilityArgs {
+    /// Repeatable module identifier whose source artifacts should be omitted from on-chain metadata
+    ///
+    /// Matching modules still publish bytecode on-chain. This only clears the module's source
+    /// text and source map from package metadata. Values may be provided either as a bare module
+    /// name like `poc_contribution` or a fully qualified identifier like
+    /// `topo_framework::poc_contribution`.
+    #[clap(long = "hide-source-for-module", value_name = "MODULE")]
+    pub hide_source_for_modules: Vec<String>,
+}
+
 /// Publishes the modules in a Move package to the Aptos blockchain
 #[derive(Parser)]
 pub struct PublishPackage {
@@ -807,6 +819,8 @@ pub struct PublishPackage {
     pub chunked_publish_option: ChunkedPublishOption,
     #[clap(flatten)]
     pub included_artifacts_args: IncludedArtifactsArgs,
+    #[clap(flatten)]
+    pub source_visibility_args: SourceVisibilityArgs,
     #[clap(flatten)]
     pub move_options: MovePackageOptions,
     #[clap(flatten)]
@@ -845,8 +859,12 @@ impl TryInto<PackagePublicationData> for &PublishPackage {
         let package =
             build_package_options(&self.move_options, &self.included_artifacts_args, &self.env)?;
 
-        let package_publication_data =
-            create_package_publication_data(package, PublishType::AccountDeploy, None)?;
+        let package_publication_data = create_package_publication_data(
+            package,
+            PublishType::AccountDeploy,
+            None,
+            &self.source_visibility_args,
+        )?;
 
         let size = bcs::serialized_size(&package_publication_data.payload)?;
         println!("package size {} bytes", size);
@@ -880,6 +898,7 @@ impl AsyncTryInto<ChunkedPublishPayloads> for &PublishPackage {
             package,
             PublishType::AccountDeploy,
             None,
+            &self.source_visibility_args,
             self.chunked_publish_option
                 .large_packages_module
                 .large_packages_module_address(&self.txn_options)
@@ -1005,9 +1024,15 @@ fn create_package_publication_data(
     package: BuiltPackage,
     publish_type: PublishType,
     object_address: Option<AccountAddress>,
+    source_visibility_args: &SourceVisibilityArgs,
 ) -> CliTypedResult<PackagePublicationData> {
     let compiled_units = package.extract_code();
-    let metadata = package.extract_metadata()?;
+    let mut metadata = package.extract_metadata()?;
+    let hidden_modules = selectively_hide_module_sources(
+        &mut metadata,
+        &source_visibility_args.hide_source_for_modules,
+    );
+    print_hidden_module_sources(&hidden_modules);
     let metadata_serialized = bcs::to_bytes(&metadata).expect("PackageMetadata has BCS");
 
     let payload = match publish_type {
@@ -1042,11 +1067,17 @@ fn create_chunked_publish_payloads(
     package: BuiltPackage,
     publish_type: PublishType,
     object_address: Option<AccountAddress>,
+    source_visibility_args: &SourceVisibilityArgs,
     large_packages_module_address: AccountAddress,
     chunk_size: usize,
 ) -> CliTypedResult<ChunkedPublishPayloads> {
     let compiled_units = package.extract_code();
-    let metadata = package.extract_metadata()?;
+    let mut metadata = package.extract_metadata()?;
+    let hidden_modules = selectively_hide_module_sources(
+        &mut metadata,
+        &source_visibility_args.hide_source_for_modules,
+    );
+    print_hidden_module_sources(&hidden_modules);
     let metadata_serialized = bcs::to_bytes(&metadata).expect("PackageMetadata has BCS");
 
     let maybe_object_address = if let PublishType::ObjectUpgrade = publish_type {
@@ -1065,6 +1096,47 @@ fn create_chunked_publish_payloads(
     );
 
     Ok(ChunkedPublishPayloads { payloads })
+}
+
+pub(crate) fn selectively_hide_module_sources(
+    metadata: &mut PackageMetadata,
+    requested_modules: &[String],
+) -> Vec<String> {
+    if requested_modules.is_empty() {
+        return vec![];
+    }
+
+    let mut hidden_module_names = vec![];
+    for module in &mut metadata.modules {
+        if requested_modules
+            .iter()
+            .any(|module_id| module_name_matches(module_id, &module.name))
+        {
+            module.source.clear();
+            module.source_map.clear();
+            hidden_module_names.push(module.name.clone());
+        }
+    }
+
+    hidden_module_names
+}
+
+fn module_name_matches(requested_module: &str, actual_module_name: &str) -> bool {
+    requested_module
+        .rsplit("::")
+        .next()
+        .is_some_and(|module_name| module_name == actual_module_name)
+}
+
+fn print_hidden_module_sources(hidden_modules: &[String]) {
+    if hidden_modules.is_empty() {
+        return;
+    }
+
+    println!(
+        "Omitting source artifacts for modules: {}",
+        hidden_modules.join(", ")
+    );
 }
 
 #[async_trait]
@@ -1173,6 +1245,8 @@ pub struct CreateObjectAndPublishPackage {
     #[clap(flatten)]
     pub(crate) included_artifacts_args: IncludedArtifactsArgs,
     #[clap(flatten)]
+    pub(crate) source_visibility_args: SourceVisibilityArgs,
+    #[clap(flatten)]
     pub(crate) move_options: MovePackageOptions,
     #[clap(flatten)]
     pub(crate) txn_options: TransactionOptions,
@@ -1217,6 +1291,7 @@ impl CliCommand<TransactionSummary> for CreateObjectAndPublishPackage {
                 package,
                 PublishType::AccountDeploy,
                 None,
+                &self.source_visibility_args,
                 chunked_publish_large_packages_module_address.unwrap(),
                 self.chunked_publish_option.chunk_size,
             )?
@@ -1247,6 +1322,7 @@ impl CliCommand<TransactionSummary> for CreateObjectAndPublishPackage {
                 package,
                 PublishType::ObjectDeploy,
                 None,
+                &self.source_visibility_args,
                 chunked_publish_large_packages_module_address.unwrap(),
                 self.chunked_publish_option.chunk_size,
             )?
@@ -1272,6 +1348,7 @@ impl CliCommand<TransactionSummary> for CreateObjectAndPublishPackage {
                 package,
                 PublishType::ObjectDeploy,
                 Some(object_address),
+                &self.source_visibility_args,
             )?
             .payload;
             let size = bcs::serialized_size(&payload)?;
@@ -1313,6 +1390,8 @@ pub struct UpgradeObjectPackage {
     pub(crate) chunked_publish_option: ChunkedPublishOption,
     #[clap(flatten)]
     pub(crate) included_artifacts_args: IncludedArtifactsArgs,
+    #[clap(flatten)]
+    pub(crate) source_visibility_args: SourceVisibilityArgs,
     #[clap(flatten)]
     pub(crate) move_options: MovePackageOptions,
     #[clap(flatten)]
@@ -1366,6 +1445,7 @@ impl CliCommand<TransactionSummary> for UpgradeObjectPackage {
                 built_package,
                 PublishType::ObjectUpgrade,
                 Some(self.object_address),
+                &self.source_visibility_args,
                 chunked_publish_large_packages_module_address,
                 self.chunked_publish_option.chunk_size,
             )?
@@ -1390,6 +1470,7 @@ impl CliCommand<TransactionSummary> for UpgradeObjectPackage {
                 built_package,
                 PublishType::ObjectUpgrade,
                 Some(self.object_address),
+                &self.source_visibility_args,
             )?
             .payload;
 
@@ -1431,6 +1512,8 @@ pub struct DeployObjectCode {
     pub(crate) chunked_publish_option: ChunkedPublishOption,
     #[clap(flatten)]
     pub(crate) included_artifacts_args: IncludedArtifactsArgs,
+    #[clap(flatten)]
+    pub(crate) source_visibility_args: SourceVisibilityArgs,
     #[clap(flatten)]
     pub(crate) move_options: MovePackageOptions,
     #[clap(flatten)]
@@ -1476,6 +1559,7 @@ impl CliCommand<TransactionSummary> for DeployObjectCode {
                 package,
                 PublishType::AccountDeploy,
                 None,
+                &self.source_visibility_args,
                 chunked_publish_large_packages_module_address.unwrap(),
                 self.chunked_publish_option.chunk_size,
             )?
@@ -1506,6 +1590,7 @@ impl CliCommand<TransactionSummary> for DeployObjectCode {
                 package,
                 PublishType::ObjectDeploy,
                 None,
+                &self.source_visibility_args,
                 chunked_publish_large_packages_module_address.unwrap(),
                 self.chunked_publish_option.chunk_size,
             )?
@@ -1531,6 +1616,7 @@ impl CliCommand<TransactionSummary> for DeployObjectCode {
                 package,
                 PublishType::ObjectDeploy,
                 Some(object_address),
+                &self.source_visibility_args,
             )?
             .payload;
 
@@ -1580,6 +1666,8 @@ pub struct UpgradeCodeObject {
     pub(crate) chunked_publish_option: ChunkedPublishOption,
     #[clap(flatten)]
     pub(crate) included_artifacts_args: IncludedArtifactsArgs,
+    #[clap(flatten)]
+    pub(crate) source_visibility_args: SourceVisibilityArgs,
     #[clap(flatten)]
     pub(crate) move_options: MovePackageOptions,
     #[clap(flatten)]
@@ -1670,6 +1758,7 @@ impl CliCommand<TransactionSummary> for UpgradeCodeObject {
                 package,
                 PublishType::ObjectUpgrade,
                 Some(self.object_address),
+                &self.source_visibility_args,
                 chunked_publish_large_packages_module_address,
                 self.chunked_publish_option.chunk_size,
             )?
@@ -1694,6 +1783,7 @@ impl CliCommand<TransactionSummary> for UpgradeCodeObject {
                 package,
                 PublishType::ObjectUpgrade,
                 Some(self.object_address),
+                &self.source_visibility_args,
             )?
             .payload;
 
@@ -1912,6 +2002,8 @@ pub struct CreateResourceAccountAndPublishPackage {
     #[clap(flatten)]
     pub(crate) included_artifacts_args: IncludedArtifactsArgs,
     #[clap(flatten)]
+    pub(crate) source_visibility_args: SourceVisibilityArgs,
+    #[clap(flatten)]
     pub(crate) move_options: MovePackageOptions,
     #[clap(flatten)]
     pub(crate) txn_options: TransactionOptions,
@@ -1932,6 +2024,7 @@ impl CliCommand<TransactionSummary> for CreateResourceAccountAndPublishPackage {
             txn_options,
             override_size_check_option,
             included_artifacts_args,
+            source_visibility_args,
             seed_args,
             env,
         } = self;
@@ -1962,7 +2055,12 @@ impl CliCommand<TransactionSummary> for CreateResourceAccountAndPublishPackage {
         let compiled_units = package.extract_code();
 
         // Send the compiled module and metadata using the code::publish_package_txn.
-        let metadata = package.extract_metadata()?;
+        let mut metadata = package.extract_metadata()?;
+        let hidden_modules = selectively_hide_module_sources(
+            &mut metadata,
+            &source_visibility_args.hide_source_for_modules,
+        );
+        print_hidden_module_sources(&hidden_modules);
 
         let message = format!(
             "Do you want to publish this package under the resource account's address {}?",
@@ -2082,6 +2180,9 @@ pub struct VerifyPackage {
     pub(crate) included_artifacts: IncludedArtifacts,
 
     #[clap(flatten)]
+    pub(crate) source_visibility_args: SourceVisibilityArgs,
+
+    #[clap(flatten)]
     pub(crate) move_options: MovePackageOptions,
     #[clap(flatten)]
     pub(crate) rest_options: RestOptions,
@@ -2111,7 +2212,11 @@ impl CliCommand<&'static str> for VerifyPackage {
         let w = self.env.writer();
         let pack = BuiltPackage::build_to(&w, self.move_options.get_package_path()?, build_options)
             .map_err(|e| CliError::MoveCompilationError(format!("{:#}", e)))?;
-        let compiled_metadata = pack.extract_metadata()?;
+        let mut compiled_metadata = pack.extract_metadata()?;
+        selectively_hide_module_sources(
+            &mut compiled_metadata,
+            &self.source_visibility_args.hide_source_for_modules,
+        );
 
         // Now pull the compiled package
         let url = self.rest_options.url(&self.profile_options)?;

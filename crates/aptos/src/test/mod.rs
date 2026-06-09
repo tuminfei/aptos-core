@@ -55,7 +55,7 @@ use aptos_move_cli::{
     EntryFunctionArguments, FrameworkPackageArgs, IncludedArtifacts, IncludedArtifactsArgs,
     InitPackage, LargePackagesModuleOption, MemberId, MoveEnv, MovePackageOptions,
     OverrideSizeCheckOption, PublishPackage, RunFunction, RunScript, ScriptFunctionArguments,
-    TestPackage, TypeArgVec,
+    SourceVisibilityArgs, TestPackage, TypeArgVec,
 };
 use aptos_rest_client::{
     aptos_api_types::{MoveStructTag, MoveType},
@@ -1021,6 +1021,7 @@ impl CliTestFramework {
             included_artifacts_args: IncludedArtifactsArgs {
                 included_artifacts: included_artifacts.unwrap_or(IncludedArtifacts::Sparse),
             },
+            source_visibility_args: SourceVisibilityArgs::default(),
             chunked_publish_option: ChunkedPublishOption {
                 chunked_publish: false,
                 large_packages_module: LargePackagesModuleOption {
