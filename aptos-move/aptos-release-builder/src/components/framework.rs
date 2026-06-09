@@ -5,6 +5,7 @@ use crate::{aptos_core_path, components::get_execution_hash};
 use anyhow::Result;
 use aptos_crypto::HashValue;
 use topo_framework::{new_release_package, BuildOptions, BuiltPackage};
+use topo_framework::natives::code::PackageMetadata;
 use aptos_temppath::TempPath;
 use aptos_types::account_address::AccountAddress;
 use git2::Repository;
@@ -24,6 +25,10 @@ pub struct FrameworkReleaseConfig {
     /// "aptos-token", "aptos-token-objects", "topo-trading"
     #[serde(default)]
     pub packages: Option<Vec<String>>,
+    /// Optional list of module identifiers whose source artifacts should be omitted from
+    /// on-chain package metadata. Matching modules still publish bytecode on-chain.
+    #[serde(default)]
+    pub hidden_modules: Option<Vec<String>>,
 }
 
 pub fn generate_upgrade_proposals(
@@ -173,7 +178,11 @@ pub fn generate_upgrade_proposals(
             ..BuildOptions::default()
         };
         let package = BuiltPackage::build(package_path, options)?;
-        let release = new_release_package(package)?;
+        let mut release = new_release_package(package)?;
+        selectively_hide_module_sources(
+            release.package_metadata_mut(),
+            config.hidden_modules.as_deref().unwrap_or(&[]),
+        );
 
         if is_multi_step {
             // If we're generating a multi-step proposal
@@ -206,4 +215,124 @@ pub fn generate_upgrade_proposals(
         result.push((script_name, script));
     }
     Ok(result)
+}
+
+fn selectively_hide_module_sources(
+    metadata: &mut PackageMetadata,
+    requested_modules: &[String],
+) -> Vec<String> {
+    if requested_modules.is_empty() {
+        return vec![];
+    }
+
+    let mut hidden_module_names = vec![];
+    for module in &mut metadata.modules {
+        if requested_modules
+            .iter()
+            .any(|module_id| module_name_matches(module_id, &module.name))
+        {
+            module.source.clear();
+            module.source_map.clear();
+            hidden_module_names.push(module.name.clone());
+        }
+    }
+
+    hidden_module_names
+}
+
+fn module_name_matches(requested_module: &str, actual_module_name: &str) -> bool {
+    requested_module
+        .rsplit("::")
+        .next()
+        .is_some_and(|module_name| module_name == actual_module_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{selectively_hide_module_sources, FrameworkReleaseConfig};
+
+    use topo_framework::natives::code::{ModuleMetadata, PackageMetadata, UpgradePolicy};
+
+    fn test_metadata() -> PackageMetadata {
+        PackageMetadata {
+            name: "TopoFramework".to_string(),
+            upgrade_policy: UpgradePolicy::compat(),
+            upgrade_number: 0,
+            source_digest: "digest".to_string(),
+            manifest: vec![1, 2, 3],
+            modules: vec![
+                ModuleMetadata {
+                    name: "poc_registry".to_string(),
+                    source: vec![1],
+                    source_map: vec![2],
+                    extension: None,
+                },
+                ModuleMetadata {
+                    name: "poc_registry_extra".to_string(),
+                    source: vec![3],
+                    source_map: vec![4],
+                    extension: None,
+                },
+                ModuleMetadata {
+                    name: "visible_module".to_string(),
+                    source: vec![5],
+                    source_map: vec![6],
+                    extension: None,
+                },
+            ],
+            deps: vec![],
+            extension: None,
+        }
+    }
+
+    #[test]
+    fn framework_release_config_defaults_hidden_modules() {
+        let parsed: FrameworkReleaseConfig = serde_yaml::from_str(
+            r#"
+bytecode_version: 8
+git_hash: ~
+packages:
+  - topo-framework
+"#,
+        )
+        .expect("config should parse");
+
+        assert_eq!(parsed.hidden_modules, None);
+    }
+
+    #[test]
+    fn selectively_hides_only_requested_module_sources() {
+        let mut metadata = test_metadata();
+
+        let hidden = selectively_hide_module_sources(
+            &mut metadata,
+            &["topo_framework::poc_registry".to_string()],
+        );
+
+        assert_eq!(hidden, vec!["poc_registry".to_string()]);
+
+        let hidden_module = metadata
+            .modules
+            .iter()
+            .find(|module| module.name == "poc_registry")
+            .expect("hidden module should exist");
+        assert!(hidden_module.source.is_empty());
+        assert!(hidden_module.source_map.is_empty());
+
+        let similar_module = metadata
+            .modules
+            .iter()
+            .find(|module| module.name == "poc_registry_extra")
+            .expect("similar module should exist");
+        assert!(!similar_module.source.is_empty());
+        assert!(!similar_module.source_map.is_empty());
+
+        let visible_module = metadata
+            .modules
+            .iter()
+            .find(|module| module.name == "visible_module")
+            .expect("visible module should exist");
+        assert!(!visible_module.source.is_empty());
+        assert!(!visible_module.source_map.is_empty());
+    }
 }

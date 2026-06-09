@@ -1,0 +1,20 @@
+---
+remote_endpoint: http://127.0.0.1:8080/v1
+name: "local-topo-framework-hide-src"
+proposals:
+  - name: proposal_1_upgrade_framework
+    metadata:
+      title: "Upgrade TopoFramework with hidden POC module sources"
+      description: "Local testnet validation for hidden module source metadata"
+    execution_mode: MultiStep
+    update_sequence:
+      - Framework:
+          bytecode_version: 8
+          git_hash: ~
+          packages:
+            - topo-framework
+          hidden_modules:
+            - topo_framework::poc_contribution
+            - topo_framework::poc_power_store
+            - topo_framework::poc_registry
+            - topo_framework::staking_registry

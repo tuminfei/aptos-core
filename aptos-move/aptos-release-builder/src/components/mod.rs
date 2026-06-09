@@ -776,6 +776,7 @@ impl Default for ReleaseConfig {
                         bytecode_version: VERSION_DEFAULT,
                         git_hash: None,
                         packages: None,
+                        hidden_modules: None,
                     })],
                 },
                 Proposal {
