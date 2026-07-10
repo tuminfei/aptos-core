@@ -11,7 +11,8 @@ use aptos_logger::info;
 use aptos_mempool::MempoolClientSender;
 use aptos_protos::{
     indexer::v1::{
-        raw_data_server::RawDataServer, FILE_DESCRIPTOR_SET as INDEXER_V1_FILE_DESCRIPTOR_SET,
+        data_service_server::DataServiceServer, raw_data_server::RawDataServer,
+        FILE_DESCRIPTOR_SET as INDEXER_V1_FILE_DESCRIPTOR_SET,
     },
     internal::fullnode::v1::fullnode_data_server::FullnodeDataServer,
     transaction::v1::FILE_DESCRIPTOR_SET as TRANSACTION_V1_TESTING_FILE_DESCRIPTOR_SET,
@@ -112,11 +113,15 @@ pub fn bootstrap(
                 tonic_server.add_service(svc)
             },
             true => {
-                let svc = RawDataServer::new(localnet_data_server)
+                let svc = DataServiceServer::new(localnet_data_server.clone())
                     .send_compressed(CompressionEncoding::Zstd)
                     .accept_compressed(CompressionEncoding::Zstd)
                     .accept_compressed(CompressionEncoding::Gzip);
-                tonic_server.add_service(svc)
+                let raw_data_svc = RawDataServer::new(localnet_data_server)
+                    .send_compressed(CompressionEncoding::Zstd)
+                    .accept_compressed(CompressionEncoding::Zstd)
+                    .accept_compressed(CompressionEncoding::Gzip);
+                tonic_server.add_service(svc).add_service(raw_data_svc)
             },
         };
 
