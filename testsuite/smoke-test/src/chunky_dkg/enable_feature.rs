@@ -21,7 +21,7 @@ use std::{sync::Arc, time::Duration};
 #[tokio::test]
 async fn chunky_dkg_enable_feature() {
     let epoch_duration_secs = 20;
-    let estimated_dkg_latency_secs = 120;
+    let estimated_dkg_latency_secs = 180;
 
     // Genesis: randomness + validator txns enabled.
     // Chunky DKG config is OFF (default). ENCRYPTED_TRANSACTIONS is OFF.

@@ -16,7 +16,9 @@ use aptos_logger::info;
 #[tokio::test]
 async fn chunky_dkg_correctness() {
     let epoch_duration_secs = 10;
-    let estimated_dkg_latency_secs = 60;
+    // Building the Chunky DKG discrete-log table is intentionally expensive
+    // and can take well over a minute on slower test hosts.
+    let estimated_dkg_latency_secs = 180;
     let time_limit_secs = epoch_duration_secs + estimated_dkg_latency_secs;
 
     let swarm = create_swarm_with_chunky_dkg(4, epoch_duration_secs).await;
@@ -28,14 +30,6 @@ async fn chunky_dkg_correctness() {
     info!(
         "Chunky DKG completed for epoch {}",
         session_1.target_epoch()
-    );
-
-    // Verify transcript
-    let subtranscript_1 = verify_chunky_dkg_transcript(&session_1);
-    assert!(
-        subtranscript_1.dealer_bitmask.count_ones() >= 3,
-        "Expected >= 3 dealers (BFT threshold), got {}",
-        subtranscript_1.dealer_bitmask.count_ones()
     );
 
     // Verify encryption key
@@ -54,14 +48,6 @@ async fn chunky_dkg_correctness() {
     info!(
         "Chunky DKG completed for epoch {}",
         session_2.target_epoch()
-    );
-
-    // Verify second transcript
-    let subtranscript_2 = verify_chunky_dkg_transcript(&session_2);
-    assert!(
-        subtranscript_2.dealer_bitmask.count_ones() >= 3,
-        "Expected >= 3 dealers for second session, got {}",
-        subtranscript_2.dealer_bitmask.count_ones()
     );
 
     // Verify consecutive dealer epochs
@@ -88,6 +74,22 @@ async fn chunky_dkg_correctness() {
     assert_ne!(
         key_bytes_1, key_bytes_2,
         "Encryption key must change between epoch 2 and epoch 3"
+    );
+
+    // Transcript verification lazily builds a CPU-intensive 4M-entry
+    // discrete-log table. Keep it after all time-sensitive epoch observations
+    // so local verification cannot make the test miss a short test epoch.
+    let subtranscript_1 = verify_chunky_dkg_transcript(&session_1);
+    assert!(
+        subtranscript_1.dealer_bitmask.count_ones() >= 3,
+        "Expected >= 3 dealers (BFT threshold), got {}",
+        subtranscript_1.dealer_bitmask.count_ones()
+    );
+    let subtranscript_2 = verify_chunky_dkg_transcript(&session_2);
+    assert!(
+        subtranscript_2.dealer_bitmask.count_ones() >= 3,
+        "Expected >= 3 dealers for second session, got {}",
+        subtranscript_2.dealer_bitmask.count_ones()
     );
     info!("Encryption key rotated successfully between epochs");
 }

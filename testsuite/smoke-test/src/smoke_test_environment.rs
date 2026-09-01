@@ -9,7 +9,7 @@ use aptos_forge::{ActiveNodesGuard, Factory, LocalFactory, LocalSwarm, Node};
 use aptos_genesis::builder::{InitConfigFn, InitGenesisConfigFn, InitGenesisStakeFn};
 use aptos_infallible::Mutex;
 use aptos_logger::prelude::*;
-use aptos_types::chain_id::ChainId;
+use aptos_types::{chain_id::ChainId, on_chain_config::OnChainChunkyDKGConfig};
 use once_cell::sync::Lazy;
 use rand::rngs::OsRng;
 use std::{env, num::NonZeroUsize, path::PathBuf, sync::Arc};
@@ -115,6 +115,14 @@ impl SwarmBuilder {
                 builder.vfn_config,
                 builder.init_genesis_stake,
                 Some(Arc::new(move |genesis_config| {
+                    // Most smoke tests use short epochs and do not exercise
+                    // Chunky DKG. Its production genesis default performs an
+                    // expensive discrete-log table initialization that can
+                    // block those epoch transitions. Chunky DKG and encrypted
+                    // transaction tests explicitly opt back in below through
+                    // their per-test genesis configuration.
+                    genesis_config.chunky_dkg_config_override =
+                        Some(OnChainChunkyDKGConfig::default_disabled());
                     if let Some(init_genesis_config) = &init_genesis_config {
                         (init_genesis_config)(genesis_config);
                     }

@@ -168,7 +168,7 @@ async fn test_encryption_key_rotation_and_encrypted_txns() {
 
     // ---- Wait for epoch 2 and record the encryption key ----
     info!("Waiting for epoch 2...");
-    let key_at_epoch2 = wait_for_epoch(&client, 2, 90).await;
+    let key_at_epoch2 = wait_for_epoch(&client, 2, 240).await;
     let epoch2 = client
         .get_ledger_information()
         .await
@@ -220,7 +220,7 @@ async fn test_encryption_key_rotation_and_encrypted_txns() {
 
     // ---- Wait for the next epoch and check the key changed ----
     info!("Waiting for epoch {}...", epoch2 + 1);
-    let key_at_next_epoch = wait_for_epoch(&client, epoch2 + 1, 60).await;
+    let key_at_next_epoch = wait_for_epoch(&client, epoch2 + 1, 240).await;
     let next_epoch = client
         .get_ledger_information()
         .await
@@ -286,7 +286,7 @@ async fn test_fee_payer_encrypted_transaction() {
 
     // Wait for epoch 2 so an encryption key is available.
     info!("Waiting for epoch 2 for encryption key...");
-    let key_bytes = wait_for_epoch(&client, 2, 90).await;
+    let key_bytes = wait_for_epoch(&client, 2, 240).await;
     assert!(
         key_bytes.is_some(),
         "Encryption key should exist after epoch 2"
@@ -472,7 +472,7 @@ async fn test_decryption_v2_to_v3_transition() {
     // Advance past the first DKG reconfig so both the genesis-epoch V2 blocks
     // and the post-resource V3 blocks exist in history.
     info!("Waiting for epoch 3 so both V2 (genesis epoch) and V3 (post-resource) blocks exist...");
-    let _ = wait_for_epoch(&client, 3, 120).await;
+    let _ = wait_for_epoch(&client, 3, 240).await;
 
     let final_version = client
         .get_ledger_information()

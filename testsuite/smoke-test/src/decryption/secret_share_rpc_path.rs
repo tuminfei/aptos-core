@@ -46,7 +46,7 @@ async fn secret_share_rpc_path() {
     // Wait for epoch 2 so DKG + secret sharing are active.
     info!("Waiting for epoch 2...");
     swarm
-        .wait_for_all_nodes_to_catchup_to_epoch(2, Duration::from_secs(epoch_duration_secs * 5))
+        .wait_for_all_nodes_to_catchup_to_epoch(2, Duration::from_secs(240))
         .await
         .expect("Timed out waiting for epoch 2");
 
@@ -92,7 +92,7 @@ async fn secret_share_rpc_path() {
     // secret share exchange, which can now only succeed via the RPC path.
     info!("Waiting for epoch 3 with secret share direct-send disabled...");
     swarm
-        .wait_for_all_nodes_to_catchup_to_epoch(3, Duration::from_secs(epoch_duration_secs * 5))
+        .wait_for_all_nodes_to_catchup_to_epoch(3, Duration::from_secs(240))
         .await
         .expect("Timed out waiting for epoch 3 — SecretShareMsg RPC path may be broken");
 

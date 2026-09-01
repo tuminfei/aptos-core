@@ -137,7 +137,7 @@ script {
 #[tokio::test]
 async fn chunky_dkg_shadow_mode() {
     let epoch_duration_secs = 20;
-    let estimated_dkg_latency_secs = 120;
+    let estimated_dkg_latency_secs = 180;
     let grace_period_secs = 60;
 
     let (swarm, cli, root_idx) = create_swarm_with_dkg_only(4, epoch_duration_secs).await;
@@ -218,7 +218,7 @@ async fn chunky_dkg_shadow_mode() {
 #[tokio::test]
 async fn chunky_dkg_shadow_to_v1() {
     let epoch_duration_secs = 20;
-    let estimated_dkg_latency_secs = 120;
+    let estimated_dkg_latency_secs = 180;
     let grace_period_secs = 60;
 
     let (mut swarm, cli, root_idx) = create_swarm_with_dkg_only(4, epoch_duration_secs).await;
