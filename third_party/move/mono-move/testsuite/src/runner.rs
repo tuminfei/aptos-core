@@ -8,8 +8,8 @@ use crate::{
     compile::{compile, compile_move_path, compile_move_stdlib, SourceKind},
     engine::RunResult,
     extensions::{
-        seed_extensions, TEST_SESSION_COUNTER, TEST_STATE_BYTES, TEST_STATE_ITEMS, TEST_TXN_HASH,
-        TEST_TXN_INDEX,
+        seed_extensions, test_user_transaction_context, TEST_CHAIN_ID, TEST_SCRIPT_HASH,
+        TEST_SESSION_COUNTER, TEST_STATE_BYTES, TEST_STATE_ITEMS, TEST_TXN_HASH,
     },
     matcher::check_output,
     module_provider::InMemoryModuleProvider,
@@ -18,34 +18,33 @@ use crate::{
 };
 use anyhow::{anyhow, bail};
 use aptos_framework_natives::{
-    event::NativeEventContext, object::NativeObjectContext,
-    state_storage::NativeStateStorageContext, transaction_context::NativeTransactionContext,
+    cryptography::ristretto255_point::NativeRistrettoPointContext, event::NativeEventContext,
+    object::NativeObjectContext, state_storage::NativeStateStorageContext,
+    transaction_context::NativeTransactionContext,
 };
 use aptos_gas_schedule::{MiscGasParameters, NativeGasParameters, LATEST_GAS_FEATURE_VERSION};
 use aptos_types::{
     contract_event::ContractEvent,
-    event::EventKey,
     on_chain_config::{Features, TimedFeaturesBuilder},
     state_store::{
         errors::StateViewError, state_key::StateKey, state_storage_usage::StateStorageUsage,
         StateViewId,
     },
-    transaction::user_transaction_context::{TransactionIndexKind, UserTransactionContext},
 };
 use aptos_vm::natives::aptos_natives;
 use aptos_vm_types::resolver::StateStorageView;
-use mono_move_core::{native::NativeExtensions, types::type_to_string};
+use mono_move_core::native::NativeExtensions;
 use mono_move_global_context::{ExecutionGuard, GlobalContext};
-use mono_move_natives::{EventKind, EventStore};
-use mono_move_runtime::serialize;
-use move_binary_format::CompiledModule;
+use mono_move_natives::EventStore;
+use mono_move_output::to_contract_events_from_store;
+use move_binary_format::{errors::Location, CompiledModule};
 use move_core_types::{
     account_address::AccountAddress,
     identifier::IdentStr,
     int256::{I256, U256},
     language_storage::{ModuleId, TypeTag},
     value::MoveValue,
-    vm_status::StatusCode,
+    vm_status::{AbortLocation, StatusCode},
 };
 use move_vm_runtime::{
     data_cache::{MoveVmDataCacheAdapter, TransactionDataCache},
@@ -131,9 +130,14 @@ fn render_execution_output(vals: &[String], events: &[String]) -> String {
 /// Renders the events emitted into the legacy VM's [`NativeEventContext`], in
 /// emission order, for cross-VM comparison.
 pub fn finalize_events_v1(extensions: &NativeContextExtensions) -> Vec<String> {
-    extensions
-        .get::<NativeEventContext>()
-        .events_iter()
+    render_contract_events(extensions.get::<NativeEventContext>().events_iter())
+}
+
+/// Renders materialized events into the normalized form used for cross-VM
+/// comparison.
+fn render_contract_events<'a>(events: impl IntoIterator<Item = &'a ContractEvent>) -> Vec<String> {
+    events
+        .into_iter()
         .map(|event| {
             let type_str = event.type_tag().to_canonical_string();
             match event {
@@ -155,40 +159,20 @@ pub fn finalize_events_v1(extensions: &NativeContextExtensions) -> Vec<String> {
 ///
 /// # Safety
 ///
-/// The VM heap must be live: each entry's `msg_data` embeds heap pointers that
-/// [`serialize`] dereferences.
+/// Every allocation reachable through the event data must remain live, and
+/// `layouts` must be the matching execution guard. No GC may run during
+/// serialization.
 pub unsafe fn finalize_events_v2(
     extensions: &NativeExtensions,
     layouts: &ExecutionGuard<'_>,
 ) -> Vec<String> {
     let store = extensions
-        .get_mut::<EventStore>()
+        .get::<EventStore>()
         .expect("event store installed");
-    store
-        .entries()
-        .iter()
-        .map(|entry| {
-            let type_str = type_to_string(entry.msg_ty);
-            // SAFETY: forwarded from this function's contract — the heap is live.
-            let blob = unsafe { serialize(layouts, entry.msg_data.as_ptr(), entry.msg_ty) }
-                .expect("event value serializes");
-            match &entry.kind {
-                EventKind::V2 => render_event(None, None, &type_str, &blob),
-                EventKind::V1 {
-                    guid,
-                    sequence_number,
-                } => {
-                    let key: EventKey = bcs::from_bytes(guid).expect("guid decodes to EventKey");
-                    render_event(
-                        Some(key.get_creator_address()),
-                        Some(*sequence_number),
-                        &type_str,
-                        &blob,
-                    )
-                },
-            }
-        })
-        .collect()
+    // SAFETY: forwarded from this function's contract.
+    let events = unsafe { to_contract_events_from_store(&store, layouts) }
+        .expect("events materialize into ContractEvents");
+    render_contract_events(&events)
 }
 
 /// Run all steps in a differential test, checking both VMs produce matching
@@ -206,7 +190,7 @@ pub fn run_test(steps: Vec<Step>, kind: SourceKind, test_path: &Path) -> anyhow:
 
     // Publish the Move stdlib into both VMs so tests can call real stdlib
     // natives.
-    for module in stdlib_modules().iter().chain(test_utils_modules()) {
+    for module in prelude_modules() {
         let mut blob = vec![];
         module.serialize(&mut blob).expect("module serializes");
         storage.add_module_bytes(module.self_addr(), module.self_name(), blob.into());
@@ -317,8 +301,23 @@ fn v1_native_table() -> NativeFunctionTable {
         TimedFeaturesBuilder::enable_all().build(),
         Features::default(),
     );
-    table.extend(crate::v1_test_natives::make_all_v1_test_natives());
+    // The mirrors take precedence over same-name production natives (cargo
+    // feature unification can put `unit_test` natives into the production
+    // table), so both VMs run the same implementation in the comparison.
+    let overrides = crate::v1_test_natives::make_all_v1_test_natives();
+    table.retain(|(addr, module, fun, _)| {
+        !overrides.iter().any(|(o_addr, o_module, o_fun, _)| {
+            addr == o_addr && module == o_module && fun == o_fun
+        })
+    });
+    table.extend(overrides);
     table
+}
+
+/// The prelude every differential test publishes before its own modules:
+/// the Move stdlib plus the `test_utils` library.
+fn prelude_modules() -> impl Iterator<Item = &'static CompiledModule> {
+    stdlib_modules().iter().chain(test_utils_modules())
 }
 
 /// The compiled Move stdlib, compiled once and shared across tests.
@@ -449,30 +448,17 @@ fn execute_function_v1(
         usage: StateStorageUsage::new(TEST_STATE_ITEMS as usize, TEST_STATE_BYTES as usize),
     };
     let mut extensions = NativeContextExtensions::default();
-    let user_transaction_context = UserTransactionContext::new(
-        AccountAddress::ZERO,
-        vec![],
-        AccountAddress::ZERO,
-        0,
-        0,
-        0,
-        None,
-        None,
-        TransactionIndexKind::BlockExecution {
-            transaction_index: TEST_TXN_INDEX,
-        },
-        false,
-    );
     extensions.add(NativeTransactionContext::new(
         TEST_TXN_HASH.to_vec(),
-        vec![],
-        0,
-        Some(user_transaction_context),
+        TEST_SCRIPT_HASH.to_vec(),
+        TEST_CHAIN_ID,
+        Some(test_user_transaction_context()),
         TEST_SESSION_COUNTER,
     ));
     extensions.add(NativeObjectContext::default());
     extensions.add(NativeStateStorageContext::new(&state_storage_view));
     extensions.add(NativeEventContext::default());
+    extensions.add(NativeRistrettoPointContext::new());
 
     let mut data_cache = TransactionDataCache::empty();
     let output = match MoveVM::execute_loaded_function(
@@ -509,11 +495,14 @@ fn execute_function_v1(
         },
         Err(err) if err.major_status() == StatusCode::ABORTED => {
             let code = err.sub_status().unwrap();
-            let display = match err.message() {
-                Some(m) => format!("aborted: code {} ({})", code, m),
-                None => format!("aborted: code {}", code),
+            let location = match err.location() {
+                Location::Module(module_id) => render_module_location(module_id),
+                Location::Script => "script".to_string(),
+                Location::Undefined => "undefined".to_string(),
             };
-            Output { display }
+            Output {
+                display: render_abort(code, err.message().map(String::as_str), &location),
+            }
         },
         Err(err) => Output {
             display: format!("error: {}", err),
@@ -539,8 +528,8 @@ fn execute_function_v2(
     return_kinds: &[PrimitiveKind],
     heap_size: Option<usize>,
 ) -> (Output, usize) {
-    // Seed extensions with the same fixed inputs as the legacy side.
-    let extensions = seed_extensions();
+    // For differential tests, treat transaction as a user transaction.
+    let extensions = seed_extensions(true);
 
     // Run through the shared pipeline engine. Argument placement and result
     // reading mirror mono-move's frame slot layout.
@@ -604,13 +593,38 @@ fn execute_function_v2(
     let display = match outcome {
         Err(err) => format!("error: {}", err),
         Ok(RunResult::Error(err)) => format!("error: {}", err),
-        Ok(RunResult::Aborted { code, message }) => match message {
-            Some(m) => format!("aborted: code {} ({})", code, m),
-            None => format!("aborted: code {}", code),
+        Ok(RunResult::Aborted {
+            code,
+            message,
+            location,
+        }) => {
+            let location = match &location {
+                AbortLocation::Module(module_id) => render_module_location(module_id),
+                AbortLocation::Script => "script".to_string(),
+            };
+            render_abort(code, message.as_deref(), &location)
         },
         Ok(RunResult::Success((vals, events))) => render_execution_output(&vals, &events),
     };
     (Output { display }, gc_count)
+}
+
+/// Renders an abort outcome. Both VMs go through this so the abort location
+/// participates in the differential comparison.
+fn render_abort(code: u64, message: Option<&str>, location: &str) -> String {
+    match message {
+        Some(message) => format!("aborted: code {} ({}) in {}", code, message, location),
+        None => format!("aborted: code {} in {}", code, location),
+    }
+}
+
+/// The common rendering of a module abort location: `0x<address>::<module>`.
+pub(crate) fn render_module_location(module_id: &ModuleId) -> String {
+    format!(
+        "0x{}::{}",
+        module_id.address().short_str_lossless(),
+        module_id.name()
+    )
 }
 
 /// Kind supported as an argument or return value in differential tests

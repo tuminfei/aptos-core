@@ -468,6 +468,9 @@ pub enum SpecBlockMember_ {
     },
     Variable {
         is_global: bool,
+        /// Ghost struct field, declared in a struct spec block: model-only
+        /// state carried by each value of the struct.
+        is_ghost: bool,
         name: Name,
         type_parameters: Vec<(Name, Vec<Ability>)>,
         type_: Type,
@@ -731,6 +734,13 @@ pub enum BehaviorKind {
     EnsuresOf,
     /// `result_of<f>(x)` - deterministic result selector based on `ensures_of`
     ResultOf,
+    /// `unchanged_of<f>(x)` - the global memory `f` may modify at the given
+    /// arguments is unchanged relative to the pre-state
+    UnchangedOf,
+    /// `folds_of<f>(v, i)` / `folds_of<f>(g, i)` - the values written by `f`
+    /// to its captured variables over the first `i` iterations are the fold
+    /// of a derived accumulator transformer, and no prefix iteration aborts
+    FoldsOf,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -1704,12 +1714,15 @@ impl AstDebug for SpecBlockMember_ {
             },
             SpecBlockMember_::Variable {
                 is_global,
+                is_ghost,
                 name,
                 type_parameters,
                 type_,
                 init: _,
             } => {
-                if *is_global {
+                if *is_ghost {
+                    w.write("ghost ");
+                } else if *is_global {
                     w.write("global ");
                 } else {
                     w.write("local");
@@ -2428,6 +2441,8 @@ impl AstDebug for Exp_ {
                     BehaviorKind::AbortsOf => "aborts_of",
                     BehaviorKind::EnsuresOf => "ensures_of",
                     BehaviorKind::ResultOf => "result_of",
+                    BehaviorKind::UnchangedOf => "unchanged_of",
+                    BehaviorKind::FoldsOf => "folds_of",
                 };
                 w.write(kind_str);
                 w.write("<");

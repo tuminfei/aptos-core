@@ -141,6 +141,26 @@ fn resource_types_for_native(
     Vec::new()
 }
 
+/// Returns type arguments for which the native function should know the layout.
+/// For example, `bcs::constant_serialized_size<T>` needs to know layout of `T`.
+//
+// TODO(completeness): Instead of hard-coding them here, figure out a way to allow natives to declare them.
+fn layout_type_args_for_native(
+    interner: &impl Interner,
+    module_id: InternedModuleId,
+    func_name: InternedIdentifier,
+    callee_ty_args: &[InternedType],
+) -> Vec<InternedType> {
+    let bcs = interner.module_id_of(&AccountAddress::ONE, ident_str!("bcs"));
+    if module_id == bcs
+        && func_name == interner.identifier_of(ident_str!("constant_serialized_size"))
+    {
+        return callee_ty_args.to_vec();
+    }
+
+    Vec::new()
+}
+
 /// Publishes a struct descriptor for the concrete `ty`, recording it in
 /// `descriptors`. A no-op when `ty` is not sized or its pointer offsets can't be
 /// derived (e.g. still generic).
@@ -703,11 +723,10 @@ pub fn try_build_context<'a>(
             CalleeRegion::Skip(reason) => return Ok(BuildContextOutcome::Skipped(reason)),
         };
         let (callee_module_id, callee_func_name) = callee_identity(&module_ir.module, handle_idx);
-        // TODO(correctness): The native registry is trusted unconditionally here.
-        //
-        // Consider cross-checking against the callee module's `is_native` flag
-        // against the callee module's `is_native` flag so a registered impl cannot
-        // shadow a Move-body function with the same qualified name.
+        // TODO(correctness): The native registry is trusted unconditionally
+        // here. Consider cross-checking against the callee module's
+        // `is_native` flag so a registered impl cannot shadow a Move-body
+        // function with the same qualified name.
         let native_idx = natives.resolve(callee_module_id, callee_func_name, call_ty_args);
         // Descriptor IDs for the native's resource types (published by the
         // discovery pass, keyed on the concrete type); e.g. `add_box` uses its
@@ -973,6 +992,7 @@ pub fn try_lower_function(
     let name = module_ir.module.interned_identifier_at(func_ir.name_idx);
     let LoweredFunction {
         code,
+        origins,
         entry_gas,
         mut safe_points,
     } = lower_function(func_ir, &ctx)?;
@@ -1004,7 +1024,8 @@ pub fn try_lower_function(
     Ok(LoweringOutcome::Built(Function {
         name,
         module_id: module_ir.module.id(),
-        code: Code::from_vec(code),
+        def_idx: func_ir.def_idx,
+        code: Code::with_origins(code, origins),
         entry_gas,
         param_slots,
         param_region_size: derived.param_region_size as usize,
@@ -1141,6 +1162,16 @@ fn try_discover_types_for_lowering_in_function_impl(
                 discover_type_metadata(ctx, interner, resource_ty, ty_args, visited, descriptors)?;
                 let resource_ty = interner.subst_type(resource_ty, ty_args)?;
                 publish_struct_descriptor_for(ctx, resource_ty, &mut descriptors.vec)?;
+            }
+
+            // Here we only need layout, so there is no need to publish the type descriptor.
+            for layout_ty in layout_type_args_for_native(
+                interner,
+                module_id,
+                func_name,
+                view_type_list(callee_ty_args),
+            ) {
+                discover_type_metadata(ctx, interner, layout_ty, ty_args, visited, descriptors)?;
             }
         }
 

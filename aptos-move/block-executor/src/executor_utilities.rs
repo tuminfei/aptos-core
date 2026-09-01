@@ -2,10 +2,10 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{
-    captured_reads::{CapturedReads, DataRead, ReadKind},
+    captured_reads::{CapturedReads, DataRead, ReadKind, TxnInput},
     counters,
     errors::ResourceGroupSerializationError,
-    task::{BeforeMaterializationOutput, ExecutorTask, TransactionOutput},
+    task::{LegacyTxnOutput, TxnOutput},
     txn_last_input_output::TxnLastInputOutput,
     view::{LatestView, ViewState},
 };
@@ -29,13 +29,13 @@ use move_core_types::{language_storage::ModuleId, value::MoveTypeLayout};
 use move_vm_runtime::{execution_tracing::Trace, Module};
 use move_vm_types::delayed_values::delayed_field_id::DelayedFieldID;
 use rand::{thread_rng, Rng};
-use std::{collections::BTreeMap, sync::Arc};
+use std::collections::BTreeMap;
 use triomphe::Arc as TriompheArc;
 
 /// Block executor state access required to materialize a transaction output at
 /// commit time: finalizing resource groups and exchanging delayed field
 /// identifiers back to values.
-pub(crate) trait Materializer<T: Transaction> {
+pub trait Materializer<T: Transaction> {
     /// Returns the committed contents of a resource group and its size.
     fn finalize_group(
         &self,
@@ -63,13 +63,13 @@ pub(crate) trait Materializer<T: Transaction> {
 /// during execution are fetched from the captured read-set.
 pub(crate) struct ParallelMaterializer<'a, T: Transaction, S: TStateView<Key = T::Key>> {
     latest_view: &'a LatestView<'a, T, S>,
-    read_set: Arc<CapturedReads<T, ModuleId, CompiledModule, Module, AptosModuleExtension>>,
+    read_set: &'a CapturedReads<T, ModuleId, CompiledModule, Module, AptosModuleExtension>,
 }
 
 impl<'a, T: Transaction, S: TStateView<Key = T::Key>> ParallelMaterializer<'a, T, S> {
     pub(crate) fn new(
         latest_view: &'a LatestView<'a, T, S>,
-        read_set: Arc<CapturedReads<T, ModuleId, CompiledModule, Module, AptosModuleExtension>>,
+        read_set: &'a CapturedReads<T, ModuleId, CompiledModule, Module, AptosModuleExtension>,
     ) -> Self {
         Self {
             latest_view,
@@ -180,32 +180,20 @@ impl<T: Transaction, S: TStateView<Key = T::Key>> Materializer<T>
 /// finalizes and serializes resource group updates, replaces delayed field
 /// identifiers with values in resource writes and events, and incorporates the
 /// results into the output.
-/// !!! [CAUTION] !!!: May not be concurrent with any other accesses to the output.
 pub(crate) fn materialize_output<T, O, M>(
-    output: &mut O,
+    output: O,
     materializer: &M,
 ) -> Result<(O::CommittedOutput, Trace), PanicOr<ResourceGroupSerializationError>>
 where
     T: Transaction,
-    O: TransactionOutput<Txn = T>,
+    O: LegacyTxnOutput<Txn = T, Key = T::Key, Tag = T::Tag, Value = ValueWithLayout<T::Value>>,
     M: Materializer<T>,
 {
-    let (
-        group_metadata_ops,
-        group_reads_needing_exchange,
-        resource_write_set,
-        reads_needing_exchange,
-        events,
-    ) = {
-        let guard = output.before_materialization()?;
-        (
-            guard.resource_group_metadata_ops(),
-            guard.group_reads_needing_delayed_field_exchange(),
-            guard.resource_write_set(),
-            guard.reads_needing_delayed_field_exchange(),
-            guard.get_events(),
-        )
-    };
+    let group_metadata_ops = output.resource_group_metadata_ops();
+    let group_reads_needing_exchange = output.group_reads_needing_delayed_field_exchange();
+    let resource_write_set = output.resource_write_set();
+    let reads_needing_exchange = output.reads_needing_delayed_field_exchange();
+    let events = output.get_events();
 
     let finalized_groups = group_metadata_ops
         .into_iter()
@@ -274,6 +262,87 @@ where
             .collect(),
         materialized_events,
     )?)
+}
+
+/// Checks that every resource group this transaction finalizes will
+/// BCS-serialize to its recorded size, merging the transaction's own group ops
+/// onto the group's committed contents. Returns false if a finalized group
+/// fails to serialize to its recorded size, so the caller can discard the
+/// transaction.
+pub fn check_resource_group_serialization<T, O, M>(output: &O, materializer: &M) -> bool
+where
+    T: Transaction,
+    O: LegacyTxnOutput<Txn = T, Key = T::Key, Tag = T::Tag, Value = ValueWithLayout<T::Value>>,
+    M: Materializer<T>,
+{
+    let serializes =
+        |group: &BTreeMap<T::Tag, Bytes>, size: ResourceGroupSize| match bcs::to_bytes(group) {
+            Ok(bytes) => {
+                !((!group.is_empty() || size.get() != 0) && bytes.len() as u64 != size.get())
+            },
+            Err(_) => false,
+        };
+    let raw_bytes = |value: ValueWithLayout<T::Value>| {
+        value
+            .extract_value()
+            .extract_raw_bytes()
+            .expect("Deletions should already be applied")
+    };
+
+    // Groups only read but rewritten due to delayed-field changes: the finalized
+    // contents are exactly the group already in the map.
+    for (group_key, _) in output.group_reads_needing_delayed_field_exchange() {
+        fail_point!("fail-point-resource-group-serialization", |_| false);
+        let (finalized, size) = match materializer.finalize_group(&group_key) {
+            Ok(finalized) => finalized,
+            // finalize_group only errors outside sequential execution, where this
+            // check does not run; treat as non-materializable defensively.
+            Err(_) => return false,
+        };
+        let group = finalized
+            .into_iter()
+            .map(|(tag, value)| (tag, raw_bytes(value)))
+            .collect();
+        if !serializes(&group, size) {
+            return false;
+        }
+    }
+
+    // Groups written: merge this transaction's ops onto the prior contents.
+    for (group_key, (_, output_size, group_ops)) in output.resource_group_write_set() {
+        fail_point!("fail-point-resource-group-serialization", |_| false);
+        let (finalized, size) = match materializer.finalize_group(&group_key) {
+            Ok(finalized) => finalized,
+            Err(_) => return false,
+        };
+        // The finalized size and the output's recorded size come from the same
+        // output, so they are expected to be equal; this guard is defensive and
+        // skips the group in the unexpected case that they diverge.
+        if output_size.get() != size.get() {
+            continue;
+        }
+        let mut group: BTreeMap<_, _> = finalized
+            .into_iter()
+            .map(|(tag, value)| (tag, raw_bytes(value)))
+            .collect();
+        for (tag, op) in group_ops {
+            if op.is_deletion() {
+                group.remove(&tag);
+            } else {
+                group.insert(
+                    tag,
+                    op.extract_value()
+                        .extract_raw_bytes()
+                        .expect("Non-deletion op must have raw bytes"),
+                );
+            }
+        }
+        if !serializes(&group, size) {
+            return false;
+        }
+    }
+
+    true
 }
 
 /// Given a state value, performs deserialization-serialization round-trip to
@@ -501,13 +570,14 @@ fn replace_ids_with_values<T: Transaction, M: Materializer<T>>(
     }
 }
 
-pub(crate) fn update_transaction_on_abort<T, E>(
+pub(crate) fn update_transaction_on_abort<T, I, O>(
     txn_idx: TxnIndex,
-    last_input_output: &TxnLastInputOutput<T, E::Output>,
-    versioned_cache: &MVHashMap<T::Key, T::Tag, ValueWithLayout<T::Value>, DelayedFieldID>,
+    last_input_output: &TxnLastInputOutput<T, I, O>,
+    versioned_cache: &MVHashMap<I::Key, I::Tag, I::Value, DelayedFieldID>,
 ) where
     T: Transaction,
-    E: ExecutorTask<Txn = T>,
+    I: TxnInput,
+    O: TxnOutput<Txn = T, Key = I::Key, Tag = I::Tag>,
 {
     counters::SPECULATIVE_ABORT_COUNT.inc();
 

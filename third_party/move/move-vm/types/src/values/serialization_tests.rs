@@ -132,6 +132,28 @@ mod tests {
         );
     }
 
+    #[test]
+    fn enum_out_of_range_zero_field_tag_fails_to_serialize() {
+        let layout = enum_layout();
+
+        let bad_zero_field_tag = Value::struct_(Struct::pack_variant(3, iter::empty()));
+        assert!(
+            ValueSerDeContext::new(None)
+                .serialize(&bad_zero_field_tag, &layout)
+                .unwrap()
+                .is_none(),
+            "serializing an out-of-range zero-field variant tag must fail"
+        );
+
+        let variants_layout = MoveStructLayout::RuntimeVariants(vec![
+            vec![MoveTypeLayout::U64],
+            vec![],
+            vec![MoveTypeLayout::Bool, MoveTypeLayout::U32],
+        ]);
+        assert!(variants_layout.fields(Some(3)).is_none());
+        assert!(variants_layout.fields(Some(1)).is_some());
+    }
+
     // ---------------------------------------------------------------------------
     // Rust cross-serialization tests
 
@@ -531,7 +553,7 @@ mod tests {
             (Value::u256(int256::U256::ONE), U256),
             (Value::bool(true), Bool),
             (Value::address(AccountAddress::ONE), Address),
-            (Value::master_signer(AccountAddress::ONE), Signer),
+            (Value::signer(AccountAddress::ONE), Signer),
             (u64_delayed_value, Native(Aggregator, Box::new(U64))),
             (u128_delayed_value, Native(Snapshot, Box::new(U128))),
             (
@@ -585,7 +607,7 @@ mod tests {
         let move_value = MoveValue::Signer(AccountAddress::ZERO);
         let bytes = move_value.simple_serialize().unwrap();
 
-        let vm_value = Value::master_signer(AccountAddress::ZERO);
+        let vm_value = Value::signer(AccountAddress::ZERO);
         let vm_bytes = ValueSerDeContext::new(None)
             .serialize(&vm_value, &MoveTypeLayout::Signer)
             .unwrap()
@@ -603,27 +625,6 @@ mod tests {
 
         // ser(MoveValue) == ser(VMValue)
         assert_eq!(bytes, vm_bytes);
-
-        // Permissioned Signer Roundtrip
-        let vm_value = Value::permissioned_signer(AccountAddress::ZERO, AccountAddress::ONE);
-        let vm_bytes = ValueSerDeContext::new(None)
-            .serialize(&vm_value, &MoveTypeLayout::Signer)
-            .unwrap()
-            .unwrap();
-
-        // VM Value Roundtrip
-        assert!(ValueSerDeContext::new(None)
-            .deserialize(&vm_bytes, &MoveTypeLayout::Signer)
-            .unwrap()
-            .equals(&vm_value)
-            .unwrap());
-
-        // Cannot serialize permissioned signer into bytes with legacy signer
-        assert!(ValueSerDeContext::new(None)
-            .with_legacy_signer()
-            .serialize(&vm_value, &MoveTypeLayout::Signer)
-            .unwrap()
-            .is_none());
     }
 
     #[test]
@@ -631,7 +632,7 @@ mod tests {
         let move_value = MoveValue::Address(AccountAddress::ZERO);
         let bytes = move_value.simple_serialize().unwrap();
 
-        let vm_value = Value::master_signer(AccountAddress::ZERO);
+        let vm_value = Value::signer(AccountAddress::ZERO);
         let vm_bytes = ValueSerDeContext::new(None)
             .with_legacy_signer()
             .serialize(&vm_value, &MoveTypeLayout::Signer)

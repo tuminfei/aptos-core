@@ -15,9 +15,9 @@ use aptos_types::{
     contract_event::ContractEvent,
     state_store::TStateView,
     transaction::{
-        signature_verified_transaction::SignatureVerifiedTransaction, AuxiliaryInfo, BlockOutput,
-        PersistedAuxiliaryInfo, SignedTransaction, Transaction, TransactionExecutableRef,
-        TransactionInfo, TransactionOutput, TransactionPayload, Version,
+        signature_verified_transaction::SignatureVerifiedTransaction, AuxiliaryInfo, BlockError,
+        BlockOutput, PersistedAuxiliaryInfo, SignedTransaction, Transaction,
+        TransactionExecutableRef, TransactionInfo, TransactionOutput, TransactionPayload, Version,
     },
     vm_status::VMStatus,
 };
@@ -346,7 +346,7 @@ impl AptosDebugger {
         let mut cur = vec![];
         let mut cur_aux_infos = vec![];
         let mut cur_version = begin;
-        for (txn, aux_info) in txns.into_iter().zip(auxiliary_infos.into_iter()) {
+        for (txn, aux_info) in txns.into_iter().zip(auxiliary_infos) {
             if txn.is_block_start() && !cur.is_empty() {
                 let to_execute = std::mem::take(&mut cur);
                 let to_execute_aux_infos = std::mem::take(&mut cur_aux_infos);
@@ -545,7 +545,7 @@ fn execute_block_no_limit(
     txn_provider: &DefaultTxnProvider<SignatureVerifiedTransaction, AuxiliaryInfo>,
     state_view: &DebuggerStateView,
     concurrency_level: usize,
-) -> Result<Vec<TransactionOutput>, VMStatus> {
+) -> Result<Vec<TransactionOutput>, BlockError> {
     let executor = AptosVMBlockExecutor::new();
     executor
         .execute_block_with_config(

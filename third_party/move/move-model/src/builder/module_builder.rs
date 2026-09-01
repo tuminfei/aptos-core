@@ -29,7 +29,7 @@ use crate::{
     },
     pragmas::{
         is_pragma_valid_for_block, is_property_valid_for_condition, CONDITION_DEACTIVATED_PROP,
-        CONDITION_EXPORT_PROP, CONDITION_INJECTED_PROP,
+        CONDITION_EXPORT_PROP, CONDITION_INJECTED_PROP, INTRINSIC_PRAGMA,
     },
     symbol::{Symbol, SymbolPool},
     ty::{
@@ -218,6 +218,7 @@ impl<'env, 'translator> ModuleBuilder<'env, 'translator> {
     pub fn translate(&mut self, loc: Loc, module_def: EA::ModuleDefinition) {
         self.decl_ana(&module_def);
         self.def_ana(&module_def);
+        self.synthesize_validity_slots();
         self.collect_spec_block_infos(&module_def);
         let attrs = self.translate_attributes(&module_def.attributes);
         self.populate_and_finalize_env(loc, attrs);
@@ -789,6 +790,35 @@ impl ModuleBuilder<'_, '_> {
     }
 
     fn decl_ana_spec_block(&mut self, block: &EA::SpecBlock) {
+        // Ghost field declarations must be registered at declaration time:
+        // function bodies — whose inline spec blocks may reference ghost
+        // fields — are translated before struct spec blocks are
+        // definition-analyzed.
+        if let Some(SpecBlockContext::Struct(struct_name)) =
+            self.get_spec_block_context(&block.value.target)
+        {
+            for member in &block.value.members {
+                if let EA::SpecBlockMember_::Variable {
+                    is_global: false,
+                    is_ghost: true,
+                    name,
+                    type_parameters,
+                    type_,
+                    init,
+                } = &member.value
+                {
+                    let loc = self.parent.env.to_loc(&member.loc);
+                    self.decl_ana_ghost_field(
+                        &loc,
+                        &struct_name,
+                        name,
+                        type_parameters,
+                        type_,
+                        init,
+                    );
+                }
+            }
+        }
         for member in &block.value.members {
             self.decl_ana_spec_block_member(member)
         }
@@ -811,6 +841,7 @@ impl ModuleBuilder<'_, '_> {
             } => self.decl_ana_spec_fun(&loc, *uninterpreted, name, signature),
             Variable {
                 is_global: true,
+                is_ghost: _,
                 name,
                 type_,
                 type_parameters,
@@ -1023,6 +1054,7 @@ impl ModuleBuilder<'_, '_> {
         for member in &block.value.members {
             if let EA::SpecBlockMember_::Variable {
                 is_global: false,
+                is_ghost: false,
                 name,
                 type_,
                 type_parameters,
@@ -1153,13 +1185,6 @@ impl ModuleBuilder<'_, '_> {
                 if !self.parent.const_table.contains_key(&qsym) {
                     continue;
                 }
-                if !self.test_language_version(
-                    &loc,
-                    "constant definitions referring to other constants",
-                    LanguageVersion::V2_0,
-                ) {
-                    continue;
-                }
                 if visited.contains(&const_name) {
                     continue;
                 }
@@ -1185,6 +1210,14 @@ impl ModuleBuilder<'_, '_> {
         for (name, def) in module_def.structs.key_cloned_iter() {
             self.def_ana_struct(&name, def);
         }
+
+        // Re-check ghost field types for recursion now that every struct in
+        // the module has its runtime layout: the declaration-time check
+        // cannot see same-module runtime fields (layouts are still empty
+        // then), so a cycle routed through another struct's runtime field
+        // (e.g. `spec S { ghost g: Two; }` with `Two { b: Wrap<S> }`) is
+        // only detectable here.
+        self.check_ghost_field_recursion();
 
         // Analyze all constants.
         self.analyze_constants(module_def);
@@ -1223,15 +1256,15 @@ impl ModuleBuilder<'_, '_> {
             self.def_ana_fun(&name, fun_def);
         }
 
-        // TODO: we should re-visit this decision once we have high-order function ready on
-        // the compiled bytecode (i.e., file format) level. Before that, the rule is:
-        // - an inline function can have in-body spec blocks
-        // - an inline function cannot have function spec (i.e., pre/post-conditions)
-        //
-        // On the verification side:
-        // - we do not verify the correctness of in-body spec blocks in the inline function
-        // - instead, we inline these in-body spec blocks into the caller and verify these
-        //   specs in the context of caller.
+        // The rules for specs on inline functions are:
+        // - an inline function can have in-body spec blocks; they are expanded into the
+        //   caller and verified in the caller's context
+        // - an inline function without function-typed parameters can have a function spec;
+        //   in verify mode such a function is compiled to bytecode and checked against its
+        //   spec, and if it is opaque, calls are retained and use the spec at call sites
+        // - an inline function with function-typed parameters cannot have a function spec:
+        //   its spec would need to refer to the behavior of lambda arguments, which is not
+        //   supported (see move-prover/doc/dev/inline_fun_specs.md)
 
         // Analyze all module level spec blocks (except schemas)
         for spec in &module_def.specs {
@@ -1256,6 +1289,20 @@ impl ModuleBuilder<'_, '_> {
                                 &spec.value.target.value
                             {
                                 self.validate_target_signature(&fun_decl, &loc, signature);
+                            }
+
+                            if fun_decl.kind == FunctionKind::Inline
+                                && fun_decl
+                                    .params
+                                    .iter()
+                                    .any(|Parameter(_, ty, _)| ty.is_function())
+                            {
+                                self.parent.error(
+                                    &loc,
+                                    "function spec blocks are not supported for inline \
+                                     functions with function-typed parameters; those \
+                                     functions are verified at each application site",
+                                );
                             }
                         },
                         SpecBlockContext::Struct(..) | SpecBlockContext::Module => (),
@@ -1491,6 +1538,43 @@ impl ModuleBuilder<'_, '_> {
             .expect("struct invalid");
         entry.layout = layout;
         entry.is_empty_struct = is_empty_struct;
+        // Ghost fields are registered (from the struct's spec block) during
+        // declaration analysis, before field definitions are known; check for
+        // clashes with declared fields here, through the same field lookup
+        // used everywhere else.
+        let qid = entry.module_id.qualified_inst(entry.struct_id, vec![]);
+        let ghost_decls = entry
+            .ghost_fields
+            .iter()
+            .map(|(sym, data)| (*sym, data.loc.clone()))
+            .collect_vec();
+        for (sym, loc) in ghost_decls {
+            if !self.parent.lookup_struct_field_decl(&qid, sym).0.is_empty() {
+                self.parent.error(
+                    &loc,
+                    &format!(
+                        "duplicate declaration of field `{}` in struct `{}`",
+                        sym.display(self.parent.env.symbol_pool()),
+                        qsym.display(self.parent.env)
+                    ),
+                );
+                // Drop the clashing ghost so downstream analysis does not
+                // treat the field name as ghost.
+                self.parent
+                    .struct_table
+                    .get_mut(&qsym)
+                    .expect("struct invalid")
+                    .ghost_fields
+                    .remove(&sym);
+                self.parent
+                    .struct_table
+                    .get_mut(&qsym)
+                    .expect("struct invalid")
+                    .pending_ghost_inits
+                    .remove(&sym);
+            }
+        }
+        self.translate_pending_ghost_inits(&qsym);
     }
 
     fn build_field_map(
@@ -1534,6 +1618,8 @@ impl ModuleBuilder<'_, '_> {
                 offset: *idx,
                 variant: for_variant,
                 ty: field_ty,
+                is_ghost: false,
+                init: None,
             });
         }
         let mut is_empty_struct = false;
@@ -1549,6 +1635,8 @@ impl ModuleBuilder<'_, '_> {
                 offset: 0,
                 variant: None,
                 ty: field_ty,
+                is_ghost: false,
+                init: None,
             });
             is_empty_struct = true;
         }
@@ -1591,10 +1679,9 @@ impl ModuleBuilder<'_, '_> {
                 et.define_type_param(loc, *name, Type::new_param(pos), kind.clone(), false);
             }
             et.enter_scope();
-            let is_lang_version_2_1 = et.env().language_version.is_at_least(LanguageVersion::V2_1);
             for (idx, Parameter(n, ty, loc)) in params.iter().enumerate() {
                 let symbol_pool = et.parent.parent.env.symbol_pool();
-                if !is_lang_version_2_1 || symbol_pool.string(*n).as_ref() != "_" {
+                if symbol_pool.string(*n).as_ref() != "_" {
                     et.define_local(loc, *n, ty.clone(), None, Some(idx));
                 }
             }
@@ -1738,23 +1825,31 @@ impl ModuleBuilder<'_, '_> {
             if let Some(pre_name) = pre_label.and_then(&get_label_name) {
                 used_pre_labels.insert(pre_name);
             }
-            // Reject post-state labels on single-state predicates (requires_of, aborts_of).
+            // Reject post-state labels on predicates without an explicit
+            // post-state (requires_of, aborts_of, unchanged_of, folds_of).
             if post_label.is_some() {
-                if let Some(BehaviorKind::RequiresOf | BehaviorKind::AbortsOf) = behavior_kind {
-                    let kind_name = match behavior_kind.unwrap() {
-                        BehaviorKind::RequiresOf => "requires_of",
-                        BehaviorKind::AbortsOf => "aborts_of",
+                if let Some(
+                    kind @ (BehaviorKind::RequiresOf
+                    | BehaviorKind::AbortsOf
+                    | BehaviorKind::UnchangedOf
+                    | BehaviorKind::FoldsOf),
+                ) = behavior_kind
+                {
+                    let msg = match kind {
+                        BehaviorKind::RequiresOf | BehaviorKind::AbortsOf => format!(
+                            "`{}` describes a single state and cannot have a post-state label; \
+                             only `ensures_of` and `result_of` support state transitions",
+                            kind,
+                        ),
+                        BehaviorKind::UnchangedOf | BehaviorKind::FoldsOf => format!(
+                            "`{}` implicitly relates the pre-state to the current \
+                             state and cannot have a post-state label",
+                            kind,
+                        ),
                         _ => unreachable!(),
                     };
                     let exp_loc = self.parent.env.get_node_loc(*node_id);
-                    self.parent.env.error(
-                        &exp_loc,
-                        &format!(
-                            "`{}` describes a single state and cannot have a post-state label; \
-                             only `ensures_of` and `result_of` support state transitions",
-                            kind_name,
-                        ),
-                    );
+                    self.parent.env.error(&exp_loc, &msg);
                 }
             }
         }
@@ -1914,6 +2009,20 @@ impl ModuleBuilder<'_, '_> {
                 init,
                 ..
             } => self.def_ana_global_var(loc, name, init.as_ref()),
+            Variable {
+                is_global: false,
+                is_ghost: true,
+                ..
+            } => {
+                // Registered during declaration analysis when the enclosing
+                // spec block targets a struct; anywhere else it is an error.
+                if !matches!(context, SpecBlockContext::Struct(..)) {
+                    self.parent.env.error(
+                        loc,
+                        "ghost fields can only be declared in a struct spec block",
+                    );
+                }
+            },
             Variable {
                 is_global: false, ..
             } => { /* nothing to do right now */ },
@@ -2799,6 +2908,21 @@ impl<'env, 'translator> ModuleBuilder<'env, 'translator> {
                             None,
                         );
                     }
+                    // Ghost fields are also bindable bare in struct invariants
+                    // (`invariant g > 0` instead of only `invariant self.g > 0`).
+                    for f in entry.ghost_fields.values() {
+                        et.define_local(
+                            loc,
+                            f.name,
+                            f.ty.clone(),
+                            Some(Operation::Select(
+                                entry.module_id,
+                                entry.struct_id,
+                                FieldId::new(f.name),
+                            )),
+                            None,
+                        );
+                    }
                     let receiver_param_name =
                         et.symbol_pool().make(well_known::RECEIVER_PARAM_NAME);
                     let struct_type =
@@ -2806,6 +2930,21 @@ impl<'env, 'translator> ModuleBuilder<'env, 'translator> {
                     et.define_local(loc, receiver_param_name, struct_type, None, None);
                 } else if let StructLayout::Variants(_) = &entry.layout {
                     et.enter_scope();
+                    // Ghost fields on enums are variant-agnostic and also
+                    // bindable bare in struct invariants.
+                    for f in entry.ghost_fields.values() {
+                        et.define_local(
+                            loc,
+                            f.name,
+                            f.ty.clone(),
+                            Some(Operation::Select(
+                                entry.module_id,
+                                entry.struct_id,
+                                FieldId::new(f.name),
+                            )),
+                            None,
+                        );
+                    }
                     let receiver_param_name =
                         et.symbol_pool().make(well_known::RECEIVER_PARAM_NAME);
                     let struct_type =
@@ -2990,33 +3129,62 @@ impl ModuleBuilder<'_, '_> {
             cond.exp.visit_post_order(&mut visitor);
         } else if !context.allow_old() {
             let name = context.name().expect("should have name");
-            // Restrict accesses to function arguments only for `old(..)` in in-spec block
+            // For `old(..)` in an inline spec block, restrict the wrapped
+            // expression to function parameters and global state: local
+            // variables have no value at function entry. Everything built
+            // from parameters, `global`/`exists` reads, selections thereof,
+            // and pure operations is admissible.
             let entry = self.parent.fun_table.get(name).expect("function defined");
+            let param_count = entry.params.len();
+            // Variables bound within the condition itself (quantifiers, lets,
+            // lambdas) are rigid values, not state-dependent: `old(..)`
+            // reinterprets only state reads. Only occurrences free in the
+            // whole condition refer to locals of the enclosing function.
+            let mut free_occurrences = BTreeSet::new();
+            cond.exp.visit_free_local_vars(|id, _sym| {
+                free_occurrences.insert(id);
+            });
             let mut visitor = |e: &ExpData| {
                 if let ExpData::Call(_, Operation::Old, args) = e {
                     let arg = &args[0];
-                    match args[0].as_ref() {
-                        ExpData::Temporary(_, idx) if *idx < entry.params.len() => (),
-                        _ => {
-                            let label_cond = (
-                                cond.loc.clone(),
-                                "only a function parameter is allowed in old(..) expressions \
-                                in inline spec block"
-                                    .to_owned(),
-                            );
-                            let label_exp = (
-                                self.parent.env.get_node_loc(arg.node_id()),
-                                "this expression is not a function parameter".to_owned(),
-                            );
-                            self.parent.env.diag_with_labels(
-                                Severity::Error,
-                                loc,
-                                "invalid old(..) expression in inline spec block",
-                                vec![label_cond, label_exp],
-                            );
-                            ok = false;
-                        },
-                    };
+                    let mut offender = None;
+                    arg.visit_pre_order(&mut |sub| {
+                        if offender.is_some() {
+                            return false;
+                        }
+                        match sub {
+                            ExpData::LocalVar(id, _) if free_occurrences.contains(id) => {
+                                offender = Some(*id);
+                                false
+                            },
+                            ExpData::Temporary(id, idx) if *idx >= param_count => {
+                                offender = Some(*id);
+                                false
+                            },
+                            _ => true,
+                        }
+                    });
+                    if let Some(offender_id) = offender {
+                        let label_cond = (
+                            cond.loc.clone(),
+                            "only function parameters and global state can be used \
+                            in old(..) in inline spec blocks"
+                                .to_owned(),
+                        );
+                        let label_exp = (
+                            self.parent.env.get_node_loc(offender_id),
+                            "this refers to a local variable, which has no value \
+                            at function entry"
+                                .to_owned(),
+                        );
+                        self.parent.env.diag_with_labels(
+                            Severity::Error,
+                            loc,
+                            "invalid old(..) expression in inline spec block",
+                            vec![label_cond, label_exp],
+                        );
+                        ok = false;
+                    }
                 }
                 true // continue visit, note all problematic subexprs
             };
@@ -3737,6 +3905,461 @@ impl ModuleBuilder<'_, '_> {
     }
 }
 
+/// ## Ghost Field Definition Analysis
+
+impl ModuleBuilder<'_, '_> {
+    /// Declaration analysis for a ghost field (`ghost f: T;`) in a struct
+    /// spec block: registers a model-only field on the struct. Ghost fields
+    /// have no runtime counterpart; they are fresh (unconstrained) when the
+    /// struct is packed, carried along by every copy/move/borrow, excluded
+    /// from equality, and only accessible in specification expressions. This
+    /// runs in the declaration phase so that inline spec blocks in function
+    /// bodies, which are translated before struct spec blocks are
+    /// definition-analyzed, can reference ghost fields.
+    fn decl_ana_ghost_field(
+        &mut self,
+        loc: &Loc,
+        struct_name: &QualifiedSymbol,
+        name: &Name,
+        type_parameters: &[(Name, EA::AbilitySet)],
+        type_: &EA::Type,
+        init: &Option<EA::Exp>,
+    ) {
+        let struct_name = struct_name.clone();
+        if !type_parameters.is_empty() {
+            self.parent
+                .env
+                .error(loc, "ghost fields cannot have their own type parameters");
+            return;
+        }
+        let entry = self
+            .parent
+            .struct_table
+            .get(&struct_name)
+            .expect("invalid spec block context")
+            .clone();
+        // Translate the field type with the struct's type parameters in scope.
+        let mut et = ExpTranslator::new(self);
+        for (pos, TypeParameter(tp_name, tp_kind, tp_loc)) in entry.type_params.iter().enumerate() {
+            et.define_type_param(
+                tp_loc,
+                *tp_name,
+                Type::new_param(pos),
+                tp_kind.clone(),
+                false, /*report_errors*/
+            );
+        }
+        let ty = et.translate_type(type_);
+        // Reference types would generate ill-typed Boogie: the datatype
+        // constructor arg would require `$Mutation(...)`, but ghost value
+        // generation supplies bare typed values. Ghost state is model-only
+        // and shouldn't carry runtime reference semantics anyway.
+        if matches!(&ty, Type::Reference(..)) {
+            self.parent
+                .env
+                .error(loc, "ghost field type cannot be a reference");
+            return;
+        }
+        // A ghost field whose type transitively references its own enclosing
+        // struct produces a non-well-founded Boogie datatype (the only
+        // constructor requires another value of the same type). Reject it
+        // up front — the recursive-type check that runs over runtime fields
+        // doesn't see ghost fields.
+        let self_qid = entry.module_id.qualified(entry.struct_id);
+        if self.type_contains_struct(&ty, self_qid, &mut BTreeSet::new()) {
+            self.parent.env.error(
+                loc,
+                &format!(
+                    "ghost field type cannot reference its enclosing struct `{}`, \
+                     directly or transitively",
+                    struct_name.display(self.parent.env)
+                ),
+            );
+            return;
+        }
+        let field_sym = self.symbol_pool().make(&name.value);
+        // Collisions with declared (runtime) fields are checked when the
+        // struct definition is analyzed (`def_ana_struct`), where the field
+        // layout is known; only ghost-vs-ghost duplicates are checked here.
+        let duplicate_ghost = self
+            .parent
+            .struct_table
+            .get(&struct_name)
+            .expect("struct entry")
+            .ghost_fields
+            .contains_key(&field_sym);
+        if duplicate_ghost {
+            self.parent.env.error(
+                loc,
+                &format!(
+                    "duplicate declaration of field `{}` in struct `{}`",
+                    name.value,
+                    struct_name.display(self.parent.env)
+                ),
+            );
+            return;
+        }
+        let ghost_fields = &mut self
+            .parent
+            .struct_table
+            .get_mut(&struct_name)
+            .expect("struct entry")
+            .ghost_fields;
+        let offset = ghost_fields.len();
+        ghost_fields.insert(field_sym, FieldData {
+            name: field_sym,
+            loc: loc.clone(),
+            offset,
+            variant: None,
+            ty,
+            is_ghost: true,
+            init: None,
+        });
+        // Stash the raw initializer expression until the struct's runtime
+        // field layout is known; `def_ana_struct` translates and installs it
+        // on the FieldData.
+        if let Some(init_exp) = init {
+            self.parent
+                .struct_table
+                .get_mut(&struct_name)
+                .expect("struct entry")
+                .pending_ghost_inits
+                .insert(field_sym, init_exp.clone());
+        }
+    }
+
+    /// Translates any pending ghost-field initializer expressions (`ghost f: T = expr;`)
+    /// on the given struct into `Exp`s and installs them on the corresponding
+    /// ghost `FieldData::init`. Called from `def_ana_struct` once the struct's
+    /// runtime layout is known.
+    ///
+    /// Scope for the initializer:
+    /// * Type parameters of the enclosing struct.
+    /// * For singleton structs, each runtime field is bare-bindable (bound as a
+    ///   `LocalVar` of the field's type). Pack sites substitute the pack
+    ///   argument in for each `LocalVar`.
+    /// * For enums, only type parameters are in scope: ghost fields are
+    ///   variant-agnostic, so the initializer cannot reference variant fields.
+    fn translate_pending_ghost_inits(&mut self, struct_name: &QualifiedSymbol) {
+        let entry = self
+            .parent
+            .struct_table
+            .get(struct_name)
+            .expect("struct entry")
+            .clone();
+        if entry.pending_ghost_inits.is_empty() {
+            return;
+        }
+        for (field_sym, init_ea) in entry.pending_ghost_inits.iter() {
+            let ghost_ty = match entry.ghost_fields.get(field_sym) {
+                Some(fd) => fd.ty.clone(),
+                None => continue,
+            };
+            let mut et = ExpTranslator::new(self);
+            for (pos, TypeParameter(tp_name, tp_kind, tp_loc)) in
+                entry.type_params.iter().enumerate()
+            {
+                et.define_type_param(
+                    tp_loc,
+                    *tp_name,
+                    Type::new_param(pos),
+                    tp_kind.clone(),
+                    false, /*report_errors*/
+                );
+            }
+            et.enter_scope();
+            if let StructLayout::Singleton(field_map, _) = &entry.layout {
+                for (fname, fdata) in field_map {
+                    et.define_local(&fdata.loc, *fname, fdata.ty.clone(), None, None);
+                }
+            }
+            let translated = et.translate_exp(init_ea, &ghost_ty);
+            et.finalize_types(true);
+            let init_exp = translated.into_exp();
+            if exp_contains_bitwise_op(&init_exp) {
+                self.parent.env.error(
+                    &self.parent.env.get_node_loc(init_exp.node_id()),
+                    "bitvector expressions (|, &, ^, int2bv) cannot appear in a \
+                     ghost field initializer (ghost integer fields are modeled \
+                     as mathematical integers)",
+                );
+                continue;
+            }
+            if !self.parent.env.has_errors() {
+                self.parent
+                    .struct_table
+                    .get_mut(struct_name)
+                    .expect("struct entry")
+                    .ghost_fields
+                    .get_mut(field_sym)
+                    .expect("ghost field")
+                    .init = Some(init_exp);
+            }
+        }
+        // Drain pending; translated (or errored-out) initializers stay on the
+        // FieldData.
+        self.parent
+            .struct_table
+            .get_mut(struct_name)
+            .expect("struct entry")
+            .pending_ghost_inits
+            .clear();
+    }
+
+    /// Backend-synthesized iterator-validity slots. Binding a validity
+    /// predicate role (`map_spec_iter_valid`, `map_spec_leaf_iter_valid`, or
+    /// `map_spec_iter_preserved`) gives the intrinsic map — and, for the
+    /// per-iterator predicates, the predicate's iterator enum — a hidden
+    /// ghost field named `$validity`. The name is not spellable in Move
+    /// source, so no user spec can read, write, initialize, or constrain the
+    /// slot; the ghost machinery (carrier representation, fresh-at-pack,
+    /// havoc on structural mutation, equality exclusion) carries it, and the
+    /// role templates define the predicates over it.
+    fn synthesize_validity_slots(&mut self) {
+        use crate::pragmas::{
+            INTRINSIC_FUN_MAP_SPEC_ITER_PRESERVED, INTRINSIC_FUN_MAP_SPEC_ITER_VALID,
+            INTRINSIC_FUN_MAP_SPEC_LEAF_ITER_VALID,
+        };
+        let hidden = self.symbol_pool().make("$validity");
+        let mut to_stamp: Vec<QualifiedSymbol> = vec![];
+        let mut bad_roles: Vec<(&'static str, Loc)> = vec![];
+        for decl in &self.parent.intrinsics {
+            if decl.get_move_type().module_id != self.module_id {
+                continue;
+            }
+            let mut any = false;
+            for role in [
+                INTRINSIC_FUN_MAP_SPEC_ITER_VALID,
+                INTRINSIC_FUN_MAP_SPEC_LEAF_ITER_VALID,
+            ] {
+                let Some(sf_qid) = decl.lookup_spec_fun(self.parent.env, role) else {
+                    continue;
+                };
+                any = true;
+                // The iterator enum is the predicate's first parameter; it
+                // must live in this module so its slot can be synthesized
+                // here. Full signature validation happens at mono analysis.
+                let (iter_qsym, sf_loc) = if sf_qid.module_id == self.module_id {
+                    let sf = &self.spec_funs[sf_qid.id.as_usize()];
+                    let qsym = match sf.params.first() {
+                        Some(Parameter(_, Type::Struct(mid, sid, _), _))
+                            if *mid == self.module_id =>
+                        {
+                            Some(QualifiedSymbol {
+                                module_name: self.module_name.clone(),
+                                symbol: sid.symbol(),
+                            })
+                        },
+                        _ => None,
+                    };
+                    (qsym, sf.loc.clone())
+                } else {
+                    let sf_loc = self
+                        .parent
+                        .env
+                        .get_module(sf_qid.module_id)
+                        .get_spec_fun(sf_qid.id)
+                        .loc
+                        .clone();
+                    (None, sf_loc)
+                };
+                match iter_qsym {
+                    Some(qsym) => to_stamp.push(qsym),
+                    None => bad_roles.push((role, sf_loc)),
+                }
+            }
+            if decl
+                .lookup_spec_fun(self.parent.env, INTRINSIC_FUN_MAP_SPEC_ITER_PRESERVED)
+                .is_some()
+            {
+                any = true;
+            }
+            if any {
+                to_stamp.push(QualifiedSymbol {
+                    module_name: self.module_name.clone(),
+                    symbol: decl.get_move_type().id.symbol(),
+                });
+            }
+        }
+        for (role, loc) in bad_roles {
+            self.parent.env.error(
+                &loc,
+                &format!(
+                    "the first parameter of a `{}` binding must be an iterator \
+                     type declared in the same module as the map",
+                    role
+                ),
+            );
+        }
+        for qsym in to_stamp {
+            let Some(entry) = self.parent.struct_table.get_mut(&qsym) else {
+                continue;
+            };
+            if entry.ghost_fields.contains_key(&hidden) {
+                continue;
+            }
+            let offset = entry.ghost_fields.len();
+            entry.ghost_fields.insert(hidden, FieldData {
+                name: hidden,
+                loc: entry.loc.clone(),
+                offset,
+                variant: None,
+                ty: Type::Primitive(PrimitiveType::Num),
+                is_ghost: true,
+                init: None,
+            });
+        }
+    }
+
+    /// Post-definition-analysis check of all ghost field types in this
+    /// module for recursion through runtime fields. Rejecting ghosts whose
+    /// type reaches back to the enclosing struct keeps the generated Boogie
+    /// datatypes well-founded.
+    fn check_ghost_field_recursion(&mut self) {
+        let ghost_decls: Vec<(QualifiedSymbol, Symbol, Loc, Type)> = self
+            .parent
+            .struct_table
+            .iter()
+            .filter(|(_, entry)| entry.module_id == self.module_id)
+            .flat_map(|(qsym, entry)| {
+                entry
+                    .ghost_fields
+                    .values()
+                    .map(|f| (qsym.clone(), f.name, f.loc.clone(), f.ty.clone()))
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        for (struct_name, field_sym, loc, ty) in ghost_decls {
+            let entry = self.parent.struct_table.get(&struct_name).expect("entry");
+            let self_qid = entry.module_id.qualified(entry.struct_id);
+            if self.type_contains_struct(&ty, self_qid, &mut BTreeSet::new()) {
+                self.parent.env.error(
+                    &loc,
+                    &format!(
+                        "ghost field type cannot reference its enclosing struct `{}`, \
+                         directly or transitively",
+                        struct_name.display(self.parent.env)
+                    ),
+                );
+                self.parent
+                    .struct_table
+                    .get_mut(&struct_name)
+                    .expect("entry")
+                    .ghost_fields
+                    .remove(&field_sym);
+            }
+        }
+    }
+
+    /// Whether `ty` transitively references the struct identified by `needle`.
+    /// Used by ghost-field declaration analysis to reject self-referential
+    /// ghost types (which would generate a non-well-founded Boogie datatype).
+    ///
+    /// Runs during declaration analysis, when structs in the current module
+    /// may not yet be visible via `GlobalEnv::get_struct`. For same-module
+    /// struct references, walks the builder's `struct_table` instead; for
+    /// cross-module references, uses the global env.
+    fn type_contains_struct(
+        &self,
+        ty: &Type,
+        needle: crate::model::QualifiedId<StructId>,
+        visited: &mut BTreeSet<(crate::model::QualifiedId<StructId>, Vec<Type>)>,
+    ) -> bool {
+        match ty {
+            Type::Struct(mid, sid, inst) => {
+                let qid = mid.qualified(*sid);
+                if qid == needle {
+                    return true;
+                }
+                // Key the visited set on the full instantiation: `Wrap<u64>`
+                // must not shield a later `Wrap<S>` whose argument reaches
+                // the needle. Struct declarations are acyclic (up to the
+                // ghost edges being checked), so the set of instantiations
+                // encountered is finite.
+                if !visited.insert((qid, inst.clone())) {
+                    return false;
+                }
+                // Same-module structs may not be in GlobalEnv yet during
+                // declaration analysis; look them up in the builder table
+                // via the reverse index.
+                if *mid == self.module_id {
+                    let sym = self
+                        .parent
+                        .reverse_struct_table
+                        .get(&(*mid, *sid))
+                        .expect("same-module struct in builder table");
+                    let entry = self
+                        .parent
+                        .struct_table
+                        .get(sym)
+                        .expect("same-module struct entry");
+                    let mut hit = false;
+                    let mut check_fields = |fields: &BTreeMap<Symbol, FieldData>| {
+                        for f in fields.values() {
+                            if self.type_contains_struct(&f.ty.instantiate(inst), needle, visited) {
+                                hit = true;
+                            }
+                        }
+                    };
+                    match &entry.layout {
+                        StructLayout::Singleton(field_map, _) => check_fields(field_map),
+                        StructLayout::Variants(variants) => {
+                            for v in variants {
+                                check_fields(&v.fields);
+                            }
+                        },
+                        StructLayout::None => {},
+                    }
+                    // Ghost fields are constructor arguments of the Boogie
+                    // datatype too, so a cycle through another struct's ghost
+                    // is just as non-well-founded as one through a runtime
+                    // field.
+                    check_fields(&entry.ghost_fields);
+                    return hit;
+                }
+                let s = self.parent.env.get_struct(qid);
+                let mut hit = false;
+                if s.has_variants() {
+                    for variant in s.get_variants() {
+                        for f in s.get_fields_of_variant(variant) {
+                            if self.type_contains_struct(
+                                &f.get_type().instantiate(inst),
+                                needle,
+                                visited,
+                            ) {
+                                hit = true;
+                            }
+                        }
+                    }
+                } else {
+                    for f in s.get_fields() {
+                        if self.type_contains_struct(
+                            &f.get_type().instantiate(inst),
+                            needle,
+                            visited,
+                        ) {
+                            hit = true;
+                        }
+                    }
+                }
+                for f in s.get_ghost_fields() {
+                    if self.type_contains_struct(&f.get_type().instantiate(inst), needle, visited) {
+                        hit = true;
+                    }
+                }
+                hit
+            },
+            Type::Vector(inner) | Type::Reference(_, inner) => {
+                self.type_contains_struct(inner, needle, visited)
+            },
+            Type::Tuple(tys) => tys
+                .iter()
+                .any(|t| self.type_contains_struct(t, needle, visited)),
+            _ => false,
+        }
+    }
+}
+
 /// ## Global Variable Definition Analysis
 
 impl ModuleBuilder<'_, '_> {
@@ -3795,11 +4418,101 @@ impl ModuleBuilder<'_, '_> {
                 PropertyBag::default(),
                 "",
             );
+        } else if let Some((base, is_ghost_field)) =
+            self.extract_ghost_field_update_target(&translated_lhs)
+        {
+            if !is_ghost_field {
+                self.parent.error(
+                    &self.parent.env.get_node_loc(translated_lhs.node_id()),
+                    "target of `update` restricted to specification variables and ghost fields",
+                );
+                return;
+            }
+            // Local variables of inline spec blocks appear as `LocalVar` here
+            // and are remapped to `Temporary` when the spec is attached to
+            // the code.
+            if !matches!(
+                base.as_ref(),
+                ExpData::Temporary(..) | ExpData::LocalVar(..)
+            ) {
+                self.parent.error(
+                    &self.parent.env.get_node_loc(translated_lhs.node_id()),
+                    "ghost field update target must be a local variable or parameter",
+                );
+                return;
+            }
+            // Immutable references are eliminated before spec instrumentation:
+            // the write would land on an owned prover copy, but the callee's
+            // postcondition over the immutable reference is still assumed —
+            // letting a caller certify false assertions about unchanged
+            // runtime state. Only owned values and mutable references have
+            // observable ghost mutations.
+            let base_ty = self.parent.env.get_node_type(base.node_id());
+            if matches!(
+                base_ty,
+                crate::ty::Type::Reference(crate::ty::ReferenceKind::Immutable, _)
+            ) {
+                self.parent.error(
+                    &self.parent.env.get_node_loc(translated_lhs.node_id()),
+                    "ghost field update target cannot be behind an immutable reference; \
+                     use an owned value or a mutable reference",
+                );
+                return;
+            }
+            // Read-only-ness of intrinsic-map ghosts is checked in spec
+            // instrumentation, where the intrinsics annotation is complete
+            // even for same-module declarations.
+            // Bitwise operators on the RHS produce bitvector-typed Boogie
+            // expressions, but ghost fields are declared as unbounded integer
+            // in Boogie (they are model-only and don't participate in
+            // number-operation analysis). Emitting the update would yield an
+            // ill-typed Boogie program, so reject at model build time.
+            let rhs_exp = translated_rhs.into_exp();
+            if exp_contains_bitwise_op(&rhs_exp) {
+                self.parent.error(
+                    &self.parent.env.get_node_loc(rhs_exp.node_id()),
+                    "bitvector expressions (|, &, ^, int2bv) cannot appear in a \
+                     ghost field update expression (ghost integer fields are \
+                     modeled as mathematical integers)",
+                );
+                return;
+            }
+            self.add_conditions_to_context(
+                context,
+                loc,
+                vec![Condition {
+                    loc: loc.clone(),
+                    kind: ConditionKind::Update,
+                    properties: Default::default(),
+                    exp: rhs_exp,
+                    additional_exps: vec![translated_lhs.into_exp()],
+                }],
+                PropertyBag::default(),
+                "",
+            );
         } else {
             self.parent.error(
                 &self.parent.env.get_node_loc(translated_lhs.node_id()),
-                "target of `update` restricted to specification variables",
+                "target of `update` restricted to specification variables and ghost fields",
             )
+        }
+    }
+
+    /// If the expression is a field selection `base.f`, returns the base
+    /// expression and whether `f` is a ghost field of the base's struct.
+    /// Consults the builder tables since the struct's module may still be
+    /// under construction.
+    fn extract_ghost_field_update_target(&self, lhs: &ExpData) -> Option<(Exp, bool)> {
+        if let ExpData::Call(_, Operation::Select(mid, sid, fid), args) = lhs {
+            let is_ghost = self
+                .parent
+                .reverse_struct_table
+                .get(&(*mid, *sid))
+                .and_then(|qsym| self.parent.struct_table.get(qsym))
+                .is_some_and(|entry| entry.ghost_fields.contains_key(&fid.symbol()));
+            Some((args[0].clone(), is_ghost))
+        } else {
+            None
         }
     }
 }
@@ -4762,6 +5475,25 @@ impl ModuleBuilder<'_, '_> {
             }
             // New struct in this module
             let spec = self.struct_specs.remove(&name.symbol).unwrap_or_default();
+            // Intrinsic types have no generated Boogie datatype to carry
+            // ghost constructor arguments; reject ghosts on them — except
+            // intrinsic MAP types, which gain a carrier datatype. This is the
+            // earliest point where the intrinsic pragma is reliably known.
+            if !entry.ghost_fields.is_empty() {
+                let pool = self.parent.env.symbol_pool();
+                if spec.properties.contains_key(&pool.make(INTRINSIC_PRAGMA)) {
+                    for f in entry.ghost_fields.values() {
+                        // Backend-synthesized validity slots carry unspellable
+                        // `$`-names and exist precisely for intrinsic maps.
+                        if pool.string(f.name).starts_with('$') {
+                            continue;
+                        }
+                        self.parent
+                            .env
+                            .error(&f.loc, "ghost fields are not supported on intrinsic types");
+                    }
+                }
+            }
             let mut field_data: BTreeMap<FieldId, FieldData> = BTreeMap::new();
             let mut variants: BTreeMap<Symbol, model::StructVariant> = BTreeMap::new();
             let is_enum = match &entry.layout {
@@ -4804,6 +5536,11 @@ impl ModuleBuilder<'_, '_> {
                 abilities: entry.abilities,
                 spec_var_opt: None,
                 field_data,
+                ghost_field_data: entry
+                    .ghost_fields
+                    .iter()
+                    .map(|(sym, data)| (FieldId::new(*sym), data.clone()))
+                    .collect(),
                 variants: if is_enum { Some(variants) } else { None },
                 spec: RefCell::new(spec),
                 field_access_of,
@@ -4876,9 +5613,9 @@ impl ModuleBuilder<'_, '_> {
                 result_type: entry.result_type.clone(),
                 access_specifiers,
                 fun_param_access_of,
-                spec_used_memory: BTreeSet::new(),
-                spec_old_memory: BTreeSet::new(),
-                spec_uses_old: false,
+                spec_used_memory: std::cell::RefCell::new(BTreeSet::new()),
+                spec_old_memory: std::cell::RefCell::new(BTreeSet::new()),
+                spec_uses_old: std::cell::Cell::new(false),
                 acquired_structs: None,
                 spec: spec.into(),
                 def,
@@ -4916,9 +5653,9 @@ impl ModuleBuilder<'_, '_> {
                 result_type: Type::unit(),
                 access_specifiers: None,
                 fun_param_access_of: vec![],
-                spec_used_memory: BTreeSet::new(),
-                spec_old_memory: BTreeSet::new(),
-                spec_uses_old: false,
+                spec_used_memory: std::cell::RefCell::new(BTreeSet::new()),
+                spec_old_memory: std::cell::RefCell::new(BTreeSet::new()),
+                spec_uses_old: std::cell::Cell::new(false),
                 acquired_structs: None,
                 spec: spec.into(),
                 def: None,
@@ -4973,6 +5710,24 @@ impl ModuleBuilder<'_, '_> {
             std::mem::take(&mut self.spec_block_infos),
         );
     }
+}
+
+/// Whether `exp` contains a bitvector-producing operation anywhere in its
+/// tree: a bitwise operator or `int2bv`. These lower to bitvector-typed
+/// Boogie expressions and cannot be assigned into a ghost integer field
+/// (which is modeled as unbounded int).
+pub(crate) fn exp_contains_bitwise_op(exp: &crate::ast::Exp) -> bool {
+    use crate::ast::{ExpData, Operation};
+    exp.as_ref().any(&mut |e| {
+        matches!(
+            e,
+            ExpData::Call(
+                _,
+                Operation::BitOr | Operation::BitAnd | Operation::Xor | Operation::Int2Bv,
+                _
+            )
+        )
+    })
 }
 
 /// Extract all accesses of a schema from a schema expression.

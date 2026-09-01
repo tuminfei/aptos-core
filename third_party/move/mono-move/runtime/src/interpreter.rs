@@ -27,28 +27,56 @@ use crate::{
     },
     value_utils,
 };
-use aptos_types::write_set::WriteSet;
 use mono_move_core::{
     captured_values_size,
-    interner::{InternedIdentifier, InternedModuleId},
-    native::{NativeABI, NativeExtensions, NativeIdx, NativeStatus, ObjectHandle, RootPool},
+    interner::{module_id_of, InternedIdentifier, InternedModuleId},
+    native::{
+        NativeABI, NativeExtension, NativeExtensions, NativeIdx, NativeStatus, ObjectHandle,
+        RootPool,
+    },
     next_captured_value_offset,
     storage::resource_provider::InMemoryStorageKey,
-    types::{view_type_list, InternedType, InternedTypeList},
-    value_layout::LayoutProvider,
+    types::{view_type, view_type_list, InternedType, InternedTypeList, Type},
     CallClosureOp, ClosureFuncRef, CmpKind, CodeOffset, ConstantPoolIndex, DescriptorId,
     FrameOffset, Function, FunctionPtr, FunctionRef, GasMeter, IntBinaryOp, IntCastOp, IntNegateOp,
-    IntOperand, IntShiftOp, IntTy, MicroOp, PackClosureOp, ResourceProvider, ShiftOperand,
-    VMInternalError, VMResult, VecPackOp, VecUnpackOp, CAPTURED_DATA_TAG_MATERIALIZED,
-    CAPTURED_DATA_TAG_OFFSET, CAPTURED_DATA_VALUES_OFFSET, CAPTURED_DATA_VALUES_SIZE_OFFSET,
-    CLOSURE_CAPTURED_DATA_PTR_OFFSET, CLOSURE_DESCRIPTOR_ID, CLOSURE_FUNC_REF_OFFSET,
-    CLOSURE_MASK_OFFSET, FRAME_METADATA_SIZE, FUNC_REF_PAYLOAD_OFFSET, FUNC_REF_TAG_OFFSET,
-    FUNC_REF_TAG_RESOLVED, FUNC_REF_TAG_UNRESOLVED, MAX_ALIGN, OBJECT_HEADER_SIZE,
+    IntOperand, IntShiftOp, IntTy, LayoutProvider, MicroOp, PackClosureOp, ResourceProvider,
+    ShiftOperand, VMInternalError, VMResult, VecPackOp, VecUnpackOp,
+    CAPTURED_DATA_TAG_MATERIALIZED, CAPTURED_DATA_TAG_OFFSET, CAPTURED_DATA_VALUES_OFFSET,
+    CAPTURED_DATA_VALUES_SIZE_OFFSET, CLOSURE_CAPTURED_DATA_PTR_OFFSET, CLOSURE_DESCRIPTOR_ID,
+    CLOSURE_FUNC_REF_OFFSET, CLOSURE_MASK_OFFSET, FRAME_METADATA_SIZE, FUNC_REF_PAYLOAD_OFFSET,
+    FUNC_REF_TAG_OFFSET, FUNC_REF_TAG_RESOLVED, FUNC_REF_TAG_UNRESOLVED, MAX_ALIGN,
+    OBJECT_HEADER_SIZE,
 };
+use mono_move_global_context::ExecutionGuard;
 use mono_move_loader::{Loader, ModuleReadSet};
-use move_core_types::int256::{I256, U256};
+use move_core_types::{
+    int256::{I256, U256},
+    vm_status::AbortLocation,
+};
 use rand::{rngs::StdRng, Rng, SeedableRng};
-use std::ptr::{null, NonNull};
+use std::{
+    cell::Ref,
+    ptr::{null, NonNull},
+};
+
+/// Resolves the resource-group container a resource type belongs to from the
+/// read-set-pinned defining module, or [`None`] for an own storage slot.
+macro_rules! resolve_resource_group {
+    ($ctx:expr, $ty:expr) => {{
+        let Type::Nominal {
+            module_id, name, ..
+        } = view_type($ty)
+        else {
+            // Global-storage ops always operate on nominal (struct/enum) types.
+            invariant_violation!(Unreachable(
+                "resource type must be a nominal type".to_string()
+            ));
+        };
+        let arena_ref = $ctx.loader.guard().arena_ref_for_module_id(*module_id);
+        Ok($ctx.read_set.get_loaded(arena_ref)?.resource_group_of(name))
+    }};
+}
+
 // ---------------------------------------------------------------------------
 // Runtime state
 // ---------------------------------------------------------------------------
@@ -72,44 +100,117 @@ pub(crate) struct VMRegisters {
 }
 
 impl VMRegisters {
+    /// Sentinel `pc` marking a context with no function installed yet.
+    /// Guarded at every entry point that would touch the registers, so the
+    /// dangling function pointer is never dereferenced.
+    const IDLE_PC: usize = usize::MAX;
+
     /// Registers initialized with a fresh root frame, ready to begin execution.
-    fn new(stack_base: *mut u8, func: &Function) -> Self {
+    fn new(stack: &MemoryRegion, func: &Function) -> Self {
         Self {
             pc: 0,
-            // SAFETY: `stack_base` points to a stack allocation far larger than
-            // `FRAME_METADATA_SIZE`, so the offset stays in bounds.
-            fp: unsafe { stack_base.add(FRAME_METADATA_SIZE) },
+            fp: root_frame_base(stack),
             func: NonNull::from(func),
         }
     }
+
+    /// Registers of an idle context; [`Self::new`] via `prepare_call` must run
+    /// before execution.
+    //
+    // TODO(cleanup): `func` has no value until the first call, so this hands
+    // out a dangling pointer and leans on `is_idle` instead of the `NonNull`
+    // invariant. Look for ways to get rid of this workaround in the future.
+    fn idle(stack: &MemoryRegion) -> Self {
+        Self {
+            pc: Self::IDLE_PC,
+            fp: root_frame_base(stack),
+            func: NonNull::dangling(),
+        }
+    }
+
+    fn is_idle(&self) -> bool {
+        self.pc == Self::IDLE_PC
+    }
+}
+
+/// Frame pointer of the root call frame, which sits above the stack's sentinel
+/// frame metadata.
+fn root_frame_base(stack: &MemoryRegion) -> *mut u8 {
+    assert!(
+        stack.len() > FRAME_METADATA_SIZE,
+        "stack is too small to hold a root frame"
+    );
+    // SAFETY: the offset is within `stack`, checked above.
+    unsafe { stack.as_ptr().add(FRAME_METADATA_SIZE) }
 }
 
 /// What a finished transaction leaves behind: the frozen heap, the
 /// global-storage read-write set, and the native extensions (event store and
-/// friends). Read-write-set and extension entries point into `heap`, so the
-/// parts are only valid together; external read pointers remain owned by the
-/// resource provider.
+/// friends).
 ///
-// TODO(correctness): the effects hold interned types but carry no lifetime, so
-// they can outlive the guard and dereference freed arenas after a maintenance
-// reset. Tie them to the guard lifetime (`SessionEffects<'guard>`).
-pub struct SessionEffects {
-    pub heap: Heap,
-    pub read_write_set: ResourceReadWriteSet,
-    pub extensions: NativeExtensions,
+/// Read-write-set and extension entries point into the frozen heap, so the
+/// parts are only valid together. Read-write-set keys and some extension
+/// entries, notably emitted events, contain interned types backed by the global
+/// arena. Retaining the originating execution guard prevents arena-resetting
+/// maintenance while the effects exist and supplies the matching layout table
+/// during materialization. Retaining the exact resource provider used during
+/// execution keeps its external read allocations alive and lets materializers
+/// reject another provider whose pointer-keyed caches or state snapshot do not
+/// match these effects.
+pub struct SessionEffects<'guard> {
+    read_write_set: ResourceReadWriteSet,
+    extensions: NativeExtensions,
+    /// The guard whose layout table describes the effects' interned types.
+    guard: &'guard ExecutionGuard<'guard>,
+    /// The exact provider that supplied external reads during execution.
+    resource_provider: &'guard dyn ResourceProvider,
+    /// Owns the allocations referenced by the read-write set and extensions.
+    /// Not read directly: those hold raw pointers into it, so it only needs to
+    /// outlive them. Declared last because fields drop in declaration order.
+    _heap: Heap,
 }
 
-impl SessionEffects {
-    /// The transaction's write set.
-    pub fn write_set(&self, layouts: &impl LayoutProvider) -> VMResult<WriteSet> {
-        crate::write_set::build_write_set(&self.read_write_set, layouts)
+impl<'guard> SessionEffects<'guard> {
+    /// The transaction's global-storage read-write set.
+    pub fn read_write_set(&self) -> &ResourceReadWriteSet {
+        &self.read_write_set
+    }
+
+    /// Immutable access to one of the transaction's native extensions.
+    pub fn extension<T: NativeExtension>(&self) -> VMResult<Ref<'_, T>> {
+        self.extensions.get::<T>()
+    }
+
+    /// The originating layout provider for the effects' interned types.
+    #[inline]
+    pub fn layout_provider(&self) -> &impl LayoutProvider {
+        self.guard
+    }
+
+    /// Whether `provider` is the exact provider instance used during execution.
+    ///
+    /// Identity matters because storage keys and provider caches can contain
+    /// pointer-identified interned types.
+    pub fn originates_from_provider(&self, provider: &dyn ResourceProvider) -> bool {
+        std::ptr::addr_eq(self.resource_provider, provider)
+    }
+}
+
+/// Materializes the [`AbortLocation`] naming the module that raised an abort.
+// TODO(completeness): return `AbortLocation::Script` for script aborts.
+fn abort_location(module_id: InternedModuleId) -> VMResult<AbortLocation> {
+    match module_id_of(module_id) {
+        Some(module_id) => Ok(AbortLocation::Module(module_id)),
+        None => invariant_violation!(Unreachable(
+            "interned module name is not a valid identifier".to_string()
+        )),
     }
 }
 
 /// Per-transaction interpreter context with a unified call stack and a
 /// GC-managed heap: owns the transaction state (code loader and read-set, gas
 /// meter, native extensions, resource read-write set) and the machine state
-/// (stack, heap, VM registers). Interpreter sessions are [`Self::invoke`] /
+/// (stack, heap, VM registers). Interpreter sessions are [`Self::prepare_call`] /
 /// [`Self::reset`] calls on the same context, so state like the heap and the
 /// read-write set lives across sessions within one transaction.
 ///
@@ -197,7 +298,7 @@ impl<'guard> InterpreterContext<'guard> {
                 .join("\n")
         );
 
-        let stack = MemoryRegion::new(DEFAULT_STACK_SIZE);
+        let stack = MemoryRegion::new_zeroed(DEFAULT_STACK_SIZE);
         let base = stack.as_ptr();
 
         unsafe {
@@ -213,9 +314,43 @@ impl<'guard> InterpreterContext<'guard> {
             natives,
             extensions: NativeExtensions::new(),
             resource_provider,
-            registers: VMRegisters::new(base, entry),
+            registers: VMRegisters::new(&stack, entry),
             stack,
             heap: Heap::new(heap_size),
+            root_pool: RootPool::new(),
+            read_write_set: ResourceReadWriteSet::new(),
+            rng: StdRng::seed_from_u64(0),
+        }
+    }
+
+    /// Creates a context with no function installed and an empty read-set:
+    /// for drivers that resolve their first function through the context
+    /// itself. [`prepare_call`](Self::prepare_call) must run before execution.
+    pub fn new_idle(
+        loader: Loader<'guard, 'guard>,
+        gas_meter: GasMeter,
+        resource_provider: &'guard dyn ResourceProvider,
+        natives: &'guard ProductionNativeRegistry,
+    ) -> Self {
+        let stack = MemoryRegion::new_zeroed(DEFAULT_STACK_SIZE);
+        let base = stack.as_ptr();
+
+        unsafe {
+            write_u64(base, META_SAVED_PC_OFFSET, 0);
+            write_u64(base, META_SAVED_FP_OFFSET, 0);
+            write_ptr(base, META_SAVED_FUNC_PTR_OFFSET, null());
+        }
+
+        Self {
+            loader,
+            read_set: ModuleReadSet::new(),
+            gas_meter,
+            natives,
+            extensions: NativeExtensions::new(),
+            resource_provider,
+            registers: VMRegisters::idle(&stack),
+            stack,
+            heap: Heap::new(DEFAULT_HEAP_SIZE),
             root_pool: RootPool::new(),
             read_write_set: ResourceReadWriteSet::new(),
             rng: StdRng::seed_from_u64(0),
@@ -263,6 +398,13 @@ impl<'guard> InterpreterContext<'guard> {
             module.interned_constant_type_at(idx),
             module.constant_data_at(idx),
         ))
+    }
+
+    /// Resolves the resource-group container a resource type belongs to, or
+    /// [`None`] if it lives in its own storage slot. Membership is read from the
+    /// resource's defining module, which must be available.
+    fn resource_group_of(&self, ty: InternedType) -> VMResult<Option<InternedType>> {
+        resolve_resource_group!(self, ty)
     }
 
     /// Returns the transaction's read-set.
@@ -325,30 +467,39 @@ impl<'guard> InterpreterContext<'guard> {
     /// Consumes the context, returning the transaction's side effects for
     /// publication. No execution can follow, so the heap is frozen and every
     /// heap pointer inside the read-write set and extensions stays valid for
-    /// as long as the returned effects live.
-    pub fn finish(self) -> SessionEffects {
+    /// as long as the returned effects live. Retaining the originating guard
+    /// also prevents the global arena that owns their interned types from being
+    /// reset and supplies the matching layout table during materialization.
+    pub fn finish(self) -> SessionEffects<'guard> {
+        let guard = self.loader.guard();
         SessionEffects {
-            heap: self.heap,
             read_write_set: self.read_write_set,
             extensions: self.extensions,
+            guard,
+            resource_provider: self.resource_provider,
+            _heap: self.heap,
         }
     }
 
-    /// The transaction's write set, read out of the still-live context.
-    ///
-    /// Used for testing and benchmarking.
-    pub fn write_set(&self) -> VMResult<WriteSet> {
-        crate::write_set::build_write_set(&self.read_write_set, self.loader.guard())
+    /// Runs `f` with gas metering suspended: the meter is swapped for an
+    /// effectively unbounded one and restored afterwards, so loads and
+    /// execution inside `f` never touch the transaction's budget. Used for
+    /// system code (prologue, epilogue) that runs unmetered by design.
+    pub fn unmetered<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> R {
+        let saved = std::mem::replace(&mut self.gas_meter, GasMeter::with_max_budget());
+        let result = f(self);
+        self.gas_meter = saved;
+        result
     }
 
     /// Reset the context to call a different function, preserving the heap.
     ///
     /// Use `set_root_arg` to place arguments before calling `run()`.
-    pub fn invoke(&mut self, func: &Function) {
+    pub fn prepare_call(&mut self, func: &Function) {
         let base = self.stack.as_ptr();
 
         // Reset execution state to root frame.
-        self.registers = VMRegisters::new(base, func);
+        self.registers = VMRegisters::new(&self.stack, func);
 
         // Re-write sentinel metadata so Return from root triggers Done.
         unsafe {
@@ -374,7 +525,7 @@ impl<'guard> InterpreterContext<'guard> {
     /// stack and heap buffers instead of reallocating them. Place arguments with
     /// [`set_root_arg`](Self::set_root_arg) before calling [`run`](Self::run).
     pub fn reset(&mut self, func: &Function, gas_budget: u64) {
-        self.invoke(func);
+        self.prepare_call(func);
         self.heap.reset();
         self.read_write_set = ResourceReadWriteSet::new();
         self.root_pool = RootPool::new();
@@ -447,6 +598,25 @@ impl<'guard> InterpreterContext<'guard> {
         }
     }
 
+    /// Place a reference to `target` in the root frame at the given byte offset.
+    ///
+    /// # Safety
+    ///
+    /// `target` must stay valid and pinned until the call finishes. Pointing
+    /// outside the VM heap also keeps it away from the GC.
+    pub unsafe fn set_root_ref_arg(&mut self, offset: u32, target: *const u8) {
+        // SAFETY: the offset is a parameter slot of the root frame, so it is
+        // within the stack and wide enough for a reference.
+        unsafe {
+            write_fat_ptr(
+                self.stack.as_ptr(),
+                FRAME_METADATA_SIZE + offset as usize,
+                target,
+                0,
+            )
+        };
+    }
+
     /// Read a raw heap pointer from the root frame at the given byte offset.
     pub fn root_heap_ptr(&self, offset: u32) -> *const u8 {
         unsafe { read_ptr(self.stack.as_ptr(), FRAME_METADATA_SIZE + offset as usize) }
@@ -481,6 +651,11 @@ impl<'guard> InterpreterContext<'guard> {
     /// as a `u64` suitable for embedding in args. Useful for passing pre-built
     /// data into a program without generating initialization micro-ops.
     pub fn alloc_u64_vec(&mut self, descriptor_id: DescriptorId, values: &[u64]) -> VMResult<u64> {
+        if self.registers.is_idle() {
+            invariant_violation!(Unreachable(
+                "allocation on an idle context: no call was prepared".to_string()
+            ));
+        }
         let n = values.len() as u64;
         let ptr = alloc_vec!(
             self,
@@ -1071,6 +1246,12 @@ impl InterpreterContext<'_> {
     }
 
     pub fn run(&mut self) -> VMResult<RuntimeStatus> {
+        if self.registers.is_idle() {
+            invariant_violation!(Unreachable(
+                "run on an idle context: no call was prepared".to_string()
+            ));
+        }
+
         // Hoist the VM registers into a local so the dispatch loop keeps
         // them in CPU registers rather than reloading from `self.registers`
         // each iteration. Only sync back to `self` on exit.
@@ -1086,7 +1267,7 @@ impl InterpreterContext<'_> {
             // executing a call instruction, which stores a valid pointer.
             let func = unsafe { regs.func.as_ref() };
 
-            let code = func.code.get();
+            let code = func.code.ops();
 
             if regs.pc >= code.len() {
                 invariant_violation!(PcOutOfBounds {
@@ -1143,7 +1324,21 @@ impl InterpreterContext<'_> {
                         if let Some((code, message)) =
                             self.exec_call_native(func, regs, native_idx, ty_args, abi)?
                         {
-                            break RuntimeStatus::Aborted { code, message };
+                            // Attribute the abort to the native's own module
+                            // (not the caller's, which `regs.func` names here)
+                            // — the same rule as a Move-level abort.
+                            let location = match self.natives.module_by_idx(native_idx) {
+                                Some(module_id) => abort_location(module_id)?,
+                                None => invariant_violation!(NativeIdxOutOfBounds {
+                                    idx: native_idx.0,
+                                    registry_size: self.natives.len(),
+                                }),
+                            };
+                            break RuntimeStatus::Aborted {
+                                code,
+                                message,
+                                location,
+                            };
                         }
                     },
 
@@ -1394,6 +1589,7 @@ impl InterpreterContext<'_> {
                         break RuntimeStatus::Aborted {
                             code,
                             message: None,
+                            location: abort_location(func.module_id)?,
                         };
                     },
 
@@ -1423,6 +1619,7 @@ impl InterpreterContext<'_> {
                         break RuntimeStatus::Aborted {
                             code,
                             message: Some(message),
+                            location: abort_location(func.module_id)?,
                         };
                     },
 
@@ -1963,18 +2160,22 @@ impl InterpreterContext<'_> {
 
                     MicroOp::Exists { addr, ty, dst } => {
                         let address = read_account_address(fp, addr);
+                        let group = self.resource_group_of(ty)?;
                         let exists = self.read_write_set.exists(
                             self.resource_provider,
                             &InMemoryStorageKey::resource(address, ty),
+                            group,
                         )?;
                         write_bool(fp, dst, exists);
                     },
 
                     MicroOp::BorrowGlobal { addr, ty, dst } => {
                         let address = read_account_address(fp, addr);
+                        let group = self.resource_group_of(ty)?;
                         let ptr = self.read_write_set.borrow_global(
                             self.resource_provider,
                             &InMemoryStorageKey::resource(address, ty),
+                            group,
                         )?;
                         // A reference is a 16-byte fat pointer; the borrow points
                         // at the start of the resource, so the offset half is 0.
@@ -1983,11 +2184,13 @@ impl InterpreterContext<'_> {
 
                     MicroOp::BorrowGlobalMut { addr, ty, dst } => {
                         let address = read_account_address(fp, addr);
+                        let group = self.resource_group_of(ty)?;
                         let key = InMemoryStorageKey::resource(address, ty);
-                        let ptr = match self
-                            .read_write_set
-                            .try_borrow_global_mut(self.resource_provider, &key)?
-                        {
+                        let ptr = match self.read_write_set.try_borrow_global_mut(
+                            self.resource_provider,
+                            &key,
+                            group,
+                        )? {
                             EntryPtr::Writable(ptr) => ptr,
                             EntryPtr::NonWritable(ptr) => {
                                 let ptr = self.deep_copy(regs, ptr)?;
@@ -2002,10 +2205,13 @@ impl InterpreterContext<'_> {
 
                     MicroOp::MoveFrom { addr, ty, dst } => {
                         let address = read_account_address(fp, addr);
+                        let group = self.resource_group_of(ty)?;
                         let key = InMemoryStorageKey::resource(address, ty);
-                        let entry_ptr = self
-                            .read_write_set
-                            .try_move_from(self.resource_provider, &key)?;
+                        let entry_ptr = self.read_write_set.try_move_from(
+                            self.resource_provider,
+                            &key,
+                            group,
+                        )?;
                         let ptr = match entry_ptr {
                             EntryPtr::Writable(ptr) => ptr,
                             EntryPtr::NonWritable(ptr) => {
@@ -2028,10 +2234,12 @@ impl InterpreterContext<'_> {
                         let Some(ptr) = NonNull::new(read_ptr(fp, src)) else {
                             invariant_violation!(MoveToNullSource);
                         };
+                        let group = self.resource_group_of(ty)?;
 
                         self.read_write_set.move_to(
                             self.resource_provider,
                             &InMemoryStorageKey::resource(address, ty),
+                            group,
                             ptr,
                         )?;
                     },
@@ -2968,6 +3176,7 @@ impl InterpreterContext<'_> {
             // — clearer once everything (rws → table natives, gas → all) is
             // wired up.
             let guard = self.loader.guard();
+            let resolve_resource_group = |ty| resolve_resource_group!(self, ty);
             let ctx = ProductionNativeContext::new(
                 new_fp,
                 abi,
@@ -2976,6 +3185,7 @@ impl InterpreterContext<'_> {
                 guard,
                 guard,
                 self.resource_provider,
+                &resolve_resource_group,
                 &mut self.heap,
                 &mut self.read_write_set,
                 &self.extensions,

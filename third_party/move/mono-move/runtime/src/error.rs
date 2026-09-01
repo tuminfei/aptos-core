@@ -4,7 +4,7 @@
 //! Interpreter-internal error types.
 
 use mono_move_core::{ExecutionErrorKind, IntTy, IntoExecutionError, ResourceProviderError};
-use move_core_types::account_address::AccountAddress;
+use move_core_types::{account_address::AccountAddress, vm_status::AbortLocation};
 use std::fmt;
 use thiserror::Error;
 
@@ -105,6 +105,9 @@ pub enum RuntimeError {
 
     #[error("BCS deserialize: cannot deserialize a signer")]
     BCSSignerNotDeserializable,
+
+    #[error("unsupported: {0}")]
+    Unsupported(&'static str),
 }
 
 impl IntoExecutionError for RuntimeError {
@@ -140,6 +143,8 @@ impl IntoExecutionError for RuntimeError {
             | BCSRemainingInput { .. }
             | BCSInvalidBool { .. }
             | BCSSignerNotDeserializable => ExecutionErrorKind::InvalidOperation,
+
+            Unsupported(_) => ExecutionErrorKind::InvariantViolation,
 
             InvariantViolation(_) => ExecutionErrorKind::InvariantViolation,
             ResourceProvider(e) => e.kind(),
@@ -333,9 +338,13 @@ pub enum RuntimeInvariantViolation {
 #[derive(Debug)]
 pub enum RuntimeStatus {
     Success,
-    // TODO(completeness): carry the abort's `Location` (which module raised it) once
-    // we have a `Location` type defined.
-    Aborted { code: u64, message: Option<String> },
+    Aborted {
+        code: u64,
+        message: Option<String>,
+        /// The module that raised the abort.
+        /// TODO(completeness): extend with aborts in scripts.
+        location: AbortLocation,
+    },
 }
 
 /// Returns from the enclosing function with an [`RuntimeError::InvariantViolation`]

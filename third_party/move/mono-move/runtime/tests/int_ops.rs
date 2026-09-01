@@ -38,9 +38,9 @@ mod common;
 
 use mono_move_alloc::GlobalArenaPtr;
 use mono_move_core::{
-    native::NativeExtensions, Code, FrameLayoutInfo, FrameOffset as FO, Function, IntBinaryOp,
-    IntCastOp, IntNegateOp, IntOperand, IntShiftOp, IntTy, MicroOp, ShiftOperand,
-    SortedSafePointEntries, FRAME_METADATA_SIZE,
+    native::NativeExtensions, Code, FrameLayoutInfo, FrameOffset as FO, Function,
+    FunctionDefinitionIndex, IntBinaryOp, IntCastOp, IntNegateOp, IntOperand, IntShiftOp, IntTy,
+    MicroOp, ShiftOperand, SortedSafePointEntries, FRAME_METADATA_SIZE,
 };
 use move_core_types::int256::{I256, U256};
 use num_bigint::{BigInt, Sign};
@@ -192,6 +192,7 @@ fn make_func(op: MicroOp) -> Function {
     Function {
         name: GlobalArenaPtr::from_static("op"),
         module_id: crate::program_module_id!("test"),
+        def_idx: FunctionDefinitionIndex(0),
         code: Code::from_vec(vec![op, MicroOp::Return]),
         entry_gas: 0,
         param_slots: vec![],
@@ -1218,8 +1219,13 @@ macro_rules! impl_cast_type_wide {
                 )
             }
 
+            // Rendered through `BigInt` rather than the type's own `Display`,
+            // which reaches a `ethnum` formatting path that violates Stacked
+            // Borrows and aborts the whole binary under Miri. Decimal output is
+            // identical either way.
             fn decode(bytes: &[u8]) -> String {
-                <$ty>::from_le_bytes(bytes.try_into().unwrap()).to_string()
+                assert_eq!(bytes.len(), Self::WIDTH);
+                $bytes_to_big(bytes).to_string()
             }
 
             fn strategy() -> BoxedStrategy<Self> {

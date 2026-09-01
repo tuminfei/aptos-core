@@ -18,6 +18,23 @@ pub enum TransactionIndexKind {
     NotAvailable,
 }
 
+impl TransactionIndexKind {
+    /// Returns the monotonic counter's reserved byte (0 for block execution, 1
+    /// for validation/simulation) and the transaction index, or [`None`] when
+    /// no transaction index is available.
+    pub fn reserved_byte_and_transaction_index(&self) -> Option<(u128, u32)> {
+        match self {
+            TransactionIndexKind::BlockExecution { transaction_index } => {
+                Some((0, *transaction_index))
+            },
+            TransactionIndexKind::ValidationOrSimulation { transaction_index } => {
+                Some((1, *transaction_index))
+            },
+            TransactionIndexKind::NotAvailable => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct UserTransactionContext {
     sender: AccountAddress,
@@ -25,12 +42,13 @@ pub struct UserTransactionContext {
     gas_payer: AccountAddress,
     max_gas_amount: u64,
     gas_unit_price: u64,
-    chain_id: u8,
+    user_txn_chain_id: u8,
     entry_function_payload: Option<EntryFunctionPayload>,
     multisig_payload: Option<MultisigPayload>,
     /// The transaction index context for the monotonically increasing counter.
     transaction_index_kind: TransactionIndexKind,
     is_encrypted_txn: bool,
+    is_orderless_txn: bool,
 }
 
 impl UserTransactionContext {
@@ -40,11 +58,12 @@ impl UserTransactionContext {
         gas_payer: AccountAddress,
         max_gas_amount: u64,
         gas_unit_price: u64,
-        chain_id: u8,
+        user_txn_chain_id: u8,
         entry_function_payload: Option<EntryFunctionPayload>,
         multisig_payload: Option<MultisigPayload>,
         transaction_index_kind: TransactionIndexKind,
         is_encrypted_txn: bool,
+        is_orderless_txn: bool,
     ) -> Self {
         Self {
             sender,
@@ -52,11 +71,12 @@ impl UserTransactionContext {
             gas_payer,
             max_gas_amount,
             gas_unit_price,
-            chain_id,
+            user_txn_chain_id,
             entry_function_payload,
             multisig_payload,
             transaction_index_kind,
             is_encrypted_txn,
+            is_orderless_txn,
         }
     }
 
@@ -80,8 +100,8 @@ impl UserTransactionContext {
         self.gas_unit_price
     }
 
-    pub fn chain_id(&self) -> u8 {
-        self.chain_id
+    pub fn user_txn_chain_id(&self) -> u8 {
+        self.user_txn_chain_id
     }
 
     pub fn entry_function_payload(&self) -> Option<EntryFunctionPayload> {
@@ -98,6 +118,10 @@ impl UserTransactionContext {
 
     pub fn is_encrypted_txn(&self) -> bool {
         self.is_encrypted_txn
+    }
+
+    pub fn is_orderless_txn(&self) -> bool {
+        self.is_orderless_txn
     }
 }
 

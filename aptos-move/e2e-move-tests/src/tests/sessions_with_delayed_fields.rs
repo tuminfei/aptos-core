@@ -14,10 +14,12 @@ use aptos_aggregator::{
 use aptos_block_executor::{
     code_cache_global_manager::AptosModuleCacheManagerGuard,
     executor::BlockExecutor,
-    task::{BeforeMaterializationOutput, ExecutionStatus, ExecutorTask, TransactionOutput},
+    single_transaction_executor::LegacyTransactionExecutor,
+    task::{ExecutionStatus, ExecutorTask, LegacyTxnOutput, TxnOutput},
     txn_commit_hook::NoOpTransactionCommitHook,
     txn_provider::default::DefaultTxnProvider,
     types::InputOutputKey,
+    Materializer,
 };
 use aptos_gas_schedule::LATEST_GAS_FEATURE_VERSION;
 use aptos_mvhashmap::types::TxnIndex;
@@ -59,7 +61,6 @@ use move_core_types::{
     identifier::Identifier,
     language_storage::{ModuleId, StructTag},
     value::{MoveTypeLayout, MoveValue},
-    vm_status::VMStatus,
 };
 use move_vm_runtime::{
     execution_tracing::Trace,
@@ -159,32 +160,21 @@ impl BlockExecutableTransaction for TestTransaction {
 #[derive(Debug)]
 struct TestOutput;
 
-impl TransactionOutput for TestOutput {
-    type BeforeMaterializationGuard<'a> = &'a Self;
+impl TxnOutput for TestOutput {
     type CommittedOutput = aptos_types::transaction::TransactionOutput;
+    type Key = StateKey;
+    type Tag = StructTag;
     type Txn = TestTransaction;
+    type Value = ValueWithLayout<WriteOp>;
 
     fn skip_output() -> Self {
         Self
     }
 
-    fn before_materialization(&self) -> Result<Self::BeforeMaterializationGuard<'_>, PanicError> {
-        Ok(self)
+    fn check_materialization(&self, _materializer: &impl Materializer<Self::Txn>) -> bool {
+        true
     }
 
-    fn incorporate_materialized_txn_output(
-        &mut self,
-        _patched_resource_write_set: Vec<(StateKey, WriteOp)>,
-        _patched_events: Vec<ContractEvent>,
-    ) -> Result<(Self::CommittedOutput, Trace), PanicError> {
-        Ok((
-            aptos_types::transaction::TransactionOutput::new_empty_success(),
-            Trace::empty(),
-        ))
-    }
-}
-
-impl BeforeMaterializationOutput<TestTransaction> for &TestOutput {
     fn resource_write_set(&self) -> HashMap<StateKey, ValueWithLayout<WriteOp>> {
         HashMap::new()
     }
@@ -198,20 +188,6 @@ impl BeforeMaterializationOutput<TestTransaction> for &TestOutput {
 
     fn delayed_field_change_set(&self) -> BTreeMap<DelayedFieldID, DelayedChange<DelayedFieldID>> {
         BTreeMap::new()
-    }
-
-    fn reads_needing_delayed_field_exchange(
-        &self,
-    ) -> Vec<(StateKey, StateValueMetadata, TriompheArc<MoveTypeLayout>)> {
-        vec![]
-    }
-
-    fn group_reads_needing_delayed_field_exchange(&self) -> Vec<(StateKey, StateValueMetadata)> {
-        vec![]
-    }
-
-    fn get_events(&self) -> Vec<(ContractEvent, Option<MoveTypeLayout>)> {
-        vec![]
     }
 
     fn resource_group_write_set(
@@ -266,9 +242,39 @@ impl BeforeMaterializationOutput<TestTransaction> for &TestOutput {
     }
 }
 
+impl LegacyTxnOutput for TestOutput {
+    fn reads_needing_delayed_field_exchange(
+        &self,
+    ) -> Vec<(StateKey, StateValueMetadata, TriompheArc<MoveTypeLayout>)> {
+        vec![]
+    }
+
+    fn group_reads_needing_delayed_field_exchange(&self) -> Vec<(StateKey, StateValueMetadata)> {
+        vec![]
+    }
+
+    fn get_events(&self) -> Vec<(ContractEvent, Option<MoveTypeLayout>)> {
+        vec![]
+    }
+
+    fn resource_group_metadata_ops(&self) -> Vec<(StateKey, WriteOp)> {
+        vec![]
+    }
+
+    fn incorporate_materialized_txn_output(
+        self,
+        _patched_resource_write_set: Vec<(StateKey, WriteOp)>,
+        _patched_events: Vec<ContractEvent>,
+    ) -> Result<(Self::CommittedOutput, Trace), PanicError> {
+        Ok((
+            aptos_types::transaction::TransactionOutput::new_empty_success(),
+            Trace::empty(),
+        ))
+    }
+}
+
 impl ExecutorTask for TestTask {
     type AuxiliaryInfo = AuxiliaryInfo;
-    type Error = VMStatus;
     type Output = TestOutput;
     type Txn = TestTransaction;
 
@@ -291,7 +297,7 @@ impl ExecutorTask for TestTask {
         txn: &Self::Txn,
         _auxiliary_info: &Self::AuxiliaryInfo,
         _txn_idx: TxnIndex,
-    ) -> ExecutionStatus<Self::Output, Self::Error> {
+    ) -> Result<ExecutionStatus<Self::Output>, PanicError> {
         let resolver = self.vm.as_move_resolver_with_group_view(view);
         let mut change_set_1 = self.run(&resolver, view, &txn.session_1);
         println!("  [session_1] change set: {:?}", change_set_1);
@@ -340,7 +346,10 @@ impl ExecutorTask for TestTask {
         };
         *outcome_cell().lock().unwrap() = Some(outcome);
 
-        ExecutionStatus::Success(TestOutput)
+        Ok(ExecutionStatus::Executed {
+            output: TestOutput,
+            skips_rest: false,
+        })
     }
 }
 
@@ -358,7 +367,7 @@ fn testcase(label: &str, txn: TestTransaction, expected: Expected) {
     let mut guard = AptosModuleCacheManagerGuard::none_with_delayed_fields_for_testing(state_view);
     let executor = BlockExecutor::<
         TestTransaction,
-        TestTask,
+        LegacyTransactionExecutor<TestTask>,
         _,
         NoOpTransactionCommitHook<TestOutput>,
         DefaultTxnProvider<TestTransaction, AuxiliaryInfo>,

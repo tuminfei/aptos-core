@@ -15,7 +15,7 @@ use crate::{
     },
     memory::{
         read_descriptor, read_obj_size, read_ptr, read_vec_len, write_enum_tag, write_ptr,
-        write_u64,
+        write_u64, MemoryRegion,
     },
     types::{META_SAVED_FP_OFFSET, META_SAVED_FUNC_PTR_OFFSET, VEC_DATA_OFFSET, VEC_LENGTH_OFFSET},
 };
@@ -82,6 +82,9 @@ pub struct ProductionNativeContext<'a> {
     rws: UnsafeCell<&'a mut ResourceReadWriteSet>,
     /// Resource provider backing global-storage reads on a read-set cache miss.
     resource_provider: &'a dyn ResourceProvider,
+    /// Resolves a resource type's group container (returns [`None`] if not a
+    /// group member).
+    resource_group_of: &'a dyn Fn(InternedType) -> VMResult<Option<InternedType>>,
     /// Per-transaction native extensions, shared across native calls. Accessed
     /// sharedly — each extension's own [`RefCell`](std::cell::RefCell) provides
     /// the interior mutability.
@@ -104,6 +107,7 @@ impl<'a> ProductionNativeContext<'a> {
         desc_provider: &'a dyn DescriptorProvider,
         layouts: &'a dyn LayoutProvider,
         resource_provider: &'a dyn ResourceProvider,
+        resource_group_of: &'a dyn Fn(InternedType) -> VMResult<Option<InternedType>>,
         heap: &'a mut Heap,
         rws: &'a mut ResourceReadWriteSet,
         extensions: &'a NativeExtensions,
@@ -114,6 +118,7 @@ impl<'a> ProductionNativeContext<'a> {
             desc_provider,
             layouts,
             resource_provider,
+            resource_group_of,
             frame_ptr,
             gas: UnsafeCell::new(gas_meter),
             heap: UnsafeCell::new(heap),
@@ -318,14 +323,23 @@ impl NativeContext for ProductionNativeContext<'_> {
         }
     }
 
-    fn new_byte_vector<'a>(&'a self, bytes: &[u8]) -> VMResult<Vector<'a, u8>> {
+    fn new_vector_no_pointers<'a>(
+        &'a self,
+        elem_size: u32,
+        count: u64,
+        data: &[u8],
+    ) -> VMResult<Vector<'a, Opaque>> {
         if self.returns_started.get() {
             return Err(native_invariant_violation(
-                "new_byte_vector called after a return value was written".into(),
+                "new_vector_no_pointers called after a return value was written".into(),
             ));
         }
-        let len = bytes.len() as u64;
-        if len == 0 {
+        if (count as usize).checked_mul(elem_size as usize) != Some(data.len()) {
+            return Err(native_invariant_violation(
+                "new_vector_no_pointers: data length must equal count * elem_size".into(),
+            ));
+        }
+        if count == 0 {
             // TODO(correctness): audit empty <=> null vector invariant
             // SAFETY: passing `null` is always safe.
             let handle = unsafe { self.pool.root_object(std::ptr::null_mut()) };
@@ -337,14 +351,14 @@ impl NativeContext for ProductionNativeContext<'_> {
         // live (see the type-level aliasing rule).
         let heap = unsafe { &mut **self.heap.get() };
         let rws = unsafe { &mut **self.rws.get() };
-        // A heap-aliasing `bytes` would be invalidated by the GC `alloc_vec` may
+        // A heap-aliasing `data` would be invalidated by the GC `alloc_vec` may
         // trigger, before the copy below.
-        if is_heap_ptr(heap, bytes.as_ptr()) {
+        if is_heap_ptr(heap, data.as_ptr()) {
             return Err(native_invariant_violation(
-                "new_byte_vector: bytes must not alias the VM heap".into(),
+                "new_vector_no_pointers: data must not alias the VM heap".into(),
             ));
         }
-        // A `vector<u8>` has no inner pointers, so it uses the trivial descriptor.
+        // Pointer-free elements, so the vector uses the trivial descriptor.
         let ptr = alloc_vec(
             heap,
             self.desc_provider,
@@ -354,14 +368,14 @@ impl NativeContext for ProductionNativeContext<'_> {
             self.frame_ptr,
             TopFrame::Native(self.abi),
             TRIVIAL_DESCRIPTOR_ID,
-            1,
-            len,
+            elem_size,
+            count,
         )?;
-        // SAFETY: `ptr` is a fresh vector with room for `len` bytes; no GC runs
-        // between here and these writes, so the raw pointer is valid.
+        // SAFETY: `ptr` is a fresh vector with room for `count` elements; no GC
+        // runs between here and these writes, so the raw pointer is valid.
         unsafe {
-            write_u64(ptr, VEC_LENGTH_OFFSET, len);
-            std::ptr::copy_nonoverlapping(bytes.as_ptr(), ptr.add(VEC_DATA_OFFSET), bytes.len());
+            write_u64(ptr, VEC_LENGTH_OFFSET, count);
+            std::ptr::copy_nonoverlapping(data.as_ptr(), ptr.add(VEC_DATA_OFFSET), data.len());
         }
         // Root it so it survives later allocations and is GC-relocated.
         // SAFETY: `ptr` is the data pointer of the freshly allocated vector.
@@ -499,21 +513,27 @@ impl NativeContext for ProductionNativeContext<'_> {
         let layout = self.layouts.layout_by_ty(ty).ok_or_else(|| {
             native_invariant_violation("bcs deserialize: no layout for type".into())
         })?;
-        let mut out = vec![0u8; layout.size as usize];
+        // `MemoryRegion` meets the alignment `deserialize` requires. Zeroed, not
+        // uninit: the copy below reads padding the deserializer skips. `max(1)`
+        // keeps zero-size types on the normal path, so trailing input is still
+        // rejected.
+        let size = layout.size as usize;
+        let region = MemoryRegion::new_zeroed(size.max(1));
+        let dst = region.as_ptr();
         // SAFETY: heap and rws are distinct fields (see the type-level aliasing
         // rule), so reborrowing both through `&self` at once is sound.
         let heap = unsafe { &mut **self.heap.get() };
         let rws = unsafe { &mut **self.rws.get() };
         // `bytes` is off-heap (the native copied it), so it survives the GC the
         // retry may run.
-        // SAFETY: `out` is `layout.size` writable bytes.
+        // SAFETY: `dst` is `size` writable, correctly aligned bytes.
         let result = unsafe {
             deserialize_or_gc(
                 self.layouts,
                 heap,
                 ty,
                 bytes,
-                out.as_mut_ptr(),
+                dst,
                 self.desc_provider,
                 rws,
                 &self.pool,
@@ -523,7 +543,10 @@ impl NativeContext for ProductionNativeContext<'_> {
             )
         };
         match result {
-            Ok(()) => Ok(Some(out)),
+            // SAFETY: `deserialize_or_gc` initialized `size` bytes at `dst`.
+            Ok(()) => Ok(Some(
+                unsafe { std::slice::from_raw_parts(dst, size) }.to_vec(),
+            )),
             // Malformed input: the bytes are not a valid encoding of `ty`. Heap
             // exhaustion and missing layouts carry other kinds and still propagate.
             Err(e) if e.kind() == ExecutionErrorKind::InvalidOperation => Ok(None),
@@ -532,10 +555,14 @@ impl NativeContext for ProductionNativeContext<'_> {
     }
 
     fn resource_exists(&self, address: AccountAddress, ty: InternedType) -> VMResult<bool> {
+        // Resolved before the `rws` reborrow; the resolver reads the module
+        // read-set, disjoint from the read-write set.
+        let group = (self.resource_group_of)(ty)?;
+
         // SAFETY: `rws` is reborrowed exclusively here; no other borrow is live.
         let rws = unsafe { &mut **self.rws.get() };
         let key = InMemoryStorageKey::resource(address, ty);
-        Ok(rws.exists(self.resource_provider, &key)?)
+        Ok(rws.exists(self.resource_provider, &key, group)?)
     }
 
     fn bcs_serialize_arg(&self, i: usize, ty: InternedType) -> VMResult<Vec<u8>> {
@@ -601,7 +628,8 @@ impl NativeContext for ProductionNativeContext<'_> {
         // SAFETY: `rws` is reborrowed exclusively here.
         let rws = unsafe { &mut **self.rws.get() };
         let storage_key = InMemoryStorageKey::table_item(*handle, key.into(), value_ty);
-        Ok(rws.exists(self.resource_provider, &storage_key)?)
+        // Table items never belong to a resource group.
+        Ok(rws.exists(self.resource_provider, &storage_key, None)?)
     }
 
     fn table_borrow(
@@ -614,8 +642,9 @@ impl NativeContext for ProductionNativeContext<'_> {
         let storage_key = InMemoryStorageKey::table_item(*handle, key.into(), value_ty);
         // SAFETY: heap and rws are distinct fields (see the aliasing rule).
         let rws = unsafe { &mut **self.rws.get() };
+        // Table items never belong to a resource group.
         let ptr = if mutable {
-            match rws.try_borrow_global_mut(self.resource_provider, &storage_key) {
+            match rws.try_borrow_global_mut(self.resource_provider, &storage_key, None) {
                 Ok(EntryPtr::Writable(ptr)) => ptr,
                 Ok(EntryPtr::NonWritable(ptr)) => {
                     // Copy-on-write: an external or stale value must be copied
@@ -641,7 +670,7 @@ impl NativeContext for ProductionNativeContext<'_> {
                 Err(e) => return Err(e.into()),
             }
         } else {
-            match rws.borrow_global(self.resource_provider, &storage_key) {
+            match rws.borrow_global(self.resource_provider, &storage_key, None) {
                 Ok(ptr) => ptr,
                 Err(RuntimeError::ResourceDoesNotExist { .. }) => return Ok(None),
                 Err(e) => return Err(e.into()),
@@ -708,7 +737,8 @@ impl NativeContext for ProductionNativeContext<'_> {
             .ok_or_else(|| native_invariant_violation("table_add: null boxed value".into()))?;
         // SAFETY: `rws` is reborrowed exclusively here.
         let rws = unsafe { &mut **self.rws.get() };
-        match rws.move_to(self.resource_provider, &storage_key, obj) {
+        // Table items never belong to a resource group.
+        match rws.move_to(self.resource_provider, &storage_key, None, obj) {
             Ok(()) => Ok(true),
             Err(RuntimeError::ResourceAlreadyExists { .. }) => Ok(false),
             Err(e) => Err(e.into()),
@@ -724,7 +754,8 @@ impl NativeContext for ProductionNativeContext<'_> {
         let storage_key = InMemoryStorageKey::table_item(*handle, key.into(), value_ty);
         // SAFETY: heap and rws are distinct fields (see the aliasing rule).
         let rws = unsafe { &mut **self.rws.get() };
-        let ptr = match rws.try_move_from(self.resource_provider, &storage_key) {
+        // Table items never belong to a resource group.
+        let ptr = match rws.try_move_from(self.resource_provider, &storage_key, None) {
             Ok(EntryPtr::Writable(ptr)) => ptr,
             Ok(EntryPtr::NonWritable(ptr)) => {
                 // Copy-on-write: an external or older-epoch value must be copied

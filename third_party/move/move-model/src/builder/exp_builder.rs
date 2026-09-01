@@ -219,17 +219,6 @@ impl<'env, 'translator, 'module_translator> ExpTranslator<'env, 'translator, 'mo
         et
     }
 
-    /// Returns `true` if language version is ok. Otherwise,
-    /// issues an error message and returns `false`.
-    pub fn test_language_version(
-        &self,
-        loc: &Loc,
-        feature: &str,
-        version_min: LanguageVersion,
-    ) -> bool {
-        self.parent.test_language_version(loc, feature, version_min)
-    }
-
     /// Returns `Some(())` if language version checks out.  Otherwise,
     /// issues an error message and returns `None`.
     pub fn check_language_version(
@@ -272,6 +261,23 @@ impl<'env, 'translator, 'module_translator> ExpTranslator<'env, 'translator, 'mo
 
     pub fn is_spec_mode(&self) -> bool {
         matches!(self.mode, ExpTranslationMode::Spec)
+    }
+
+    /// In specification expressions, ghost fields (`ghost f: T;` from the
+    /// struct's spec block) are selectable like ordinary fields; in code
+    /// contexts they do not exist. Returns the instantiated field type.
+    pub fn lookup_ghost_field_decl(
+        &self,
+        id: &QualifiedInstId<StructId>,
+        field_name: Symbol,
+    ) -> Option<Type> {
+        if self.is_spec_mode() {
+            self.parent
+                .parent
+                .lookup_struct_ghost_field_decl(id, field_name)
+        } else {
+            None
+        }
     }
 
     pub fn type_variance(&self) -> Variance {
@@ -781,10 +787,6 @@ impl<'env, 'translator, 'module_translator> ExpTranslator<'env, 'translator, 'mo
         params: &[(PA::Var, EA::Type)],
         for_move_fun: bool,
     ) -> Vec<Parameter> {
-        let is_lang_version_2_1 = self
-            .env()
-            .language_version
-            .is_at_least(LanguageVersion::V2_1);
         params
             .iter()
             .enumerate()
@@ -794,7 +796,7 @@ impl<'env, 'translator, 'module_translator> ExpTranslator<'env, 'translator, 'mo
                 let sym = self.symbol_pool().make(var_str);
                 let loc = self.to_loc(&v.loc());
 
-                if !is_lang_version_2_1 || var_str != "_" {
+                if var_str != "_" {
                     self.define_local(
                         &loc,
                         sym,
@@ -873,7 +875,13 @@ impl UnificationContext for ExpTranslator<'_, '_, '_> {
         id: &QualifiedInstId<StructId>,
         field_name: Symbol,
     ) -> (Vec<(Option<Symbol>, Type)>, bool) {
-        self.parent.parent.lookup_struct_field_decl(id, field_name)
+        let result = self.parent.parent.lookup_struct_field_decl(id, field_name);
+        if result.0.is_empty() {
+            if let Some(ty) = self.lookup_ghost_field_decl(id, field_name) {
+                return (vec![(None, ty)], false);
+            }
+        }
+        result
     }
 
     fn get_function_wrapper_type(&self, id: &QualifiedInstId<StructId>) -> Option<Type> {
@@ -1354,13 +1362,6 @@ impl ExpTranslator<'_, '_, '_> {
                 ResourceSpecifier::Any
             },
         };
-        if !matches!(resource, ResourceSpecifier::Resource(..)) {
-            self.check_language_version(
-                &loc,
-                "address and wildcard access specifiers. Only resource type names can be provided.",
-                LanguageVersion::V2_0,
-            )?;
-        };
         let address = self.translate_address_specifier(address)?;
         let kind = match kind {
             EA::AccessSpecifierKind::LegacyAcquires => AccessSpecifierKind::LegacyAcquires,
@@ -1380,31 +1381,12 @@ impl ExpTranslator<'_, '_, '_> {
         let loc = self.to_loc(&specifier.loc);
         let res = match &specifier.value {
             EA::AddressSpecifier_::Empty => (loc, AddressSpecifier::Any),
-            EA::AddressSpecifier_::Any => {
-                self.check_language_version(
-                    &loc,
-                    "wildcard address specifiers",
-                    LanguageVersion::V2_0,
-                )?;
-                (loc, AddressSpecifier::Any)
-            },
-            EA::AddressSpecifier_::Literal(addr) => {
-                self.check_language_version(
-                    &loc,
-                    "literal address specifiers",
-                    LanguageVersion::V2_0,
-                )?;
-                (
-                    loc,
-                    AddressSpecifier::Address(Address::Numerical(addr.into_inner())),
-                )
-            },
+            EA::AddressSpecifier_::Any => (loc, AddressSpecifier::Any),
+            EA::AddressSpecifier_::Literal(addr) => (
+                loc,
+                AddressSpecifier::Address(Address::Numerical(addr.into_inner())),
+            ),
             EA::AddressSpecifier_::Name(name) => {
-                self.check_language_version(
-                    &loc,
-                    "named address specifiers",
-                    LanguageVersion::V2_0,
-                )?;
                 // Construct an expansion name exp for regular type check
                 let maccess = sp(name.loc, EA::ModuleAccess_::Name(*name));
                 self.translate_name(
@@ -1420,11 +1402,6 @@ impl ExpTranslator<'_, '_, '_> {
                 )
             },
             EA::AddressSpecifier_::Call(maccess, type_args, name) => {
-                self.check_language_version(
-                    &loc,
-                    "derived address specifiers",
-                    LanguageVersion::V2_0,
-                )?;
                 // Construct an expansion function call for regular type check
                 let name_exp = sp(
                     name.loc,
@@ -3917,7 +3894,6 @@ impl ExpTranslator<'_, '_, '_> {
         // handles call of struct/variant with positional fields
         let expected_type = &self.subs.specialize(expected_type);
         if self.can_resolve_to_struct(expected_type, maccess) {
-            self.check_language_version(loc, "positional fields", LanguageVersion::V2_0)?;
             // translates StructName(e0, e1, ...) to pack<StructName> { 0: e0, 1: e1, ... }
             let fields: EA::Fields<_> =
                 EA::Fields::maybe_from_iter(args.iter().enumerate().map(|(i, &arg)| {
@@ -4792,7 +4768,6 @@ impl ExpTranslator<'_, '_, '_> {
                 .struct_table
                 .contains_key(&global_var_sym)
             {
-                self.check_language_version(loc, "resource indexing", LanguageVersion::V2_0)?;
                 if self
                     .parent
                     .parent
@@ -4818,7 +4793,6 @@ impl ExpTranslator<'_, '_, '_> {
             }
         }
         if !self.is_spec_mode() {
-            self.check_language_version(loc, "vector indexing", LanguageVersion::V2_0)?;
             // Translate to vector indexing in impl mode if the target is not a resource or a spec schema
             // spec mode is handled in `translate_index`
             if call.is_none() {
@@ -5010,7 +4984,12 @@ impl ExpTranslator<'_, '_, '_> {
         field_name: Symbol,
     ) -> Operation {
         let struct_name = self.parent.parent.get_struct_name(id.to_qualified_id());
-        if self.is_empty_struct(struct_name) {
+        // Ghost fields on an otherwise-empty struct are still selectable in
+        // spec expressions; only reject empty-struct access when the target
+        // is not a declared ghost field.
+        if self.is_empty_struct(struct_name)
+            && self.lookup_ghost_field_decl(id, field_name).is_none()
+        {
             self.error(
                 loc,
                 &format!(
@@ -5021,6 +5000,10 @@ impl ExpTranslator<'_, '_, '_> {
             );
         }
         let (decls, is_variant) = self.parent.parent.lookup_struct_field_decl(id, field_name);
+        if decls.is_empty() && self.lookup_ghost_field_decl(id, field_name).is_some() {
+            // Selection of a ghost field in a specification expression.
+            return Operation::Select(id.module_id, id.id, FieldId::new(field_name));
+        }
         let field_ids = decls
             .into_iter()
             .map(|(variant, _)| {
@@ -5073,15 +5056,20 @@ impl ExpTranslator<'_, '_, '_> {
             let expected_type = &self.subs.specialize(expected_type);
             if let Type::Struct(mid, sid, inst) = self.subs.specialize(expected_type) {
                 let field_name = self.symbol_pool().make(name.value.as_str());
+                let qid = mid.qualified_inst(sid, inst);
                 let (field_decls, _) = self
                     .parent
                     .parent
-                    .lookup_struct_field_decl(&mid.qualified_inst(sid, inst), field_name);
-                let (variant, expected_field_type) =
+                    .lookup_struct_field_decl(&qid, field_name);
+                let (variant, expected_field_type, is_ghost_field) =
                     if let Some((variant, ty)) = field_decls.into_iter().next() {
-                        (variant, ty)
+                        (variant, ty, false)
+                    } else if let Some(ty) = self.lookup_ghost_field_decl(&qid, field_name) {
+                        // Ghost fields participate in `update_field(s, f, v)` in
+                        // spec expressions — variant-agnostic.
+                        (None, ty, true)
                     } else {
-                        (None, Type::Error) // this error is reported via type unification
+                        (None, Type::Error, false) // this error is reported via type unification
                     };
                 let constraint = Constraint::SomeStruct(
                     [(field_name, expected_field_type.clone())]
@@ -5102,6 +5090,22 @@ impl ExpTranslator<'_, '_, '_> {
 
                 // Translate the new value with the field type as the expected type.
                 let value_exp = self.translate_exp(args[2], &expected_field_type);
+                // Mirror the rejection applied to direct `update s.g = rhs`:
+                // bitwise operators lower to bitvector-typed Boogie while
+                // ghost integer fields are modeled as unbounded int, so the
+                // emitted `$Update` application would be ill-typed.
+                if is_ghost_field {
+                    let value_check = value_exp.clone().into_exp();
+                    if super::module_builder::exp_contains_bitwise_op(&value_check) {
+                        self.error(
+                            loc,
+                            "bitvector expressions (|, &, ^, int2bv) cannot appear in a \
+                             ghost field update expression (ghost integer fields are \
+                             modeled as mathematical integers)",
+                        );
+                        return self.new_error_exp();
+                    }
+                }
                 let id = self.new_node_id_with_type_loc(expected_type, loc);
                 self.set_node_instantiation(id, vec![expected_type.clone()]);
                 // For enum types, use variant-qualified FieldId (like Select does)
@@ -5119,7 +5123,21 @@ impl ExpTranslator<'_, '_, '_> {
                     value_exp.into_exp(),
                 ])
             } else {
-                // Error reported
+                if !matches!(expected_type, Type::Error) {
+                    // Not a follow-up of an already reported type error: the
+                    // context does not (yet) determine the struct type, e.g.
+                    // for an unannotated lambda parameter. Report instead of
+                    // producing a silent error expression.
+                    self.error(
+                        loc,
+                        &format!(
+                            "cannot determine the struct type of `update_field` from \
+                             the context (found `{}`); add a type annotation, e.g. \
+                             on an enclosing lambda parameter",
+                            expected_type.display(&self.type_display_context())
+                        ),
+                    );
+                }
                 self.new_error_exp()
             }
         } else {
@@ -5651,11 +5669,6 @@ impl ExpTranslator<'_, '_, '_> {
         args: Vec<Exp>,
         expected_type: &Type,
     ) -> ExpData {
-        if !self.test_language_version(loc, "receiver style function calls", LanguageVersion::V2_0)
-        {
-            let id = self.new_node_id_with_type_loc(&Type::Error, loc);
-            return ExpData::Invalid(id);
-        }
         let generics = generics
             .as_ref()
             .map(|tys| self.translate_types_with_loc(tys));
@@ -6476,6 +6489,8 @@ impl ExpTranslator<'_, '_, '_> {
             PA::BehaviorKind::AbortsOf => BehaviorKind::AbortsOf,
             PA::BehaviorKind::EnsuresOf => BehaviorKind::EnsuresOf,
             PA::BehaviorKind::ResultOf => BehaviorKind::ResultOf,
+            PA::BehaviorKind::UnchangedOf => BehaviorKind::UnchangedOf,
+            PA::BehaviorKind::FoldsOf => BehaviorKind::FoldsOf,
         };
 
         // Translate the target expression and validate it has function type
@@ -6708,9 +6723,15 @@ impl ExpTranslator<'_, '_, '_> {
                 },
                 ExpData::Call(
                     id,
-                    Behavior(BehaviorKind::EnsuresOf | BehaviorKind::ResultOf, r),
+                    Behavior(
+                        BehaviorKind::EnsuresOf
+                        | BehaviorKind::ResultOf
+                        | BehaviorKind::UnchangedOf
+                        | BehaviorKind::FoldsOf,
+                        r,
+                    ),
                     _,
-                ) => (*id, r, "ensures_of/result_of"),
+                ) => (*id, r, "ensures_of/result_of/unchanged_of/folds_of"),
                 ExpData::Call(id, SpecFunction(mid, fid, r), _) => {
                     let is_two_state = env.get_module_opt(*mid).is_some_and(|m| {
                         m.get_spec_funs()
@@ -6821,6 +6842,11 @@ impl ExpTranslator<'_, '_, '_> {
         result_ty: &Type,
         kind: &BehaviorKind,
     ) -> Vec<Exp> {
+        if matches!(kind, BehaviorKind::FoldsOf) {
+            // `folds_of` has its own argument layout, unrelated to the
+            // target's parameter list.
+            return self.translate_and_check_folds_of_args(loc, args, arg_ty);
+        }
         let minimum = self.compute_behavior_arg_types(arg_ty, result_ty, kind);
         let canonical = self.compute_behavior_arg_types_canonical(arg_ty, result_ty, kind);
         let expected_types: &[Type] =
@@ -6857,6 +6883,97 @@ impl ExpTranslator<'_, '_, '_> {
             return translated;
         }
 
+        let prev = std::mem::replace(&mut self.in_behavior_pred_arg, true);
+        let translated = args
+            .iter()
+            .zip(expected_types.iter())
+            .map(|(arg, expected_ty)| self.translate_exp(arg, expected_ty).into_exp())
+            .collect();
+        self.in_behavior_pred_arg = prev;
+        translated
+    }
+
+    /// Translates and type-checks the arguments of a `folds_of<f>(..)`
+    /// predicate. Two surface forms exist, dispatched on whether the first
+    /// argument is a literal lambda:
+    /// - element form `folds_of<f>(v, i)`: `f` must be unary and `v` a
+    ///   vector of `f`'s (reference-stripped) parameter type;
+    /// - general form `folds_of<f>(g, i)`: `g` is a literal index lambda
+    ///   `|j: u64| ..` producing `f`'s (reference-stripped) argument tuple
+    ///   for iteration `j`.
+    /// In both forms `i` is the `u64` iteration count.
+    fn translate_and_check_folds_of_args(
+        &mut self,
+        loc: &Loc,
+        args: &[EA::Exp],
+        arg_ty: &Type,
+    ) -> Vec<Exp> {
+        // Error recovery: translate the arguments without type expectation,
+        // as in the generic arity-error path above.
+        let translate_free = |this: &mut Self, args: &[EA::Exp]| -> Vec<Exp> {
+            let prev = std::mem::replace(&mut this.in_behavior_pred_arg, true);
+            let translated = args
+                .iter()
+                .map(|arg| this.translate_exp_free(arg).1.into_exp())
+                .collect();
+            this.in_behavior_pred_arg = prev;
+            translated
+        };
+        if args.len() != 2 {
+            self.error(
+                loc,
+                &format!(
+                    "expected 2 argument(s) for folds_of but {} were provided",
+                    args.len()
+                ),
+            );
+            return translate_free(self, args);
+        }
+        let param_tys: Vec<Type> = arg_ty
+            .clone()
+            .flatten()
+            .into_iter()
+            .map(|ty| ty.skip_reference().clone())
+            .collect();
+        let u64_ty = Type::new_prim(PrimitiveType::U64);
+        let first_ty = if let EA::Exp_::Lambda(sp!(_, lambda_params), ..) = &args[0].value {
+            // General form: literal index lambda `|j: u64| <argument tuple>`.
+            if lambda_params.len() != 1 {
+                self.error(
+                    &self.to_loc(&args[0].loc),
+                    &format!(
+                        "the index function of `folds_of` must take exactly one \
+                         `u64` index parameter, but this lambda takes {}",
+                        lambda_params.len()
+                    ),
+                );
+                return translate_free(self, args);
+            }
+            Type::Fun(
+                Box::new(u64_ty.clone()),
+                Box::new(Type::tuple(param_tys)),
+                AbilitySet::EMPTY,
+            )
+        } else {
+            // Element form: a vector of the unary target's element type.
+            match param_tys.as_slice() {
+                [elem_ty] => Type::Vector(Box::new(elem_ty.clone())),
+                _ => {
+                    self.error(
+                        loc,
+                        &format!(
+                            "the element form `folds_of<f>(v, i)` requires `f` to \
+                             take exactly one parameter, but it takes {}; use the \
+                             general form `folds_of<f>(|j| (..), i)` with a literal \
+                             index lambda instead",
+                            param_tys.len()
+                        ),
+                    );
+                    return translate_free(self, args);
+                },
+            }
+        };
+        let expected_types = [first_ty, u64_ty];
         let prev = std::mem::replace(&mut self.in_behavior_pred_arg, true);
         let translated = args
             .iter()
