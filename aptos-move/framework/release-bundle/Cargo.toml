@@ -18,7 +18,7 @@ doctest = false
 [dependencies]
 anyhow = { workspace = true }
 aptos-crypto = { workspace = true }
-aptos-framework-natives = { workspace = true }
+topo-framework-natives = { workspace = true }
 aptos-types = { workspace = true }
 bcs = { workspace = true }
 move-binary-format = { workspace = true }

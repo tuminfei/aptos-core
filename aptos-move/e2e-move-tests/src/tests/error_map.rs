@@ -4,12 +4,12 @@
 extern crate core;
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_types::{
     account_address::AccountAddress,
     transaction::{ExecutionStatus, TransactionStatus},
 };
 use move_core_types::value::MoveValue;
+use topo_framework::BuildOptions;
 
 #[test]
 fn error_map() {

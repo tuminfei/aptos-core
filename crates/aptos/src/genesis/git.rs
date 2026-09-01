@@ -9,7 +9,6 @@ use crate::{
     CliCommand,
 };
 use aptos_config::config::Token;
-use aptos_framework::ReleaseBundle;
 use aptos_genesis::config::Layout;
 use aptos_github_client::Client as GithubClient;
 use async_trait::async_trait;
@@ -21,6 +20,7 @@ use std::{
     path::{Path, PathBuf},
     str::FromStr,
 };
+use topo_framework::ReleaseBundle;
 
 pub const LAYOUT_FILE: &str = "layout.yaml";
 pub const OPERATOR_FILE: &str = "operator.yaml";

@@ -1,6 +1,6 @@
 module publisher_address::dice_roll {
     use std::signer::address_of;
-    use aptos_framework::randomness;
+    use topo_framework::randomness;
 
     struct LastRoll has key {
         value: u64,

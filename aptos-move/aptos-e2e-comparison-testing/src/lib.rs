@@ -1,9 +1,6 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::{
-    natives::code::PackageMetadata, unzip_metadata_str, BuiltPackage, APTOS_PACKAGES,
-};
 use aptos_transaction_simulation::InMemoryStateStore;
 use aptos_types::{
     account_address::AccountAddress,
@@ -22,6 +19,9 @@ use std::{
     process::Command,
 };
 use tempfile::TempDir;
+use topo_framework::{
+    natives::code::PackageMetadata, unzip_metadata_str, BuiltPackage, APTOS_PACKAGES,
+};
 
 mod data_collection;
 mod data_state_view;
@@ -43,12 +43,12 @@ use move_package::{
 pub use online_execution::*;
 
 const APTOS_PACKAGES_DIR_NAMES: [&str; 7] = [
-    "aptos-framework",
+    "topo-framework",
     "move-stdlib",
-    "aptos-stdlib",
-    "aptos-token",
-    "aptos-token-objects",
-    "aptos-trading",
+    "topo-stdlib",
+    "topo-token",
+    "topo-token-objects",
+    "topo-trading",
     "aptos-experimental",
 ];
 
@@ -475,7 +475,7 @@ fn compile_package(
     experiments: &[String],
     version: &str,
 ) -> anyhow::Result<CompiledPackage> {
-    let mut build_options = aptos_framework::BuildOptions {
+    let mut build_options = topo_framework::BuildOptions {
         language_version: Some(LanguageVersion::latest()),
         experiments: experiments.to_vec(),
         ..Default::default()

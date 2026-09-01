@@ -10,7 +10,7 @@ use aptos_types::{
     state_store::state_key::StateKey,
     transaction::{ExecutionStatus, TransactionOutput},
     write_set::{TransactionWrite, WriteOp, WriteSet, TOTAL_SUPPLY_STATE_KEY},
-    AptosCoinType,
+    TopoCoinType,
 };
 use claims::assert_ok;
 use move_core_types::{
@@ -271,7 +271,7 @@ impl TransactionDiffBuilder {
                 // Skip changes to fee payer's coin balance.
                 let coin_resource_key = StateKey::resource(
                     &fee_payer,
-                    &CoinStoreResource::<AptosCoinType>::struct_tag(),
+                    &CoinStoreResource::<TopoCoinType>::struct_tag(),
                 )
                 .unwrap();
                 ops.remove(&coin_resource_key);

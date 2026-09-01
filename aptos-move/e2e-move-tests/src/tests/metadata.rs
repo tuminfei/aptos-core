@@ -3,7 +3,6 @@
 
 use crate::{assert_success, assert_vm_status, MoveHarness};
 use aptos_cached_packages::aptos_stdlib;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
     chain_id::ChainId,
@@ -20,6 +19,7 @@ use move_core_types::{
 };
 use move_model::metadata::{CompilationMetadata, CompilerVersion, COMPILATION_METADATA_KEY};
 use std::collections::BTreeMap;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 #[test]
 fn test_unknown_metadata_key() {

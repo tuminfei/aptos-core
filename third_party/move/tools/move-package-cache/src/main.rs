@@ -15,13 +15,12 @@ use url::Url;
 async fn main() -> Result<()> {
     let cache = PackageCache::new_with_listener("./data", DebugPackageCacheListener).unwrap();
 
-    let aptos_framework_url =
-        Url::from_str("https://github.com/aptos-labs/aptos-framework").unwrap();
+    let topo_framework_url = Url::from_str("https://github.com/aptos-labs/topo-framework").unwrap();
 
     let oid = cache
-        .resolve_git_revision(&aptos_framework_url, "main")
+        .resolve_git_revision(&topo_framework_url, "main")
         .await?;
-    cache.checkout_git_repo(&aptos_framework_url, oid).await?;
+    cache.checkout_git_repo(&topo_framework_url, oid).await?;
 
     cache
         .fetch_on_chain_package(

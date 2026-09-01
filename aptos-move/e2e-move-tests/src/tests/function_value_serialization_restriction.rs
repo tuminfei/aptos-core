@@ -5,7 +5,6 @@
 //! values fails while the flag is on; storage writes and execution are unaffected.
 
 use crate::{assert_abort, assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_language_e2e_tests::account::Account;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
@@ -14,6 +13,7 @@ use aptos_types::{
     transaction::{ExecutionStatus, TransactionStatus},
 };
 use move_core_types::vm_status::{sub_status::NFE_BCS_SERIALIZATION_FAILURE, AbortLocation};
+use topo_framework::BuildOptions;
 
 const SOURCE: &str = r#"
 module 0x66::m {
@@ -96,8 +96,8 @@ fn publish(h: &mut MoveHarness, account: &Account) -> TransactionStatus {
     let mut builder = PackageBuilder::new("Package");
     builder.add_source("m.move", SOURCE);
     builder.add_local_dep(
-        "AptosStdlib",
-        &common::framework_dir_path("aptos-stdlib").to_string_lossy(),
+        "TopoStdlib",
+        &common::framework_dir_path("topo-stdlib").to_string_lossy(),
     );
     builder.add_local_dep(
         "MoveStdlib",

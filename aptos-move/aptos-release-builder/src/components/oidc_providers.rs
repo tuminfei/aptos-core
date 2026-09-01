@@ -34,12 +34,12 @@ pub fn generate_oidc_provider_ops_proposal(
         is_testnet,
         next_execution_hash,
         is_multi_step,
-        &["aptos_framework::jwks"],
+        &["topo_framework::jwks"],
         |writer| {
             for op in ops {
                 write_op(writer, signer_arg, op);
             }
-            emitln!(writer, "aptos_governance::reconfigure({});", signer_arg);
+            emitln!(writer, "topo_governance::reconfigure({});", signer_arg);
         },
     );
 

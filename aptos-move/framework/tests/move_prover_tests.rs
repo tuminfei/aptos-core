@@ -1,7 +1,6 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::{extended_checks, prover::ProverOptions};
 use move_binary_format::file_format_common::VERSION_DEFAULT;
 use move_core_types::diag_writer::DiagWriter;
 use move_model::metadata::{CompilerVersion, LanguageVersion};
@@ -11,6 +10,7 @@ use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
 };
+use topo_framework::{extended_checks, prover::ProverOptions};
 
 const ENV_TEST_INCONSISTENCY: &str = "MVP_TEST_INCONSISTENCY";
 const ENV_TEST_UNCONDITIONAL_ABORT_AS_INCONSISTENCY: &str =
@@ -166,17 +166,17 @@ fn check_baseline(test_file: &str, output: &str) {
 
 #[test]
 fn move_framework_prover_tests() {
-    run_prover_for_pkg("aptos-framework");
+    run_prover_for_pkg("topo-framework");
 }
 
 #[test]
 fn move_token_prover_tests() {
-    run_prover_for_pkg("aptos-token");
+    run_prover_for_pkg("topo-token");
 }
 
 #[test]
 fn move_aptos_stdlib_prover_tests() {
-    run_prover_for_pkg("aptos-stdlib");
+    run_prover_for_pkg("topo-stdlib");
 }
 
 #[test]

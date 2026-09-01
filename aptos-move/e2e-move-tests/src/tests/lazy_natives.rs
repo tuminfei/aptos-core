@@ -8,7 +8,7 @@ use move_core_types::vm_status::StatusCode;
 #[test]
 fn lazy_natives() {
     let mut h = MoveHarness::new();
-    let acc = h.aptos_framework_account();
+    let acc = h.topo_framework_account();
     let mut builder = PackageBuilder::new("LazyNatives");
     builder.add_source(
         "test",

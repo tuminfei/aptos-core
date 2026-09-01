@@ -50,7 +50,7 @@ pub fn create_account_txn(
 ) -> SignedTransaction {
     sender
         .transaction()
-        .payload(aptos_stdlib::aptos_account_create_account(
+        .payload(aptos_stdlib::topo_account_create_account(
             *new_account.address(),
         ))
         .sequence_number(seq_num)
@@ -71,7 +71,7 @@ pub fn peer_to_peer_txn(
     // get a SignedTransaction
     sender
         .transaction()
-        .payload(aptos_stdlib::aptos_account_fungible_transfer_only(
+        .payload(aptos_stdlib::topo_account_fungible_transfer_only(
             *receiver.address(),
             transfer_amount,
         ))

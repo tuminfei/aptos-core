@@ -7,7 +7,6 @@ use crate::{
     listener::{EmptyPackageCacheListener, PackageCacheListener},
 };
 use anyhow::{anyhow, bail, Result};
-use aptos_framework::natives::code::PackageRegistry;
 use futures::future;
 use git2::{
     build::RepoBuilder, FetchOptions, ObjectType, Oid, RemoteCallbacks, Repository, TreeWalkResult,
@@ -20,6 +19,7 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+use topo_framework::natives::code::PackageRegistry;
 use url::Url;
 
 /// Removes a directory if it exists, ignoring "directory not found" errors.

@@ -2426,23 +2426,23 @@ mod tests {
             "move-stdlib",
         ));
         assert!(source_path_in_package(
-            OsStr::new("relative/aptos-stdlib/sources/big_vector.move"),
-            "aptos-stdlib",
+            OsStr::new("relative/topo-stdlib/sources/big_vector.move"),
+            "topo-stdlib",
         ));
     }
 
     #[test]
     fn source_path_in_package_skips_dotdot_segments() {
-        // move-package emits paths like `aptos-experimental/../aptos-framework/.../move-stdlib/sources/cmp.move`
+        // move-package emits paths like `aptos-experimental/../topo-framework/.../move-stdlib/sources/cmp.move`
         // — every named component appears in `Path::components()`, so a naïve
         // "any component matches" check would falsely match every package.
         // The package is the *last named directory before `sources/`*.
         let p = OsStr::new(
-            "/root/aptos-move/framework/aptos-experimental/../aptos-framework/../aptos-stdlib/../move-stdlib/sources/cmp.move",
+            "/root/aptos-move/framework/aptos-experimental/../topo-framework/../topo-stdlib/../move-stdlib/sources/cmp.move",
         );
         assert!(source_path_in_package(p, "move-stdlib"));
-        assert!(!source_path_in_package(p, "aptos-stdlib"));
-        assert!(!source_path_in_package(p, "aptos-framework"));
+        assert!(!source_path_in_package(p, "topo-stdlib"));
+        assert!(!source_path_in_package(p, "topo-framework"));
         assert!(!source_path_in_package(p, "aptos-experimental"));
     }
 
@@ -2450,15 +2450,15 @@ mod tests {
     fn source_path_in_package_rejects_unrelated_package() {
         assert!(!source_path_in_package(
             OsStr::new("/repo/aptos-move/framework/move-stdlib/sources/option.move"),
-            "aptos-stdlib",
+            "topo-stdlib",
         ));
     }
 
     #[test]
     fn source_path_in_package_handles_tests_dir() {
         assert!(source_path_in_package(
-            OsStr::new("/repo/aptos-move/framework/aptos-stdlib/tests/foo.move"),
-            "aptos-stdlib",
+            OsStr::new("/repo/aptos-move/framework/topo-stdlib/tests/foo.move"),
+            "topo-stdlib",
         ));
     }
 }

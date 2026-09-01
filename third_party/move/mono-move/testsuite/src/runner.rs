@@ -17,10 +17,6 @@ use crate::{
     print_sections,
 };
 use anyhow::{anyhow, bail};
-use aptos_framework_natives::{
-    event::NativeEventContext, object::NativeObjectContext,
-    state_storage::NativeStateStorageContext, transaction_context::NativeTransactionContext,
-};
 use aptos_gas_schedule::{MiscGasParameters, NativeGasParameters, LATEST_GAS_FEATURE_VERSION};
 use aptos_types::{
     contract_event::ContractEvent,
@@ -59,6 +55,10 @@ use move_vm_runtime::{
 use move_vm_test_utils::InMemoryStorage;
 use move_vm_types::{gas::UnmeteredGasMeter, loaded_data::runtime_types::Type};
 use std::{path::Path, sync::OnceLock};
+use topo_framework_natives::{
+    event::NativeEventContext, object::NativeObjectContext,
+    state_storage::NativeStateStorageContext, transaction_context::NativeTransactionContext,
+};
 
 /// Execution output from a VM as a normalized display string.
 struct Output {

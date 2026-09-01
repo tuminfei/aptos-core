@@ -4,13 +4,13 @@
 //! Tests for struct definition count limits per module.
 
 use crate::{assert_success, assert_vm_status, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
     account_address::AccountAddress, on_chain_config::TimedFeatureFlag,
     transaction::TransactionStatus,
 };
 use move_core_types::vm_status::StatusCode;
+use topo_framework::BuildOptions;
 
 /// Generates Move source for a module with `n` empty structs.
 fn struct_defs_source(n: usize) -> String {

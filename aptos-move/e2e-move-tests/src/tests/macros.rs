@@ -5,11 +5,11 @@
 //! introduced in Move language version 2.4 and onwards.
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_types::{
     account_address::AccountAddress,
     transaction::{ExecutionStatus, TransactionStatus},
 };
+use topo_framework::BuildOptions;
 
 #[test]
 fn test_macros() {

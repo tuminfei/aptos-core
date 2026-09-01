@@ -6,7 +6,7 @@
 //! These natives borrow StorageSlotResource<T> from Move global storage and return references.
 //! They work by using the VM's newly exposed borrow_resource APIs.
 
-use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_gas_schedule::gas_params::natives::topo_framework::*;
 use aptos_native_interface::{
     safely_assert_eq, safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext,
     SafeNativeError, SafeNativeResult,

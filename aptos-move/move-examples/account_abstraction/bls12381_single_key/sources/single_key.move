@@ -2,7 +2,7 @@ module aa::single_key {
     use std::option;
     use std::signer;
     use aptos_std::bls12381::{Self, PublicKey};
-    use aptos_framework::auth_data::{Self, AbstractionAuthData};
+    use topo_framework::auth_data::{Self, AbstractionAuthData};
 
     /// Only fungible asset metadata owner can make changes.
     const EINVALID_PUBLIC_KEY: u64 = 1;

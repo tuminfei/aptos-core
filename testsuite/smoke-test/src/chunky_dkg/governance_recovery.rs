@@ -21,7 +21,7 @@ use std::{
 ///
 /// In the common chunky-stuck failure mode, consensus is still alive (blocks
 /// keep being produced; only the epoch transition is wedged). A governance
-/// proposal calling `aptos_governance::force_end_epoch` clears the lingering
+/// proposal calling `topo_governance::force_end_epoch` clears the lingering
 /// chunky session and advances the epoch atomically, with no validator
 /// restart, no local seqnum override, and no execution divergence. This test
 /// exercises that recovery path.
@@ -34,7 +34,7 @@ use std::{
 ///      DKG cleared but chunky still in_progress (the wedge state).
 ///   4. Verify consensus is still alive by running a liveness check.
 ///   5. Clear the failpoint so chunky can run normally after recovery.
-///   6. Submit a governance script calling `aptos_governance::force_end_epoch`.
+///   6. Submit a governance script calling `topo_governance::force_end_epoch`.
 ///   7. Verify the epoch advances past the wedged epoch.
 ///   8. Verify ChunkyDKG completes a fresh session in the next epoch
 ///      transition.
@@ -162,11 +162,11 @@ async fn chunky_dkg_stall_governance_recovery() {
     info!("Submit governance force_end_epoch to clear the wedge.");
     let script = r#"
 script {
-    use aptos_framework::aptos_governance;
+    use topo_framework::topo_governance;
 
     fun main(core_resources: &signer) {
-        let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
-        aptos_governance::force_end_epoch(&framework_signer);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
+        topo_governance::force_end_epoch(&framework_signer);
     }
 }
     "#;

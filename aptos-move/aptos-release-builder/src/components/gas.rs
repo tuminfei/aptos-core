@@ -4,10 +4,10 @@
 use crate::{components::get_signer_arg, utils::*};
 use anyhow::Result;
 use aptos_crypto::HashValue;
-use aptos_framework::generate_blob_as_hex_string;
 use aptos_types::on_chain_config::{DiffItem, GasScheduleV2};
 use move_model::{code_writer::CodeWriter, emit, emitln, model::Loc};
 use sha3::{Digest, Sha3_512};
+use topo_framework::generate_blob_as_hex_string;
 
 fn emit_gas_schedule_diff(
     writer: &CodeWriter,
@@ -119,7 +119,7 @@ pub fn generate_gas_upgrade_proposal(
         is_testnet,
         next_execution_hash,
         is_multi_step,
-        &["aptos_framework::gas_schedule"],
+        &["topo_framework::gas_schedule"],
         |writer| {
             let gas_schedule_blob = bcs::to_bytes(new_gas_schedule).unwrap();
             assert!(gas_schedule_blob.len() < 65536);
@@ -146,7 +146,7 @@ pub fn generate_gas_upgrade_proposal(
                     );
                 },
             }
-            emitln!(writer, "aptos_governance::reconfigure({});", signer_arg);
+            emitln!(writer, "topo_governance::reconfigure({});", signer_arg);
         },
     );
 

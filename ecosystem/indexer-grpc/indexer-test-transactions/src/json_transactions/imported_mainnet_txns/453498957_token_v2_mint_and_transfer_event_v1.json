@@ -35,9 +35,9 @@
           "type": {
             "address": "0x4",
             "module": "aptos_token",
-            "name": "AptosToken"
+            "name": "TopoToken"
           },
-          "typeStr": "0x4::aptos_token::AptosToken",
+          "typeStr": "0x4::aptos_token::TopoToken",
           "data": "{\"burn_ref\":{\"vec\":[{\"inner\":{\"vec\":[{\"self\":\"0x2a8822cbd320abf7e363a7197626161eaf8b8de51f1da239e84255336b1e8923\"}]},\"self\":{\"vec\":[]}}]},\"mutator_ref\":{\"vec\":[{\"self\":\"0x2a8822cbd320abf7e363a7197626161eaf8b8de51f1da239e84255336b1e8923\"}]},\"property_mutator_ref\":{\"self\":\"0x2a8822cbd320abf7e363a7197626161eaf8b8de51f1da239e84255336b1e8923\"},\"transfer_ref\":{\"vec\":[]}}"
         }
       },
@@ -83,13 +83,13 @@
                 "type": "MOVE_TYPES_STRUCT",
                 "struct": {
                   "address": "0x1",
-                  "module": "aptos_coin",
-                  "name": "AptosCoin"
+                  "module": "topo_coin",
+                  "name": "TopoCoin"
                 }
               }
             ]
           },
-          "typeStr": "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
+          "typeStr": "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>",
           "data": "{\"coin\":{\"value\":\"8461800\"},\"deposit_events\":{\"counter\":\"1\",\"guid\":{\"id\":{\"addr\":\"0x40fc28526d4c093fac5cd2bb43e7adf41a48dbbe5edf7a1dd57a3a89c627d17a\",\"creation_num\":\"2\"}}},\"frozen\":false,\"withdraw_events\":{\"counter\":\"1\",\"guid\":{\"id\":{\"addr\":\"0x40fc28526d4c093fac5cd2bb43e7adf41a48dbbe5edf7a1dd57a3a89c627d17a\",\"creation_num\":\"3\"}}}}"
         }
       },
@@ -129,9 +129,9 @@
           "type": {
             "address": "0x4",
             "module": "aptos_token",
-            "name": "AptosToken"
+            "name": "TopoToken"
           },
-          "typeStr": "0x4::aptos_token::AptosToken",
+          "typeStr": "0x4::aptos_token::TopoToken",
           "data": "{\"burn_ref\":{\"vec\":[{\"inner\":{\"vec\":[{\"self\":\"0x41428e9025efe2c2a97de15b25d753ebb19264e8ecee56cb3d9bdd62a19d7a51\"}]},\"self\":{\"vec\":[]}}]},\"mutator_ref\":{\"vec\":[{\"self\":\"0x41428e9025efe2c2a97de15b25d753ebb19264e8ecee56cb3d9bdd62a19d7a51\"}]},\"property_mutator_ref\":{\"self\":\"0x41428e9025efe2c2a97de15b25d753ebb19264e8ecee56cb3d9bdd62a19d7a51\"},\"transfer_ref\":{\"vec\":[]}}"
         }
       },

@@ -4,7 +4,6 @@
 //! Tests for upgrade compatibility of public/package structs/enums
 
 use crate::{assert_abort, assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_language_e2e_tests::account::Account;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
@@ -13,6 +12,7 @@ use aptos_types::{
 use move_core_types::{parser::parse_struct_tag, vm_status::StatusCode};
 use move_model::well_known::INCOMPLETE_MATCH_ABORT_CODE;
 use serde::{Deserialize, Serialize};
+use topo_framework::BuildOptions;
 
 #[test]
 fn public_enum_upgrade() {

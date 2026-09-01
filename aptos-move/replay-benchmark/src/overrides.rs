@@ -10,7 +10,6 @@
 //!   4. changing modules (bytecode, metadata, etc.) and package information.
 
 use anyhow::bail;
-use aptos_framework::{natives::code::PackageRegistry, BuildOptions, BuiltPackage};
 use aptos_gas_schedule::LATEST_GAS_FEATURE_VERSION;
 use aptos_logger::{error, warn};
 use aptos_types::{
@@ -22,6 +21,7 @@ use std::{
     collections::{BTreeSet, HashMap},
     path::PathBuf,
 };
+use topo_framework::{natives::code::PackageRegistry, BuildOptions, BuiltPackage};
 
 /// Stores information about compiled Move packages and the build options used to create them. Used
 /// by the override configuration to shadow existing on-chain modules with modules defined in these

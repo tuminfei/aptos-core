@@ -4,10 +4,14 @@
 use aptos_release_bundle::ReleaseBundle;
 use once_cell::sync::Lazy;
 
-pub mod aptos_framework_sdk_builder;
-pub mod aptos_stdlib;
-pub mod aptos_token_objects_sdk_builder;
-pub mod aptos_token_sdk_builder;
+pub mod topo_framework_sdk_builder;
+pub mod topo_stdlib;
+pub mod topo_token_objects_sdk_builder;
+pub mod topo_token_sdk_builder;
+
+pub use topo_stdlib as aptos_stdlib;
+pub use topo_token_objects_sdk_builder as aptos_token_objects_sdk_builder;
+pub use topo_token_sdk_builder as aptos_token_sdk_builder;
 
 #[cfg(not(feature = "move-harness-with-test-only"))]
 const HEAD_RELEASE_BUNDLE_BYTES: &[u8] = include_bytes!("head.mrb");

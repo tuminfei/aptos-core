@@ -12,7 +12,6 @@
 //!   resolves resource-group placement.
 
 use anyhow::{anyhow, bail, Result};
-use aptos_framework::natives::code::PackageRegistry;
 use aptos_types::{
     state_store::{state_key::StateKey, StateView},
     vm::module_metadata::{get_metadata, RuntimeModuleMetadataV1},
@@ -45,6 +44,7 @@ use move_core_types::{
 };
 use std::cell::RefCell;
 use thiserror::Error;
+use topo_framework::natives::code::PackageRegistry;
 use triomphe::Arc;
 
 /// Default size of the provider's value arena. Occupancy is bounded by one

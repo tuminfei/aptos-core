@@ -4,7 +4,7 @@ create_account(1){
     create_account{
         // Testing network
         create_account.network = {"network": "TESTING", "blockchain": "aptos"};
-        
+
         // Generate key and derive the address, saving it locally
         key = generate_key({"curve_type": "edwards25519"});
         account = derive({
@@ -21,7 +21,7 @@ create_account(1){
           "symbol": "APT",
           "decimals": 8,
           "metadata": {
-            "move_type": "0x1::aptos_coin::AptosCoin"
+            "move_type": "0x1::topo_coin::TopoCoin"
           }
         };
         print_message({"Find faucet with at least balance to create accounts": "10000000"});
@@ -31,7 +31,7 @@ create_account(1){
             "currency": {{currency}}
           }
         });
- 
+
         // Make a create account call
         print_message({"Create account":{{account.account_identifier.address}}, "With account":{{loaded_account.account_identifier.address}}});
         create_account.operations = [
@@ -55,7 +55,7 @@ request_funds(1){
       "symbol": "APT",
       "decimals": 8,
       "metadata": {
-        "move_type": "0x1::aptos_coin::AptosCoin"
+        "move_type": "0x1::topo_coin::TopoCoin"
       }
     };
     print_message({"Find faucet with at least balance": "0"});
@@ -87,7 +87,7 @@ transfer(50){
           "symbol": "APT",
           "decimals": 8,
           "metadata": {
-            "move_type": "0x1::aptos_coin::AptosCoin"
+            "move_type": "0x1::topo_coin::TopoCoin"
           }
         };
 
@@ -118,9 +118,9 @@ transfer(50){
             "create_limit": 100,
             "create_probability": 50
         });
-        
+
         print_message({"Transfer funds": {"sender":{{sender.account_identifier.address}}, "receiver":{{receiver.account_identifier.address}}, "amount":{{receiver_amount}}}});
-        
+
         transfer.operations = [
             {
                 "operation_identifier": {"index": 0},

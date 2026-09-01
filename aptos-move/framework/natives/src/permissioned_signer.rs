@@ -1,10 +1,10 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 use aptos_gas_schedule::gas_params::natives::{
-    aptos_framework::{
+    move_stdlib::SIGNER_BORROW_ADDRESS_BASE,
+    topo_framework::{
         IS_PERMISSIONED_SIGNER_BASE, PERMISSION_ADDRESS_BASE, SIGNER_FROM_PERMISSIONED_HANDLE_BASE,
     },
-    move_stdlib::SIGNER_BORROW_ADDRESS_BASE,
 };
 use aptos_native_interface::{
     safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError,

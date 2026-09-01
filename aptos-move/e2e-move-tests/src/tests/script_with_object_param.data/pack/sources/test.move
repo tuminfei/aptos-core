@@ -1,6 +1,6 @@
 script {
-    use aptos_framework::fungible_asset::Metadata;
-    use aptos_framework::object::Object;
+    use topo_framework::fungible_asset::Metadata;
+    use topo_framework::object::Object;
     use example_addr::managed_fungible_asset::transfer_between_primary_stores;
 
     fun main(

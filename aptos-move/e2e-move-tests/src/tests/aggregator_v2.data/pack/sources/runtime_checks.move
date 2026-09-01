@@ -6,7 +6,7 @@ module 0x1::runtime_checks {
     use std::string;
     use std::option;
     use aptos_std::string_utils;
-    use aptos_framework::aggregator_v2::{Self, Aggregator, AggregatorSnapshot, DerivedStringSnapshot};
+    use topo_framework::aggregator_v2::{Self, Aggregator, AggregatorSnapshot, DerivedStringSnapshot};
 
     //
     // Structs and constructors.

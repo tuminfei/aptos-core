@@ -3,7 +3,6 @@
 
 use crate::{assert_success, assert_vm_status, MoveHarness};
 use aptos_cached_packages::aptos_stdlib;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
     account_address::AccountAddress,
@@ -14,6 +13,7 @@ use move_binary_format::CompiledModule;
 use move_core_types::{metadata::Metadata, vm_status::StatusCode};
 use serde::Serialize;
 use std::collections::BTreeMap;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 #[test]
 fn test_view_attribute() {

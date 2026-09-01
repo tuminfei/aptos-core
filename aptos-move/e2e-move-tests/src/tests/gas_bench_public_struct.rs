@@ -18,12 +18,12 @@
 //! cross-module access.
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_types::{
     account_address::AccountAddress,
     transaction::{EntryFunction, TransactionPayload},
 };
 use move_core_types::{identifier::Identifier, language_storage::ModuleId};
+use topo_framework::BuildOptions;
 
 const MOD_ADDR: &str = "0xcafe";
 

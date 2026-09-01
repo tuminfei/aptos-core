@@ -15,7 +15,7 @@ rust-version = { workspace = true }
 [dependencies]
 anyhow = { workspace = true }
 aptos-crypto = { workspace = true, features = ["fuzzing"] }
-aptos-framework-natives = { workspace = true }
+topo-framework-natives = { workspace = true }
 aptos-gas-schedule = { workspace = true }
 aptos-move-stdlib = { workspace = true }
 aptos-types = { workspace = true }

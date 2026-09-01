@@ -149,7 +149,7 @@ Next add the following to the `Move.toml`:
 
 ```toml
 [dependencies]
-MoveStdlib = { git = "https://github.com/aptos-labs/aptos-framework.git", subdir="aptos-move/framework/move-stdlib", rev = "main", addr_subst = { "std" = "0x1" } }
+MoveStdlib = { git = "https://github.com/aptos-labs/topo-framework.git", subdir="aptos-move/framework/move-stdlib", rev = "main", addr_subst = { "std" = "0x1" } }
 ```
 
 Next add the following module under the `sources` directory:
@@ -236,8 +236,8 @@ This will compute code coverage from test cases and generate a coverage summary.
 
 ```shellscript filename="Terminal"
 $ aptos move test --coverage
-INCLUDING DEPENDENCY AptosFramework
-INCLUDING DEPENDENCY AptosStdlib
+INCLUDING DEPENDENCY TopoFramework
+INCLUDING DEPENDENCY TopoStdlib
 INCLUDING DEPENDENCY MoveStdlib
 BUILDING TestExample
 Running Move unit tests

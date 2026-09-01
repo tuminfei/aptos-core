@@ -6,7 +6,6 @@ use aptos_config::{config::NodeConfig, keys::ConfigKey, utils::get_available_por
 use aptos_crypto::ed25519::Ed25519PrivateKey;
 use aptos_faucet_core::server::{FunderKeyEnum, RunConfig};
 use aptos_forge::{ActiveNodesGuard, Factory, LocalFactory, LocalSwarm, Node};
-use aptos_framework::ReleaseBundle;
 use aptos_genesis::builder::{InitConfigFn, InitGenesisConfigFn, InitGenesisStakeFn};
 use aptos_infallible::Mutex;
 use aptos_logger::prelude::*;
@@ -15,6 +14,7 @@ use once_cell::sync::Lazy;
 use rand::rngs::OsRng;
 use std::{env, num::NonZeroUsize, path::PathBuf, sync::Arc};
 use tokio::task::JoinHandle;
+use topo_framework::ReleaseBundle;
 
 const SWARM_BUILD_NUM_RETRIES: u8 = 3;
 

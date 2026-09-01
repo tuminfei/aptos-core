@@ -87,7 +87,7 @@ fn p2p_transfer_matches_v1() {
     let txn = alice
         .account()
         .transaction()
-        .payload(aptos_cached_packages::aptos_stdlib::aptos_account_transfer(
+        .payload(aptos_cached_packages::aptos_stdlib::topo_account_transfer(
             *bob.address(),
             1_000,
         ))
@@ -202,7 +202,7 @@ fn p2p_transfer_insufficient_balance_aborts_like_v1() {
     let txn = alice
         .account()
         .transaction()
-        .payload(aptos_cached_packages::aptos_stdlib::aptos_account_transfer(
+        .payload(aptos_cached_packages::aptos_stdlib::topo_account_transfer(
             *bob.address(),
             u64::MAX,
         ))
@@ -251,7 +251,7 @@ fn p2p_transfer_draining_fee_payer_aborts_like_v1() {
     let txn = alice
         .account()
         .transaction()
-        .payload(aptos_cached_packages::aptos_stdlib::aptos_account_transfer(
+        .payload(aptos_cached_packages::aptos_stdlib::topo_account_transfer(
             *bob.address(),
             1_000_000_000,
         ))
@@ -338,11 +338,11 @@ fn nonexistent_entry_function_kept_like_v1() {
 fn extra_signers_rejected_like_v1() {
     let (fx, alice, bob) = setup();
 
-    // `aptos_account::transfer` takes one `&signer`; supply two senders.
+    // `topo_account::transfer` takes one `&signer`; supply two senders.
     let txn = alice
         .account()
         .transaction()
-        .payload(aptos_cached_packages::aptos_stdlib::aptos_account_transfer(
+        .payload(aptos_cached_packages::aptos_stdlib::topo_account_transfer(
             *bob.address(),
             1_000,
         ))
@@ -391,7 +391,7 @@ fn sequential_execution_applies_outputs() {
         alice
             .account()
             .transaction()
-            .payload(aptos_cached_packages::aptos_stdlib::aptos_account_transfer(
+            .payload(aptos_cached_packages::aptos_stdlib::topo_account_transfer(
                 *bob.address(),
                 1_000,
             ))

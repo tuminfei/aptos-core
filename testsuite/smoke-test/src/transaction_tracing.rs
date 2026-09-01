@@ -71,7 +71,7 @@ async fn test_transaction_tracing() {
     for account in &mut accounts {
         let tx = account.sign_with_transaction_builder(
             info.transaction_factory()
-                .payload(aptos_stdlib::aptos_coin_transfer(receiver.address(), 100)),
+                .payload(aptos_stdlib::topo_coin_transfer(receiver.address(), 100)),
         );
         let pending = info.client().submit(&tx).await.unwrap().into_inner();
         let result = info.client().wait_for_transaction(&pending).await;

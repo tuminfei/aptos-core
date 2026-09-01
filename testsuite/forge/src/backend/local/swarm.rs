@@ -11,7 +11,6 @@ use aptos_config::{
     keys::ConfigKey,
     network_id::NetworkId,
 };
-use aptos_framework::ReleaseBundle;
 use aptos_genesis::builder::{
     FullnodeNodeConfig, InitConfigFn, InitGenesisConfigFn, InitGenesisStakeFn,
 };
@@ -42,6 +41,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tempfile::TempDir;
+use topo_framework::ReleaseBundle;
 
 #[derive(Debug)]
 pub enum SwarmDirectory {

@@ -241,7 +241,7 @@ pub async fn execute_return_worker_funds(
             if balance > txn_factory_ref.get_max_gas_amount() * txn_factory_ref.get_gas_unit_price()
             {
                 let txn = account.sign_with_transaction_builder(txn_factory_ref.payload(
-                    aptos_stdlib::aptos_coin_transfer(
+                    aptos_stdlib::topo_coin_transfer(
                         coin_source_account.address(),
                         balance
                             - txn_factory_ref.get_max_gas_amount()

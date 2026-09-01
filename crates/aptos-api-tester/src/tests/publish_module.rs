@@ -21,7 +21,6 @@ use crate::{
 use anyhow::{anyhow, Result};
 use aptos_api_types::{HexEncodedBytes, U64};
 use aptos_cached_packages::aptos_stdlib::EntryFunctionCall;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_logger::error;
 use aptos_rest_client::Client;
 use aptos_sdk::{bcs, types::LocalAccount};
@@ -31,6 +30,7 @@ use aptos_types::{
 };
 use move_core_types::{ident_str, language_storage::ModuleId};
 use std::{collections::BTreeMap, path::PathBuf};
+use topo_framework::{BuildOptions, BuiltPackage};
 
 static MODULE_NAME: &str = "message";
 static TEST_MESSAGE: &str = "test message";

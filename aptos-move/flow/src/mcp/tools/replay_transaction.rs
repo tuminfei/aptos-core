@@ -12,7 +12,6 @@ use super::{
     replay_tracing::{CaptureOpts, TraceCapture, TraceRecorder, TracingDebugger},
 };
 use aptos_cli_common::format_txn_status;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_move_cli::{source_locator::AptosSourceLocator, MoveDebugger};
 use aptos_move_debugger::aptos_debugger::AptosDebugger;
 use aptos_rest_client::{AptosBaseUrl, Client};
@@ -34,6 +33,7 @@ use std::{
     str::FromStr,
     sync::Arc,
 };
+use topo_framework::{BuildOptions, BuiltPackage};
 use url::Url;
 
 /// Parse the `network` parameter into a base URL. Accepts the well-known names

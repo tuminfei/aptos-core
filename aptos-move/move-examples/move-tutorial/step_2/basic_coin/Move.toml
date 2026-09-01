@@ -2,7 +2,5 @@
 name = "basic_coin"
 version = "0.0.0"
 
-[dependencies.AptosStdlib]
-git = 'https://github.com/aptos-labs/aptos-framework.git'
-rev = 'main'
-subdir = 'aptos-stdlib'
+[dependencies.TopoStdlib]
+local = "../../../../framework/topo-stdlib"

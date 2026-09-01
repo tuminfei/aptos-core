@@ -22,7 +22,7 @@ pub fn generate_jwk_consensus_config_update_proposal(
         is_testnet,
         next_execution_hash,
         is_multi_step,
-        &["aptos_framework::jwk_consensus_config", "std::string::utf8"],
+        &["topo_framework::jwk_consensus_config", "std::string::utf8"],
         |writer| {
             match config {
                 OnChainJWKConsensusConfig::Off => {
@@ -41,7 +41,7 @@ pub fn generate_jwk_consensus_config_update_proposal(
                     );
                 },
             }
-            emitln!(writer, "aptos_governance::reconfigure({});", signer_arg);
+            emitln!(writer, "topo_governance::reconfigure({});", signer_arg);
         },
     );
 

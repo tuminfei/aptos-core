@@ -20,7 +20,6 @@ use crate::{
 use aptos_api_types::ViewFunction;
 use aptos_cached_packages::aptos_stdlib;
 use aptos_crypto::HashValue;
-use aptos_framework::{new_release_package, BuiltPackage};
 use aptos_logger::warn;
 pub use aptos_move_cli::CompileScriptFunction;
 use aptos_move_cli::{FrameworkPackageArgs, IncludedArtifacts, MovePackageOptions};
@@ -31,7 +30,7 @@ use aptos_rest_client::{
 use aptos_sdk::move_types::language_storage::CORE_CODE_ADDRESS;
 use aptos_types::{
     account_address::AccountAddress,
-    account_config::is_aptos_governance_create_proposal_event,
+    account_config::is_topo_governance_create_proposal_event,
     event::EventHandle,
     governance::VotingRecords,
     stake_pool::StakePool,
@@ -47,6 +46,7 @@ use move_core_types::{
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fmt::Formatter, path::PathBuf};
+use topo_framework::{new_release_package, BuiltPackage};
 
 /// Tool for on-chain governance
 ///
@@ -174,7 +174,7 @@ impl CliCommand<Vec<ProposalSummary>> for ListProposals {
         let events = client
             .get_account_events_bcs(
                 AccountAddress::ONE,
-                "0x1::aptos_governance::GovernanceEvents",
+                "0x1::topo_governance::GovernanceEvents",
                 "create_proposal_events",
                 None,
                 Some(100),
@@ -390,7 +390,7 @@ impl CliCommand<ProposalSubmissionSummary> for SubmitProposal {
         let txn: Transaction = if self.args.is_multi_step {
             self.args
                 .txn_options
-                .submit_transaction(aptos_stdlib::aptos_governance_create_proposal_v2(
+                .submit_transaction(aptos_stdlib::topo_governance_create_proposal_v2(
                     self.pool_address_args.pool_address,
                     script_hash.to_vec(),
                     self.args.metadata_url.to_string().as_bytes().to_vec(),
@@ -401,7 +401,7 @@ impl CliCommand<ProposalSubmissionSummary> for SubmitProposal {
         } else {
             self.args
                 .txn_options
-                .submit_transaction(aptos_stdlib::aptos_governance_create_proposal(
+                .submit_transaction(aptos_stdlib::topo_governance_create_proposal(
                     self.pool_address_args.pool_address,
                     script_hash.to_vec(),
                     self.args.metadata_url.to_string().as_bytes().to_vec(),
@@ -451,7 +451,7 @@ fn extract_proposal_id(txn: &Transaction) -> CliTypedResult<Option<u64>> {
         // Find event with proposal id
         let proposal_id =
             if let Some(event) = inner.events.iter().find(|event| {
-                is_aptos_governance_create_proposal_event(event.typ.to_string().as_str())
+                is_topo_governance_create_proposal_event(event.typ.to_string().as_str())
             }) {
                 let data: CreateProposalEvent = serde_json::from_value(event.data.clone())
                     .map_err(|_| {
@@ -542,7 +542,7 @@ impl SubmitVote {
         let voting_records = client
             .get_account_resource_bcs::<VotingRecords>(
                 CORE_CODE_ADDRESS,
-                "0x1::aptos_governance::VotingRecords",
+                "0x1::topo_governance::VotingRecords",
             )
             .await
             .unwrap()
@@ -554,7 +554,7 @@ impl SubmitVote {
             let voting_record = client
                 .get_table_item(
                     voting_records,
-                    "0x1::aptos_governance::RecordKey",
+                    "0x1::topo_governance::RecordKey",
                     "bool",
                     VotingRecord {
                         proposal_id: proposal_id.to_string(),
@@ -591,7 +591,7 @@ impl SubmitVote {
             summaries.push(
                 self.args
                     .txn_options
-                    .submit_transaction(aptos_stdlib::aptos_governance_vote(
+                    .submit_transaction(aptos_stdlib::topo_governance_vote(
                         *pool_address,
                         proposal_id,
                         vote,
@@ -647,7 +647,7 @@ impl SubmitVote {
                 .view(ViewFunction {
                     module: ModuleId::new(
                         AccountAddress::ONE,
-                        ident_str!("aptos_governance").to_owned(),
+                        ident_str!("topo_governance").to_owned(),
                     ),
                     function: ident_str!("get_remaining_voting_power").to_owned(),
                     ty_args: vec![],
@@ -686,7 +686,7 @@ impl SubmitVote {
             summaries.push(
                 self.args
                     .txn_options
-                    .submit_transaction(aptos_stdlib::aptos_governance_partial_vote(
+                    .submit_transaction(aptos_stdlib::topo_governance_partial_vote(
                         *pool_address,
                         proposal_id,
                         voting_power,
@@ -727,7 +727,7 @@ impl CliCommand<Vec<TransactionSummary>> for SubmitVote {
 }
 
 /// Submit a transaction to approve a proposal's script hash to bypass the transaction size limit.
-/// This is needed for upgrading large packages such as aptos-framework.
+/// This is needed for upgrading large packages such as topo-framework.
 #[derive(Parser)]
 pub struct ApproveExecutionHash {
     /// Id of the proposal to vote on
@@ -748,7 +748,7 @@ impl CliCommand<TransactionSummary> for ApproveExecutionHash {
         Ok(self
             .txn_options
             .submit_transaction(
-                aptos_stdlib::aptos_governance_add_approved_script_hash_script(self.proposal_id),
+                aptos_stdlib::topo_governance_add_approved_script_hash_script(self.proposal_id),
             )
             .await
             .map(TransactionSummary::from)?)
@@ -902,9 +902,9 @@ pub struct GenerateExecutionHash {
     #[clap(long)]
     pub script_path: Option<PathBuf>,
 
-    /// Local directory of the `aptos-framework` package to compile against
+    /// Local directory of the `topo-framework` package to compile against
     ///
-    /// Defaults to the copy of `aptos-framework` bundled with this CLI.
+    /// Defaults to the copy of `topo-framework` bundled with this CLI.
     #[clap(long)]
     pub framework_local_dir: Option<PathBuf>,
 }
@@ -920,7 +920,7 @@ impl GenerateExecutionHash {
                 path.pop();
                 path.join("aptos-move")
                     .join("framework")
-                    .join("aptos-framework")
+                    .join("topo-framework")
                     .canonicalize()
                     .map_err(|err| {
                         CliError::IO(

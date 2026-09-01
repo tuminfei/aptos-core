@@ -12,7 +12,7 @@ use crate::{
 };
 use aptos_cached_packages::aptos_stdlib;
 use aptos_language_e2e_tests::account::Account;
-use aptos_types::{account_config::CoinInfoResource, AptosCoinType};
+use aptos_types::{account_config::CoinInfoResource, TopoCoinType};
 use move_core_types::account_address::AccountAddress;
 use proptest::prelude::*;
 use test_case::test_case;
@@ -25,16 +25,16 @@ fn setup() -> (MoveHarness, Account) {
 }
 
 /// Abort code for `error::permission_denied(ENOT_APTOS_FRAMEWORK_ADDRESS)`
-/// raised by `system_addresses::assert_aptos_framework`.
+/// raised by `system_addresses::assert_topo_framework`.
 const ENOT_APTOS_FRAMEWORK_ADDRESS: u64 = 0x5_0003;
 
-/// Reads APT supply tracked by `CoinInfo<AptosCoin>` (excluding the supply of
+/// Reads APT supply tracked by `CoinInfo<TopoCoin>` (excluding the supply of
 /// the paired fungible asset).
 fn coin_supply(h: &mut MoveHarness) -> u128 {
     let bytes = h
         .execute_view_function(
             str::parse("0x1::coin::coin_supply").unwrap(),
-            vec![str::parse("0x1::aptos_coin::AptosCoin").unwrap()],
+            vec![str::parse("0x1::topo_coin::TopoCoin").unwrap()],
             vec![],
         )
         .values
@@ -57,7 +57,7 @@ fn test_aggregator_supply_switch(block_split: BlockSplit) {
     const FUNDED_BALANCE: u64 = 1_000_000_000_000_000;
 
     let mut h = MoveHarness::new();
-    let framework = h.aptos_framework_account();
+    let framework = h.topo_framework_account();
     // Core resources account holds the mint capability in test genesis.
     let core_resources = h.new_account_at(AccountAddress::from_hex_literal("0xA550C18").unwrap());
     let attacker = h.new_account_at(AccountAddress::random());
@@ -66,10 +66,10 @@ fn test_aggregator_supply_switch(block_split: BlockSplit) {
         .collect::<Vec<_>>();
 
     // Test genesis tracks APT supply with a plain integer, while mainnet
-    // still uses a parallelizable aggregator. Patch CoinInfo<AptosCoin> and
+    // still uses a parallelizable aggregator. Patch CoinInfo<TopoCoin> and
     // the aggregator table item to recreate the mainnet state.
     let initial_supply = coin_supply(&mut h);
-    let coin_info = CoinInfoResource::<AptosCoinType>::random(u128::MAX);
+    let coin_info = CoinInfoResource::<TopoCoinType>::random(u128::MAX);
     h.executor
         .apply_write_set(&coin_info.to_writeset(initial_supply).unwrap());
     let aggregator_key = coin_info.supply_aggregator_state_key();
@@ -89,7 +89,7 @@ fn test_aggregator_supply_switch(block_split: BlockSplit) {
             SUCCESS,
             h.create_transaction_payload(
                 &core_resources,
-                aptos_stdlib::aptos_coin_mint(*dst.address(), MINT_AMOUNT),
+                aptos_stdlib::topo_coin_mint(*dst.address(), MINT_AMOUNT),
             ),
         )
     };
@@ -101,11 +101,11 @@ fn test_aggregator_supply_switch(block_split: BlockSplit) {
     // Only the framework account can switch the supply to an integer.
     txns.push((
         ENOT_APTOS_FRAMEWORK_ADDRESS,
-        h.create_transaction_payload(&attacker, aptos_stdlib::aptos_coin_upgrade_supply()),
+        h.create_transaction_payload(&attacker, aptos_stdlib::topo_coin_upgrade_supply()),
     ));
     txns.push((
         SUCCESS,
-        h.create_transaction_payload(&framework, aptos_stdlib::aptos_coin_upgrade_supply()),
+        h.create_transaction_payload(&framework, aptos_stdlib::topo_coin_upgrade_supply()),
     ));
     for dst in &dsts[NUM_MINTS_BEFORE_SWITCH..] {
         txns.push(mint(&mut h, dst));
@@ -130,9 +130,7 @@ fn test_aggregator_supply_switch(block_split: BlockSplit) {
     }
 
     // Upgrading again is a no-op.
-    assert_success!(
-        h.run_transaction_payload(&framework, aptos_stdlib::aptos_coin_upgrade_supply())
-    );
+    assert_success!(h.run_transaction_payload(&framework, aptos_stdlib::topo_coin_upgrade_supply()));
     let coin_info = h.executor.read_apt_coin_info_resource().unwrap();
     let supply = coin_info.supply().as_ref().unwrap();
     assert!(supply.aggregator.is_none());

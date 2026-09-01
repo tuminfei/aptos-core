@@ -4,7 +4,6 @@
 //! Tests for upgrade compatibility of public/package/friend constants.
 
 use crate::{assert_success, assert_vm_status, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_language_e2e_tests::account::Account;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
@@ -12,6 +11,7 @@ use aptos_types::{
 };
 use bcs;
 use move_core_types::vm_status::StatusCode;
+use topo_framework::BuildOptions;
 
 fn publish(h: &mut MoveHarness, account: &Account, source: &str) -> TransactionStatus {
     let mut builder = PackageBuilder::new("Package");

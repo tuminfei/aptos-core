@@ -24,7 +24,7 @@ use aptos_types::{
         authenticator::{AuthenticationKey, TransactionAuthenticator},
         EntryFunction, ReplayProtector, Script, SignedTransaction,
     },
-    utility_coin::{AptosCoinType, CoinType},
+    utility_coin::{CoinType, TopoCoinType},
 };
 use move_core_types::{
     identifier::Identifier,
@@ -623,7 +623,7 @@ async fn test_post_batch_entry_function_api_validation(
             .entry_function(EntryFunction::new(
                 ModuleId::new(AccountAddress::from_hex_literal("0x1").unwrap(), module_id),
                 func,
-                vec![AptosCoinType::type_tag()],
+                vec![TopoCoinType::type_tag()],
                 vec![
                     bcs::to_bytes(&AccountAddress::from_hex_literal("0xdd").unwrap()).unwrap(),
                     bcs::to_bytes(&123u64).unwrap(),
@@ -1353,7 +1353,7 @@ async fn test_signing_message_with_entry_function_payload(
     let txn = context.create_user_account(&account).await;
     let payload = json!({
         "type": "entry_function_payload",
-        "function": "0x1::aptos_account::create_account",
+        "function": "0x1::topo_account::create_account",
         "type_arguments": [],
         "arguments": [
             account.address().to_hex_literal(), // new_account_address
@@ -1752,7 +1752,7 @@ async fn test_get_txn_execute_failed_by_invalid_entry_function_address(
         "0x1222",
         "Coin",
         "transfer",
-        vec![AptosCoinType::type_tag()],
+        vec![TopoCoinType::type_tag()],
         vec![
             bcs::to_bytes(&AccountAddress::from_hex_literal("0xdd").unwrap()).unwrap(),
             bcs::to_bytes(&1u64).unwrap(),
@@ -1787,7 +1787,7 @@ async fn test_get_txn_execute_failed_by_invalid_entry_function_module_name(
         "0x1",
         "CoinInvalid",
         "transfer",
-        vec![AptosCoinType::type_tag()],
+        vec![TopoCoinType::type_tag()],
         vec![
             bcs::to_bytes(&AccountAddress::from_hex_literal("0xdd").unwrap()).unwrap(),
             bcs::to_bytes(&1u64).unwrap(),
@@ -1822,7 +1822,7 @@ async fn test_get_txn_execute_failed_by_invalid_entry_function_name(
         "0x1",
         "Coin",
         "transfer_invalid",
-        vec![AptosCoinType::type_tag()],
+        vec![TopoCoinType::type_tag()],
         vec![
             bcs::to_bytes(&AccountAddress::from_hex_literal("0xdd").unwrap()).unwrap(),
             bcs::to_bytes(&1u64).unwrap(),
@@ -1857,7 +1857,7 @@ async fn test_get_txn_execute_failed_by_invalid_entry_function_arguments(
         "0x1",
         "Coin",
         "transfer",
-        vec![AptosCoinType::type_tag()],
+        vec![TopoCoinType::type_tag()],
         vec![
             bcs::to_bytes(&AccountAddress::from_hex_literal("0xdd").unwrap()).unwrap(),
             bcs::to_bytes(&1u8).unwrap(), // invalid type
@@ -1892,7 +1892,7 @@ async fn test_get_txn_execute_failed_by_missing_entry_function_arguments(
         "0x1",
         "Coin",
         "transfer",
-        vec![AptosCoinType::type_tag()],
+        vec![TopoCoinType::type_tag()],
         vec![
             bcs::to_bytes(&AccountAddress::from_hex_literal("0xdd").unwrap()).unwrap(),
             // missing arguments
@@ -1930,7 +1930,7 @@ async fn test_get_txn_execute_failed_by_entry_function_validation(
         "0x1",
         "Coin",
         "transfer",
-        vec![AptosCoinType::type_tag()],
+        vec![TopoCoinType::type_tag()],
         vec![
             bcs::to_bytes(&AccountAddress::from_hex_literal("0xdd").unwrap()).unwrap(),
             bcs::to_bytes(&123u64).unwrap(), // exceed limit, account balance is 0.
@@ -1966,7 +1966,7 @@ async fn test_get_txn_execute_failed_by_entry_function_invalid_module_name(
         "0x1",
         "coin",
         "transfer::what::what",
-        vec![AptosCoinType::type_tag()],
+        vec![TopoCoinType::type_tag()],
         vec![
             bcs::to_bytes(&AccountAddress::from_hex_literal("0xdd").unwrap()).unwrap(),
             bcs::to_bytes(&123u64).unwrap(), // exceed limit, account balance is 0.
@@ -2002,7 +2002,7 @@ async fn test_get_txn_execute_failed_by_entry_function_invalid_function_name(
         "0x1",
         "coin::coin",
         "transfer",
-        vec![AptosCoinType::type_tag()],
+        vec![TopoCoinType::type_tag()],
         vec![
             bcs::to_bytes(&AccountAddress::from_hex_literal("0xdd").unwrap()).unwrap(),
             bcs::to_bytes(&123u64).unwrap(), // exceed limit, account balance is 0.
@@ -2698,7 +2698,7 @@ async fn test_simulation_failure_with_move_abort_error_rendering(
         .entry_function(EntryFunction::new(
             ModuleId::new(
                 AccountAddress::from_hex_literal("0x1").unwrap(),
-                Identifier::new("aptos_account").unwrap(),
+                Identifier::new("topo_account").unwrap(),
             ),
             Identifier::new("transfer").unwrap(),
             vec![],
@@ -2758,7 +2758,7 @@ async fn test_simulation_failure_with_detail_error(
                 Identifier::new("MemeCoin").unwrap(),
             ),
             Identifier::new("transfer").unwrap(),
-            vec![AptosCoinType::type_tag()],
+            vec![TopoCoinType::type_tag()],
             vec![
                 bcs::to_bytes(&AccountAddress::from_hex_literal("0xdd").unwrap()).unwrap(),
                 bcs::to_bytes(&1u64).unwrap(),

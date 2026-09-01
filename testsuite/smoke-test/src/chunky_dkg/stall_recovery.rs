@@ -112,13 +112,13 @@ async fn chunky_dkg_stall_recovery() {
     info!("Bump on-chain config seqnum to re-enable ChunkyDKG.");
     let script = r#"
 script {
-    use aptos_framework::aptos_governance;
-    use aptos_framework::chunky_dkg_config_seqnum;
+    use topo_framework::topo_governance;
+    use topo_framework::chunky_dkg_config_seqnum;
 
     fun main(core_resources: &signer) {
-        let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
         chunky_dkg_config_seqnum::set_for_next_epoch(&framework_signer, 2);
-        aptos_governance::force_end_epoch(&framework_signer);
+        topo_governance::force_end_epoch(&framework_signer);
     }
 }
     "#;

@@ -9,8 +9,8 @@
 
 //# publish --private-key Alice
 module Alice::events_test {
-    use aptos_framework::account;
-    use aptos_framework::event;
+    use topo_framework::account;
+    use topo_framework::event;
 
     struct V1Event<phantom T> has store, drop {}
 

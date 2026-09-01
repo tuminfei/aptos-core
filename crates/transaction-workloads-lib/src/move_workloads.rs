@@ -3,7 +3,6 @@
 #![allow(unused)]
 
 pub use super::prebuilt_packages::PreBuiltPackagesImpl;
-use aptos_framework::natives::code::PackageMetadata;
 use aptos_sdk::{
     bcs,
     move_types::{
@@ -33,6 +32,7 @@ use std::{
     collections::HashMap,
     sync::{atomic::AtomicU64, Arc},
 };
+use topo_framework::natives::code::PackageMetadata;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct BCSStream {

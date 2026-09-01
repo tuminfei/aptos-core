@@ -7,7 +7,6 @@ use crate::{
     DataManager, IndexReader, PackageInfo, TxnIndex, APTOS_COMMONS,
 };
 use anyhow::Result;
-use aptos_framework::APTOS_PACKAGES;
 use aptos_language_e2e_tests::executor::FakeExecutor;
 use aptos_replay_benchmark::diff::{Diff, TransactionDiffBuilder};
 use aptos_transaction_simulation::{InMemoryStateStore, SimulationStateStore};
@@ -31,6 +30,7 @@ use std::{
     path::PathBuf,
     sync::Arc,
 };
+use topo_framework::APTOS_PACKAGES;
 
 fn add_packages_to_state_store(
     state_store: &impl SimulationStateStore,
@@ -450,7 +450,7 @@ impl Execution {
             if let Path::Resource(tag) = path {
                 if tag.name.as_str() == "CoinStore" && !tag.type_args.is_empty() {
                     let para_type = &tag.type_args[0];
-                    if para_type.to_canonical_string() == "0x1::aptos_coin::AptosCoin" {
+                    if para_type.to_canonical_string() == "0x1::topo_coin::TopoCoin" {
                         return true;
                     }
                 }

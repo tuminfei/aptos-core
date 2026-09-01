@@ -19,9 +19,9 @@
     /*
     2-Using-Resource-Account % aptos move create-resource-account-and-publish-package --seed 1235 --address-name mint_nft --profile default --named-addresses source_addr=a911e7374107ad434bbc5369289cf5855c3b1a2938a6bfce0776c1d296271cde
     Compiling, may take a little while to download git dependencies...
-    INCLUDING DEPENDENCY AptosFramework
-    INCLUDING DEPENDENCY AptosStdlib
-    INCLUDING DEPENDENCY AptosToken
+    INCLUDING DEPENDENCY TopoFramework
+    INCLUDING DEPENDENCY TopoStdlib
+    INCLUDING DEPENDENCY TopoToken
     INCLUDING DEPENDENCY MoveStdlib
     BUILDING Examples
     Do you want to publish this package under the resource account's address 3ad2cce668ed2186da580b95796ffe8534566583363cd3b03547bec9542662dc? [yes/no] >
@@ -76,9 +76,9 @@ module mint_nft::create_nft_with_resource_account {
     use std::signer;
     use std::string::String;
     use aptos_token::token::TokenDataId;
-    use aptos_framework::account::SignerCapability;
-    use aptos_framework::resource_account;
-    use aptos_framework::account;
+    use topo_framework::account::SignerCapability;
+    use topo_framework::resource_account;
+    use topo_framework::account;
 
     // This struct stores an NFT collection's relevant information
     struct ModuleData has key {

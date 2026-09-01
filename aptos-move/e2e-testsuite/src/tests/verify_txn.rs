@@ -67,7 +67,7 @@ fn verify_signature() {
     executor.add_account_data(&sender);
     // Generate a new key pair to try and sign things with.
     let private_key = Ed25519PrivateKey::generate_for_testing();
-    let program = aptos_stdlib::aptos_coin_transfer(*sender.address(), 100);
+    let program = aptos_stdlib::topo_coin_transfer(*sender.address(), 100);
     let signed_txn = transaction_test_helpers::get_test_unchecked_txn(
         *sender.address(),
         0,
@@ -193,7 +193,7 @@ fn verify_reserved_sender() {
     executor.add_account_data(&sender);
     // Generate a new key pair to try and sign things with.
     let private_key = Ed25519PrivateKey::generate_for_testing();
-    let program = aptos_stdlib::aptos_coin_transfer(*sender.address(), 100);
+    let program = aptos_stdlib::topo_coin_transfer(*sender.address(), 100);
     let signed_txn = transaction_test_helpers::get_test_signed_txn(
         account_config::reserved_vm_address(),
         0,
@@ -227,7 +227,7 @@ fn verify_simple_payment() {
     let txn = sender
         .account()
         .transaction()
-        .payload(aptos_stdlib::aptos_coin_transfer(
+        .payload(aptos_stdlib::topo_coin_transfer(
             *receiver.address(),
             transfer_amount,
         ))

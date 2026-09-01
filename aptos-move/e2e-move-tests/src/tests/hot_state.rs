@@ -16,7 +16,6 @@ use crate::{aggregator, assert_success, tests::common, MoveHarness};
 use aptos_block_executor::txn_provider::default::DefaultTxnProvider;
 use aptos_cached_packages::aptos_stdlib;
 use aptos_crypto::HashValue;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::account::Account;
 use aptos_types::{
     account_config::{AccountResource, AggregatorV1Resource, CoinInfoResource},
@@ -35,7 +34,7 @@ use aptos_types::{
         signature_verified_transaction::into_signature_verified_block, ExecutionStatus,
         Transaction, TransactionArgument, TransactionStatus,
     },
-    utility_coin::AptosCoinType,
+    utility_coin::TopoCoinType,
 };
 use aptos_vm::{aptos_vm::AptosVMBlockExecutor, VMBlockExecutor};
 use move_core_types::{
@@ -43,6 +42,7 @@ use move_core_types::{
     parser::parse_struct_tag,
 };
 use std::collections::BTreeSet;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 const HELPER_ADDR: &str = "0xcafe";
 
@@ -609,14 +609,14 @@ fn test_discarded_txn_reads_not_promoted() {
     // A committed transfer, so the block has a real promotion set.
     let good = Transaction::UserTransaction(h.create_transaction_payload(
         &alice,
-        aptos_stdlib::aptos_account_transfer(*bob.address(), 100),
+        aptos_stdlib::topo_account_transfer(*bob.address(), 100),
     ));
     // Sequence number one ahead of the account's: the prologue reads Dave's account resource, then
     // aborts with SEQUENCE_NUMBER_TOO_NEW, discarding the transaction.
     let discarded = Transaction::UserTransaction(
         h.create_transaction_without_sign(
             &dave,
-            aptos_stdlib::aptos_account_transfer(*bob.address(), 1),
+            aptos_stdlib::topo_account_transfer(*bob.address(), 1),
         )
         .sequence_number(1)
         .sign(),
@@ -655,11 +655,11 @@ fn test_block_promotions_cover_reads_and_exclude_writes() {
     let txns = vec![
         Transaction::UserTransaction(h.create_transaction_payload(
             &alice,
-            aptos_stdlib::aptos_account_transfer(*bob.address(), 100),
+            aptos_stdlib::topo_account_transfer(*bob.address(), 100),
         )),
         Transaction::UserTransaction(h.create_transaction_payload(
             &bob,
-            aptos_stdlib::aptos_account_transfer(*alice.address(), 50),
+            aptos_stdlib::topo_account_transfer(*alice.address(), 50),
         )),
         read_txn(&mut h, &alice, "read_only", charlie.address()),
     ];
@@ -671,7 +671,7 @@ fn test_block_promotions_cover_reads_and_exclude_writes() {
     // promoted (a framework module and the user-published one).
     assert!(promoted.contains(&StateKey::module(
         &AccountAddress::ONE,
-        ident_str!("aptos_account")
+        ident_str!("topo_account")
     )));
     assert!(promoted.contains(&StateKey::module(
         &helper_address(),
@@ -683,7 +683,7 @@ fn test_block_promotions_cover_reads_and_exclude_writes() {
         StateKey::on_chain_config::<ChainId>().unwrap(),
         StateKey::on_chain_config::<CurrentTimeMicroseconds>().unwrap(),
         StateKey::resource_typed::<AccountResource>(charlie.address()).unwrap(),
-        StateKey::resource_typed::<CoinInfoResource<AptosCoinType>>(&AccountAddress::ONE).unwrap(),
+        StateKey::resource_typed::<CoinInfoResource<TopoCoinType>>(&AccountAddress::ONE).unwrap(),
     ] {
         assert!(promoted.contains(&key), "Expected promotion for {:?}", key);
     }

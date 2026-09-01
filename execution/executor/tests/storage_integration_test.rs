@@ -42,7 +42,7 @@ fn test_genesis() {
 
     let account_resource_path =
         StateKey::resource_typed::<AccountResource>(&CORE_CODE_ADDRESS).unwrap();
-    let (aptos_framework_account_resource, state_proof) = db
+    let (topo_framework_account_resource, state_proof) = db
         .reader
         .get_state_value_with_proof_by_version(&account_resource_path, 0)
         .unwrap();
@@ -59,7 +59,7 @@ fn test_genesis() {
         .verify(
             txn_info.state_checkpoint_hash().unwrap(),
             account_resource_path.hash(),
-            aptos_framework_account_resource.as_ref(),
+            topo_framework_account_resource.as_ref(),
         )
         .unwrap();
 }
@@ -111,7 +111,7 @@ fn test_reconfiguration() {
         /* sequence_number = */ 0,
         genesis_key.clone(),
         genesis_key.public_key(),
-        Some(aptos_stdlib::aptos_coin_mint(validator_account, 1_000_000)),
+        Some(aptos_stdlib::topo_coin_mint(validator_account, 1_000_000)),
     );
     // txn2 = a dummy block prologue to bump the timer.
     let txn2 = Transaction::BlockMetadata(BlockMetadata::new(
@@ -138,7 +138,7 @@ fn test_reconfiguration() {
         2,
         genesis_key.clone(),
         genesis_key.public_key(),
-        Some(aptos_stdlib::aptos_governance_force_end_epoch_test_only()),
+        Some(aptos_stdlib::topo_governance_force_end_epoch_test_only()),
     );
 
     let txn_block = into_signature_verified_block(vec![txn1, txn2, txn3, txn4]);

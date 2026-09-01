@@ -2,11 +2,11 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 mod helper;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::executor::FakeExecutor;
 use clap::Parser;
 use move_binary_format::CompiledModule;
 use std::{fs::read_dir, path::PathBuf};
+use topo_framework::{BuildOptions, BuiltPackage};
 
 // CLI options
 #[derive(Parser, Debug)]

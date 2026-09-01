@@ -1,16 +1,16 @@
 // Script hash: 034204de
 // Framework commit hash: 7bc3f195928488963bb947dc0e300f26527f2675
 // Builder commit hash: 7bc3f195928488963bb947dc0e300f26527f2675
-// Upgrade proposal for package `AptosStdlib`
+// Upgrade proposal for package `TopoStdlib`
 
 // source digest: 1D4ED5929F42A72E62C7E3DF754A7EBB336DC734C24C5DFCC72E00B54CE886A0
 script {
     use std::vector;
-    use aptos_framework::aptos_governance;
-    use aptos_framework::code;
+    use topo_framework::topo_governance;
+    use topo_framework::code;
 
     fun main(core_resources: &signer){
-        let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
         let code = vector::empty();
         let chunk0 =
         vector[

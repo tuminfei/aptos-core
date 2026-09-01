@@ -8,7 +8,6 @@ use crate::{
 };
 use anyhow::{format_err, Result};
 use aptos_block_executor::txn_provider::default::DefaultTxnProvider;
-use aptos_framework::natives::code::PackageMetadata;
 use aptos_rest_client::Client;
 use aptos_transaction_simulation::InMemoryStateStore;
 use aptos_types::{
@@ -29,6 +28,7 @@ use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
 };
+use topo_framework::natives::code::PackageMetadata;
 
 pub struct DataCollection {
     debugger: Arc<dyn AptosValidatorInterface + Send>,

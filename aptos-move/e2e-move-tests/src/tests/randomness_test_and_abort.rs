@@ -2,7 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_abort, assert_success, tests::common, MoveHarness};
-use aptos_framework::BuiltPackage;
 use aptos_language_e2e_tests::account::{Account, TransactionBuilder};
 use aptos_types::{
     account_address::AccountAddress,
@@ -12,6 +11,7 @@ use aptos_types::{
 };
 use claims::assert_ok;
 use move_core_types::{ident_str, language_storage::ModuleId, vm_status::AbortLocation};
+use topo_framework::BuiltPackage;
 
 // Error codes from randomness module.
 const E_API_USE_SUSCEPTIBLE_TO_TEST_AND_ABORT: u64 = 1;
@@ -124,7 +124,7 @@ fn test_unbiasable_annotation() {
 }
 
 fn set_randomness_seed(h: &mut MoveHarness) {
-    let fx = h.aptos_framework_account();
+    let fx = h.topo_framework_account();
     let mut pbr = h
         .read_resource::<PerBlockRandomness>(fx.address(), PerBlockRandomness::struct_tag())
         .unwrap();
@@ -144,7 +144,7 @@ fn deploy_code(
 
     let package = BuiltPackage::build(
         common::test_dir_path(code_path),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     )?;
 
     let txn = harness.create_publish_built_package(&account, &package, |_| {});

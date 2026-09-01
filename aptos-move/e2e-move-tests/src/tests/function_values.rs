@@ -5,9 +5,9 @@
 //! tests are written as transactional tests elsewhere.)
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::account_address::AccountAddress;
+use topo_framework::BuildOptions;
 
 #[test]
 fn function_value_registry() {

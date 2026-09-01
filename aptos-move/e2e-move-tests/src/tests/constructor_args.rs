@@ -2,7 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_types::{
     account_address::AccountAddress,
     on_chain_config::FeatureFlag,
@@ -14,6 +13,7 @@ use move_core_types::{
     vm_status::{AbortLocation, StatusCode},
 };
 use serde::{Deserialize, Serialize};
+use topo_framework::{BuildOptions, BuiltPackage};
 
 /// Mimics `0xcafe::test::ModuleData`
 #[derive(Serialize, Deserialize)]

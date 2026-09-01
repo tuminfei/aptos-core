@@ -5,11 +5,11 @@
 //! functions.
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_package_builder::PackageBuilder;
 use aptos_transaction_simulation::Account;
 use aptos_types::transaction::TransactionStatus;
 use move_core_types::account_address::AccountAddress;
+use topo_framework::BuildOptions;
 
 #[test]
 fn test_function_caches_for_recursive_functions_do_not_leak_memory() {

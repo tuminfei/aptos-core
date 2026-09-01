@@ -3,7 +3,6 @@
 
 use super::publish_util::Package;
 use crate::publishing::prebuild_packages::PrebuiltPackagesBundle;
-use aptos_framework::natives::code::PackageMetadata;
 use aptos_sdk::{
     move_types::{
         account_address::AccountAddress, identifier::Identifier, language_storage::ModuleId,
@@ -17,6 +16,7 @@ use move_binary_format::{
     CompiledModule,
 };
 use rand::rngs::StdRng;
+use topo_framework::natives::code::PackageMetadata;
 
 pub trait PreBuiltPackages: std::fmt::Debug + Sync + Send {
     fn package_bundle(&self) -> &PrebuiltPackagesBundle;

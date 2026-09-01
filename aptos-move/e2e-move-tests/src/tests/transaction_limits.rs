@@ -9,8 +9,8 @@ use crate::{
     MoveHarness,
 };
 use aptos_cached_packages::aptos_stdlib::{
-    aptos_coin_transfer, delegation_pool_add_stake, delegation_pool_initialize_delegation_pool,
-    stake_set_delegated_voter,
+    delegation_pool_add_stake, delegation_pool_initialize_delegation_pool,
+    stake_set_delegated_voter, topo_coin_transfer,
 };
 use aptos_crypto::HashValue;
 use aptos_language_e2e_tests::account::{Account, TransactionBuilder};
@@ -90,7 +90,7 @@ fn payload_with_limits(
     sender_addr: AccountAddress,
     request: UserTxnLimitsRequest,
 ) -> TransactionPayload {
-    match aptos_coin_transfer(sender_addr, 0) {
+    match topo_coin_transfer(sender_addr, 0) {
         TransactionPayload::EntryFunction(entry_func) => {
             TransactionPayload::Payload(TransactionPayloadInner::V1 {
                 executable: TransactionExecutable::EntryFunction(entry_func),
@@ -568,9 +568,9 @@ fn test_approved_gov_script_with_txn_limits_request_rejected() {
     // the hash is in the approved list.
     let script_code = vec![0xA1, 0x1C, 0xEB, 0x0B, 0x06, 0x00, 0x00, 0x00];
     let script_hash = HashValue::sha3_256_of(&script_code).to_vec();
-    let aptos_framework_addr = *h.aptos_framework_account().address();
+    let topo_framework_addr = *h.topo_framework_account().address();
     h.set_resource(
-        aptos_framework_addr,
+        topo_framework_addr,
         ApprovedExecutionHashes::struct_tag(),
         &ApprovedExecutionHashes {
             entries: vec![(0, script_hash)],

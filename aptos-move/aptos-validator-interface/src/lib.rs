@@ -6,7 +6,6 @@ mod storage_interface;
 
 pub use crate::{rest_interface::RestDebuggerInterface, storage_interface::DBDebuggerInterface};
 use anyhow::Result;
-use aptos_framework::natives::code::PackageMetadata;
 use aptos_types::{
     account_address::AccountAddress,
     state_store::{
@@ -27,6 +26,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+use topo_framework::natives::code::PackageMetadata;
 
 /// Pre-compiled local module bytecodes that override on-chain versions during
 /// replay.  Build one by compiling a local Move package and passing each

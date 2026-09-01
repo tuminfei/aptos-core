@@ -108,7 +108,7 @@ pub async fn publish_on_chain_dice_module(
     cli.init_package(
         "OnChainDice".to_string(),
         package_addresses,
-        Some(CliTestFramework::aptos_framework_dir()),
+        Some(CliTestFramework::topo_framework_dir()),
     )
     .await
     .unwrap();

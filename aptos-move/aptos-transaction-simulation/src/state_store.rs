@@ -17,7 +17,7 @@ use aptos_types::{
     },
     transaction::Version,
     write_set::{TransactionWrite, WriteSet},
-    AptosCoinType,
+    TopoCoinType,
 };
 use bytes::Bytes;
 use move_binary_format::{deserializer::DeserializerConfig, CompiledModule};
@@ -257,7 +257,7 @@ pub trait SimulationStateStore: TStateView<Key = StateKey> {
 
     /// Fetches the APT balance of an account from the legacy coin store.
     fn get_apt_balance_legacy(&self, address: AccountAddress) -> Result<u64> {
-        let coin_store = match self.get_resource::<CoinStoreResource<AptosCoinType>>(address)? {
+        let coin_store = match self.get_resource::<CoinStoreResource<TopoCoinType>>(address)? {
             Some(coin_store) => coin_store,
             None => return Ok(0),
         };

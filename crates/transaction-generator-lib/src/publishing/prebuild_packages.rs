@@ -2,7 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use anyhow::{anyhow, bail};
-use aptos_framework::{natives::code::PackageMetadata, BuildOptions, BuiltPackage};
 use aptos_sdk::bcs;
 use move_package::source_package::std_lib::StdVersion;
 use serde::{Deserialize, Serialize};
@@ -12,6 +11,7 @@ use std::{
     io::Write,
     path::{Path, PathBuf},
 };
+use topo_framework::{natives::code::PackageMetadata, BuildOptions, BuiltPackage};
 
 /// Get the local framework path based on this source file's location.
 /// Note: If this source file is moved to a different location, this function

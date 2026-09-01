@@ -13,7 +13,7 @@ cargo run -p aptos -- move sim init --path sess --network devnet --api-key $API_
 cargo run -p aptos -- move sim fund --session sess --account default --amount 100000000
 
 # transfer 100 Octa to self
-cargo run -p aptos -- move run --session sess --function-id 0x1::aptos_account::transfer --args address:default u64:100
+cargo run -p aptos -- move run --session sess --function-id 0x1::topo_account::transfer --args address:default u64:100
 
 # view account sequence number
 cargo run -p aptos -- move view --session sess --function-id 0x1::account::get_sequence_number --args address:default

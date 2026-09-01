@@ -38,7 +38,6 @@ use aptos_block_executor::{
     txn_provider::{default::DefaultTxnProvider, TxnProvider},
 };
 use aptos_crypto::HashValue;
-use aptos_framework_natives::code::PublishRequest;
 use aptos_gas_algebra::{Gas, GasQuantity, NumBytes, Octa};
 use aptos_gas_meter::{AptosGasMeter, GasAlgebra, StandardGasAlgebra, StandardGasMeter};
 use aptos_gas_schedule::{
@@ -156,6 +155,7 @@ use std::{
     str::FromStr,
     sync::Arc,
 };
+use topo_framework_natives::code::PublishRequest;
 
 static EXECUTION_CONCURRENCY_LEVEL: OnceCell<usize> = OnceCell::new();
 static BLOCKSTM_V2_ENABLED: OnceCell<bool> = OnceCell::new();

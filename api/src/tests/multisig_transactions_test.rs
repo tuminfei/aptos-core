@@ -16,8 +16,8 @@ use move_core_types::{
 };
 use rstest::rstest;
 
-/// Compiled Move script bytecode for `aptos_account::transfer(to: address, amount: u64)`.
-/// Source: `script { use aptos_framework::aptos_account; fun main(to: address, amount: u64) { aptos_account::transfer(to, amount); } }`
+/// Compiled Move script bytecode for `topo_account::transfer(to: address, amount: u64)`.
+/// Source: `script { use topo_framework::topo_account; fun main(to: address, amount: u64) { topo_account::transfer(to, amount); } }`
 const SCRIPT_HEX: &str = "a11ceb0b0700000a06010002030206050806070e20082e40106e1f010200010001000103060c050300083c53454c463e5f30087472616e736665720d6170746f735f6163636f756e74ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000000000000000000114636f6d70696c6174696f6e5f6d65746164617461090003322e3003322e31000001050b000b010b02110002";
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -513,7 +513,7 @@ async fn test_multisig_transaction_with_payload_hash() {
         .execute_multisig_transaction_with_payload(
             owner_account,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account.address().to_hex_literal(), "1000"],
             202,
@@ -548,7 +548,7 @@ async fn test_multisig_transaction_with_payload_hash_and_failing_execution() {
         .execute_multisig_transaction_with_payload(
             owner_account,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account.address().to_hex_literal(), "2000"],
             202,
@@ -580,7 +580,7 @@ async fn test_multisig_transaction_with_payload_not_matching_hash() {
         .execute_multisig_transaction_with_payload(
             owner_account,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account.address().to_hex_literal(), "1000"],
             400,
@@ -604,7 +604,7 @@ async fn test_multisig_transaction_with_matching_payload() {
         .execute_multisig_transaction_with_payload(
             owner_account,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account.address().to_hex_literal(), "1000"],
             202,
@@ -633,7 +633,7 @@ async fn test_multisig_transaction_with_mismatching_payload() {
         .execute_multisig_transaction_with_payload(
             owner_account,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account.address().to_hex_literal(), "2000"],
             400,
@@ -647,7 +647,7 @@ async fn test_multisig_transaction_with_mismatching_payload() {
         .execute_multisig_transaction_with_payload(
             owner_account,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account.address().to_hex_literal(), "1000"],
             202,
@@ -680,7 +680,7 @@ async fn test_multisig_transaction_simulation() {
         .simulate_multisig_transaction(
             owner_account_1,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account_1.address().to_hex_literal(), "1000"],
             200,
@@ -728,7 +728,7 @@ async fn test_multisig_transaction_simulation_2_of_3() {
         .simulate_multisig_transaction(
             owner_account_1,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account_1.address().to_hex_literal(), "1000"],
             200,
@@ -772,7 +772,7 @@ async fn test_multisig_transaction_simulation_fail() {
         .simulate_multisig_transaction(
             owner_account_1,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account_1.address().to_hex_literal(), "2000"],
             200,
@@ -817,7 +817,7 @@ async fn test_multisig_transaction_simulation_fail_2_of_3_insufficient_approvals
         .simulate_multisig_transaction(
             owner_account_1,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account_1.address().to_hex_literal(), "1000"],
             200,
@@ -856,7 +856,7 @@ async fn test_simulate_multisig_transaction_should_charge_gas_against_sender() {
         .simulate_multisig_transaction(
             owner_account,
             multisig_account,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             &[],
             &[&owner_account.address().to_hex_literal(), "10"],
             200,
@@ -1458,7 +1458,7 @@ async fn assert_signature_threshold(
 fn construct_multisig_txn_transfer_payload(recipient: AccountAddress, amount: u64) -> Vec<u8> {
     bcs::to_bytes(&MultisigTransactionPayload::EntryFunction(
         EntryFunction::new(
-            ModuleId::new(CORE_CODE_ADDRESS, ident_str!("aptos_account").to_owned()),
+            ModuleId::new(CORE_CODE_ADDRESS, ident_str!("topo_account").to_owned()),
             ident_str!("transfer").to_owned(),
             vec![],
             serialize_values(&vec![MoveValue::Address(recipient), MoveValue::U64(amount)]),

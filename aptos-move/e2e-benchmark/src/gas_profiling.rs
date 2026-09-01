@@ -576,19 +576,19 @@ mod tests {
         runner.run(
             "Transfer",
             account_1,
-            aptos_stdlib::aptos_coin_transfer(account_2_address, 1000),
+            aptos_stdlib::topo_coin_transfer(account_2_address, 1000),
         );
 
         runner.run(
             "2ndTransfer",
             account_1,
-            aptos_stdlib::aptos_coin_transfer(account_2_address, 1000),
+            aptos_stdlib::topo_coin_transfer(account_2_address, 1000),
         );
 
         runner.run(
             "CreateAccount",
             account_1,
-            aptos_stdlib::aptos_account_create_account(
+            aptos_stdlib::topo_account_create_account(
                 AccountAddress::from_hex_literal("0xcafe1").unwrap(),
             ),
         );
@@ -596,7 +596,7 @@ mod tests {
         runner.run(
             "CreateTransfer",
             account_1,
-            aptos_stdlib::aptos_account_transfer(
+            aptos_stdlib::topo_account_transfer(
                 AccountAddress::from_hex_literal("0xcafe2").unwrap(),
                 1000,
             ),
@@ -803,7 +803,7 @@ mod tests {
             publisher,
             &test_dir_path("code_publishing.data/pack_upgrade_compat"),
         );
-        let publisher = &runner.harness.aptos_framework_account();
+        let publisher = &runner.harness.topo_framework_account();
         runner.publish(
             "PublishLarge",
             publisher,
@@ -1016,14 +1016,14 @@ mod tests {
         runner.run_with_tps_estimate(
             "Transfer",
             account_1,
-            aptos_stdlib::aptos_coin_transfer(account_2_address, 1000),
+            aptos_stdlib::topo_coin_transfer(account_2_address, 1000),
             if use_large_db_numbers { 2032. } else { 2791. },
         );
 
         runner.run_with_tps_estimate(
             "CreateAccount",
             account_1,
-            aptos_stdlib::aptos_account_create_account(
+            aptos_stdlib::topo_account_create_account(
                 AccountAddress::from_hex_literal("0xcafe1").unwrap(),
             ),
             if use_large_db_numbers { 1583.0 } else { 2215. },

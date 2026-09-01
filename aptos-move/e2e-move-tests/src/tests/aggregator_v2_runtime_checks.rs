@@ -15,18 +15,18 @@ use move_core_types::{
     vm_status::{sub_status::NFE_BCS_SERIALIZATION_FAILURE, AbortLocation},
 };
 
-fn publish_test_package(h: &mut MoveHarness, aptos_framework_account: &Account) {
+fn publish_test_package(h: &mut MoveHarness, topo_framework_account: &Account) {
     let path_buf = common::test_dir_path("aggregator_v2.data/pack");
-    assert_success!(h.publish_package(aptos_framework_account, path_buf.as_path()));
+    assert_success!(h.publish_package(topo_framework_account, path_buf.as_path()));
 }
 
 fn create_test_txn(
     h: &mut MoveHarness,
-    aptos_framework_account: &Account,
+    topo_framework_account: &Account,
     name: &str,
 ) -> SignedTransaction {
     h.create_entry_function(
-        aptos_framework_account,
+        topo_framework_account,
         str::parse(name).unwrap(),
         vec![],
         vec![],
@@ -142,7 +142,7 @@ fn test_string_utils(h: &mut MoveHarness, acc: &Account) {
 #[test]
 fn run_all_tests() {
     let mut h = MoveHarness::new();
-    let acc = h.aptos_framework_account();
+    let acc = h.topo_framework_account();
     publish_test_package(&mut h, &acc);
 
     // Make sure aggregators are enabled, so that we can test

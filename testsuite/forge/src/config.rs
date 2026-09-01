@@ -9,8 +9,8 @@ use aptos_config::config::{
     ExecutionBackpressureGasLimitConfig, ExecutionBackpressureTxnLimitConfig, NodeConfig,
     OverrideNodeConfig,
 };
-use aptos_framework::ReleaseBundle;
 use std::{num::NonZeroUsize, sync::Arc};
+use topo_framework::ReleaseBundle;
 
 /// A PFN deployment configuration. Each entry maps to one helm release via the PFN deployer.
 pub struct PfnDeployment {

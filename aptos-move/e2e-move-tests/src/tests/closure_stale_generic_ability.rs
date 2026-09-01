@@ -3,7 +3,6 @@
 
 use crate::{assert_abort, assert_vm_status, tests::common, MoveHarness};
 use aptos_cached_packages::aptos_stdlib;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::account::Account;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
@@ -14,6 +13,7 @@ use aptos_types::{
 };
 use aptos_vm_environment::prod_configs::{set_async_runtime_checks, set_paranoid_type_checks};
 use move_core_types::vm_status::StatusCode;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 const ADDRESS: &str = "0xca14";
 const FEE_PAYER_ADDRESS: &str = "0xca15";
@@ -36,32 +36,32 @@ module 0xca14::provider {
 module 0xca14::caller {
     use std::signer;
     use aptos_std::copyable_any;
-    use aptos_framework::aptos_coin::AptosCoin;
-    use aptos_framework::coin::{Self, Coin};
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin::{Self, Coin};
     use 0xca14::provider;
 
     const AMOUNT: u64 = 100000000000000;
 
     struct Single has key {
-        coin: Coin<AptosCoin>,
+        coin: Coin<TopoCoin>,
     }
 
     struct Doubled has key {
-        left: Coin<AptosCoin>,
-        right: Coin<AptosCoin>,
+        left: Coin<TopoCoin>,
+        right: Coin<TopoCoin>,
     }
 
     struct SupplyReserve has key {
-        coin: Coin<AptosCoin>,
+        coin: Coin<TopoCoin>,
     }
 
     public entry fun create_supply_reserve(owner: &signer) {
-        move_to(owner, SupplyReserve { coin: coin::withdraw<AptosCoin>(owner, AMOUNT) })
+        move_to(owner, SupplyReserve { coin: coin::withdraw<TopoCoin>(owner, AMOUNT) })
     }
 
     public entry fun create(owner: &signer) {
-        assert!(coin::balance<AptosCoin>(signer::address_of(owner)) == AMOUNT, 1401);
-        let coin = coin::withdraw<AptosCoin>(owner, AMOUNT);
+        assert!(coin::balance<TopoCoin>(signer::address_of(owner)) == AMOUNT, 1401);
+        let coin = coin::withdraw<TopoCoin>(owner, AMOUNT);
         assert!(coin::value(&coin) == AMOUNT, 1402);
         move_to(owner, Single { coin })
     }
@@ -75,11 +75,11 @@ module 0xca14::caller {
         let Single { coin } = move_from<Single>(signer::address_of(owner));
         assert!(coin::value(&coin) == AMOUNT, 1403);
 
-        let packed = provider::pack<Coin<AptosCoin>>(coin);
+        let packed = provider::pack<Coin<TopoCoin>>(coin);
 
         let packed_copy = copy packed;
-        let left = copyable_any::unpack<Coin<AptosCoin>>(packed);
-        let right = copyable_any::unpack<Coin<AptosCoin>>(packed_copy);
+        let left = copyable_any::unpack<Coin<TopoCoin>>(packed);
+        let right = copyable_any::unpack<Coin<TopoCoin>>(packed_copy);
 
         assert!(coin::value(&left) == AMOUNT, 1404);
         assert!(coin::value(&right) == AMOUNT, 1405);
@@ -95,14 +95,14 @@ module 0xca14::caller {
 
     public entry fun redeem(owner: &signer) acquires Doubled {
         let addr = signer::address_of(owner);
-        let balance_before = coin::balance<AptosCoin>(addr);
+        let balance_before = coin::balance<TopoCoin>(addr);
         assert!(balance_before == 0, 1408);
         let Doubled { left, right } = move_from<Doubled>(addr);
         assert!(coin::value(&left) == AMOUNT, 1409);
         assert!(coin::value(&right) == AMOUNT, 1410);
-        coin::deposit<AptosCoin>(addr, left);
-        coin::deposit<AptosCoin>(addr, right);
-        assert!(coin::balance<AptosCoin>(addr) == 2 * AMOUNT, 1411)
+        coin::deposit<TopoCoin>(addr, left);
+        coin::deposit<TopoCoin>(addr, right);
+        assert!(coin::balance<TopoCoin>(addr) == 2 * AMOUNT, 1411)
     }
 }
 
@@ -124,7 +124,7 @@ module 0xca14::keeper {
 }
 
 module 0xca14::upgrade_driver {
-    use aptos_framework::code;
+    use topo_framework::code;
     use 0xca14::keeper;
 
     public entry fun upgrade(
@@ -149,31 +149,31 @@ module 0xca14::provider {
 
 module 0xca14::caller {
     use std::signer;
-    use aptos_framework::aptos_coin::AptosCoin;
-    use aptos_framework::coin::{Self, Coin};
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin::{Self, Coin};
 
     const AMOUNT: u64 = 100000000000000;
 
     struct Single has key {
-        coin: Coin<AptosCoin>,
+        coin: Coin<TopoCoin>,
     }
 
     struct Doubled has key {
-        left: Coin<AptosCoin>,
-        right: Coin<AptosCoin>,
+        left: Coin<TopoCoin>,
+        right: Coin<TopoCoin>,
     }
 
     struct SupplyReserve has key {
-        coin: Coin<AptosCoin>,
+        coin: Coin<TopoCoin>,
     }
 
     public entry fun create_supply_reserve(owner: &signer) {
-        move_to(owner, SupplyReserve { coin: coin::withdraw<AptosCoin>(owner, AMOUNT) })
+        move_to(owner, SupplyReserve { coin: coin::withdraw<TopoCoin>(owner, AMOUNT) })
     }
 
     public entry fun create(owner: &signer) {
-        assert!(coin::balance<AptosCoin>(signer::address_of(owner)) == AMOUNT, 1401);
-        let coin = coin::withdraw<AptosCoin>(owner, AMOUNT);
+        assert!(coin::balance<TopoCoin>(signer::address_of(owner)) == AMOUNT, 1401);
+        let coin = coin::withdraw<TopoCoin>(owner, AMOUNT);
         assert!(coin::value(&coin) == AMOUNT, 1402);
         move_to(owner, Single { coin })
     }
@@ -189,14 +189,14 @@ module 0xca14::caller {
 
     public entry fun redeem(owner: &signer) acquires Doubled {
         let addr = signer::address_of(owner);
-        let balance_before = coin::balance<AptosCoin>(addr);
+        let balance_before = coin::balance<TopoCoin>(addr);
         assert!(balance_before == 0, 1408);
         let Doubled { left, right } = move_from<Doubled>(addr);
         assert!(coin::value(&left) == AMOUNT, 1409);
         assert!(coin::value(&right) == AMOUNT, 1410);
-        coin::deposit<AptosCoin>(addr, left);
-        coin::deposit<AptosCoin>(addr, right);
-        assert!(coin::balance<AptosCoin>(addr) == 2 * AMOUNT, 1411)
+        coin::deposit<TopoCoin>(addr, left);
+        coin::deposit<TopoCoin>(addr, right);
+        assert!(coin::balance<TopoCoin>(addr) == 2 * AMOUNT, 1411)
     }
 }
 
@@ -218,7 +218,7 @@ module 0xca14::keeper {
 }
 
 module 0xca14::upgrade_driver {
-    use aptos_framework::code;
+    use topo_framework::code;
     use 0xca14::keeper;
 
     public entry fun upgrade(
@@ -248,8 +248,8 @@ fn package_builder(source: &str) -> PackageBuilder {
     builder.add_source("coin_clone.move", source);
     for (name, path) in [
         ("MoveStdlib", "move-stdlib"),
-        ("AptosStdlib", "aptos-stdlib"),
-        ("AptosFramework", "aptos-framework"),
+        ("TopoStdlib", "topo-stdlib"),
+        ("TopoFramework", "topo-framework"),
     ] {
         builder.add_local_dep(name, &common::framework_dir_path(path).to_string_lossy());
     }
@@ -390,7 +390,7 @@ fn run_coin_duplication_scenario(revalidation_enabled: bool) {
     // Closure revalidation is disabled, so the stale closure still executes the pre-upgrade
     // `closure_target`. But when that body invokes the upgraded `provider::pack` through a
     // cross-module generic call, the runtime re-checks the type-argument abilities against the
-    // resolved callee. The upgraded `pack` requires `copy + drop + store`, which `Coin<AptosCoin>`
+    // resolved callee. The upgraded `pack` requires `copy + drop + store`, which `Coin<TopoCoin>`
     // does not satisfy, so the call is rejected and the upgrade transaction is discarded. The coin
     // is therefore never duplicated.
     assert_vm_status!(upgrade_status, StatusCode::CONSTRAINT_NOT_SATISFIED);

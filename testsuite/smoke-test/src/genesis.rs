@@ -449,14 +449,14 @@ fn generate_genesis_transaction(
     let script = format!(
         r#"
         script {{
-            use aptos_framework::stake;
-            use aptos_framework::aptos_governance;
-            use aptos_framework::block;
+            use topo_framework::stake;
+            use topo_framework::topo_governance;
+            use topo_framework::block;
 
             fun main(vm_signer: &signer, framework_signer: &signer) {{
                 stake::remove_validators(framework_signer, &vector[@0x{}]);
                 block::emit_writeset_block_event(vm_signer, @0x1);
-                aptos_governance::force_end_epoch(framework_signer);
+                topo_governance::force_end_epoch(framework_signer);
             }}
     }}
     "#,
@@ -475,7 +475,7 @@ fn generate_genesis_transaction(
         .join("..")
         .join("aptos-move")
         .join("framework")
-        .join("aptos-framework");
+        .join("topo-framework");
 
     // Create a temporary file to hold the genesis blob
     let genesis_blob_path = TempPath::new();

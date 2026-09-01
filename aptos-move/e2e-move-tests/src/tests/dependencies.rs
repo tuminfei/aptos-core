@@ -2,7 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::executor::{ExecutorMode, FakeExecutor};
 use aptos_types::{
     account_address::AccountAddress,
@@ -11,6 +10,7 @@ use aptos_types::{
 use move_core_types::vm_status::StatusCode;
 use std::collections::HashSet;
 use test_case::test_case;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 fn assert_dependency_limit_reached(status: TransactionStatus) {
     assert!(matches!(

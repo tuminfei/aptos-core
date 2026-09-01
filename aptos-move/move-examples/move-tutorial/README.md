@@ -21,7 +21,7 @@ There are nine steps in total:
 - [Step 7: Use the Move prover](#step-7--use-the-move-prover)
 - [Step 8: Writing formal specifications for the `basic_coin` module](#step-8-write-formal-specifications-for-the-basic_coin-module)
 
-Each step is designed to be self-contained in the corresponding `step_x` directory. For example, if you would like to skip the contents in step 1 through 4, feel free to jump to step 5 since all the code we have written before step 5 will be in the `step_5` directory. At the end of some steps, we also include additional material on more advanced topics. 
+Each step is designed to be self-contained in the corresponding `step_x` directory. For example, if you would like to skip the contents in step 1 through 4, feel free to jump to step 5 since all the code we have written before step 5 will be in the `step_5` directory. At the end of some steps, we also include additional material on more advanced topics.
 
 Now let's get started!
 
@@ -231,9 +231,9 @@ assertion fails the unit test will fail.
 ## Step 3: Designing my `basic_coin` module<span id="Step3"><span>
 
 In this section, we are going to design a module implementing a basic coin and balance interface, where coins can
-be minted and transferred between balances held under different addresses. 
+be minted and transferred between balances held under different addresses.
 
-> NOTE: The coin and balance interfaces are for illustration of Move concepts only. Aptos uses a different, richer [coin type](https://aptos-labs.github.io/framework-book/aptos-framework/coin.html) contained in the Aptos framework.
+> NOTE: The coin and balance interfaces are for illustration of Move concepts only. Aptos uses a different, richer [coin type](https://aptos-labs.github.io/framework-book/topo-framework/coin.html) contained in the Aptos framework.
 
 The signatures of the public Move function are the following:
 
@@ -491,14 +491,14 @@ Read more about [phantom type](https://aptos.dev/move/book/generics#phantom-type
 </details>
 
 ## Step 7:  Use the Move Prover
-    
+
 > NOTE: Before running the Move Prover, ensure that the [Move Prover](https://aptos.dev/build/cli/setup-cli/install-move-prover/) and associated tools are installed.
 
 Smart contracts deployed on the blockchain may manipulate high-value assets. As a technique that uses strict
 mathematical methods to describe behavior and reason correctness of computer systems, formal verification
 has been used in blockchains to prevent bugs in smart contracts. The
 [Move Prover](https://aptos.dev/move/prover/move-prover)
-is an evolving formal verification tool for smart contracts written in the Move language. The user can employ the 
+is an evolving formal verification tool for smart contracts written in the Move language. The user can employ the
 [Move Prover](https://github.com/move-language/move/blob/main/language/move-prover/doc/user/prover-guide.md) to specify
 functional properties of smart contracts
 using the [Move Specification Language (MSL)](https://github.com/move-language/move/blob/main/language/move-prover/doc/user/spec-lang.md)
@@ -577,7 +577,7 @@ The method withdraws tokens with value `amount` from the address `addr` and retu
 
 As we can see here, a spec block can contain let bindings that introduce names for expressions. `global<T>(address): T` is a built-in function that returns the resource value at `addr`. `balance` is the number of tokens owned by `addr`. `exists<T>(address): bool` is a built-in function that returns `true` if the resource T exists at address. Two `aborts_if` clauses correspond to the two conditions mentioned above.
 
-In general, if a function has more than one `aborts_if` condition, those conditions are or-ed with each other. By default, if a user wants to specify aborts conditions, all possible conditions need to be listed. Otherwise, the Move Prover will generate a verification error. However, if `pragma aborts_if_is_partial` is defined in the spec block, the combined aborts condition (the or-ed individual conditions) only *imply* that the function aborts. 
+In general, if a function has more than one `aborts_if` condition, those conditions are or-ed with each other. By default, if a user wants to specify aborts conditions, all possible conditions need to be listed. Otherwise, the Move Prover will generate a verification error. However, if `pragma aborts_if_is_partial` is defined in the spec block, the combined aborts condition (the or-ed individual conditions) only *imply* that the function aborts.
 
 Refer to the
 [MSL](https://github.com/move-language/move/blob/main/language/move-prover/doc/user/spec-lang.md) document for more information.

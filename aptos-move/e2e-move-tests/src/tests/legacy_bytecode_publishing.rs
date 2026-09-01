@@ -8,10 +8,10 @@
 
 use crate::{assert_success, assert_vm_status, MoveHarness};
 use aptos_cached_packages::aptos_stdlib;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{account_address::AccountAddress, on_chain_config::TimedFeatureFlag};
 use move_core_types::vm_status::StatusCode;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 const ADDR: &str = "0xa11ce";
 

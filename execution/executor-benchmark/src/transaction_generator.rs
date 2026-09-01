@@ -93,7 +93,7 @@ fn get_genesis_validator_address(db: &DbReaderWriter) -> AccountAddress {
 
     let state_view = db.reader.latest_state_checkpoint_view().unwrap();
 
-    // Try to get the ValidatorSet resource from @aptos_framework
+    // Try to get the ValidatorSet resource from @topo_framework
     if let Ok(Some(validator_set_bytes)) =
         state_view.get_state_value(&StateKey::on_chain_config::<ValidatorSet>().unwrap())
     {
@@ -627,7 +627,7 @@ impl TransactionGenerator {
             let transactions: Vec<_> = chunk
                 .iter()
                 .map(|new_account| {
-                    let payload = aptos_stdlib::aptos_account_transfer(
+                    let payload = aptos_stdlib::topo_account_transfer(
                         new_account.authentication_key().account_address(),
                         seed_account_balance,
                     );

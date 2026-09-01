@@ -12,17 +12,17 @@ use std::{fmt::Display, path::PathBuf};
 
 /// Represents a standard library.
 pub enum StdLib {
-    AptosTokenObjects,
-    AptosToken,
-    AptosTrading,
-    AptosFramework,
-    AptosStdlib,
+    TopoTokenObjects,
+    TopoToken,
+    TopoTrading,
+    TopoFramework,
+    TopoStdlib,
     MoveStdlib,
 }
 
 impl StdLib {
     /// The well-known git URL for the standard library.
-    const STD_GIT_URL: &'static str = "https://github.com/aptos-labs/aptos-framework.git";
+    const STD_GIT_URL: &'static str = "https://github.com/aptos-labs/topo-framework.git";
 
     /// Returns the dependency for the standard library with the given version.
     pub fn dependency(&self, version: &StdVersion) -> Dependency {
@@ -57,11 +57,11 @@ impl StdLib {
     /// Returns the name of the standard library.
     pub fn as_str(&self) -> &'static str {
         match self {
-            StdLib::AptosTrading => "AptosTrading",
-            StdLib::AptosToken => "AptosToken",
-            StdLib::AptosTokenObjects => "AptosTokenObjects",
-            StdLib::AptosFramework => "AptosFramework",
-            StdLib::AptosStdlib => "AptosStdlib",
+            StdLib::TopoTrading => "TopoTrading",
+            StdLib::TopoToken => "TopoToken",
+            StdLib::TopoTokenObjects => "TopoTokenObjects",
+            StdLib::TopoFramework => "TopoFramework",
+            StdLib::TopoStdlib => "TopoStdlib",
             StdLib::MoveStdlib => "MoveStdlib",
         }
     }
@@ -69,10 +69,10 @@ impl StdLib {
     /// Returns the standard library from the given package name, or `None` if the package name is not a standard library.
     pub fn from_package_name(package_name: Symbol) -> Option<StdLib> {
         match package_name.as_str() {
-            "AptosToken" => Some(StdLib::AptosToken),
-            "AptosTokenObjects" => Some(StdLib::AptosTokenObjects),
-            "AptosFramework" => Some(StdLib::AptosFramework),
-            "AptosStdlib" => Some(StdLib::AptosStdlib),
+            "TopoToken" => Some(StdLib::TopoToken),
+            "TopoTokenObjects" => Some(StdLib::TopoTokenObjects),
+            "TopoFramework" => Some(StdLib::TopoFramework),
+            "TopoStdlib" => Some(StdLib::TopoStdlib),
             "MoveStdlib" => Some(StdLib::MoveStdlib),
             _ => None,
         }
@@ -81,11 +81,11 @@ impl StdLib {
     /// Returns the subdirectory of the standard library in the git repository.
     fn sub_dir(&self) -> &'static str {
         match self {
-            StdLib::AptosTrading => "aptos-trading",
-            StdLib::AptosToken => "aptos-token",
-            StdLib::AptosTokenObjects => "aptos-token-objects",
-            StdLib::AptosFramework => "aptos-framework",
-            StdLib::AptosStdlib => "aptos-stdlib",
+            StdLib::TopoTrading => "topo-trading",
+            StdLib::TopoToken => "topo-token",
+            StdLib::TopoTokenObjects => "topo-token-objects",
+            StdLib::TopoFramework => "topo-framework",
+            StdLib::TopoStdlib => "topo-stdlib",
             StdLib::MoveStdlib => "move-stdlib",
         }
     }

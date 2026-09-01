@@ -7,7 +7,7 @@ against an external REST endpoint.
 ## Architecture
 
 [Rosetta](https://en.wikipedia.org/wiki/Rosetta_(software)) works as a sidecar to an Aptos fullnode.  Rosetta then proxies the Rosetta standard
-API calls to underlying Aptos REST API calls and builds the appropriate data.  
+API calls to underlying Aptos REST API calls and builds the appropriate data.
 
 
 ## Running Rosetta
@@ -43,7 +43,7 @@ Here are some exceptions:
  * Not all operators can be parsed from `failed transactions`.
  * Set operator will have the stake balance in its metadata.
 
-All transactions are parsed from the events provided by the AptosFramework.  There are a few exceptions to this that use the transaction payload, but only for errors.
+All transactions are parsed from the events provided by the TopoFramework.  There are a few exceptions to this that use the transaction payload, but only for errors.
 
 Block hash is `<chain_id>:<block_height>` and not actually a hash.
 

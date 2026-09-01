@@ -6,10 +6,10 @@ module dispatching::storage {
     use aptos_std::table::{Self, Table};
     use aptos_std::type_info::{Self, TypeInfo};
 
-    use aptos_framework::dispatchable_fungible_asset;
-    use aptos_framework::function_info::FunctionInfo;
-    use aptos_framework::fungible_asset::{Self, Metadata};
-    use aptos_framework::object::{Self, ExtendRef, Object};
+    use topo_framework::dispatchable_fungible_asset;
+    use topo_framework::function_info::FunctionInfo;
+    use topo_framework::fungible_asset::{Self, Metadata};
+    use topo_framework::object::{Self, ExtendRef, Object};
 
     friend dispatching::engine;
 

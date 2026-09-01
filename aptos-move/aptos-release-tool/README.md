@@ -131,7 +131,7 @@ release and can be moved as a unit.
 #### Bundle Structure
 
 ```
-aptos-framework-v1.45.1/
+topo-framework-v1.45.1/
 ├── bundle.toml                          # Bundle manifest (see below)
 ├── config.yaml                          # The release config used to generate this bundle
 ├── metadata.json                        # Proposal metadata (title, description, URLs)
@@ -164,7 +164,7 @@ below).
 format_version = 1                       # bundle format version, for forward compatibility
 
 [bundle]
-name = "aptos-framework-v1.45.1"         # the bundle's identity; matches config.yaml's name
+name = "topo-framework-v1.45.1"         # the bundle's identity; matches config.yaml's name
 created_at = "2026-04-01T18:30:00Z"
 
 [source]
@@ -211,11 +211,11 @@ Gas feature version: 30 -> 31
 The top checkbox ensures the reviewer scans the changes before signing off. Critical
 gas parameters (e.g. `txn.max_execution_gas`, `txn.max_io_gas`,
 `txn.max_transaction_size_in_bytes`) additionally get their own per-change `[ ]` in the
-sign-off column, forcing explicit acknowledgment. 
+sign-off column, forcing explicit acknowledgment.
 
-`verify-bundle --require-signoff` optionally enforces that every box is ticked; 
-it is opt-in (off by default) to avoid friction. Ticking boxes never invalidates 
-the bundle's checksums — summary checkboxes are normalized away before hashing 
+`verify-bundle --require-signoff` optionally enforces that every box is ticked;
+it is opt-in (off by default) to avoid friction. Ticking boxes never invalidates
+the bundle's checksums — summary checkboxes are normalized away before hashing
 (see Bundle Integrity).
 
 #### Bundle Integrity
@@ -225,14 +225,14 @@ Integrity is two-layered:
 1. **Per-file checksums** — `[checksums]` holds a SHA-256 of every bundle file
    (except `bundle.toml`), catching any changed, added, or removed file.
 2. **Global digest** — `integrity.digest` is a single hash over the bundle's identity,
-   computed using its name, the source commit, and the sorted list of per-file checksums. 
-   It excludes volatile fields (`created_at`, `branch`, `format_version`) so regenerating 
+   computed using its name, the source commit, and the sorted list of per-file checksums.
+   It excludes volatile fields (`created_at`, `branch`, `format_version`) so regenerating
    from the same source reproduces the same digest.
 
 `verify-bundle` checks the bundle is internally self-consistent:
 
 ```bash
-cargo run -p aptos-release-tool -- verify-bundle --bundle aptos-framework-v1.45.1/
+cargo run -p aptos-release-tool -- verify-bundle --bundle topo-framework-v1.45.1/
 ```
 
 It confirms the checksums and global digest match, the manifest and `config.yaml`
@@ -306,7 +306,7 @@ on:
 The tool is **built from the release branch**, not main: the new ("current") gas
 schedule is compiled into the binary, so it must come from the branch being released.
 The bundle name — and the `framework-releases/<version>` directory it lands in — is
-derived from the config's `name` (with the `aptos-framework-` prefix stripped for the
+derived from the config's `name` (with the `topo-framework-` prefix stripped for the
 version).
 
 ```
@@ -336,7 +336,7 @@ on:
   workflow_dispatch:
     inputs:
       bundle_name:
-        description: "Bundle name (e.g. aptos-framework-v1.45.1)"
+        description: "Bundle name (e.g. topo-framework-v1.45.1)"
         required: true
 ```
 
@@ -348,7 +348,7 @@ Steps:
   4. Trigger release-framework (internal-ops)
   5. Update testnet branch (push-branch workflow)
   6. Verify deployment on-chain (gas version, package registry)
-  7. Push framework tag (aptos-framework-vX.Y.Z)
+  7. Push framework tag (topo-framework-vX.Y.Z)
 ```
 
 This replaces the current process where the captain runs simulation locally, triggers
@@ -365,7 +365,7 @@ on:
   workflow_dispatch:
     inputs:
       bundle_name:
-        description: "Bundle name (e.g. aptos-framework-v1.45.1)"
+        description: "Bundle name (e.g. topo-framework-v1.45.1)"
         required: true
       network:
         description: "Network to simulate against"
@@ -476,12 +476,12 @@ is the same artifact regardless of whether CI or a human drives the process.
 
 ```
 1. Generate the bundle (verify-bundle runs automatically):
-     generate-bundle --release-config framework-release.yaml --bundle aptos-framework-v1.45.1
+     generate-bundle --release-config framework-release.yaml --bundle topo-framework-v1.45.1
 
 2. Review summary files, tick checkboxes if required
 
 3. (Optional) Simulate against testnet:
-     simulate --bundle aptos-framework-v1.45.1 --network testnet
+     simulate --bundle topo-framework-v1.45.1 --network testnet
 
 4. Commit the bundle to aptos-networks (manual PR)
 
@@ -491,21 +491,21 @@ is the same artifact regardless of whether CI or a human drives the process.
    — may be done automatically by the release workflow
 
 7. Verify the framework release on-chain:
-     verify-framework-deployment --bundle aptos-framework-v1.45.1 --network testnet
+     verify-framework-deployment --bundle topo-framework-v1.45.1 --network testnet
 
 8. Push framework tag:
-     git tag -f aptos-framework-v1.45.1 && git push -f origin refs/tags/aptos-framework-v1.45.1
+     git tag -f topo-framework-v1.45.1 && git push -f origin refs/tags/topo-framework-v1.45.1
 ```
 
 #### Mainnet Release (manual)
 
 ```
 1. If cherry-picks landed since testnet, regenerate:
-     generate-bundle --release-config framework-release.yaml --bundle aptos-framework-v1.45.1
+     generate-bundle --release-config framework-release.yaml --bundle topo-framework-v1.45.1
    Otherwise, reuse the testnet bundle.
 
 2. Simulate against mainnet:
-     simulate --bundle aptos-framework-v1.45.1 --network mainnet
+     simulate --bundle topo-framework-v1.45.1 --network mainnet
 
 3. Coordinate with operator & Foundation (create on-chain proposal,
    initiate voting, 3-day window)

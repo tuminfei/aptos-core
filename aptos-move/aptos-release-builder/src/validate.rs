@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use crate::{aptos_framework_path, components::ProposalMetadata, ExecutionMode, ReleaseConfig};
+use crate::{components::ProposalMetadata, topo_framework_path, ExecutionMode, ReleaseConfig};
 use anyhow::Result;
 use aptos::{
     common::types::CliCommand,
@@ -141,14 +141,14 @@ impl NetworkConfig {
 
         std::fs::write(fas_script_path.as_path(), format!(r#"
         script {{
-            use aptos_framework::aptos_governance;
+            use topo_framework::topo_governance;
 
             fun main(core_resources: &signer) {{
-                let core_signer = aptos_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
+                let core_signer = topo_governance::get_signer_testnet_only(core_resources, @0000000000000000000000000000000000000000000000000000000000000001);
 
                 let framework_signer = &core_signer;
 
-                aptos_governance::update_governance_config(framework_signer, 0, 0, {});
+                topo_governance::update_governance_config(framework_signer, 0, 0, {});
             }}
         }}
         "#, resolution_time).as_bytes())?;
@@ -168,7 +168,7 @@ impl NetworkConfig {
             self.endpoint.as_str(),
         ];
         let rev = self.framework_git_rev.clone();
-        let framework_path = aptos_framework_path();
+        let framework_path = topo_framework_path();
         if let Some(rev) = &rev {
             args.push("--framework-git-rev");
             args.push(rev.as_str());
@@ -232,7 +232,7 @@ impl NetworkConfig {
         }
 
         let rev_string = self.framework_git_rev.clone();
-        let framework_path = aptos_framework_path();
+        let framework_path = topo_framework_path();
         let proposal_summary = if let Some(rev) = &rev_string {
             args.push("--framework-git-rev");
             args.push(rev.as_str());
@@ -291,7 +291,7 @@ impl NetworkConfig {
         let mut args = vec![
             "",
             "--function-id",
-            "0x1::aptos_coin::mint",
+            "0x1::topo_coin::mint",
             "--sender-account",
             "0xa550c18",
             "--args",
@@ -328,7 +328,7 @@ impl NetworkConfig {
         let mut args = vec![
             "",
             "--function-id",
-            "0x1::aptos_governance::add_approved_script_hash_script",
+            "0x1::topo_governance::add_approved_script_hash_script",
             "--sender-account",
             "0xa550c18",
             "--args",
@@ -396,7 +396,7 @@ impl NetworkConfig {
         }
 
         let rev = self.framework_git_rev.clone();
-        let framework_path = aptos_framework_path();
+        let framework_path = topo_framework_path();
         if let Some(rev) = &rev {
             args.push("--framework-git-rev");
             args.push(rev.as_str());
@@ -514,7 +514,7 @@ async fn execute_release(
                     }
 
                     let rev = network_config.framework_git_rev.clone();
-                    let framework_path = aptos_framework_path();
+                    let framework_path = topo_framework_path();
                     if let Some(rev) = &rev {
                         args.push("--framework-git-rev");
                         args.push(rev.as_str());

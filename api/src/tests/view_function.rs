@@ -16,7 +16,7 @@ fn build_coin_balance_request(address: &AccountAddress) -> Value {
     json!({
         "function":"0x1::coin::balance",
         "arguments": vec![address.to_string()],
-        "type_arguments": vec!["0x1::aptos_coin::AptosCoin"],
+        "type_arguments": vec!["0x1::topo_coin::TopoCoin"],
     })
 }
 
@@ -25,7 +25,7 @@ fn build_coin_decimals_request() -> Value {
     json!({
         "function":"0x1::coin::decimals",
         "arguments": arguments,
-        "type_arguments": vec!["0x1::aptos_coin::AptosCoin"],
+        "type_arguments": vec!["0x1::topo_coin::TopoCoin"],
     })
 }
 
@@ -191,7 +191,7 @@ async fn test_view_error_type_resolution_error() {
             json!({
                 "function":"0x1::coin::is_account_registered",
                 "arguments": vec![AccountAddress::random().to_string()],
-                "type_arguments": ["0x1::aptos_coin::NewCoin"], // Does not exist
+                "type_arguments": ["0x1::topo_coin::NewCoin"], // Does not exist
             }),
         )
         .await;
@@ -213,7 +213,7 @@ async fn test_view_does_not_exist() {
         .post(
             "/view",
             json!({
-                "function":"0x1::aptos_account::fake_function",
+                "function":"0x1::topo_account::fake_function",
                 "arguments": vec![owner.address().to_string()],
                 "type_arguments": [],
             }),
@@ -238,7 +238,7 @@ async fn test_simple_view_invalid() {
         .post(
             "/view",
             json!({
-                "function":"0x1::aptos_account::assert_account_exists",
+                "function":"0x1::topo_account::assert_account_exists",
                 "arguments": vec![owner.address().to_string()],
                 "type_arguments": [],
             }),
@@ -266,7 +266,7 @@ async fn test_versioned_simple_view() {
             json!({
                 "function":"0x1::coin::balance",
                 "arguments": vec![owner.address().to_string()],
-                "type_arguments": vec!["0x1::aptos_coin::AptosCoin"],
+                "type_arguments": vec!["0x1::topo_coin::TopoCoin"],
             }),
         )
         .await;

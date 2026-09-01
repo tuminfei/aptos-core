@@ -7,13 +7,13 @@
 //! closure that captures it. Checks that small N is accepted and large N is rejected.
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
     account_address::AccountAddress,
     transaction::{ExecutionStatus, TransactionStatus},
 };
 use move_core_types::vm_status::StatusCode;
+use topo_framework::BuildOptions;
 
 fn gen_source(addr: &str, n: usize) -> String {
     assert!(n >= 1);

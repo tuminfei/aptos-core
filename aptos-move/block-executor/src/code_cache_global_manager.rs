@@ -235,7 +235,7 @@ impl AptosModuleCacheManager {
         // cached is not possible for block execution (as long as the config enables the framework
         // prefetch).
         if guard.module_cache().num_modules() == 0 && config.prefetch_framework_code {
-            prefetch_aptos_framework(state_view, &mut guard).map_err(|err| {
+            prefetch_topo_framework(state_view, &mut guard).map_err(|err| {
                 alert_or_println!("Failed to load Aptos framework to module cache: {:?}", err);
                 VMError::from(err).into_vm_status()
             })?;
@@ -344,7 +344,7 @@ impl AptosModuleCacheManagerGuard<'_> {
 /// If Aptos framework exists, loads "transaction_validation.move" and all its transitive
 /// dependencies from storage into provided module cache. If loading fails for any reason, a panic
 /// error is returned.
-fn prefetch_aptos_framework(
+fn prefetch_topo_framework(
     state_view: &impl StateView,
     guard: &mut AptosModuleCacheManagerGuard,
 ) -> Result<(), PanicError> {
@@ -404,25 +404,25 @@ mod test {
     };
 
     #[test]
-    fn test_prefetch_existing_aptos_framework() {
+    fn test_prefetch_existing_topo_framework() {
         let state_view = InMemoryStateStore::from_head_genesis();
 
         let mut guard = AptosModuleCacheManagerGuard::none_for_state_view(&state_view);
         assert_eq!(guard.module_cache().num_modules(), 0);
 
-        let result = prefetch_aptos_framework(&state_view, &mut guard);
+        let result = prefetch_topo_framework(&state_view, &mut guard);
         assert!(result.is_ok());
         assert!(guard.module_cache().num_modules() > 0);
     }
 
     #[test]
-    fn test_prefetch_non_existing_aptos_framework() {
+    fn test_prefetch_non_existing_topo_framework() {
         let state_view = MockStateView::empty();
 
         let mut guard = AptosModuleCacheManagerGuard::none_for_state_view(&state_view);
         assert_eq!(guard.module_cache().num_modules(), 0);
 
-        let result = prefetch_aptos_framework(&state_view, &mut guard);
+        let result = prefetch_topo_framework(&state_view, &mut guard);
         assert!(result.is_ok());
         assert_eq!(guard.module_cache().num_modules(), 0);
     }
@@ -908,7 +908,7 @@ mod test {
         let mut guard = AptosModuleCacheManagerGuard::none_for_state_view(&state_view);
 
         // Prefetch Aptos framework into the hot cache
-        assert!(prefetch_aptos_framework(&state_view, &mut guard).is_ok());
+        assert!(prefetch_topo_framework(&state_view, &mut guard).is_ok());
         assert!(guard.module_cache().num_modules() > 0);
 
         let snapshot = guard.snapshot_hot_cache();

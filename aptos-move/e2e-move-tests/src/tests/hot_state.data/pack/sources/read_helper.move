@@ -1,10 +1,10 @@
 module 0xcafe::read_helper {
     use std::signer;
     use aptos_std::table::{Self, Table};
-    use aptos_framework::account;
-    use aptos_framework::aggregator_v2::{Self, Aggregator};
-    use aptos_framework::aptos_coin::AptosCoin;
-    use aptos_framework::coin;
+    use topo_framework::account;
+    use topo_framework::aggregator_v2::{Self, Aggregator};
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin;
 
     #[resource_group(scope = global)]
     struct Group {}
@@ -53,11 +53,11 @@ module 0xcafe::read_helper {
     }
 
     /// Reads framework state without writing it: the account resource of `target`, plus
-    /// `CoinInfo<AptosCoin>` and the table-backed coin-to-fungible-asset conversion map behind
+    /// `CoinInfo<TopoCoin>` and the table-backed coin-to-fungible-asset conversion map behind
     /// `coin::supply`.
     public entry fun read_only(target: address) {
         let _ = account::get_sequence_number(target);
-        let _ = coin::supply<AptosCoin>();
+        let _ = coin::supply<TopoCoin>();
     }
 
     /// Reads (via `exists`) and then mutates the caller's own `Plain`, so its slot is written.

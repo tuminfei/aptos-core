@@ -2,7 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use aptos_cached_packages::aptos_stdlib;
-use aptos_framework::{natives::code::PackageMetadata, BuildOptions, BuiltPackage};
 use aptos_gas_profiling::TransactionGasLog;
 use aptos_gas_schedule::{AptosGasParameters, FromOnChainGasSchedule, ToOnChainGasSchedule};
 pub use aptos_language_e2e_tests::SerializedReturnValues;
@@ -33,7 +32,7 @@ use aptos_types::{
         SignedTransaction, TransactionArgument, TransactionOutput, TransactionPayload,
         TransactionStatus, ViewFunctionOutput,
     },
-    AptosCoinType,
+    TopoCoinType,
 };
 use claims::assert_ok;
 use move_core_types::{
@@ -50,6 +49,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
 };
+use topo_framework::{natives::code::PackageMetadata, BuildOptions, BuiltPackage};
 
 // Code representing successful transaction, used for run_block_in_parts_and_check
 pub const SUCCESS: u64 = 0;
@@ -271,7 +271,7 @@ impl<O: OutputLogger> MoveHarnessImpl<O> {
     }
 
     /// Gets the account where the Aptos framework is installed (0x1).
-    pub fn aptos_framework_account(&mut self) -> Account {
+    pub fn topo_framework_account(&mut self) -> Account {
         self.new_account_at(AccountAddress::ONE)
     }
 
@@ -945,9 +945,9 @@ impl<O: OutputLogger> MoveHarnessImpl<O> {
     }
 
     pub fn read_aptos_balance(&self, addr: &AccountAddress) -> u64 {
-        self.read_resource::<CoinStoreResource<AptosCoinType>>(
+        self.read_resource::<CoinStoreResource<TopoCoinType>>(
             addr,
-            CoinStoreResource::<AptosCoinType>::struct_tag(),
+            CoinStoreResource::<TopoCoinType>::struct_tag(),
         )
         .map(|c| c.coin())
         .unwrap_or(0)
@@ -976,7 +976,7 @@ impl<O: OutputLogger> MoveHarnessImpl<O> {
 
     /// Enables features
     pub fn enable_features(&mut self, enabled: Vec<FeatureFlag>, disabled: Vec<FeatureFlag>) {
-        let acc = self.aptos_framework_account();
+        let acc = self.topo_framework_account();
         self.executor
             .enable_features(acc.address(), enabled, disabled);
     }
@@ -1420,7 +1420,7 @@ pub(crate) struct AptosPackageHooks {}
 
 impl move_package::package_hooks::PackageHooks for AptosPackageHooks {
     fn custom_package_info_fields(&self) -> Vec<String> {
-        vec![aptos_framework::UPGRADE_POLICY_CUSTOM_FIELD.to_string()]
+        vec![topo_framework::UPGRADE_POLICY_CUSTOM_FIELD.to_string()]
     }
 
     fn custom_dependency_key(&self) -> Option<String> {

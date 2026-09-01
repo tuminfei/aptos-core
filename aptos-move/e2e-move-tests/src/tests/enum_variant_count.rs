@@ -4,7 +4,6 @@
 //! Tests for enum variant counts
 
 use crate::{assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
     account_address::AccountAddress,
@@ -12,6 +11,7 @@ use aptos_types::{
     transaction::{ExecutionStatus, TransactionStatus},
 };
 use move_core_types::{value::VARIANT_COUNT_MAX, vm_status::StatusCode};
+use topo_framework::BuildOptions;
 
 /// Generates Move source for a module with an enum of `n` variants.
 fn enum_variants_source(n: usize) -> String {

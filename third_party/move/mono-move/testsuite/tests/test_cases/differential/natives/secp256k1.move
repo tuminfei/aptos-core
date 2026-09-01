@@ -1,8 +1,8 @@
 // Differential test for the secp256k1 native.
 //
-// The aptos-framework is not pre-published here, so the native is re-declared
+// The topo-framework is not pre-published here, so the native is re-declared
 // inline (same pattern as aptos_hash.move). Test vectors come from
-// aptos-stdlib/sources/cryptography/secp256k1.move's test_ecdsa_recover.
+// topo-stdlib/sources/cryptography/secp256k1.move's test_ecdsa_recover.
 
 // RUN: publish
 module 0x1::secp256k1 {

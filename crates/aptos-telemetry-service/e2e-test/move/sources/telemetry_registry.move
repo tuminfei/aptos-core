@@ -6,7 +6,7 @@
 module telemetry_deployer::telemetry_registry {
     use std::signer;
     use std::vector;
-    use aptos_framework::event;
+    use topo_framework::event;
 
     /// Error codes
     const ENOT_AUTHORIZED: u64 = 1;
@@ -91,7 +91,7 @@ module telemetry_deployer::telemetry_registry {
         // Emit event
         event::emit(MemberAddedEvent {
             address: member_address,
-            timestamp: aptos_framework::timestamp::now_seconds(),
+            timestamp: topo_framework::timestamp::now_seconds(),
         });
     }
 
@@ -124,7 +124,7 @@ module telemetry_deployer::telemetry_registry {
         // Emit event
         event::emit(MemberRemovedEvent {
             address: member_address,
-            timestamp: aptos_framework::timestamp::now_seconds(),
+            timestamp: topo_framework::timestamp::now_seconds(),
         });
     }
 

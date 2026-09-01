@@ -88,7 +88,7 @@ fn spawn_traced_traffic(
             let tx = account.sign_with_transaction_builder(
                 txn_factory
                     .clone()
-                    .payload(aptos_stdlib::aptos_coin_transfer(receiver, 100)),
+                    .payload(aptos_stdlib::topo_coin_transfer(receiver, 100)),
             );
 
             match client.submit(&tx).await {

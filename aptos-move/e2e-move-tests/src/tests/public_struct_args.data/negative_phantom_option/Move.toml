@@ -6,4 +6,4 @@ version = "1.0.0"
 cafe = "0xcafe"
 
 [dependencies]
-AptosFramework = { local = "../../../../../framework/aptos-framework" }
+TopoFramework = { local = "../../../../../framework/topo-framework" }

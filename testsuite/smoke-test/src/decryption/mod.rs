@@ -308,7 +308,7 @@ async fn test_fee_payer_encrypted_transaction() {
     let sender = create_and_fund_account(&mut swarm, 10_000).await;
     let fee_payer = create_and_fund_account(&mut swarm, 10_000_000).await;
 
-    const APT_COIN: &str = "0x1::aptos_coin::AptosCoin";
+    const APT_COIN: &str = "0x1::topo_coin::TopoCoin";
 
     let sender_balance_before = client
         .view_account_balance_bcs_impl(sender.address(), APT_COIN, None)
@@ -339,7 +339,7 @@ async fn test_fee_payer_encrypted_transaction() {
     }
 
     // Build and sign an encrypted fee-payer transaction (simple coin transfer to self).
-    let payload = aptos_cached_packages::aptos_stdlib::aptos_coin_transfer(sender.address(), 1);
+    let payload = aptos_cached_packages::aptos_stdlib::topo_coin_transfer(sender.address(), 1);
     let builder = txn_factory.payload(payload);
     let signed_txn = sender.sign_fee_payer_with_transaction_builder(vec![], &fee_payer, builder);
 
@@ -643,13 +643,13 @@ async fn test_decryption_v1_to_v3_transition() {
     info!("Enabling chunky DKG config and ENCRYPTED_TRANSACTIONS at runtime.");
     let script = r#"
 script {
-    use aptos_std::fixed_point64;
-    use aptos_framework::aptos_governance;
-    use aptos_framework::chunky_dkg_config;
-    use aptos_framework::features;
+    use topo_std::fixed_point64;
+    use topo_framework::topo_governance;
+    use topo_framework::chunky_dkg_config;
+    use topo_framework::features;
 
     fun main(core_resources: &signer) {
-        let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
 
         let config = chunky_dkg_config::new_v1(
             fixed_point64::create_from_rational(1, 2),
@@ -659,7 +659,7 @@ script {
 
         features::change_feature_flags_for_next_epoch(&framework_signer, vector[108], vector[]);
 
-        aptos_governance::reconfigure(&framework_signer);
+        topo_governance::reconfigure(&framework_signer);
     }
 }
 "#;

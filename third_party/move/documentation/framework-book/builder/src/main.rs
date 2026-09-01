@@ -13,23 +13,23 @@
 //!      with the path-filtered `{{move-index PKG}}` placeholder.
 
 use anyhow::{Context, Result};
-use aptos_framework::build_model;
 use move_docgen::{Docgen, DocgenOptions, IndexLinkStyle};
 use move_model::metadata::LanguageVersion;
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::{Path, PathBuf},
 };
+use topo_framework::build_model;
 
 /// Framework packages to document, in dep order.
 /// `(subdir under aptos-move/framework, Move package name, use_latest_language)`.
 /// The subdir name doubles as the path component used by `{{move-index PKG}}`.
 const PACKAGES: &[(&str, &str, bool)] = &[
     ("move-stdlib", "MoveStdlib", false),
-    ("aptos-stdlib", "AptosStdlib", false),
-    ("aptos-framework", "AptosFramework", false),
-    ("aptos-token-objects", "AptosTokenObjects", false),
-    ("aptos-trading", "AptosTrading", false),
+    ("topo-stdlib", "TopoStdlib", false),
+    ("topo-framework", "TopoFramework", false),
+    ("topo-token-objects", "TopoTokenObjects", false),
+    ("topo-trading", "TopoTrading", false),
     ("aptos-experimental", "AptosExperimental", true),
 ];
 
@@ -176,13 +176,13 @@ fn build_summary(framework_dir: &Path) -> Result<()> {
 
     let manifest = format!(
         "[package]\n\
-         name = \"AptosFrameworkBook\"\n\
+         name = \"TopoFrameworkBook\"\n\
          version = \"0.0.0\"\n\
          \n\
          [addresses]\n\
          std = \"0x1\"\n\
          aptos_std = \"0x1\"\n\
-         aptos_framework = \"0x1\"\n\
+         topo_framework = \"0x1\"\n\
          aptos_fungible_asset = \"0xA\"\n\
          aptos_token = \"0x3\"\n\
          aptos_token_objects = \"0x4\"\n\

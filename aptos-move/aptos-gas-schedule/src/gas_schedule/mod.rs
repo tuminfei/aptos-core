@@ -4,19 +4,19 @@
 use crate::traits::{FromOnChainGasSchedule, InitialGasSchedule, ToOnChainGasSchedule};
 use std::collections::BTreeMap;
 
-mod aptos_framework;
 mod instr;
 mod macros;
 mod misc;
 mod move_stdlib;
 mod table;
+mod topo_framework;
 mod transaction;
 
-pub use aptos_framework::AptosFrameworkGasParameters;
 pub use instr::InstructionGasParameters;
 pub use misc::{AbstractValueSizeGasParameters, MiscGasParameters};
 pub use move_stdlib::MoveStdlibGasParameters;
 pub use table::TableGasParameters;
+pub use topo_framework::TopoFrameworkGasParameters;
 pub use transaction::TransactionGasParameters;
 
 pub mod gas_params {
@@ -27,9 +27,9 @@ pub mod gas_params {
 
     pub mod natives {
         use super::*;
-        pub use aptos_framework::gas_params as aptos_framework;
         pub use move_stdlib::gas_params as move_stdlib;
         pub use table::gas_params as table;
+        pub use topo_framework::gas_params as topo_framework;
     }
 }
 
@@ -141,7 +141,7 @@ impl InitialGasSchedule for VMGasParameters {
 pub struct NativeGasParameters {
     pub move_stdlib: MoveStdlibGasParameters,
     pub table: TableGasParameters,
-    pub aptos_framework: AptosFrameworkGasParameters,
+    pub topo_framework: TopoFrameworkGasParameters,
 }
 
 impl FromOnChainGasSchedule for NativeGasParameters {
@@ -158,7 +158,7 @@ impl FromOnChainGasSchedule for NativeGasParameters {
                 gas_schedule,
                 feature_version,
             )?,
-            aptos_framework: FromOnChainGasSchedule::from_on_chain_gas_schedule(
+            topo_framework: FromOnChainGasSchedule::from_on_chain_gas_schedule(
                 gas_schedule,
                 feature_version,
             )?,
@@ -171,7 +171,7 @@ impl ToOnChainGasSchedule for NativeGasParameters {
         let mut entries = self.move_stdlib.to_on_chain_gas_schedule(feature_version);
         entries.extend(self.table.to_on_chain_gas_schedule(feature_version));
         entries.extend(
-            self.aptos_framework
+            self.topo_framework
                 .to_on_chain_gas_schedule(feature_version),
         );
         entries
@@ -183,7 +183,7 @@ impl NativeGasParameters {
         Self {
             move_stdlib: MoveStdlibGasParameters::zeros(),
             table: TableGasParameters::zeros(),
-            aptos_framework: AptosFrameworkGasParameters::zeros(),
+            topo_framework: TopoFrameworkGasParameters::zeros(),
         }
     }
 }
@@ -193,7 +193,7 @@ impl InitialGasSchedule for NativeGasParameters {
         Self {
             move_stdlib: InitialGasSchedule::initial(),
             table: InitialGasSchedule::initial(),
-            aptos_framework: InitialGasSchedule::initial(),
+            topo_framework: InitialGasSchedule::initial(),
         }
     }
 }

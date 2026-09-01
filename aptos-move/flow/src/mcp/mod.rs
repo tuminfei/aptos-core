@@ -10,7 +10,6 @@ pub(crate) mod tools;
 
 use crate::GlobalOpts;
 use anyhow::Result;
-use aptos_framework::UPGRADE_POLICY_CUSTOM_FIELD;
 use clap::Parser;
 use legacy_move_compiler::shared::{parse_named_address, NumericalAddress};
 use move_model::metadata::LanguageVersion;
@@ -18,6 +17,7 @@ use move_package::package_hooks::{register_package_hooks, PackageHooks};
 use move_symbol_pool::Symbol;
 use rmcp::{transport::stdio, ServiceExt};
 use session::FlowSession;
+use topo_framework::UPGRADE_POLICY_CUSTOM_FIELD;
 
 /// Package hooks for move-flow MCP server.
 /// Registers Aptos-specific custom fields to suppress unknown field warnings.

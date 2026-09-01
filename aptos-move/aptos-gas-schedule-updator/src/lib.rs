@@ -64,8 +64,8 @@ fn generate_script(gas_schedule: &GasScheduleV2) -> Result<String> {
     emitln!(writer, "script {");
     writer.indent();
 
-    emitln!(writer, "use aptos_framework::aptos_governance;");
-    emitln!(writer, "use aptos_framework::gas_schedule;");
+    emitln!(writer, "use topo_framework::topo_governance;");
+    emitln!(writer, "use topo_framework::gas_schedule;");
     emitln!(writer);
 
     emitln!(writer, "fun main(proposal_id: u64) {");
@@ -73,7 +73,7 @@ fn generate_script(gas_schedule: &GasScheduleV2) -> Result<String> {
 
     emitln!(
         writer,
-        "let framework_signer = aptos_governance::resolve(proposal_id, @{});\n",
+        "let framework_signer = topo_governance::resolve(proposal_id, @{});\n",
         AccountAddress::ONE,
     );
 
@@ -95,10 +95,10 @@ fn generate_script(gas_schedule: &GasScheduleV2) -> Result<String> {
     Ok(writer.process_result(|s| s.to_string()))
 }
 
-fn aptos_framework_path() -> PathBuf {
+fn topo_framework_path() -> PathBuf {
     Path::join(
         Path::new(env!("CARGO_MANIFEST_DIR")),
-        "../framework/aptos-framework",
+        "../framework/topo-framework",
     )
 }
 
@@ -133,7 +133,7 @@ pub fn generate_update_proposal(args: &GenArgs) -> Result<()> {
         &generate_script(&current_gas_schedule(feature_version))?,
     );
     // TODO: use relative path here
-    pack.add_local_dep("AptosFramework", &aptos_framework_path().to_string_lossy());
+    pack.add_local_dep("TopoFramework", &topo_framework_path().to_string_lossy());
 
     pack.write_to_disk(args.output.as_deref().unwrap_or("./proposal"))?;
 

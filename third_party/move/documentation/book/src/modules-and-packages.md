@@ -237,7 +237,7 @@ specified_address = "0xB0B"
 # Local dependency
 LocalDep = { local = "projects/move-awesomeness", addr_subst = { "std" = "0x1" } }
 # Git dependency
-MoveStdlib = { git = "https://github.com/aptos-labs/aptos-framework", subdir="move-stdlib", rev = "mainnet" }
+MoveStdlib = { git = "https://github.com/aptos-labs/topo-framework", subdir="move-stdlib", rev = "mainnet" }
 
 [dev-addresses] # For use when developing this module
 address_to_be_filled_in = "0x101010101"
@@ -529,9 +529,9 @@ This can lead to package resolution failures.
   Unable to resolve packages for package 'C':
     While resolving dependency 'B' in package 'C':
       Unable to resolve package dependency 'B':
-        While resolving dependency 'AptosFramework' in package 'B':
-          Unable to resolve package dependency 'AptosFramework':
-            Conflicting dependencies found: package 'AptosFramework' conflicts with 'AptosFramework'
+        While resolving dependency 'TopoFramework' in package 'B':
+          Unable to resolve package dependency 'TopoFramework':
+            Conflicting dependencies found: package 'TopoFramework' conflicts with 'TopoFramework'
 ```
 
 To resolve this, you can override the standard library packages using a command-line option. This allows you to enforce a specific version of the standard libraries across your entire dependency tree.
@@ -663,7 +663,7 @@ As a result, dependencies on upgradeable packages need to be handled with care:
 
 ### Programmatic upgrade
 
-In general, Aptos offers, via the Move module `aptos_framework::code`,
+In general, Aptos offers, via the Move module `topo_framework::code`,
 ways to publish code from anywhere in your smart contracts. However,
 notice that code published in the current transaction can be executed
 only after that transaction ends.

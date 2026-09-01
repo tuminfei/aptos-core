@@ -1,8 +1,8 @@
 // flag: --aptos
 // flag: --no-inference-opaque
 module 0x42::vault {
-    use aptos_framework::fungible_asset::{Self, FungibleAsset, FungibleStore};
-    use aptos_framework::object::{Self, Object};
+    use topo_framework::fungible_asset::{Self, FungibleAsset, FungibleStore};
+    use topo_framework::object::{Self, Object};
 
     struct Strategy(|FungibleAsset|FungibleAsset) has store, copy;
     spec Strategy {

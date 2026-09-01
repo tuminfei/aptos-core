@@ -132,7 +132,7 @@ MOVE_CRATES_INTEGRATION_TEST="\
   -p move-vm-integration-tests\
   -p aptos-move-examples\
   -p e2e-move-tests\
-  -p aptos-framework\
+  -p topo-framework\
   -p aptos-api\
   -p aptos-move-flow\
 "

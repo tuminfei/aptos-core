@@ -165,11 +165,11 @@ impl SourceAccountManager<'_> {
     ) -> Result<()> {
         info!("Minting new coins to root");
 
-        let txn = self
-            .source_account
-            .sign_with_transaction_builder(self.txn_factory.payload(
-                aptos_stdlib::aptos_coin_mint(self.source_account_address(), amount),
-            ));
+        let txn =
+            self.source_account
+                .sign_with_transaction_builder(self.txn_factory.payload(
+                    aptos_stdlib::topo_coin_mint(self.source_account_address(), amount),
+                ));
 
         if let Err(e) = txn_executor.execute_transactions(&[txn]).await {
             // This cannot work simultaneously across different txn emitters,
@@ -561,7 +561,7 @@ pub fn create_and_fund_account_request(
     txn_factory: &TransactionFactory,
 ) -> SignedTransaction {
     creation_account.sign_with_transaction_builder(
-        txn_factory.payload(aptos_stdlib::aptos_account_transfer(address, amount)),
+        txn_factory.payload(aptos_stdlib::topo_account_transfer(address, amount)),
     )
 }
 

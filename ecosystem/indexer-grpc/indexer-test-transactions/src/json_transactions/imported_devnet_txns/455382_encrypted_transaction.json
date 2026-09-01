@@ -201,8 +201,8 @@
                   "type": "MOVE_TYPES_STRUCT",
                   "struct": {
                     "address": "0x1",
-                    "module": "aptos_coin",
-                    "name": "AptosCoin"
+                    "module": "topo_coin",
+                    "name": "TopoCoin"
                   }
                 }
               ],

@@ -3,9 +3,9 @@
 This tool allows to benchmark an ordered sequence of past transactions. The tool supports four
 commands:
 
-  1. `download`: Downloads transactions from the REST client and saves them locally into a single 
+  1. `download`: Downloads transactions from the REST client and saves them locally into a single
      file.
-  2. `initialize`: Initializes the input states for benchmarking, and saves them locally into a 
+  2. `initialize`: Initializes the input states for benchmarking, and saves them locally into a
      single file.
   3. `diff`: Compares execution outputs on two different input states.
   4. `benchmark`: Executes saved transactions on top of the saved state, measuring the time taken.
@@ -172,9 +172,9 @@ event "0000000000000000000000000000000000000000000000000000000000000001::transac
 event "0000000000000000000000000000000000000000000000000000000000000001::transaction_fee::FeeStatement" data: [58, 0, 0, 0, 0, 0, 0, 0, 52, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 >>>>>>> AFTER
 <<<<<<< BEFORE
-write StateKey::AccessPath { address: 0x68c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e06, path: "Resource(0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>)" } op Modification(5ca5adc500000000004200000000000000020000000000000068c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e062b00000000000000030000000000000068c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e06, metadata:StateValueMetadata { inner: Some(StateValueMetadataInner { slot_deposit: 50000, bytes_deposit: 0, creation_time_usecs: 1700555822755002 }) })
+write StateKey::AccessPath { address: 0x68c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e06, path: "Resource(0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>)" } op Modification(5ca5adc500000000004200000000000000020000000000000068c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e062b00000000000000030000000000000068c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e06, metadata:StateValueMetadata { inner: Some(StateValueMetadataInner { slot_deposit: 50000, bytes_deposit: 0, creation_time_usecs: 1700555822755002 }) })
 ========
-write StateKey::AccessPath { address: 0x68c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e06, path: "Resource(0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>)" } op Modification(c0a5adc500000000004200000000000000020000000000000068c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e062b00000000000000030000000000000068c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e06, metadata:StateValueMetadata { inner: Some(StateValueMetadataInner { slot_deposit: 50000, bytes_deposit: 0, creation_time_usecs: 1700555822755002 }) })
+write StateKey::AccessPath { address: 0x68c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e06, path: "Resource(0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>)" } op Modification(c0a5adc500000000004200000000000000020000000000000068c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e062b00000000000000030000000000000068c709c6614e29f401b6bfdd0b89578381ef0fb719515c03b73cf13e45550e06, metadata:StateValueMetadata { inner: Some(StateValueMetadataInner { slot_deposit: 50000, bytes_deposit: 0, creation_time_usecs: 1700555822755002 }) })
 >>>>>>> AFTER
 <<<<<<< BEFORE
 write StateKey::TableItem { handle: 1b854694ae746cdbd8d44186ca4929b2b337df21d1c74633be19b2710552fdca, key: 0619dc29a0aac8fa146714058e8dd6d2d0f3bdf5f6331907bf91f3acd81e6935 } op Modification(aa8dd92120d693010000000000000000, metadata:StateValueMetadata { inner: None })
@@ -209,7 +209,7 @@ When benchmarking, a list of concurrency levels (`--concurrency-levels L1 L2 ...
 provided. Concurrency level specifies the number of threads Block-STM will use to execute a block
 of transactions. Typically, you want to have the concurrency level to match the number of cores. If
 multiple concurrency levels are provided, the benchmark reports the measurements for each level.
-This way it is possible to see how concurrency affects the runtime. 
+This way it is possible to see how concurrency affects the runtime.
 
 In order to differentiate between cold and warm starts, there is an option to skip the measurement
 for the first few blocks. By specifying `--num-block-to-skip N`, the tool will ignore measurements

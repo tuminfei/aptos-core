@@ -114,7 +114,7 @@ async fn test_solana_derivable_account() {
         function_info,
         account_identity,
         Arc::new(move |x: &[u8]| {
-            let function_name = "0x1::aptos_account::create_account";
+            let function_name = "0x1::topo_account::create_account";
             let digest = format!("0x{}", hex::encode(x));
             let message = format!(
                 "{} wants you to sign in with your Solana account:\n{}\n\nPlease confirm you explicitly initiated this request from {}. You are approving to execute transaction {} on Aptos blockchain (local).\n\nNonce: {}",
@@ -142,7 +142,7 @@ async fn test_solana_derivable_account() {
         vec![],
         Some(&info.root_account()),
         info.transaction_factory()
-            .payload(aptos_stdlib::aptos_account_create_account(
+            .payload(aptos_stdlib::topo_account_create_account(
                 AccountAddress::random(),
             )),
     );
@@ -182,7 +182,7 @@ async fn test_ethereum_derivable_account() {
         account_identity,
         Arc::new({
             move |x: &[u8]| {
-                let function_name = "0x1::aptos_account::create_account";
+                let function_name = "0x1::topo_account::create_account";
                 let digest = format!("0x{}", hex::encode(x));
                 let message_body = format!(
                     "{} wants you to sign in with your Ethereum account:\n{}\n\nPlease confirm you explicitly initiated this request from {}. You are approving to execute transaction {} on Aptos blockchain (local).\n\nURI: {}://{}\nVersion: 1\nChain ID: {}\nNonce: {}\nIssued At: {}",
@@ -222,7 +222,7 @@ async fn test_ethereum_derivable_account() {
         vec![],
         Some(&info.root_account()),
         info.transaction_factory()
-            .payload(aptos_stdlib::aptos_account_create_account(
+            .payload(aptos_stdlib::topo_account_create_account(
                 AccountAddress::random(),
             )),
     );

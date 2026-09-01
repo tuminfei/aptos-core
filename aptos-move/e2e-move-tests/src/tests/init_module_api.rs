@@ -1,10 +1,9 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-//! Tests for `aptos_framework::init::internal_maybe_initialize`.
+//! Tests for `topo_framework::init::internal_maybe_initialize`.
 
 use crate::{assert_abort, assert_success, tests::common, MoveHarness};
-use aptos_framework::{natives::code::UpgradePolicy, BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::account::Account;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
@@ -13,6 +12,7 @@ use aptos_types::{
 };
 use move_core_types::parser::parse_struct_tag;
 use serde::{Deserialize, Serialize};
+use topo_framework::{natives::code::UpgradePolicy, BuildOptions, BuiltPackage};
 
 const ADDR: &str = "0xcafe";
 
@@ -41,7 +41,7 @@ const ELAZY_MODULE_INITIALIZATION_NOT_ENABLED: u64 = 0x30003;
 fn make_module(only_once: bool, extra: &str) -> String {
     format!(
         r#"module 0xcafe::test {{
-            use aptos_framework::init;
+            use topo_framework::init;
             struct Counter has key {{ value: u64 }}
             public entry fun run(_s: &signer) {{
                 let s = init::internal_maybe_initialize({only_once});
@@ -64,8 +64,8 @@ fn make_module(only_once: bool, extra: &str) -> String {
 fn publish(h: &mut MoveHarness, acc: &aptos_language_e2e_tests::account::Account, source: &str) {
     let mut builder = PackageBuilder::new("TestPack").with_policy(UpgradePolicy::compat());
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     builder.add_source("test.move", source);
     let path = builder.write_to_temp().unwrap();
@@ -200,7 +200,7 @@ fn init_maybe_initialize_script_caller_aborts() {
 
     // Scripts have no module identity, so initialization cannot be requested from them.
     let script = r#"script {
-        use aptos_framework::init;
+        use topo_framework::init;
         fun main() {
             let _s = init::internal_maybe_initialize(false);
         }
@@ -208,8 +208,8 @@ fn init_maybe_initialize_script_caller_aborts() {
 
     let mut builder = PackageBuilder::new("TestPack").with_policy(UpgradePolicy::compat());
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     builder.add_source("main.move", script);
     let path = builder.write_to_temp().unwrap();
@@ -257,7 +257,7 @@ fn deploy_object_addr(h: &MoveHarness, acc: &Account) -> AccountAddress {
 /// `init::internal_maybe_initialize`. Its address is the named address `object`, bound to the
 /// code object's address at build time (see `deploy_to_object`).
 const OBJECT_MODULE_SRC: &str = r#"module object::test {
-    use aptos_framework::init;
+    use topo_framework::init;
 
     struct Counter has key { value: u64 }
 
@@ -275,8 +275,8 @@ const OBJECT_MODULE_SRC: &str = r#"module object::test {
 fn deploy_to_object(h: &mut MoveHarness, acc: &Account, obj: AccountAddress) -> TransactionStatus {
     let mut builder = PackageBuilder::new("ObjectPack").with_policy(UpgradePolicy::compat());
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     builder.add_source("test.move", OBJECT_MODULE_SRC);
     let path = builder.write_to_temp().unwrap();

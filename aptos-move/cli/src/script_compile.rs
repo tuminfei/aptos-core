@@ -6,7 +6,6 @@
 use crate::FrameworkPackageArgs;
 use aptos_cli_common::{CliError, CliTypedResult, PromptOptions};
 use aptos_crypto::HashValue;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use clap::Parser;
 use move_core_types::diag_writer::DiagWriter;
 use move_model::metadata::{
@@ -19,6 +18,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use tempfile::TempDir;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 /// Compile a specified script.
 #[derive(Debug, Parser, Default)]

@@ -1,7 +1,6 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::{extended_checks, path_in_crate, BuildOptions};
 use aptos_gas_schedule::{MiscGasParameters, NativeGasParameters, LATEST_GAS_FEATURE_VERSION};
 use aptos_types::on_chain_config::{
     aptos_test_feature_flags_genesis, Features, TimedFeaturesBuilder,
@@ -15,6 +14,7 @@ use move_unit_test::{
 };
 use move_vm_runtime::native_functions::NativeFunctionTable;
 use tempfile::tempdir;
+use topo_framework::{extended_checks, path_in_crate, BuildOptions};
 
 /// Configures the unit test validation hook to run the extended checker.
 fn configure_extended_checks_for_unit_test() {
@@ -92,12 +92,12 @@ pub fn aptos_test_natives() -> NativeFunctionTable {
 
 #[test]
 fn move_framework_unit_tests() {
-    run_tests_for_pkg("aptos-framework", false);
+    run_tests_for_pkg("topo-framework", false);
 }
 
 #[test]
 fn move_aptos_stdlib_unit_tests() {
-    run_tests_for_pkg("aptos-stdlib", false);
+    run_tests_for_pkg("topo-stdlib", false);
 }
 
 #[test]
@@ -107,17 +107,17 @@ fn move_stdlib_unit_tests() {
 
 #[test]
 fn move_token_unit_tests() {
-    run_tests_for_pkg("aptos-token", false);
+    run_tests_for_pkg("topo-token", false);
 }
 
 #[test]
 fn move_token_objects_unit_tests() {
-    run_tests_for_pkg("aptos-token-objects", false);
+    run_tests_for_pkg("topo-token-objects", false);
 }
 
 #[test]
 fn move_trading_unit_tests() {
-    run_tests_for_pkg("aptos-trading", false);
+    run_tests_for_pkg("topo-trading", false);
 }
 
 #[test]

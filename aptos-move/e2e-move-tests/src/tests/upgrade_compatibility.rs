@@ -7,10 +7,10 @@
 //!   to test all compatibility rules in one place.
 
 use crate::{assert_success, assert_vm_status, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{account_address::AccountAddress, transaction::TransactionStatus};
 use move_core_types::vm_status::StatusCode;
+use topo_framework::BuildOptions;
 
 #[test]
 fn private_non_entry() {

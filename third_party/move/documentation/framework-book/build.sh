@@ -6,5 +6,5 @@
 #   2. Run mdbook to render src/ into html/.
 set -euo pipefail
 cd "$(dirname "$0")"
-cargo run --release -p aptos-framework-book-builder
+cargo run --release -p topo-framework-book-builder
 mdbook build

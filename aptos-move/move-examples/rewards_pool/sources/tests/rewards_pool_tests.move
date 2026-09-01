@@ -1,8 +1,8 @@
 #[test_only]
 module rewards_pool::rewards_pool_tests {
-    use aptos_framework::fungible_asset::{Self, FungibleAsset};
-    use aptos_framework::object::Object;
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::fungible_asset::{Self, FungibleAsset};
+    use topo_framework::object::Object;
+    use topo_framework::primary_fungible_store;
     use aptos_std::simple_map;
     use rewards_pool::rewards_pool::{Self, RewardsPool};
     use rewards_pool::test_helpers;

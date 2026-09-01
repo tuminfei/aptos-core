@@ -2,10 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_abort, assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::{
-    natives::code::{PackageRegistry, UpgradePolicy},
-    BuiltPackage,
-};
 use aptos_language_e2e_tests::executor::FakeExecutor;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
@@ -25,6 +21,10 @@ use move_core_types::{
 use rstest::rstest;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use topo_framework::{
+    natives::code::{PackageRegistry, UpgradePolicy},
+    BuiltPackage,
+};
 // Note: this module uses parameterized tests via the
 // [`rstest` crate](https://crates.io/crates/rstest)
 // to test for multiple feature combinations.
@@ -112,7 +112,7 @@ fn code_publishing_disallow_user_native() {
     let txn = h.create_publish_package(
         &acc,
         &common::test_dir_path("code_publishing.data/pack_native"),
-        Some(aptos_framework::BuildOptions::default().with_experiment("native-check=off")),
+        Some(topo_framework::BuildOptions::default().with_experiment("native-check=off")),
         |_| {},
     );
     assert_vm_status!(h.run(txn), StatusCode::USER_DEFINED_NATIVE_NOT_ALLOWED);
@@ -128,7 +128,7 @@ fn code_publishing_disallow_user_native_entry() {
     let txn = h.create_publish_package(
         &acc,
         &common::test_dir_path("code_publishing.data/pack_native_entry"),
-        Some(aptos_framework::BuildOptions::default().with_experiment("native-check=off")),
+        Some(topo_framework::BuildOptions::default().with_experiment("native-check=off")),
         |_| {},
     );
     assert_vm_status!(h.run(txn), StatusCode::USER_DEFINED_NATIVE_NOT_ALLOWED);
@@ -137,7 +137,7 @@ fn code_publishing_disallow_user_native_entry() {
 #[test]
 fn code_publishing_allow_system_native() {
     let mut h = MoveHarness::new();
-    let acc = h.aptos_framework_account();
+    let acc = h.topo_framework_account();
 
     assert_success!(h.publish_package(
         &acc,
@@ -148,14 +148,14 @@ fn code_publishing_allow_system_native() {
 #[test]
 fn code_publishing_disallow_system_native_entry() {
     let mut h = MoveHarness::new();
-    let acc = h.aptos_framework_account();
+    let acc = h.topo_framework_account();
 
     // Disable the compiler's native check so the package builds and the
     // publish-time VM check is exercised.
     let txn = h.create_publish_package(
         &acc,
         &common::test_dir_path("code_publishing.data/pack_native_system_entry"),
-        Some(aptos_framework::BuildOptions::default().with_experiment("native-check=off")),
+        Some(topo_framework::BuildOptions::default().with_experiment("native-check=off")),
         |_| {},
     );
     assert_vm_status!(h.run(txn), StatusCode::USER_DEFINED_NATIVE_NOT_ALLOWED);
@@ -264,7 +264,7 @@ fn code_publishing_upgrade_loader_cache_consistency() {
 #[test]
 fn code_publishing_framework_upgrade() {
     let mut h = MoveHarness::new();
-    let acc = h.aptos_framework_account();
+    let acc = h.topo_framework_account();
 
     // We should be able to upgrade move-stdlib, as our local package has only
     // compatible changes. (We added a new function to string.move.)
@@ -277,7 +277,7 @@ fn code_publishing_framework_upgrade() {
 #[test]
 fn code_publishing_framework_upgrade_fail() {
     let mut h = MoveHarness::new();
-    let acc = h.aptos_framework_account();
+    let acc = h.topo_framework_account();
 
     // We should not be able to upgrade move-stdlib because we removed a function
     // from the string module.
@@ -305,7 +305,7 @@ fn code_publishing_using_resource_account() {
     let pack_dir = pack.write_to_temp().unwrap();
     let package = BuiltPackage::build(
         pack_dir.path().to_owned(),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     )
     .expect("building package must succeed");
 
@@ -515,7 +515,7 @@ fn publish_module_txn(source: String, module_name: &str) -> TransactionPayload {
     let pack_dir = assert_ok!(builder.write_to_temp());
     let package = assert_ok!(BuiltPackage::build(
         pack_dir.path().to_owned(),
-        aptos_framework::BuildOptions::default(),
+        topo_framework::BuildOptions::default(),
     ));
 
     let code = package.extract_code();
@@ -669,7 +669,7 @@ fn test_trace_replay_with_module_republishing() {
         let random_account = h.new_account_at(AccountAddress::random());
         let transfer_txn = h.create_entry_function(
             &random_account,
-            MemberId::from_str("0x1::aptos_account::transfer").unwrap(),
+            MemberId::from_str("0x1::topo_account::transfer").unwrap(),
             vec![],
             vec![
                 bcs::to_bytes(random_account.address()).unwrap(),

@@ -69,14 +69,14 @@ async fn enable_chunky_v1_and_watchdog(
     let script = format!(
         r#"
 script {{
-    use aptos_std::fixed_point64;
-    use aptos_framework::aptos_governance;
-    use aptos_framework::chunky_dkg_config;
-    use aptos_framework::epoch_timeout_config;
-    use aptos_framework::features;
+    use topo_std::fixed_point64;
+    use topo_framework::topo_governance;
+    use topo_framework::chunky_dkg_config;
+    use topo_framework::epoch_timeout_config;
+    use topo_framework::features;
 
     fun main(core_resources: &signer) {{
-        let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
 
         // Chunky DKG V1 (real, no shadow grace).
         let chunky_cfg = chunky_dkg_config::new_v1(
@@ -92,7 +92,7 @@ script {{
         // ENCRYPTED_TRANSACTIONS feature flag (108) — required for chunky DKG path.
         features::change_feature_flags_for_next_epoch(&framework_signer, vector[108], vector[]);
 
-        aptos_governance::reconfigure(&framework_signer);
+        topo_governance::reconfigure(&framework_signer);
     }}
 }}
 "#,

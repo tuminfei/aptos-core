@@ -14,9 +14,6 @@ use aptos_cli_common::{
     dir_default_to_current, load_account_arg, parse_json_file, parse_map, AccountAddressWrapper,
     CliError, CliTypedResult, TransactionOptions,
 };
-use aptos_framework::chunked_publish::{
-    default_large_packages_module_address, CHUNK_SIZE_IN_BYTES,
-};
 use aptos_rest_client::aptos_api_types::{EntryFunctionId, MoveStructTag, MoveType, ViewRequest};
 use aptos_transaction_simulation::SimulationStateStore;
 use aptos_transaction_simulation_session::Session;
@@ -39,6 +36,7 @@ use move_model::metadata::{
 use move_package::source_package::std_lib::StdVersion;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, path::PathBuf, str::FromStr};
+use topo_framework::chunked_publish::{default_large_packages_module_address, CHUNK_SIZE_IN_BYTES};
 
 /// Options for optimization level
 #[derive(Debug, Clone, Default, Parser)]

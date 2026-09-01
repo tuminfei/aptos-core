@@ -4,12 +4,12 @@
 use crate::{aptos_core_path, components::get_execution_hash};
 use anyhow::Result;
 use aptos_crypto::HashValue;
-use aptos_framework::{new_release_package, BuildOptions, BuiltPackage};
 use aptos_temppath::TempPath;
 use aptos_types::account_address::AccountAddress;
 use git2::Repository;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
+use topo_framework::{new_release_package, BuildOptions, BuiltPackage};
 
 #[derive(Serialize, Deserialize, Clone, Eq, PartialEq, Debug)]
 pub struct FrameworkReleaseConfig {
@@ -20,8 +20,8 @@ pub struct FrameworkReleaseConfig {
     pub git_hash: Option<String>,
     /// Optional list of specific framework packages to include.
     /// If None or empty, all packages will be included.
-    /// Valid package names: "move-stdlib", "aptos-stdlib", "aptos-framework",
-    /// "aptos-token", "aptos-token-objects", "aptos-trading"
+    /// Valid package names: "move-stdlib", "topo-stdlib", "topo-framework",
+    /// "topo-token", "topo-token-objects", "topo-trading"
     #[serde(default)]
     pub packages: Option<Vec<String>>,
 }
@@ -46,19 +46,19 @@ pub fn generate_upgrade_proposals(
     // Define all available packages with their metadata
     let all_packages = [
         ("0x1", "aptos-move/framework/move-stdlib", "move-stdlib"),
-        ("0x1", "aptos-move/framework/aptos-stdlib", "aptos-stdlib"),
+        ("0x1", "aptos-move/framework/topo-stdlib", "topo-stdlib"),
         (
             "0x1",
-            "aptos-move/framework/aptos-framework",
-            "aptos-framework",
+            "aptos-move/framework/topo-framework",
+            "topo-framework",
         ),
-        ("0x3", "aptos-move/framework/aptos-token", "aptos-token"),
+        ("0x3", "aptos-move/framework/topo-token", "topo-token"),
         (
             "0x4",
-            "aptos-move/framework/aptos-token-objects",
-            "aptos-token-objects",
+            "aptos-move/framework/topo-token-objects",
+            "topo-token-objects",
         ),
-        ("0x5", "aptos-move/framework/aptos-trading", "aptos-trading"),
+        ("0x5", "aptos-move/framework/topo-trading", "topo-trading"),
     ];
 
     // Filter packages if specific ones are requested
@@ -153,10 +153,10 @@ pub fn generate_upgrade_proposals(
         // If the `result` vector is not empty, the current file's `next_execution_hash` should be the
         // hash of the latest framework file being generated (the hash of result.last()).
         // For example, let's say we are going to generate these files:
-        // 0-move-stdlib.move	2-aptos-framework.move	4-gas-schedule.move	6-features.move
-        // 1-aptos-stdlib.move	3-aptos-token.move	5-version.move		7-consensus-config.move
-        // The first framework file being generated is 3-aptos-token.move. It's using the next_execution_hash being passed in (so in this case, the hash of 4-gas-schedule.move being passed in mod.rs).
-        // The second framework file being generated would be 2-aptos-framework.move, and it's using the hash of 3-aptos-token.move (which would be result.last()).
+        // 0-move-stdlib.move	2-topo-framework.move	4-gas-schedule.move	6-features.move
+        // 1-topo-stdlib.move	3-topo-token.move	5-version.move		7-consensus-config.move
+        // The first framework file being generated is 3-topo-token.move. It's using the next_execution_hash being passed in (so in this case, the hash of 4-gas-schedule.move being passed in mod.rs).
+        // The second framework file being generated would be 2-topo-framework.move, and it's using the hash of 3-topo-token.move (which would be result.last()).
 
         let options = BuildOptions {
             with_srcs: true,

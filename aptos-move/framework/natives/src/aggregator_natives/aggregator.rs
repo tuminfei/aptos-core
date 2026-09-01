@@ -10,7 +10,7 @@ use aptos_aggregator::{
     aggregator_v1_extension::AggregatorID,
     bounded_math::{BoundedMath, SignedU128},
 };
-use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_gas_schedule::gas_params::natives::topo_framework::*;
 use aptos_native_interface::{
     safely_pop_arg, RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError,
     SafeNativeResult,

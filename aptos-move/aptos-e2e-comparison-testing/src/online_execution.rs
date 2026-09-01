@@ -6,7 +6,6 @@ use crate::{
     CompilationCache, ExecutionMode, IndexWriter, PackageInfo, TxnIndex, APTOS_COMMONS,
 };
 use anyhow::Result;
-use aptos_framework::natives::code::PackageMetadata;
 use aptos_rest_client::Client;
 use aptos_transaction_simulation::InMemoryStateStore;
 use aptos_types::{on_chain_config::FeatureFlag, transaction::Version};
@@ -17,6 +16,7 @@ use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
 };
+use topo_framework::natives::code::PackageMetadata;
 use url::Url;
 
 pub struct OnlineExecutor {

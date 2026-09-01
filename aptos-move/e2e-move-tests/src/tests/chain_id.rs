@@ -11,10 +11,10 @@ struct ChainIdStore {
     id: u8,
 }
 
-fn call_get_chain_id_from_aptos_framework(harness: &mut MoveHarness, account: &Account) -> u8 {
+fn call_get_chain_id_from_topo_framework(harness: &mut MoveHarness, account: &Account) -> u8 {
     let status = harness.run_entry_function(
         account,
-        str::parse("0x1::chain_id_test::store_chain_id_from_aptos_framework").unwrap(),
+        str::parse("0x1::chain_id_test::store_chain_id_from_topo_framework").unwrap(),
         vec![],
         vec![],
     );
@@ -62,12 +62,12 @@ fn setup(harness: &mut MoveHarness) -> Account {
 }
 
 #[test]
-fn test_chain_id_from_aptos_framework() {
+fn test_chain_id_from_topo_framework() {
     let mut harness = MoveHarness::new();
     let account = setup(&mut harness);
 
     assert_eq!(
-        call_get_chain_id_from_aptos_framework(&mut harness, &account),
+        call_get_chain_id_from_topo_framework(&mut harness, &account),
         4u8
     );
 }

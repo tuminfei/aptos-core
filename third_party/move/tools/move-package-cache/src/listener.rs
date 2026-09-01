@@ -1,9 +1,9 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::natives::code::PackageMetadata;
 use move_core_types::account_address::AccountAddress;
 use std::path::Path;
+use topo_framework::natives::code::PackageMetadata;
 
 /// Trait for subscribing to package cache events.
 ///

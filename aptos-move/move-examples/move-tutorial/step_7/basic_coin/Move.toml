@@ -5,7 +5,5 @@ version = "0.0.0"
 [addresses]
 named_addr = "0xCAFE"
 
-[dependencies.AptosStdlib]
-git = 'https://github.com/aptos-labs/aptos-framework.git'
-rev = 'main'
-subdir = 'aptos-stdlib'
+[dependencies.TopoStdlib]
+local = "../../../../framework/topo-stdlib"

@@ -1,5 +1,5 @@
 [package]
-name = "aptos-framework-book-builder"
+name = "topo-framework-book-builder"
 description = "Generates the Aptos Framework Book by driving move-docgen across the framework packages."
 version = "0.1.0"
 
@@ -13,12 +13,12 @@ repository = { workspace = true }
 rust-version = { workspace = true }
 
 [[bin]]
-name = "aptos-framework-book-builder"
+name = "topo-framework-book-builder"
 path = "src/main.rs"
 
 [dependencies]
 anyhow = { workspace = true }
-aptos-framework = { workspace = true }
+topo-framework = { workspace = true }
 move-docgen = { workspace = true }
 move-model = { workspace = true }
 tempfile = { workspace = true }

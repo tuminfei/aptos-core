@@ -3,8 +3,8 @@
 # and per-package source under aptos-move/framework/.
 /src/SUMMARY.md
 /src/move-stdlib/
-/src/aptos-stdlib/
-/src/aptos-framework/
-/src/aptos-token-objects/
-/src/aptos-trading/
+/src/topo-stdlib/
+/src/topo-framework/
+/src/topo-token-objects/
+/src/topo-trading/
 /src/aptos-experimental/

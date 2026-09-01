@@ -20,7 +20,7 @@
 //! proposal will execute successfully, assuming it gets approved, not whether the
 //! governance framework itself is working as intended.
 
-use crate::aptos_framework_path;
+use crate::topo_framework_path;
 use anyhow::{anyhow, bail, Context, Result};
 use aptos_cli_common::PromptOptions;
 use aptos_crypto::HashValue;
@@ -192,7 +192,7 @@ fn add_simple_native_function(
 static MODULE_ID_APTOS_GOVERNANCE: Lazy<ModuleId> = Lazy::new(|| {
     ModuleId::new(
         AccountAddress::ONE,
-        Identifier::new("aptos_governance").unwrap(),
+        Identifier::new("topo_governance").unwrap(),
     )
 });
 
@@ -235,9 +235,9 @@ where
     Ok(())
 }
 
-/// Patches `aptos_framework::aptos_governance::resolve_multi_step_proposal` so that
+/// Patches `topo_framework::topo_governance::resolve_multi_step_proposal` so that
 /// it returns the requested signer directly, skipping the governance process altogether.
-fn patch_aptos_governance(
+fn patch_topo_governance(
     state_view: &impl SimulationStateStore,
     forbid_next_execution_hash: bool,
 ) -> Result<()> {
@@ -375,7 +375,7 @@ pub async fn simulate_multistep_proposal(
         let framework_package_args = FrameworkPackageArgs::try_parse_from([
             "dummy_executable_name",
             "--framework-local-dir",
-            &aptos_framework_path().to_string_lossy(),
+            &topo_framework_path().to_string_lossy(),
             "--skip-fetch-latest-git-deps",
         ])
         .context(
@@ -455,7 +455,7 @@ pub async fn simulate_multistep_proposal(
         // If the script is the last step of the proposal, it MUST NOT have a next execution hash.
         // Set the boolean flag to true to use a modified patch to catch this.
         let forbid_next_execution_hash = script_idx == proposal_scripts.len() - 1;
-        patch_aptos_governance(&state_view, forbid_next_execution_hash)
+        patch_topo_governance(&state_view, forbid_next_execution_hash)
             .context("failed to patch resolve_multistep_proposal")?;
 
         // Add the hash of the script to the list of approved hashes, so that the

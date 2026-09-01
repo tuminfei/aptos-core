@@ -1,7 +1,7 @@
 module 0x1::session {
     use std::signer;
     use std::vector;
-    use aptos_framework::aggregator_v2::{Aggregator, Self};
+    use topo_framework::aggregator_v2::{Aggregator, Self};
 
     fun init_module(account: &signer) {
         let test_1 = Test1 {

@@ -2,13 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use super::entry_point_trait::PreBuiltPackages;
-use aptos_framework::{
-    chunked_publish::{
-        chunk_package_and_create_payloads, default_large_packages_module_address, PublishType,
-        CHUNK_SIZE_IN_BYTES,
-    },
-    natives::code::PackageMetadata,
-};
 use aptos_sdk::{
     bcs,
     move_types::{identifier::Identifier, language_storage::ModuleId},
@@ -30,6 +23,13 @@ use move_binary_format::{
 };
 use move_core_types::language_storage::pseudo_script_module_id;
 use rand::{rngs::StdRng, Rng};
+use topo_framework::{
+    chunked_publish::{
+        chunk_package_and_create_payloads, default_large_packages_module_address, PublishType,
+        CHUNK_SIZE_IN_BYTES,
+    },
+    natives::code::PackageMetadata,
+};
 
 // Information used to track a publisher and what allows to identify and
 // version the package published.

@@ -12,7 +12,7 @@ use aptos_crypto::{
     traits::*,
 };
 use aptos_gas_algebra::{Arg, GasExpression};
-use aptos_gas_schedule::gas_params::natives::aptos_framework::*;
+use aptos_gas_schedule::gas_params::natives::topo_framework::*;
 #[cfg(feature = "testing")]
 use aptos_native_interface::SafeNativeError;
 use aptos_native_interface::{

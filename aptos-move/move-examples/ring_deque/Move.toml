@@ -3,7 +3,7 @@ name = "RingDeque"
 version = "0.0.0"
 
 [dependencies]
-AptosFramework = { local = "../../framework/aptos-framework" }
+TopoFramework = { local = "../../framework/topo-framework" }
 
 [addresses]
 ring_deque = "_"

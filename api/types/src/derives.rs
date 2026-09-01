@@ -51,7 +51,7 @@ impl_poem_type!(
     "string",
     (
         example = Some(serde_json::Value::String(
-            "0x1::aptos_coin::AptosCoin".to_string()
+            "0x1::topo_coin::TopoCoin".to_string()
         )),
         format = Some("hex"),
         description = Some(indoc! {"
@@ -69,7 +69,7 @@ impl_poem_type!(
     "string",
     (
         example = Some(serde_json::Value::String(
-            "0x1::aptos_coin::transfer".to_string()
+            "0x1::topo_coin::transfer".to_string()
         )),
         description = Some(indoc! {"
           Entry function id is string representation of a entry function defined on-chain.
@@ -108,7 +108,7 @@ impl_poem_type!(
     MoveModuleId,
     "string",
     (
-        example = Some(serde_json::Value::String("0x1::aptos_coin".to_string())),
+        example = Some(serde_json::Value::String("0x1::topo_coin".to_string())),
         description = Some(indoc! {"
           Move module id is a string representation of Move module.
 
@@ -126,7 +126,7 @@ impl_poem_type!(
     "string",
     (
         example = Some(serde_json::Value::String(
-            "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>".to_string()
+            "0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>".to_string()
         )),
         pattern = Some("^0x[0-9a-zA-Z:_<>]+$".to_string()),
         description = Some(indoc! {"
@@ -138,7 +138,7 @@ impl_poem_type!(
           2. `struct generic type parameters` joined by `, `
 
         Examples:
-          * `0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>`
+          * `0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>`
           * `0x1::account::Account`
 
         Note:
@@ -242,10 +242,10 @@ impl_poem_type!(
                 Vector type value examples:
                   - `vector<u8>`
                   - `vector<vector<u64>>`
-                  - `vector<0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>>`
+                  - `vector<0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>>`
 
                 Struct type value examples:
-                  - `0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>
+                  - `0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>
                   - `0x1::account::Account`
 
                 Note:

@@ -62,7 +62,7 @@ pub fn generate_randomness_config_update_proposal(
         next_execution_hash,
         is_multi_step,
         &[
-            "aptos_framework::randomness_config",
+            "topo_framework::randomness_config",
             "aptos_std::fixed_point64",
         ],
         |writer| {
@@ -125,7 +125,7 @@ pub fn generate_randomness_config_update_proposal(
                     );
                 },
             }
-            emitln!(writer, "aptos_governance::reconfigure({});", signer_arg);
+            emitln!(writer, "topo_governance::reconfigure({});", signer_arg);
         },
     );
 

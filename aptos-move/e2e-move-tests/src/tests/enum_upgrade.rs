@@ -4,11 +4,11 @@
 //! Tests for enum type upgrade compatibility
 
 use crate::{assert_success, assert_vm_status, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_language_e2e_tests::account::Account;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{account_address::AccountAddress, transaction::TransactionStatus};
 use move_core_types::vm_status::StatusCode;
+use topo_framework::BuildOptions;
 
 #[test]
 fn enum_upgrade() {

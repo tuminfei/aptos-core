@@ -2,8 +2,8 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use aptos_gas_schedule::gas_params::natives::{
-    aptos_framework::*,
     move_stdlib::{HASH_SHA3_256_BASE, HASH_SHA3_256_PER_BYTE},
+    topo_framework::*,
 };
 use aptos_native_interface::{
     RawSafeNative, SafeNativeBuilder, SafeNativeContext, SafeNativeError, SafeNativeResult,

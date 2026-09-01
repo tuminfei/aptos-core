@@ -70,7 +70,7 @@ This is exactly where `RootPool` can be helpful. Alternatively we could reserve 
 
 ## Key Operations
 
-The Move entrypoint is `event::emit<T: store + drop>(msg: T)` (defined in `aptos_framework::event`), which immediately forwards to the actual native `write_module_event_to_store<T>(msg)`. Both take the event payload by owned value, not by reference. The old event-handle-based system (`EventHandle<T>` plus `write_to_event_store`) is omitted — MonoMove does not carry it forward.
+The Move entrypoint is `event::emit<T: store + drop>(msg: T)` (defined in `topo_framework::event`), which immediately forwards to the actual native `write_module_event_to_store<T>(msg)`. Both take the event payload by owned value, not by reference. The old event-handle-based system (`EventHandle<T>` plus `write_to_event_store`) is omitted — MonoMove does not carry it forward.
 
 The Event Store provides the following APIs to MonoMove's native functions:
 

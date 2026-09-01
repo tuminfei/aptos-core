@@ -18,7 +18,7 @@ cargo test -- confidential
 
 To run the gas benchmarks, you first have to generate a `head.mrb` with the test-only functions included:
 ```
-cargo run -p aptos-framework -- update-cached-packages --with-test-mode
+cargo run -p topo-framework -- update-cached-packages --with-test-mode
 ```
 Then, you can run the benches by filtering for them using `cargo test` with a certain feature flag on:
 ```

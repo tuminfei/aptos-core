@@ -10,8 +10,8 @@ use crate::{
         FundApiComponents,
     },
     funder::{
-        ApiConnectionConfig, AssetConfig, FunderConfig, MintAssetConfig, MintFunderConfig,
-        TransactionSubmissionConfig, DEFAULT_ASSET_NAME,
+        ApiConnectionConfig, AssetConfig, EntryFunctionId, FunderConfig, MintAssetConfig,
+        MintFunderConfig, TransactionMethod, TransactionSubmissionConfig, DEFAULT_ASSET_NAME,
     },
     middleware::middleware_log,
 };
@@ -262,6 +262,16 @@ impl RunConfig {
             FunderKeyEnum::KeyFile(key_file_path) => (key_file_path, None),
             FunderKeyEnum::Key(key) => (PathBuf::from_str("/dummy").unwrap(), Some(key)),
         };
+        let mut asset_config = MintAssetConfig::new(
+            AssetConfig::new(_key, key_file_path),
+            Some(aptos_test_root_address()),
+            do_not_delegate,
+        );
+        asset_config.transaction_method = TransactionMethod::EntryFunction(EntryFunctionId {
+            module_address: AccountAddress::ONE,
+            module_name: "topo_coin".to_string(),
+            function_name: "mint".to_string(),
+        });
         Self {
             server_config: ServerConfig {
                 listen_address,
@@ -290,14 +300,7 @@ impl RunConfig {
                     35,      // wait_for_outstanding_txns_secs
                     false,   // wait_for_transactions
                 ),
-                assets: HashMap::from([(
-                    DEFAULT_ASSET_NAME.to_string(),
-                    MintAssetConfig::new(
-                        AssetConfig::new(_key, key_file_path),
-                        Some(aptos_test_root_address()),
-                        do_not_delegate,
-                    ),
-                )]),
+                assets: HashMap::from([(DEFAULT_ASSET_NAME.to_string(), asset_config)]),
                 default_asset: MintFunderConfig::get_default_asset_name(),
                 amount_to_fund: 100_000_000_000,
             }),

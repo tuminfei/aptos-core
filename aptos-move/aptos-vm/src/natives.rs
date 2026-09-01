@@ -7,10 +7,6 @@ use aptos_aggregator::resolver::TAggregatorV1View;
 use aptos_aggregator::{bounded_math::SignedU128, types::DelayedFieldsSpeculativeError};
 #[cfg(feature = "testing")]
 use aptos_aggregator::{resolver::TDelayedFieldView, types::DelayedFieldValue};
-#[cfg(feature = "testing")]
-use aptos_framework_natives::randomness::RandomnessContext;
-#[cfg(feature = "testing")]
-use aptos_framework_natives::{cryptography::algebra::AlgebraContext, event::NativeEventContext};
 use aptos_gas_schedule::{MiscGasParameters, NativeGasParameters, LATEST_GAS_FEATURE_VERSION};
 use aptos_native_interface::SafeNativeBuilder;
 #[cfg(feature = "testing")]
@@ -38,16 +34,20 @@ use move_vm_types::delayed_values::delayed_field_id::DelayedFieldID;
 #[cfg(feature = "testing")]
 use std::collections::{BTreeMap, HashSet};
 #[cfg(feature = "testing")]
+use topo_framework_natives::randomness::RandomnessContext;
+#[cfg(feature = "testing")]
+use topo_framework_natives::{cryptography::algebra::AlgebraContext, event::NativeEventContext};
+#[cfg(feature = "testing")]
 use triomphe::Arc as TriompheArc;
 #[cfg(feature = "testing")]
 use {
-    aptos_framework_natives::{
+    move_vm_runtime::native_extensions::NativeContextExtensions,
+    once_cell::sync::Lazy,
+    topo_framework_natives::{
         aggregator_natives::NativeAggregatorContext, code::NativeCodeContext,
         cryptography::ristretto255_point::NativeRistrettoPointContext,
         transaction_context::NativeTransactionContext,
     },
-    move_vm_runtime::native_extensions::NativeContextExtensions,
-    once_cell::sync::Lazy,
 };
 
 #[cfg(feature = "testing")]
@@ -197,8 +197,8 @@ pub fn configure_for_unit_test() {
 
 #[cfg(feature = "testing")]
 fn unit_test_extensions_hook(exts: &mut NativeContextExtensions) {
-    use aptos_framework_natives::object::NativeObjectContext;
     use aptos_table_natives::NativeTableContext;
+    use topo_framework_natives::object::NativeObjectContext;
 
     exts.add(NativeTableContext::new([0u8; 32], &*DUMMY_RESOLVER));
     exts.add(NativeCodeContext::new());

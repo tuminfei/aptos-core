@@ -123,7 +123,7 @@ fn get_demo_accounts() -> (
     (account1, privkey1, account2, privkey2)
 }
 
-fn get_aptos_coin_mint_transaction(
+fn get_topo_coin_mint_transaction(
     aptos_root_key: &Ed25519PrivateKey,
     aptos_root_seq_num: u64,
     account: &AccountAddress,
@@ -134,7 +134,7 @@ fn get_aptos_coin_mint_transaction(
         /* sequence_number = */ aptos_root_seq_num,
         aptos_root_key.clone(),
         aptos_root_key.public_key(),
-        Some(aptos_stdlib::aptos_coin_mint(*account, amount)),
+        Some(aptos_stdlib::topo_coin_mint(*account, amount)),
     )
 }
 
@@ -149,11 +149,11 @@ fn get_account_transaction(
         /* sequence_number = */ aptos_root_seq_num,
         aptos_root_key.clone(),
         aptos_root_key.public_key(),
-        Some(aptos_stdlib::aptos_account_create_account(*account)),
+        Some(aptos_stdlib::topo_account_create_account(*account)),
     )
 }
 
-fn get_aptos_coin_transfer_transaction(
+fn get_topo_coin_transfer_transaction(
     sender: AccountAddress,
     sender_seq_number: u64,
     sender_key: &Ed25519PrivateKey,
@@ -165,7 +165,7 @@ fn get_aptos_coin_transfer_transaction(
         sender_seq_number,
         sender_key.clone(),
         sender_key.public_key(),
-        Some(aptos_stdlib::aptos_coin_transfer(recipient, amount)),
+        Some(aptos_stdlib::topo_coin_transfer(recipient, amount)),
     )
 }
 
@@ -237,8 +237,8 @@ fn test_new_genesis() {
     let (account1, account1_key, account2, account2_key) = get_demo_accounts();
     let txn1 = get_account_transaction(genesis_key, 0, &account1, &account1_key);
     let txn2 = get_account_transaction(genesis_key, 1, &account2, &account2_key);
-    let txn3 = get_aptos_coin_mint_transaction(genesis_key, 2, &account1, 200_000_000);
-    let txn4 = get_aptos_coin_mint_transaction(genesis_key, 3, &account2, 200_000_000);
+    let txn3 = get_topo_coin_mint_transaction(genesis_key, 2, &account1, 200_000_000);
+    let txn4 = get_topo_coin_mint_transaction(genesis_key, 3, &account2, 200_000_000);
     execute_and_commit(vec![txn1, txn2, txn3, txn4], &db, &signer);
     assert_eq!(get_balance(&account1, &db), 200_000_000);
     assert_eq!(get_balance(&account2, &db), 200_000_000);
@@ -333,7 +333,7 @@ fn test_new_genesis() {
 
     println!("FINAL TRANSFER");
     // Transfer some money.
-    let txn = get_aptos_coin_transfer_transaction(account1, 0, &account1_key, account2, 50_000_000);
+    let txn = get_topo_coin_transfer_transaction(account1, 0, &account1_key, account2, 50_000_000);
     execute_and_commit(vec![txn], &db, &signer);
 
     // And verify.

@@ -64,7 +64,7 @@ All notable changes to the Aptos CLI will be captured in this file. This project
 - Fix backward compatibility issue of enum-based option module
 
 ## [7.10.1]
-- Add support into Move 2.2 for builtin constant `__COMPILE_FOR_TESTING__` 
+- Add support into Move 2.2 for builtin constant `__COMPILE_FOR_TESTING__`
 - Update the default version of move formatter to 1.3.7
 - Update the default version of move mutation test tool to 2.0.0
 
@@ -72,7 +72,7 @@ All notable changes to the Aptos CLI will be captured in this file. This project
 - Add support into Move 2.3 for signed integer types and builtin constants (`MAX_U8`, ..., `MIN_U8`, ..., `__COMPILE_FOR_TESTING__`). Move 2.3 is not yet supported on testnet or mainnet, but can be used for local development by providing `--language-version 2.3` to the CLI.
 
 ## [7.9.1]
-- Add mem as pre-compiled module to avoid compatibility issue when using aptos-framework
+- Add mem as pre-compiled module to avoid compatibility issue when using topo-framework
 
 ## [7.9.0]
 - Set language version 2.2 and bytecode version v8 as default
@@ -331,7 +331,7 @@ stdin, which triggers a graceful shutdown when received.
 ## [2.1.1] - 2023/09/27
 ### Added
 - Added an option `--print-metadata` to the command `aptos move download` to print out the metadata of the package to be downloaded.
-  - Example: `aptos move download  --account 0x1 --package AptosFramework --url https://mainnet.aptoslabs.com/v1 --print-metadata`
+  - Example: `aptos move download  --account 0x1 --package TopoFramework --url https://mainnet.aptoslabs.com/v1 --print-metadata`
 ### Updated
 - The `--with-faucet` flag has been removed from `aptos node run-local-testnet`, we now run a faucet by default. To disable the faucet use the `--no-faucet` flag.
 - **Breaking change**: When using `aptos node run-local-testnet` we now expose a transaction stream. Learn more about the transaction stream service here: https://aptos.dev/indexer/txn-stream/. Opt out of this with `--no-txn-stream`. This is marked as a breaking change since the CLI now uses a port (50051 by default) that it didn't used to. If you need this port, you can tell the CLI to use a different port with `--txn-stream-port`.

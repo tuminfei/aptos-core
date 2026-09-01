@@ -2,7 +2,7 @@
 module aptos_experimental::dead_mans_switch_tracker_test {
     use std::option;
     use std::signer;
-    use aptos_framework::timestamp;
+    use topo_framework::timestamp;
     use aptos_experimental::dead_mans_switch_tracker::{
         new_dead_mans_switch_tracker_for_test,
         is_order_valid,
@@ -16,8 +16,8 @@ module aptos_experimental::dead_mans_switch_tracker_test {
     const INITIAL_TIMESTAMP: u64 = 1000;
 
     // Test utility functions
-    fun setup_test(aptos_framework: &signer): DeadMansSwitchTracker {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
+    fun setup_test(topo_framework: &signer): DeadMansSwitchTracker {
+        timestamp::set_time_has_started_for_testing(topo_framework);
         timestamp::update_global_time_for_test_secs(INITIAL_TIMESTAMP);
         new_dead_mans_switch_tracker_for_test(MIN_KEEP_ALIVE_TIME_SECS)
     }
@@ -56,11 +56,11 @@ module aptos_experimental::dead_mans_switch_tracker_test {
         )
     }
 
-    #[test(aptos_framework = @0x1)]
+    #[test(topo_framework = @0x1)]
     public fun test_new_tracker_allows_all_orders(
-        aptos_framework: &signer
+        topo_framework: &signer
     ) {
-        let tracker = setup_test(aptos_framework);
+        let tracker = setup_test(topo_framework);
         let user_addr = @0x123;
 
         // When no keep-alive is set, all orders should be valid
@@ -71,11 +71,11 @@ module aptos_experimental::dead_mans_switch_tracker_test {
         destroy_tracker(tracker)
     }
 
-    #[test(aptos_framework = @0x1, user = @0x123)]
+    #[test(topo_framework = @0x1, user = @0x123)]
     public fun test_keep_alive_update(
-        aptos_framework: &signer, user: &signer
+        topo_framework: &signer, user: &signer
     ) {
-        let tracker = setup_test(aptos_framework);
+        let tracker = setup_test(topo_framework);
         let user_addr = signer::address_of(user);
         let timeout = 60;
 
@@ -92,11 +92,11 @@ module aptos_experimental::dead_mans_switch_tracker_test {
         destroy_tracker(tracker)
     }
 
-    #[test(aptos_framework = @0x1, user = @0x123)]
+    #[test(topo_framework = @0x1, user = @0x123)]
     public fun test_keep_alive_expiration_and_new_session(
-        aptos_framework: &signer, user: &signer
+        topo_framework: &signer, user: &signer
     ) {
-        let tracker = setup_test(aptos_framework);
+        let tracker = setup_test(topo_framework);
         let user_addr = signer::address_of(user);
         let timeout = 60;
 
@@ -120,11 +120,11 @@ module aptos_experimental::dead_mans_switch_tracker_test {
         destroy_tracker(tracker)
     }
 
-    #[test(aptos_framework = @0x1, user = @0x123)]
+    #[test(topo_framework = @0x1, user = @0x123)]
     public fun test_zero_timeout_disables_keep_alive(
-        aptos_framework: &signer, user: &signer
+        topo_framework: &signer, user: &signer
     ) {
-        let tracker = setup_test(aptos_framework);
+        let tracker = setup_test(topo_framework);
         let user_addr = signer::address_of(user);
 
         // Set keep-alive
@@ -141,11 +141,11 @@ module aptos_experimental::dead_mans_switch_tracker_test {
         destroy_tracker(tracker)
     }
 
-    #[test(aptos_framework = @0x1, user1 = @0x123, user2 = @0x456)]
+    #[test(topo_framework = @0x1, user1 = @0x123, user2 = @0x456)]
     public fun test_multiple_users_independent(
-        aptos_framework: &signer, user1: &signer, user2: &signer
+        topo_framework: &signer, user1: &signer, user2: &signer
     ) {
-        let tracker = setup_test(aptos_framework);
+        let tracker = setup_test(topo_framework);
         let user1_addr = signer::address_of(user1);
         let user2_addr = signer::address_of(user2);
 
@@ -165,16 +165,16 @@ module aptos_experimental::dead_mans_switch_tracker_test {
         destroy_tracker(tracker)
     }
 
-    #[test(aptos_framework = @0x1, user = @0x123)]
+    #[test(topo_framework = @0x1, user = @0x123)]
     #[
         expected_failure(
             abort_code = 0, location = aptos_experimental::dead_mans_switch_tracker
         )
     ]
     public fun test_timeout_too_short_fails(
-        aptos_framework: &signer, user: &signer
+        topo_framework: &signer, user: &signer
     ) {
-        let tracker = setup_test(aptos_framework);
+        let tracker = setup_test(topo_framework);
         let user_addr = signer::address_of(user);
 
         // Try to set timeout less than minimum
@@ -183,11 +183,11 @@ module aptos_experimental::dead_mans_switch_tracker_test {
         destroy_tracker(tracker)
     }
 
-    #[test(aptos_framework = @0x1, user = @0x123)]
+    #[test(topo_framework = @0x1, user = @0x123)]
     public fun test_exact_expiration_boundary(
-        aptos_framework: &signer, user: &signer
+        topo_framework: &signer, user: &signer
     ) {
-        let tracker = setup_test(aptos_framework);
+        let tracker = setup_test(topo_framework);
         let user_addr = signer::address_of(user);
         let timeout = 100;
 

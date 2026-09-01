@@ -3,11 +3,12 @@
 
 use self::framework::FrameworkReleaseConfig;
 use crate::{
-    aptos_core_path, aptos_framework_path,
+    aptos_core_path,
     components::{
         feature_flags::Features, oidc_providers::OidcProviderOp,
         randomness_config::ReleaseFriendlyRandomnessConfig,
     },
+    topo_framework_path,
 };
 use anyhow::{anyhow, bail, Context, Result};
 use aptos::governance::GenerateExecutionHash;
@@ -884,7 +885,7 @@ pub fn get_execution_hash(result: &[(String, String)]) -> Option<HashValue> {
 
         let (_, hash) = GenerateExecutionHash {
             script_path: Option::from(move_script_path),
-            framework_local_dir: Some(aptos_framework_path()),
+            framework_local_dir: Some(topo_framework_path()),
         }
         .generate_hash()
         .unwrap();
@@ -909,7 +910,7 @@ fn append_script_hash(raw_script: String) -> String {
 
     let (_, hash) = GenerateExecutionHash {
         script_path: Option::from(move_script_path),
-        framework_local_dir: Some(aptos_framework_path()),
+        framework_local_dir: Some(topo_framework_path()),
     }
     .generate_hash()
     .unwrap();

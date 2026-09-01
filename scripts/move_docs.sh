@@ -25,7 +25,7 @@ cd $current_path
 rm -rf $outpath
 mkdir -p $outpath
 
-RELEASE_PATH="$move_path/aptos-framework/releases/artifacts/current/build"
+RELEASE_PATH="$move_path/topo-framework/releases/artifacts/current/build"
 
 for folder in $(ls $RELEASE_PATH); do
   mkdir -p $outpath/$folder
@@ -33,7 +33,7 @@ for folder in $(ls $RELEASE_PATH); do
     outfile=$outpath/$folder/$file
     cp $RELEASE_PATH/$folder/docs/$file $outfile
     sed -i \
-      's#../../../../../../../aptos-framework/releases/artifacts/current/build/\(.*\)/docs/\(.*.md\)#../\1/\2#g' \
+      's#../../../../../../../topo-framework/releases/artifacts/current/build/\(.*\)/docs/\(.*.md\)#../\1/\2#g' \
       $outfile
   done
 done

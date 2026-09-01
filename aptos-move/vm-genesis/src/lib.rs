@@ -78,7 +78,7 @@ use std::collections::BTreeMap;
 const GENESIS_SEED: [u8; 32] = [42; 32];
 
 const GENESIS_MODULE_NAME: &str = "genesis";
-const GOVERNANCE_MODULE_NAME: &str = "aptos_governance";
+const GOVERNANCE_MODULE_NAME: &str = "topo_governance";
 const CODE_MODULE_NAME: &str = "code";
 const VERSION_MODULE_NAME: &str = "version";
 const JWKS_MODULE_NAME: &str = "jwks";
@@ -200,7 +200,7 @@ pub fn encode_aptos_mainnet_genesis_transaction(
             .map(Features::into_flag_vec),
     );
     initialize_trading_native_capability(&mut session, &module_storage, &mut traversal_context);
-    initialize_aptos_coin(&mut session, &module_storage, &mut traversal_context);
+    initialize_topo_coin(&mut session, &module_storage, &mut traversal_context);
     initialize_on_chain_governance(
         &mut session,
         &module_storage,
@@ -329,14 +329,14 @@ pub fn encode_genesis_change_set(
     );
     initialize_trading_native_capability(&mut session, &module_storage, &mut traversal_context);
     if genesis_config.is_test {
-        initialize_core_resources_and_aptos_coin(
+        initialize_core_resources_and_topo_coin(
             &mut session,
             &module_storage,
             &mut traversal_context,
             core_resources_key,
         );
     } else {
-        initialize_aptos_coin(&mut session, &module_storage, &mut traversal_context);
+        initialize_topo_coin(&mut session, &module_storage, &mut traversal_context);
     }
     initialize_config_buffer(&mut session, &module_storage, &mut traversal_context);
     initialize_dkg(&mut session, &module_storage, &mut traversal_context);
@@ -624,7 +624,7 @@ fn initialize_features(
     );
 }
 
-fn initialize_aptos_coin(
+fn initialize_topo_coin(
     session: &mut SessionExt<impl AptosMoveResolver>,
     module_storage: &impl AptosModuleStorage,
     traversal_context: &mut TraversalContext,
@@ -634,7 +634,7 @@ fn initialize_aptos_coin(
         module_storage,
         traversal_context,
         GENESIS_MODULE_NAME,
-        "initialize_aptos_coin",
+        "initialize_topo_coin",
         vec![],
         serialize_values(&vec![MoveValue::Signer(CORE_CODE_ADDRESS)]),
     );
@@ -998,7 +998,7 @@ fn set_genesis_end(
     );
 }
 
-fn initialize_core_resources_and_aptos_coin(
+fn initialize_core_resources_and_topo_coin(
     session: &mut SessionExt<impl AptosMoveResolver>,
     module_storage: &impl AptosModuleStorage,
     traversal_context: &mut TraversalContext,
@@ -1010,7 +1010,7 @@ fn initialize_core_resources_and_aptos_coin(
         module_storage,
         traversal_context,
         GENESIS_MODULE_NAME,
-        "initialize_core_resources_and_aptos_coin",
+        "initialize_core_resources_and_topo_coin",
         vec![],
         serialize_values(&vec![
             MoveValue::Signer(CORE_CODE_ADDRESS),

@@ -104,7 +104,7 @@ pub fn create_test_db() -> (Arc<AptosDB>, LocalAccount) {
         account1.sign_with_transaction_builder(txn_factory.transfer(account3.address(), 70 * B));
 
     let reconfig1 = core_resources_account.sign_with_transaction_builder(
-        txn_factory.payload(aptos_stdlib::aptos_governance_force_end_epoch_test_only()),
+        txn_factory.payload(aptos_stdlib::topo_governance_force_end_epoch_test_only()),
     );
 
     let block1: Vec<_> = into_signature_verified_block(vec![
@@ -248,7 +248,7 @@ fn test_db_indexer_data() {
         ident_str!("timestamp"),
         ident_str!("type_info"),
         ident_str!("aggregator"),
-        ident_str!("aptos_coin"),
+        ident_str!("topo_coin"),
         ident_str!("aptos_hash"),
         ident_str!("bcs_stream"),
         ident_str!("big_vector"),
@@ -275,7 +275,7 @@ fn test_db_indexer_data() {
         ident_str!("storage_slot"),
         ident_str!("string_utils"),
         ident_str!("aggregator_v2"),
-        ident_str!("aptos_account"),
+        ident_str!("topo_account"),
         ident_str!("bn254_algebra"),
         ident_str!("config_buffer"),
         ident_str!("create_signer"),
@@ -294,7 +294,7 @@ fn test_db_indexer_data() {
         ident_str!("keyless_account"),
         ident_str!("reconfiguration"),
         ident_str!("transaction_fee"),
-        ident_str!("aptos_governance"),
+        ident_str!("topo_governance"),
         ident_str!("bls12381_algebra"),
         ident_str!("consensus_config"),
         ident_str!("execution_config"),
@@ -393,17 +393,17 @@ fn test_db_indexer_data() {
         (false, "0x1::chain_status::GenesisEndMarker"),
         (false, "0x1::reconfiguration::Configuration"),
         (false, "0x1::nonce_validation::NonceHistory"),
-        (false, "0x1::aptos_governance::VotingRecords"),
+        (false, "0x1::topo_governance::VotingRecords"),
         (false, "0x1::state_storage::StateStorageUsage"),
         (false, "0x1::confidential_asset::GlobalConfig"),
         (false, "0x1::decryption::PerBlockDecryptionKey"),
         (false, "0x1::decryption::PerEpochEncryptionKey"),
-        (false, "0x1::aptos_governance::VotingRecordsV2"),
+        (false, "0x1::topo_governance::VotingRecordsV2"),
         (false, "0x1::consensus_config::ConsensusConfig"),
         (false, "0x1::execution_config::ExecutionConfig"),
         (false, "0x1::timestamp::CurrentTimeMicroseconds"),
-        (false, "0x1::aptos_governance::GovernanceConfig"),
-        (false, "0x1::aptos_governance::GovernanceEvents"),
+        (false, "0x1::topo_governance::GovernanceConfig"),
+        (false, "0x1::topo_governance::GovernanceEvents"),
         (false, "0x1::chunky_dkg_config::ChunkyDKGConfig"),
         (false, "0x1::decryption::PerBlockDecryptionKeyV2"),
         (false, "0x1::randomness_config::RandomnessConfig"),
@@ -414,8 +414,8 @@ fn test_db_indexer_data() {
         (false, "0x1::transaction_fee::AptosFABurnCapabilities"),
         (false, "0x1::transaction_fee::AptosFAMintCapabilities"),
         (false, "0x1::epoch_timeout_config::EpochTimeoutConfig"),
-        (false, "0x1::aptos_governance::ApprovedExecutionHashes"),
-        (false, "0x1::aptos_governance::GovernanceResponsbility"),
+        (false, "0x1::topo_governance::ApprovedExecutionHashes"),
+        (false, "0x1::topo_governance::GovernanceResponsbility"),
         (false, "0x1::randomness_api_v0_config::RequiredGasDeposit"),
         (false, "0x1::transaction_validation::TransactionValidation"),
         (
@@ -434,7 +434,7 @@ fn test_db_indexer_data() {
             false,
             "0x1::account_abstraction::DerivableDispatchableAuthenticator",
         ),
-        (false, "0x1::coin::CoinInfo<0x1::aptos_coin::AptosCoin>"),
+        (false, "0x1::coin::CoinInfo<0x1::topo_coin::TopoCoin>"),
         (
             false,
             "0x1::voting::VotingForum<0x1::governance_proposal::GovernanceProposal>",

@@ -3,7 +3,6 @@
 
 use crate::{tests::common, MoveHarness};
 use aptos_crypto::HashValue;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_gas_algebra::Gas;
 use aptos_language_e2e_tests::account::{Account, TransactionBuilder};
 use aptos_types::{
@@ -12,6 +11,7 @@ use aptos_types::{
     transaction::{ExecutionStatus, Script, TransactionArgument, TransactionStatus},
     vm_status::StatusCode,
 };
+use topo_framework::{BuildOptions, BuiltPackage};
 
 #[test]
 fn large_transactions() {
@@ -24,7 +24,7 @@ fn large_transactions() {
     let mut h = MoveHarness::new();
 
     let alice = h.new_account_at(AccountAddress::from_hex_literal("0xa11ce").unwrap());
-    let root = h.aptos_framework_account();
+    let root = h.topo_framework_account();
     let entries = ApprovedExecutionHashes { entries: vec![] };
     h.set_resource(
         *root.address(),
@@ -83,7 +83,7 @@ fn alt_execution_limit_for_gov_proposals() {
     let mut h = MoveHarness::new();
 
     let alice = h.new_account_at(AccountAddress::from_hex_literal("0xa11ce").unwrap());
-    let root = h.aptos_framework_account();
+    let root = h.topo_framework_account();
 
     h.modify_gas_schedule(|gas_params| {
         let txn = &mut gas_params.vm.txn;

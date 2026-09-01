@@ -164,7 +164,7 @@ fn parse_check(
     source: &str,
     file_hash: FileHash,
 ) -> (Option<Vec<Definition>>, Diagnostics, bool) {
-    let known_attributes = aptos_framework::extended_checks::get_all_attribute_names().clone();
+    let known_attributes = topo_framework::extended_checks::get_all_attribute_names().clone();
     let flags = Flags::empty().set_language_version(LanguageVersion::V2_5);
     let mut env = CompilationEnv::new(flags, known_attributes);
 

@@ -20,7 +20,6 @@ use aptos_crypto::{ed25519::Ed25519PrivateKey, hash::HashValue, SigningKey};
 use aptos_db::AptosDB;
 use aptos_executor::{block_executor::BlockExecutor, db_bootstrapper};
 use aptos_executor_types::BlockExecutorTrait;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_indexer_grpc_table_info::internal_indexer_db_service::MockInternalIndexerDBService;
 use aptos_mempool::mocks::MockSharedMempool;
 use aptos_mempool_notifications::MempoolNotificationSender;
@@ -65,6 +64,7 @@ use std::{
     time::{Duration, Instant},
 };
 use tokio::sync::watch::channel;
+use topo_framework::{BuildOptions, BuiltPackage};
 use warp::{http::header::CONTENT_TYPE, Filter, Rejection, Reply};
 use warp_reverse_proxy::reverse_proxy_filter;
 
@@ -398,10 +398,10 @@ impl TestContext {
         // This function executes the following script as the root account:
         // script {
         //   fun main(root: &signer, feature: u64) {
-        //     let aptos_framework = aptos_framework::aptos_governance::get_signer_testnet_only(root, @0x1);
-        //     std::features::change_feature_flags_for_next_epoch(&aptos_framework, vector[feature], vector[]);
-        //     aptos_framework::aptos_governance::reconfigure(&aptos_framework);
-        //     std::features::on_new_epoch(&aptos_framework);
+        //     let topo_framework = topo_framework::topo_governance::get_signer_testnet_only(root, @0x1);
+        //     std::features::change_feature_flags_for_next_epoch(&topo_framework, vector[feature], vector[]);
+        //     topo_framework::topo_governance::reconfigure(&topo_framework);
+        //     std::features::on_new_epoch(&topo_framework);
         //   }
         // }
         let mut root = self.root_account().await;
@@ -418,10 +418,10 @@ impl TestContext {
         // This function executes the following script as the root account:
         // script {
         //   fun main(root: &signer, feature: u64) {
-        //     let aptos_framework = aptos_framework::aptos_governance::get_signer_testnet_only(root, @0x1);
-        //     std::features::change_feature_flags_for_next_epoch(&aptos_framework, vector[], vector[feature]);
-        //     aptos_framework::aptos_governance::reconfigure(&aptos_framework);
-        //     std::features::on_new_epoch(&aptos_framework);
+        //     let topo_framework = topo_framework::topo_governance::get_signer_testnet_only(root, @0x1);
+        //     std::features::change_feature_flags_for_next_epoch(&topo_framework, vector[], vector[feature]);
+        //     topo_framework::topo_governance::reconfigure(&topo_framework);
+        //     std::features::on_new_epoch(&topo_framework);
         //   }
         // }
         let mut root = self.root_account().await;
@@ -480,12 +480,12 @@ impl TestContext {
     pub async fn api_create_account(&mut self) -> LocalAccount {
         let root = &mut self.root_account().await;
         let account = self.gen_account();
-        self.api_execute_aptos_account_transfer(root, account.address(), TRANSFER_AMOUNT)
+        self.api_execute_topo_account_transfer(root, account.address(), TRANSFER_AMOUNT)
             .await;
         account
     }
 
-    pub async fn api_execute_aptos_account_transfer(
+    pub async fn api_execute_topo_account_transfer(
         &mut self,
         sender: &mut LocalAccount,
         receiver: AccountAddress,
@@ -493,7 +493,7 @@ impl TestContext {
     ) {
         self.api_execute_entry_function(
             sender,
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             json!([]),
             json!([receiver.to_hex_literal(), amount.to_string()]),
         )
@@ -1003,7 +1003,7 @@ impl TestContext {
                 account,
                 "0x1",
                 "coin",
-                "CoinStore<0x1::aptos_coin::AptosCoin>",
+                "CoinStore<0x1::topo_coin::TopoCoin>",
             )
             .await;
         let coin = coin_balance_option.map(|x| {

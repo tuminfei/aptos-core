@@ -16,7 +16,7 @@ aptos move run \
 | Flag | Meaning |
 |---|---|
 | `--function-id <ADDR::MOD::FN>` | Fully qualified entry function name. |
-| `--type-args <TYPE>...` | Type arguments separated by spaces, e.g., `--type-args 0x1::aptos_coin::AptosCoin`. |
+| `--type-args <TYPE>...` | Type arguments separated by spaces, e.g., `--type-args 0x1::topo_coin::TopoCoin`. |
 | `--args <TYPED-ARG>...` | Arguments as `<TYPE>:<VALUE>` pairs, separated by spaces. Supported types: `address`, `bool`, `hex`, `string`, `u8`, `u16`, `u32`, `u64`, `u128`, `u256`, `raw`. Vectors use JSON array syntax: `'u64:[1,2,3]'`. |
 | `--json-file <PATH>` | Read function id, type args, and args from a JSON file instead of the command line. |
 

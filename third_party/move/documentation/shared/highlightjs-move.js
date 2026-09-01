@@ -225,7 +225,7 @@ module.exports = function move(hljs) {
    * Address literals.
    * In Move, addresses are prefixed with `@`:
    * - Numeric: @0x1, @0xCAFE
-   * - Named: @aptos_framework, @my_addr
+   * - Named: @topo_framework, @my_addr
    */
   const ADDRESS_LITERAL = {
     className: 'symbol',
@@ -365,7 +365,7 @@ module.exports = function move(hljs) {
   /**
    * Module paths with :: separator.
    * Matches qualified paths like `0x1::module_name::function_name` or
-   * `aptos_framework::coin::CoinStore`.
+   * `topo_framework::coin::CoinStore`.
    * Highlights the path segments as title (maps to hljs-title).
    */
   const MODULE_PATH = {

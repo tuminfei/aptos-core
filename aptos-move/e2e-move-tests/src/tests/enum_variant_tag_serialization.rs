@@ -2,7 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::executor::{ExecutorMode, FakeExecutor};
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
@@ -11,11 +10,12 @@ use aptos_types::{
 };
 use claims::assert_ok;
 use move_core_types::account_address::AccountAddress;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 const V1_A: &str = r#"
     module 0xcafe::a {
-        use aptos_framework::aggregator_v2::{Self, Aggregator};
-        use aptos_framework::code;
+        use topo_framework::aggregator_v2::{Self, Aggregator};
+        use topo_framework::code;
         use std::signer;
 
         enum Counter has key, drop {
@@ -41,8 +41,8 @@ const V1_A: &str = r#"
 
 const V2_A: &str = r#"
     module 0xcafe::a {
-        use aptos_framework::aggregator_v2::{Self, Aggregator};
-        use aptos_framework::code;
+        use topo_framework::aggregator_v2::{Self, Aggregator};
+        use topo_framework::code;
         use std::signer;
 
         enum Counter has key, drop {
@@ -85,8 +85,8 @@ fn build_v2_package_bytes() -> (Vec<u8>, Vec<Vec<u8>>) {
     builder.add_source("a.move", V2_A);
     builder.add_source("b.move", V2_B);
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     let path = builder.write_to_temp().unwrap();
 
@@ -115,8 +115,8 @@ fn out_of_range_variant_tag_does_not_stall_block() {
     let mut builder = PackageBuilder::new("counter_pkg");
     builder.add_source("a.move", V1_A);
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     let v1_path = builder.write_to_temp().unwrap();
     let publish_v1 =

@@ -2,7 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use aptos_cached_packages::aptos_stdlib;
-use aptos_framework::BuiltPackage;
 use aptos_language_e2e_tests::{
     account::Account,
     executor::{ExecFuncTimerDynamicArgs, FakeExecutor, GasMeterType},
@@ -11,6 +10,7 @@ use aptos_types::{move_utils::MemberId, transaction::TransactionPayload};
 use move_binary_format::CompiledModule;
 use move_core_types::{account_address::AccountAddress, language_storage::ModuleId};
 use std::{fs::ReadDir, path::PathBuf, string::String, time::Instant};
+use topo_framework::BuiltPackage;
 
 // CONSTANTS
 const PREFIX: &str = "benchmark";

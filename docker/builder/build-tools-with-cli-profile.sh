@@ -38,4 +38,4 @@ done
 
 # Build the Aptos Move framework and place it in dist. It can be found afterwards in the current directory.
 echo "Building the Aptos Move framework..."
-(cd dist && cargo run --locked --profile=$CLI_PROFILE --package aptos-framework -- release)
+(cd dist && cargo run --locked --profile=$CLI_PROFILE --package topo-framework -- release)

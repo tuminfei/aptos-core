@@ -4,10 +4,10 @@
 //! Tests for using function values as keys in tables.
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_language_e2e_tests::account::Account;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{account_address::AccountAddress, transaction::TransactionStatus};
+use topo_framework::BuildOptions;
 
 #[test]
 fn fv_in_table() {
@@ -421,8 +421,8 @@ fn publish(h: &mut MoveHarness, account: &Account, source: &str) -> TransactionS
     let mut builder = PackageBuilder::new("Package");
     builder.add_source("m.move", source);
     builder.add_local_dep(
-        "AptosStdlib",
-        &common::framework_dir_path("aptos-stdlib").to_string_lossy(),
+        "TopoStdlib",
+        &common::framework_dir_path("topo-stdlib").to_string_lossy(),
     );
     builder.add_local_dep(
         "MoveStdlib",

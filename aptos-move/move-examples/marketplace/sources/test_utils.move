@@ -4,11 +4,11 @@ module marketplace::test_utils {
     use std::string;
     use std::vector;
 
-    use aptos_framework::account;
-    use aptos_framework::aptos_coin::{Self, AptosCoin};
-    use aptos_framework::coin;
-    use aptos_framework::object::{Self, Object};
-    use aptos_framework::timestamp;
+    use topo_framework::account;
+    use topo_framework::topo_coin::{Self, TopoCoin};
+    use topo_framework::coin;
+    use topo_framework::object::{Self, Object};
+    use topo_framework::timestamp;
 
     use aptos_token::token as tokenv1;
     use aptos_token_objects::token::Token;
@@ -18,25 +18,25 @@ module marketplace::test_utils {
     use marketplace::fee_schedule::{Self, FeeSchedule};
 
     public inline fun setup(
-        aptos_framework: &signer,
+        topo_framework: &signer,
         marketplace: &signer,
         seller: &signer,
         purchaser: &signer,
     ): (address, address, address) {
-        timestamp::set_time_has_started_for_testing(aptos_framework);
-        let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(aptos_framework);
+        timestamp::set_time_has_started_for_testing(topo_framework);
+        let (burn_cap, mint_cap) = topo_coin::initialize_for_test(topo_framework);
 
         let marketplace_addr = signer::address_of(marketplace);
         account::create_account_for_test(marketplace_addr);
-        coin::register<AptosCoin>(marketplace);
+        coin::register<TopoCoin>(marketplace);
 
         let seller_addr = signer::address_of(seller);
         account::create_account_for_test(seller_addr);
-        coin::register<AptosCoin>(seller);
+        coin::register<TopoCoin>(seller);
 
         let purchaser_addr = signer::address_of(purchaser);
         account::create_account_for_test(purchaser_addr);
-        coin::register<AptosCoin>(purchaser);
+        coin::register<TopoCoin>(purchaser);
 
         let coins = coin::mint(10000, &mint_cap);
         coin::deposit(seller_addr, coins);

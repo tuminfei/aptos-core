@@ -7,7 +7,7 @@ description: Use when rebasing a branch that modifies the Aptos Move framework a
 
 ## Overview
 
-`aptos-move/framework/cached-packages/src/head.mrb` is a **serialized binary** of the compiled Move framework. Sibling files (`aptos_framework_sdk_builder.rs`, etc.) in the same directory are **code-generated** from the framework. Neither can be merge-resolved sensibly — they must be **rebuilt** from the framework sources at the conflict point.
+`aptos-move/framework/cached-packages/src/head.mrb` is a **serialized binary** of the compiled Move framework. Sibling files (`topo_framework_sdk_builder.rs`, etc.) in the same directory are **code-generated** from the framework. Neither can be merge-resolved sensibly — they must be **rebuilt** from the framework sources at the conflict point.
 
 **The rule:** don't try to 3-way merge cached-packages artifacts. Take one side to unblock git, finish the rebase, then regenerate **once** at the end with `scripts/cargo_build_aptos_cached_packages.sh`.
 
@@ -20,7 +20,7 @@ Conflict markers / git output that should trigger this skill:
 - `CONFLICT` in any of `aptos-move/framework/cached-packages/src/*.rs`
 - CI error after rebase: `ERROR: Cached framework artifacts are out-of-date.`
 
-If the conflict is in **framework source** (e.g., `aptos-move/framework/aptos-framework/sources/*.move`), resolve that conflict the normal way first — the cached-packages step comes after.
+If the conflict is in **framework source** (e.g., `aptos-move/framework/topo-framework/sources/*.move`), resolve that conflict the normal way first — the cached-packages step comes after.
 
 ## Procedure
 
@@ -41,7 +41,7 @@ If the conflict is in **framework source** (e.g., `aptos-move/framework/aptos-fr
    ```bash
    scripts/cargo_build_aptos_cached_packages.sh
    ```
-   This runs `cargo run --profile=ci -p aptos-framework -- update-cached-packages` and formats the generated `.rs` files.
+   This runs `cargo run --profile=ci -p topo-framework -- update-cached-packages` and formats the generated `.rs` files.
 
 4. **Amend the regenerated artifacts into the framework commit** (so history stays clean — bytecode change lives with the source change that caused it):
    ```bash

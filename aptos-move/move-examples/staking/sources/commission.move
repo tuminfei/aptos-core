@@ -20,17 +20,17 @@
 /// This issue is also somewhat mitigated by asserting a min balance before distributing. For other uses of this
 /// contract, consider raising the minimum balance to minimize rounding errors from frequent distribution calls.
 module staking::commission {
-    use aptos_framework::account::{Self, SignerCapability};
-    use aptos_framework::aptos_account;
-    use aptos_framework::aptos_coin::AptosCoin;
-    use aptos_framework::coin;
-    use aptos_framework::resource_account;
-    use aptos_framework::timestamp;
+    use topo_framework::account::{Self, SignerCapability};
+    use topo_framework::topo_account;
+    use topo_framework::topo_coin::TopoCoin;
+    use topo_framework::coin;
+    use topo_framework::resource_account;
+    use topo_framework::timestamp;
     use aptos_std::math128;
     use aptos_std::math64;
     use staking::oracle;
     use std::signer;
-    use aptos_framework::event;
+    use topo_framework::event;
 
     const INITIAL_COMMISSION_AMOUNT: u64 = 100000;
     const ONE_YEAR_IN_SECONDS: u64 = 31536000;
@@ -167,7 +167,7 @@ module staking::commission {
     public entry fun distribute_commission(account: &signer) acquires CommissionConfig {
         assert_manager_or_operator(account);
 
-        let balance = coin::balance<AptosCoin>(@staking);
+        let balance = coin::balance<TopoCoin>(@staking);
         assert!(balance >= MIN_BALANCE_FOR_DISTRIBUTION, EINSUFFICIENT_BALANCE_FOR_DISTRIBUTION);
 
         // Commission owed so far plus any debt.
@@ -191,11 +191,11 @@ module staking::commission {
             config.commission_debt = apt_to_usd(debt_apt);
         } else {
             let surplus_balance = balance - commission_in_apt;
-            aptos_account::transfer(commission_signer, config.manager, surplus_balance);
+            topo_account::transfer(commission_signer, config.manager, surplus_balance);
         };
 
-        let remaining_balance = coin::balance<AptosCoin>(@staking);
-        aptos_account::transfer(commission_signer, config.operator, remaining_balance);
+        let remaining_balance = coin::balance<TopoCoin>(@staking);
+        topo_account::transfer(commission_signer, config.operator, remaining_balance);
 
         event::emit(CommissionDistributed {
             manager: config.manager,

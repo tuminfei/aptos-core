@@ -4,9 +4,9 @@
 /// since `MintRef` of this fungible asset does not exist anymore.
 /// The `init_module()` code can be modified to customize the managing refs as needed.
 module example_addr::preminted_managed_coin {
-    use aptos_framework::fungible_asset::{Self, Metadata};
-    use aptos_framework::object::{Self, Object};
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::fungible_asset::{Self, Metadata};
+    use topo_framework::object::{Self, Object};
+    use topo_framework::primary_fungible_store;
     use example_addr::managed_fungible_asset;
     use std::signer;
     use std::string::utf8;

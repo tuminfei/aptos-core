@@ -1,16 +1,16 @@
 #[test_only]
 module aptos_experimental::bulk_order_book_tests {
     use std::vector;
-    use aptos_framework::timestamp;
-    use aptos_framework::account;
-    use aptos_trading::order_match_types::OrderMatch;
-    use aptos_trading::bulk_order_types::BulkOrderRequest;
+    use topo_framework::timestamp;
+    use topo_framework::account;
+    use topo_trading::order_match_types::OrderMatch;
+    use topo_trading::bulk_order_types::BulkOrderRequest;
     use aptos_experimental::bulk_order_utils::new_bulk_order_request_with_sanitization;
     use aptos_experimental::bulk_order_book::{BulkOrderBook, new_bulk_order_book};
     use aptos_experimental::price_time_index;
 
     #[test_only]
-    use aptos_trading::order_book_types::{TestMetadata, new_test_metadata};
+    use topo_trading::order_book_types::{TestMetadata, new_test_metadata};
 
     // Test accounts
     const TEST_ACCOUNT_1: address = @0x1;
@@ -29,8 +29,8 @@ module aptos_experimental::bulk_order_book_tests {
     const TOTAL_SIZE_PER_SIDE: u64 = SIZE_1 + SIZE_2;
 
     fun setup_test(): (BulkOrderBook<TestMetadata>, price_time_index::PriceTimeIndex) {
-        let aptos_framework = account::create_signer_for_test(@0x1);
-        timestamp::set_time_has_started_for_testing(&aptos_framework);
+        let topo_framework = account::create_signer_for_test(@0x1);
+        timestamp::set_time_has_started_for_testing(&topo_framework);
         let order_book = new_bulk_order_book<TestMetadata>();
         let price_time_idx = price_time_index::new_price_time_idx();
 

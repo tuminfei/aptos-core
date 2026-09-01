@@ -2,7 +2,7 @@ module hello_blockchain::message {
     use std::error;
     use std::signer;
     use std::string;
-    use aptos_framework::event;
+    use topo_framework::event;
     #[test_only]
     use std::debug;
 
@@ -53,7 +53,7 @@ module hello_blockchain::message {
         debug::print(&msg);
 
         let addr = signer::address_of(&account);
-        aptos_framework::account::create_account_for_test(addr);
+        topo_framework::account::create_account_for_test(addr);
         set_message(account, string::utf8(b"Hello, Blockchain"));
 
         assert!(

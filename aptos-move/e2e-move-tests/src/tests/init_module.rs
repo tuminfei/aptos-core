@@ -2,7 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_abort, assert_success, tests::common, MoveHarness};
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
     account_address::AccountAddress,
@@ -12,6 +11,7 @@ use claims::assert_ok;
 use move_core_types::{parser::parse_struct_tag, vm_status::StatusCode};
 use serde::{Deserialize, Serialize};
 use test_case::test_case;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 /// Mimics `0xcafe::test::ModuleData`
 #[derive(Serialize, Deserialize)]
@@ -24,7 +24,7 @@ fn init_module() {
     let mut h = MoveHarness::new();
 
     // Load the code
-    let acc = h.aptos_framework_account();
+    let acc = h.topo_framework_account();
     assert_success!(h.publish_package(&acc, &common::test_dir_path("init_module.data/pack")));
 
     // Verify that init_module was called.
@@ -52,7 +52,7 @@ fn init_module_when_republishing_package() {
     let mut h = MoveHarness::new();
 
     // Deploy a package that initially does not have the module that has the init_module function.
-    let acc = h.aptos_framework_account();
+    let acc = h.topo_framework_account();
     assert_success!(h.publish_package(
         &acc,
         &common::test_dir_path("init_module.data/pack_initial")

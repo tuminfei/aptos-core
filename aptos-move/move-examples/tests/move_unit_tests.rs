@@ -1,7 +1,6 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::extended_checks;
 use aptos_gas_schedule::{MiscGasParameters, NativeGasParameters, LATEST_GAS_FEATURE_VERSION};
 use aptos_types::{
     account_address::{create_resource_address, AccountAddress},
@@ -17,6 +16,7 @@ use move_unit_test::{
 use move_vm_runtime::native_functions::NativeFunctionTable;
 use std::{collections::BTreeMap, path::PathBuf};
 use tempfile::tempdir;
+use topo_framework::extended_checks;
 
 pub fn path_in_crate<S>(relative: S) -> PathBuf
 where

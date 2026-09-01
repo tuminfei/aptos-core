@@ -1,6 +1,6 @@
 script {
-    use aptos_framework::aptos_coin;
-    use aptos_framework::coin;
+    use topo_framework::topo_coin;
+    use topo_framework::coin;
 
     fun main(
         first: &signer,
@@ -11,8 +11,8 @@ script {
         dst_second: address,
         deposit_first: u64,
     ) {
-        let coin_first = coin::withdraw<aptos_coin::AptosCoin>(first, amount_first);
-        let coin_second = coin::withdraw<aptos_coin::AptosCoin>(second, amount_second);
+        let coin_first = coin::withdraw<topo_coin::TopoCoin>(first, amount_first);
+        let coin_second = coin::withdraw<topo_coin::TopoCoin>(second, amount_second);
 
         coin::merge(&mut coin_first, coin_second);
 

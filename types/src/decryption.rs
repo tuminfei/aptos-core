@@ -58,7 +58,7 @@ impl BlockTxnDecryptionKey {
     }
 }
 
-/// Mirror of `aptos_framework::decryption::PerBlockDecryptionKeyV2`.
+/// Mirror of `topo_framework::decryption::PerBlockDecryptionKeyV2`.
 /// Read once per epoch in `build_root`: its existence marks that dense
 /// decryption-round tracking is active (blocks emit `BlockMetadataExt::V3`),
 /// and `next_decryption_round` seeds the in-memory round chain. Not used on

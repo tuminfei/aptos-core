@@ -67,7 +67,7 @@ impl std::ops::Deref for TestValidator {
 // * SEQUENCE_NUMBER_TOO_NEW -- This error is filtered out when running validation; it is only
 //   testable when running the executor.
 // * INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE -- This is tested in verify_txn.rs.
-// * SENDING_ACCOUNT_FROZEN: Tested in functional-tests/tests/aptos_account/freezing.move.
+// * SENDING_ACCOUNT_FROZEN: Tested in functional-tests/tests/topo_account/freezing.move.
 // * Errors arising from deserializing the code -- these are tested in
 //   - move-language/move/language/move-binary-format/src/unit_tests/deserializer_tests.rs
 //   - move-language/move/language/move-binary-format/tests/serializer_tests.rs
@@ -81,7 +81,7 @@ fn test_validate_transaction() {
     let vm_validator = TestValidator::new();
 
     let address = account_config::aptos_test_root_address();
-    let program = aptos_stdlib::aptos_coin_mint(address, 100);
+    let program = aptos_stdlib::topo_coin_mint(address, 100);
     let transaction = transaction_test_helpers::get_test_signed_txn(
         address,
         1,
@@ -102,7 +102,7 @@ fn test_validate_invalid_signature() {
     // Submit with an account using an different private/public keypair
 
     let address = account_config::aptos_test_root_address();
-    let program = aptos_stdlib::aptos_coin_transfer(address, 100);
+    let program = aptos_stdlib::topo_coin_transfer(address, 100);
     let transaction = transaction_test_helpers::get_test_unchecked_txn(
         address,
         1,
@@ -257,7 +257,7 @@ fn test_validate_max_gas_price_below_bounds() {
     let vm_validator = TestValidator::new();
 
     let address = account_config::aptos_test_root_address();
-    let program = aptos_stdlib::aptos_coin_transfer(address, 100);
+    let program = aptos_stdlib::topo_coin_transfer(address, 100);
     let transaction = transaction_test_helpers::get_test_signed_transaction(
         address,
         1,
@@ -286,7 +286,7 @@ fn test_validate_invalid_auth_key() {
     // Submit with an account using an different private/public keypair
 
     let address = account_config::aptos_test_root_address();
-    let program = aptos_stdlib::aptos_coin_transfer(address, 100);
+    let program = aptos_stdlib::topo_coin_transfer(address, 100);
     let transaction = transaction_test_helpers::get_test_signed_txn(
         address,
         0,
@@ -304,7 +304,7 @@ fn test_validate_account_doesnt_exist() {
 
     let address = account_config::aptos_test_root_address();
     let random_account_addr = account_address::AccountAddress::random();
-    let program = aptos_stdlib::aptos_coin_transfer(address, 100);
+    let program = aptos_stdlib::topo_coin_transfer(address, 100);
     let transaction = transaction_test_helpers::get_test_signed_transaction(
         random_account_addr,
         1,
@@ -324,7 +324,7 @@ fn test_validate_sequence_number_too_new() {
     let vm_validator = TestValidator::new();
 
     let address = account_config::aptos_test_root_address();
-    let program = aptos_stdlib::aptos_coin_transfer(address, 100);
+    let program = aptos_stdlib::topo_coin_transfer(address, 100);
     let transaction = transaction_test_helpers::get_test_signed_txn(
         address,
         1,
@@ -341,7 +341,7 @@ fn test_validate_invalid_arguments() {
     let vm_validator = TestValidator::new();
 
     let address = account_config::aptos_test_root_address();
-    let program = aptos_stdlib::aptos_coin_transfer(address, 100);
+    let program = aptos_stdlib::topo_coin_transfer(address, 100);
     let transaction = transaction_test_helpers::get_test_signed_txn(
         address,
         1,

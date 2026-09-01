@@ -29,7 +29,7 @@ fn publish(h: &mut MoveHarness, account: &Account, sources: &[(&str, &str)]) -> 
     h.publish_package_with_options(
         account,
         path.path(),
-        aptos_framework::BuildOptions::move_2().set_latest_language(),
+        topo_framework::BuildOptions::move_2().set_latest_language(),
     )
 }
 

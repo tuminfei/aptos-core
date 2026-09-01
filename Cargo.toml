@@ -368,8 +368,8 @@ aptos-faucet-core = { path = "crates/aptos-faucet/core" }
 aptos-faucet-metrics-server = { path = "crates/aptos-faucet/metrics-server" }
 aptos-faucet-service = { path = "crates/aptos-faucet/service" }
 aptos-forge = { path = "testsuite/forge" }
-aptos-framework = { path = "aptos-move/framework" }
-aptos-framework-natives = { path = "aptos-move/framework/natives" }
+topo-framework = { path = "aptos-move/framework" }
+topo-framework-natives = { path = "aptos-move/framework/natives" }
 aptos-gas-algebra = { path = "aptos-move/aptos-gas-algebra" }
 aptos-gas-calibration = { path = "aptos-move/aptos-gas-calibration" }
 aptos-gas-meter = { path = "aptos-move/aptos-gas-meter" }

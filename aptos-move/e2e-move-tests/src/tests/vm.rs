@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::MoveHarness;
-use aptos_cached_packages::aptos_stdlib::aptos_account_transfer;
+use aptos_cached_packages::aptos_stdlib::topo_account_transfer;
 use aptos_crypto::HashValue;
 use aptos_types::{
     on_chain_config::FeatureFlag,
@@ -35,7 +35,7 @@ fn failed_transaction_cleanup_charges_gas(status_code: StatusCode) {
         .transaction()
         .sequence_number(10)
         .max_gas_amount(max_gas_amount)
-        .payload(aptos_account_transfer(*receiver.address(), 1))
+        .payload(topo_account_transfer(*receiver.address(), 1))
         .sign();
 
     let state_view = h.executor.get_state_view();
@@ -182,7 +182,7 @@ fn encrypted_transaction_charges_decryption_surcharge() {
     let receiver = h.new_account_with_balance_and_sequence_number(1_000_000, 10);
 
     // Run a normal (non-encrypted) transfer first.
-    let normal_payload = aptos_account_transfer(*receiver.address(), 1);
+    let normal_payload = topo_account_transfer(*receiver.address(), 1);
     let normal_txn = h.create_transaction_payload(&sender, normal_payload);
     let normal_output = h.run_raw(normal_txn);
     assert!(
@@ -193,7 +193,7 @@ fn encrypted_transaction_charges_decryption_surcharge() {
 
     // Run an encrypted transfer (Decrypted state, simulating successful decryption).
     let entry_fn =
-        aptos_cached_packages::aptos_stdlib::aptos_account_transfer(*receiver.address(), 1);
+        aptos_cached_packages::aptos_stdlib::topo_account_transfer(*receiver.address(), 1);
     let entry_fn_executable = match entry_fn {
         TransactionPayload::EntryFunction(ef) => TransactionExecutable::EntryFunction(ef),
         _ => panic!("Expected EntryFunction payload"),

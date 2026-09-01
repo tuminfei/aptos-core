@@ -6,7 +6,6 @@
 //! matching, and selecting/mutating the variant field.
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
     account_address::AccountAddress,
@@ -17,6 +16,7 @@ use move_core_types::{
     language_storage::ModuleId,
     vm_status::{AbortLocation, StatusCode},
 };
+use topo_framework::BuildOptions;
 
 const PUBLIC_OPTION_TEST_SOURCE: &str = r#"
 /// Exercises `std::option::Option` as a public enum from a module outside `std`.

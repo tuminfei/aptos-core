@@ -40,28 +40,28 @@ fn move_stdlib_on_mono_move() {
 #[test]
 #[ignore]
 fn aptos_stdlib_on_mono_move() {
-    run_tests_for_pkg("aptos-stdlib", false);
+    run_tests_for_pkg("topo-stdlib", false);
 }
 
 #[test]
 #[ignore]
-fn aptos_framework_on_mono_move() {
-    run_tests_for_pkg("aptos-framework", false);
+fn topo_framework_on_mono_move() {
+    run_tests_for_pkg("topo-framework", false);
 }
 
 #[test]
 fn aptos_token_on_mono_move() {
-    run_tests_for_pkg("aptos-token", false);
+    run_tests_for_pkg("topo-token", false);
 }
 
 #[test]
 fn aptos_token_objects_on_mono_move() {
-    run_tests_for_pkg("aptos-token-objects", false);
+    run_tests_for_pkg("topo-token-objects", false);
 }
 
 #[test]
 fn aptos_trading_on_mono_move() {
-    run_tests_for_pkg("aptos-trading", false);
+    run_tests_for_pkg("topo-trading", false);
 }
 
 #[test]

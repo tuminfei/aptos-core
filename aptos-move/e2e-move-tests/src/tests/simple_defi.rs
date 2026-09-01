@@ -3,7 +3,6 @@
 
 use crate::{assert_success, tests::common, MoveHarness};
 use aptos_cached_packages::aptos_stdlib;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::account::Account;
 use aptos_types::{
     account_address::{create_resource_address, AccountAddress},
@@ -12,6 +11,7 @@ use aptos_types::{
 use move_core_types::{ident_str, language_storage::ModuleId, parser::parse_struct_tag};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 #[derive(Serialize, Deserialize)]
 struct ModuleData {
@@ -20,7 +20,7 @@ struct ModuleData {
     mint_cap: Vec<u8>, // placeholder for mint capability
 }
 
-const APTOS_COIN_STRUCT_STRING: &str = "0x1::aptos_coin::AptosCoin";
+const APTOS_COIN_STRUCT_STRING: &str = "0x1::topo_coin::TopoCoin";
 const CHLOE_COIN_STRUCT_STRING: &str =
     "0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::simple_defi::ChloesCoin";
 const EXCHANGE_FROM_FUNCTION: &str = "exchange_from_entry";

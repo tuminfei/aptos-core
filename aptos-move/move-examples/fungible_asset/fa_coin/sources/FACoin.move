@@ -2,11 +2,11 @@
 /// deployer will be creating a new managed fungible asset with the hardcoded supply config, name, symbol, and decimals.
 /// The address of the asset can be obtained via get_metadata(). As a simple version, it only deals with primary stores.
 module FACoin::fa_coin {
-    use aptos_framework::fungible_asset::{Self, MintRef, TransferRef, BurnRef, Metadata, FungibleAsset};
-    use aptos_framework::object::{Self, Object};
-    use aptos_framework::primary_fungible_store;
-    use aptos_framework::function_info;
-    use aptos_framework::dispatchable_fungible_asset;
+    use topo_framework::fungible_asset::{Self, MintRef, TransferRef, BurnRef, Metadata, FungibleAsset};
+    use topo_framework::object::{Self, Object};
+    use topo_framework::primary_fungible_store;
+    use topo_framework::function_info;
+    use topo_framework::dispatchable_fungible_asset;
     use std::error;
     use std::signer;
     use std::string::{Self, utf8};
@@ -19,7 +19,7 @@ module FACoin::fa_coin {
 
     const ASSET_SYMBOL: vector<u8> = b"FA";
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Hold refs to control the minting, transfer and burning of fungible assets.
     struct ManagedFungibleAsset has key {
         mint_ref: MintRef,
@@ -27,7 +27,7 @@ module FACoin::fa_coin {
         burn_ref: BurnRef,
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     /// Global state to pause the FA coin.
     /// OPTIONAL
     struct State has key {

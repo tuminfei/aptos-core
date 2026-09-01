@@ -56,7 +56,7 @@ aptos-crypto = { workspace = true }
 aptos-db = { workspace = true }
 aptos-executor = { workspace = true }
 aptos-executor-types = { workspace = true }
-aptos-framework = { workspace = true }
+topo-framework = { workspace = true }
 aptos-genesis = { workspace = true }
 aptos-global-constants = { workspace = true }
 aptos-mempool = { workspace = true }

@@ -8,7 +8,6 @@ use aptos_config::config::{
     DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD, NO_OP_STORAGE_PRUNER_CONFIG,
 };
 use aptos_db::AptosDB;
-use aptos_framework::natives::code::PackageMetadata;
 use aptos_storage_interface::DbReader;
 use aptos_types::{
     account_address::AccountAddress,
@@ -17,6 +16,7 @@ use aptos_types::{
 };
 use move_core_types::language_storage::ModuleId;
 use std::{collections::HashMap, path::Path, sync::Arc};
+use topo_framework::natives::code::PackageMetadata;
 
 pub struct DBDebuggerInterface(Arc<dyn DbReader>);
 

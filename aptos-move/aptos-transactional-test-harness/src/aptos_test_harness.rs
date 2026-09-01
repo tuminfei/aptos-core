@@ -9,7 +9,6 @@ use aptos_crypto::{
     hash::HashValue,
     ValidCryptoMaterialStringExt,
 };
-use aptos_framework::ReleaseBundleExt;
 use aptos_gas_schedule::{InitialGasSchedule, TransactionGasParameters};
 use aptos_resource_viewer::AptosValueAnnotator;
 use aptos_transaction_simulation::{
@@ -73,6 +72,7 @@ use std::{
     sync::Arc,
 };
 use tempfile::NamedTempFile;
+use topo_framework::ReleaseBundleExt;
 
 /**
  * Definitions
@@ -273,7 +273,7 @@ impl aptos_storage_interface::DbReader for FakeDbReader {}
  */
 
 /// Default private key mappings for special Aptos accounts.
-fn aptos_framework_private_key_mapping() -> Vec<(String, Ed25519PrivateKey)> {
+fn topo_framework_private_key_mapping() -> Vec<(String, Ed25519PrivateKey)> {
     vec![("Root".to_string(), GENESIS_KEYPAIR.0.clone())]
 }
 
@@ -298,7 +298,7 @@ fn compile_framework_sources(
     all_source_files: Vec<String>,
     language_version: Option<LanguageVersion>,
 ) -> PrecompiledFilesModules {
-    let named_address_mapping_strings: Vec<String> = aptos_framework::named_addresses()
+    let named_address_mapping_strings: Vec<String> = topo_framework::named_addresses()
         .iter()
         .map(|(string, num_addr)| format!("{}={}", string, num_addr))
         .collect();
@@ -307,7 +307,7 @@ fn compile_framework_sources(
         sources: all_source_files.clone(),
         dependencies: vec![],
         named_address_mapping: named_address_mapping_strings.clone(),
-        known_attributes: aptos_framework::extended_checks::get_all_attribute_names().clone(),
+        known_attributes: topo_framework::extended_checks::get_all_attribute_names().clone(),
         language_version,
         ..move_compiler_v2::Options::default()
     };
@@ -336,7 +336,7 @@ static PRECOMPILED_APTOS_FRAMEWORK_V2: Lazy<PrecompiledFilesModules> = Lazy::new
 
 static PRECOMPILED_APTOS_FRAMEWORK_V2_WITH_EXPERIMENTAL: Lazy<PrecompiledFilesModules> =
     Lazy::new(|| {
-        let named_address_mapping_strings: Vec<String> = aptos_framework::named_addresses()
+        let named_address_mapping_strings: Vec<String> = topo_framework::named_addresses()
             .iter()
             .map(|(string, num_addr)| format!("{}={}", string, num_addr))
             .collect();
@@ -353,7 +353,7 @@ static PRECOMPILED_APTOS_FRAMEWORK_V2_WITH_EXPERIMENTAL: Lazy<PrecompiledFilesMo
             sources: all_sources.clone(),
             dependencies: vec![],
             named_address_mapping: named_address_mapping_strings.clone(),
-            known_attributes: aptos_framework::extended_checks::get_all_attribute_names().clone(),
+            known_attributes: topo_framework::extended_checks::get_all_attribute_names().clone(),
             language_version: Some(LanguageVersion::latest()),
             ..move_compiler_v2::Options::default()
         };
@@ -445,7 +445,7 @@ impl AptosTestAdapter<'_> {
             ))
     }
 
-    /// Obtain the AptosCoin amount under address `signer_addr`
+    /// Obtain the TopoCoin amount under address `signer_addr`
     fn fetch_account_balance(&self, signer_addr: &AccountAddress) -> Result<u64> {
         Ok(FungibleStoreResource::fetch_move_resource_from_group(
             &self.storage,
@@ -536,7 +536,7 @@ impl AptosTestAdapter<'_> {
         let txn = RawTransaction::new(
             aptos_test_root_address(),
             parameters.sequence_number,
-            aptos_cached_packages::aptos_stdlib::aptos_account_create_account(account_addr),
+            aptos_cached_packages::aptos_stdlib::topo_account_create_account(account_addr),
             parameters.max_gas_amount,
             parameters.gas_unit_price,
             parameters.expiration_timestamp_secs,
@@ -552,7 +552,7 @@ impl AptosTestAdapter<'_> {
         let txn = RawTransaction::new(
             aptos_test_root_address(),
             parameters.sequence_number + 1,
-            aptos_cached_packages::aptos_stdlib::aptos_coin_mint(account_addr, amount),
+            aptos_cached_packages::aptos_stdlib::topo_coin_mint(account_addr, amount),
             parameters.max_gas_amount,
             parameters.gas_unit_price,
             parameters.expiration_timestamp_secs,
@@ -592,7 +592,7 @@ impl<'a> MoveTestAdapter<'a> for AptosTestAdapter<'a> {
     }
 
     fn known_attributes(&self) -> &BTreeSet<String> {
-        aptos_framework::extended_checks::get_all_attribute_names()
+        topo_framework::extended_checks::get_all_attribute_names()
     }
 
     fn run_config(&self) -> TestRunConfig {
@@ -614,7 +614,7 @@ impl<'a> MoveTestAdapter<'a> for AptosTestAdapter<'a> {
             None => BTreeMap::new(),
         };
 
-        let mut named_address_mapping = aptos_framework::named_addresses().clone();
+        let mut named_address_mapping = topo_framework::named_addresses().clone();
 
         for (name, addr) in additional_named_address_mapping.clone() {
             if named_address_mapping.contains_key(&name) {
@@ -631,7 +631,7 @@ impl<'a> MoveTestAdapter<'a> for AptosTestAdapter<'a> {
 
         // Builtin private key mapping
         let mut private_key_mapping = BTreeMap::new();
-        for (name, private_key) in aptos_framework_private_key_mapping() {
+        for (name, private_key) in topo_framework_private_key_mapping() {
             private_key_mapping.insert(name, private_key);
         }
 
@@ -694,7 +694,7 @@ impl<'a> MoveTestAdapter<'a> for AptosTestAdapter<'a> {
             (SyntaxChoice::ASM, _) => warnings_opt,
             (_, Some(model)) => {
                 let _runtime_metadata =
-                    aptos_framework::extended_checks::run_extended_checks(&model);
+                    topo_framework::extended_checks::run_extended_checks(&model);
                 // TODO(#13327): call inject_runtime_metadata in built_package.rs?  what file?
                 if model.diag_count(Severity::Warning) > 0 {
                     let mut error_writer = Buffer::no_color();
@@ -735,7 +735,7 @@ impl<'a> MoveTestAdapter<'a> for AptosTestAdapter<'a> {
             (SyntaxChoice::ASM, _) => warnings_opt,
             (_, Some(model)) => {
                 let _runtime_metadata =
-                    aptos_framework::extended_checks::run_extended_checks(&model);
+                    topo_framework::extended_checks::run_extended_checks(&model);
                 // TODO(#13327): call inject_runtime_metadata in built_package.rs?  what file?
                 if model.diag_count(Severity::Warning) > 0 {
                     let mut error_writer = Buffer::no_color();

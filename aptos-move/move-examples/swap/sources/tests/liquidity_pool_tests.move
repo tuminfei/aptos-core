@@ -1,8 +1,8 @@
 #[test_only]
 module swap::liquidity_pool_tests {
-    use aptos_framework::fungible_asset::{Self, FungibleAsset};
-    use aptos_framework::object::Object;
-    use aptos_framework::primary_fungible_store;
+    use topo_framework::fungible_asset::{Self, FungibleAsset};
+    use topo_framework::object::Object;
+    use topo_framework::primary_fungible_store;
     use swap::liquidity_pool::{Self, LiquidityPool};
     use swap::test_helpers;
     use std::signer;

@@ -2,12 +2,12 @@ module bonding_curve_launchpad::bonding_curve_launchpad {
     use std::string::{Self, String};
     use std::option;
     use std::vector;
-    use aptos_framework::object::{Self, Object, ExtendRef};
-    use aptos_framework::fungible_asset::{Self, FungibleAsset, Metadata, TransferRef};
-    use aptos_framework::primary_fungible_store;
-    use aptos_framework::event;
-    use aptos_framework::function_info::{Self, FunctionInfo};
-    use aptos_framework::dispatchable_fungible_asset;
+    use topo_framework::object::{Self, Object, ExtendRef};
+    use topo_framework::fungible_asset::{Self, FungibleAsset, Metadata, TransferRef};
+    use topo_framework::primary_fungible_store;
+    use topo_framework::event;
+    use topo_framework::function_info::{Self, FunctionInfo};
+    use topo_framework::dispatchable_fungible_asset;
     use aptos_std::math128;
     use bonding_curve_launchpad::liquidity_pairs;
 
@@ -37,7 +37,7 @@ module bonding_curve_launchpad::bonding_curve_launchpad {
         fa_generator_extend_ref: ExtendRef
     }
 
-    #[resource_group_member(group = aptos_framework::object::ObjectGroup)]
+    #[resource_group_member(group = topo_framework::object::ObjectGroup)]
     struct FAController has key, store {
         transfer_ref: TransferRef
     }

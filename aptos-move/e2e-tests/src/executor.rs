@@ -16,7 +16,6 @@ use aptos_block_executor::{
     txn_provider::default::DefaultTxnProvider,
 };
 use aptos_crypto::HashValue;
-use aptos_framework::ReleaseBundle;
 use aptos_gas_algebra::DynamicExpression;
 use aptos_gas_meter::{AptosGasMeter, GasAlgebra, StandardGasAlgebra, StandardGasMeter};
 use aptos_gas_profiling::{GasProfiler, TransactionGasLog};
@@ -60,7 +59,7 @@ use aptos_types::{
     },
     vm_status::{StatusCode, VMStatus},
     write_set::{WriteOp, WriteSet, WriteSetMut},
-    AptosCoinType, CoinType,
+    CoinType, TopoCoinType,
 };
 use aptos_validator_interface::{DebuggerStateView, RestDebuggerInterface};
 use aptos_vm::{
@@ -106,6 +105,7 @@ use std::{
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
+use topo_framework::ReleaseBundle;
 
 static RNG_SEED: [u8; 32] = [9u8; 32];
 
@@ -459,7 +459,7 @@ impl<O: OutputLogger> FakeExecutorImpl<O> {
                 .simple_serialize()
                 .unwrap(),
         ]);
-        self.exec("aptos_governance", "force_end_epoch", vec![], vec![
+        self.exec("topo_governance", "force_end_epoch", vec![], vec![
             core_signer_arg,
         ]);
     }
@@ -776,7 +776,7 @@ impl<O: OutputLogger> FakeExecutorImpl<O> {
             .execute_view_function(
                 str::parse("0x1::coin::supply").unwrap(),
                 vec![move_core_types::language_storage::TypeTag::from_str(
-                    "0x1::aptos_coin::AptosCoin",
+                    "0x1::topo_coin::TopoCoin",
                 )
                 .unwrap()],
                 vec![],
@@ -789,8 +789,8 @@ impl<O: OutputLogger> FakeExecutorImpl<O> {
     }
 
     /// Reads the CoinInfo resource value from this executor's data store.
-    pub fn read_apt_coin_info_resource(&self) -> Option<CoinInfoResource<AptosCoinType>> {
-        self.read_resource(&AptosCoinType::coin_info_address())
+    pub fn read_apt_coin_info_resource(&self) -> Option<CoinInfoResource<TopoCoinType>> {
+        self.read_resource(&TopoCoinType::coin_info_address())
     }
 
     /// Executes the given block of transactions.

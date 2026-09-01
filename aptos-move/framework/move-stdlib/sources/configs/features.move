@@ -210,7 +210,7 @@ module std::features {
         is_enabled(PERIODICAL_REWARD_RATE_DECREASE)
     }
 
-    /// Whether enable paritial governance voting on aptos_governance.
+    /// Whether enable paritial governance voting on topo_governance.
     /// Lifetime: transient
     const PARTIAL_GOVERNANCE_VOTING: u64 = 17;
 
@@ -387,7 +387,7 @@ module std::features {
         is_enabled(BN254_STRUCTURES)
     }
 
-    /// Deprecated by `aptos_framework::randomness_config::RandomnessConfig`.
+    /// Deprecated by `topo_framework::randomness_config::RandomnessConfig`.
     const RECONFIGURE_WITH_DKG: u64 = 45;
 
     public fun get_reconfigure_with_dkg_feature(): u64 {
@@ -424,7 +424,7 @@ module std::features {
         is_enabled(KEYLESS_BUT_ZKLESS_ACCOUNTS)
     }
 
-    /// Deprecated by `aptos_framework::jwk_consensus_config::JWKConsensusConfig`.
+    /// Deprecated by `topo_framework::jwk_consensus_config::JWKConsensusConfig`.
     const JWK_CONSENSUS: u64 = 49;
 
     public fun get_jwk_consensus_feature(): u64 {
@@ -986,7 +986,7 @@ module std::features {
         is_enabled(FUNCTION_VALUE_DISPATCH) && is_enabled(FUNCTION_REFLECTION)
     }
 
-    /// Whether lazy module initialization via `aptos_framework::init::internal_maybe_initialize`
+    /// Whether lazy module initialization via `topo_framework::init::internal_maybe_initialize`
     /// is enabled. While disabled, that entry point aborts.
     /// Lifetime: transient
     const LAZY_MODULE_INITIALIZATION: u64 = 127;

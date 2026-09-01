@@ -1,0 +1,14 @@
+[package]
+name = "TopoTrading"
+version = "1.0.0"
+
+[addresses]
+std = "0x1"
+topo_std = "0x1"
+topo_framework = "0x1"
+topo_trading = "0x5"
+
+[dependencies]
+MoveStdlib = { local = "../move-stdlib" }
+TopoStdlib = { local = "../topo-stdlib" }
+TopoFramework = { local = "../topo-framework" }

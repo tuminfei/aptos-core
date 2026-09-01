@@ -16,7 +16,6 @@
 //! of the function in A that is private.
 
 use crate::{assert_abort, assert_success, tests::common, MoveHarness};
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_language_e2e_tests::{
     account::Account,
     executor::{ExecutorMode, FakeExecutor},
@@ -28,6 +27,7 @@ use aptos_types::{
     transaction::{SignedTransaction, TransactionStatus},
 };
 use test_case::test_case;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 fn build_publish_a(h: &mut MoveHarness, acc: &Account) -> SignedTransaction {
     let source = r#"
@@ -50,8 +50,8 @@ fn build_publish_a(h: &mut MoveHarness, acc: &Account) -> SignedTransaction {
     let mut builder = PackageBuilder::new("package_a_b");
     builder.add_source("a.move", source);
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     let path = builder.write_to_temp().unwrap();
     h.create_publish_package(acc, path.path(), Some(BuildOptions::move_2()), |_| {})
@@ -98,8 +98,8 @@ fn build_upgrade_a_and_publish_b(h: &mut MoveHarness, acc: &Account) -> SignedTr
     builder.add_source("a.move", source_a_v2);
     builder.add_source("b.move", source_b);
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     let path = builder.write_to_temp().unwrap();
     h.create_publish_package(acc, path.path(), Some(BuildOptions::move_2()), |_| {})
@@ -143,7 +143,7 @@ fn poc_type_confusion_module_upgrade_parallel() {
 /// substituted to distinguish versions: v1 adds 1, v2 adds 1000.
 const MODULE_A_TEMPLATE: &str = r#"
     module 0xcafe::a {
-        use aptos_framework::code;
+        use topo_framework::code;
         use std::signer;
 
         struct Res has key { f: |u64|u64 has copy + store }
@@ -197,8 +197,8 @@ fn build_package_a(sources: Vec<(&str, String)>) -> (Vec<u8>, Vec<Vec<u8>>) {
         builder.add_source(name, &source);
     }
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     let path = builder.write_to_temp().unwrap();
     let package = BuiltPackage::build(path.path().to_path_buf(), BuildOptions::move_2()).unwrap();
@@ -212,8 +212,8 @@ fn publish_a_v1_and_store_closure(h: &mut MoveHarness, acc: &Account) {
     let mut builder = PackageBuilder::new("package_a");
     builder.add_source("a.move", &MODULE_A_TEMPLATE.replace("INCREMENT", "1"));
     builder.add_local_dep(
-        "AptosFramework",
-        &common::framework_dir_path("aptos-framework").to_string_lossy(),
+        "TopoFramework",
+        &common::framework_dir_path("topo-framework").to_string_lossy(),
     );
     let path = builder.write_to_temp().unwrap();
     let txn = h.create_publish_package(acc, path.path(), Some(BuildOptions::move_2()), |_| {});

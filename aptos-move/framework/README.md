@@ -21,10 +21,10 @@ Reference documentation for every framework module lives in the
 auto-generated from the source in this directory:
 
 * [Move Standard Library](https://aptos-labs.github.io/framework-book/move-stdlib/overview.html)
-* [Aptos Standard Library](https://aptos-labs.github.io/framework-book/aptos-stdlib/overview.html)
-* [Aptos Framework](https://aptos-labs.github.io/framework-book/aptos-framework/overview.html)
-* [Aptos Token Objects](https://aptos-labs.github.io/framework-book/aptos-token-objects/overview.html)
-* [Aptos Trading Framework](https://aptos-labs.github.io/framework-book/aptos-trading/overview.html)
+* [Aptos Standard Library](https://aptos-labs.github.io/framework-book/topo-stdlib/overview.html)
+* [Aptos Framework](https://aptos-labs.github.io/framework-book/topo-framework/overview.html)
+* [Aptos Token Objects](https://aptos-labs.github.io/framework-book/topo-token-objects/overview.html)
+* [Aptos Trading Framework](https://aptos-labs.github.io/framework-book/topo-trading/overview.html)
 * [Aptos Experimental Framework](https://aptos-labs.github.io/framework-book/aptos-experimental/overview.html)
 
 The book is built and deployed by
@@ -51,7 +51,7 @@ To test our Move code while developing the Aptos Framework, run `cargo test` ins
 cargo test
 ```
 
-(Alternatively, run `cargo test -p aptos-framework` from anywhere.)
+(Alternatively, run `cargo test -p topo-framework` from anywhere.)
 
 To skip the Move prover tests, run:
 
@@ -65,7 +65,7 @@ To filter and run **all** the tests in specific packages (e.g., `aptos_stdlib`),
 cargo test -- aptos_stdlib --skip prover
 ```
 
-(See tests in `tests/move_unit_test.rs` to determine which filter to use; e.g., to run the tests in `aptos_framework` you must filter by `move_framework`.)
+(See tests in `tests/move_unit_test.rs` to determine which filter to use; e.g., to run the tests in `topo_framework` you must filter by `move_framework`.)
 
 To **filter by test name or module name** in a specific package (e.g., run the `test_empty_range_proof` in `aptos_stdlib::ristretto255_bulletproofs`), run:
 
@@ -101,9 +101,9 @@ cargo test --release -- --skip prover
 The overall structure of the Aptos Framework is as follows:
 
 ```
-├── aptos-framework                                 # Sources, testing and generated documentation for Aptos framework component
-├── aptos-token                                 # Sources, testing and generated documentation for Aptos token component
-├── aptos-stdlib                                 # Sources, testing and generated documentation for Aptos stdlib component
+├── topo-framework                                 # Sources, testing and generated documentation for Aptos framework component
+├── topo-token                                 # Sources, testing and generated documentation for Aptos token component
+├── topo-stdlib                                 # Sources, testing and generated documentation for Aptos stdlib component
 ├── move-stdlib                                 # Sources, testing and generated documentation for Move stdlib component
 ├── cached-packages                                 # Tooling to generate SDK from move sources.
 ├── src                                     # Compilation and generation of information from Move source files in the Aptos Framework. Not designed to be used as a Rust library

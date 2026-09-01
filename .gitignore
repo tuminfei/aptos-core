@@ -66,7 +66,7 @@ build/
 # experimental -- these are the release code.
 !aptos-move/framework/DPN/releases/artifacts/**
 !aptos-move/framework/experimental/releases/artifacts/**
-!aptos-move/framework/aptos-framework/releases/artifacts/**
+!aptos-move/framework/topo-framework/releases/artifacts/**
 
 # Do not ignore the Move script for the faucet.
 # https://stackoverflow.com/a/16318111/3846032

@@ -1,8 +1,8 @@
 script {
     use std::signer;
-    use aptos_framework::aptos_account;
-    use aptos_framework::aptos_coin;
-    use aptos_framework::coin;
+    use topo_framework::topo_account;
+    use topo_framework::topo_coin;
+    use topo_framework::coin;
 
     // Tune this parameter based upon the actual gas costs
     const GAS_BUFFER: u64 = 100000;
@@ -12,11 +12,11 @@ script {
         let minter_addr = signer::address_of(minter);
 
         // Do not mint if it would exceed U64_MAX
-        let balance = coin::balance<aptos_coin::AptosCoin>(minter_addr);
+        let balance = coin::balance<topo_coin::TopoCoin>(minter_addr);
         if (balance < U64_MAX - amount - GAS_BUFFER) {
-            aptos_coin::mint(minter, minter_addr, amount + GAS_BUFFER);
+            topo_coin::mint(minter, minter_addr, amount + GAS_BUFFER);
         };
 
-        aptos_account::transfer(minter, dst_addr, amount);
+        topo_account::transfer(minter, dst_addr, amount);
     }
 }

@@ -4,9 +4,9 @@
 use crate::{components::get_signer_arg, utils::*};
 use anyhow::Result;
 use aptos_crypto::HashValue;
-use aptos_framework::generate_blob_as_hex_string;
 use aptos_types::on_chain_config::OnChainConsensusConfig;
 use move_model::{code_writer::CodeWriter, emit, emitln, model::Loc};
+use topo_framework::generate_blob_as_hex_string;
 
 pub fn generate_consensus_upgrade_proposal(
     consensus_config: &OnChainConsensusConfig,
@@ -28,7 +28,7 @@ pub fn generate_consensus_upgrade_proposal(
         is_testnet,
         next_execution_hash,
         is_multi_step,
-        &["aptos_framework::consensus_config"],
+        &["topo_framework::consensus_config"],
         |writer| {
             let consensus_config_blob = bcs::to_bytes(consensus_config).unwrap();
             assert!(consensus_config_blob.len() < 65536);
@@ -42,7 +42,7 @@ pub fn generate_consensus_upgrade_proposal(
                 "consensus_config::set_for_next_epoch({}, consensus_blob);",
                 signer_arg
             );
-            emitln!(writer, "aptos_governance::reconfigure({});", signer_arg);
+            emitln!(writer, "topo_governance::reconfigure({});", signer_arg);
         },
     );
 

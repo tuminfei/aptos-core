@@ -59,23 +59,23 @@ impl ReleaseTarget {
     pub fn packages(self) -> Vec<(&'static str, Option<&'static str>, bool)> {
         let result = vec![
             ("move-stdlib", None, false),
-            ("aptos-stdlib", None, false),
+            ("topo-stdlib", None, false),
             (
-                "aptos-framework",
-                Some("cached-packages/src/aptos_framework_sdk_builder.rs"),
+                "topo-framework",
+                Some("cached-packages/src/topo_framework_sdk_builder.rs"),
                 false,
             ),
             (
-                "aptos-token",
-                Some("cached-packages/src/aptos_token_sdk_builder.rs"),
+                "topo-token",
+                Some("cached-packages/src/topo_token_sdk_builder.rs"),
                 false,
             ),
             (
-                "aptos-token-objects",
-                Some("cached-packages/src/aptos_token_objects_sdk_builder.rs"),
+                "topo-token-objects",
+                Some("cached-packages/src/topo_token_objects_sdk_builder.rs"),
                 false,
             ),
-            ("aptos-trading", None, false),
+            ("topo-trading", None, false),
             ("aptos-experimental", None, true),
         ];
         // Currently we don't have experimental packages only included in particular targets.
@@ -208,11 +208,11 @@ static NAMED_ADDRESSES: Lazy<BTreeMap<String, NumericalAddress>> = Lazy::new(|| 
     let ten = NumericalAddress::parse_str("0xA").unwrap();
     let resources = NumericalAddress::parse_str("0xA550C18").unwrap();
     result.insert("std".to_owned(), one);
-    result.insert("aptos_std".to_owned(), one);
-    result.insert("aptos_framework".to_owned(), one);
+    result.insert("topo_std".to_owned(), one);
+    result.insert("topo_framework".to_owned(), one);
     result.insert("aptos_token".to_owned(), three);
-    result.insert("aptos_token_objects".to_owned(), four);
-    result.insert("aptos_trading".to_owned(), five);
+    result.insert("topo_token_objects".to_owned(), four);
+    result.insert("topo_trading".to_owned(), five);
     result.insert("aptos_experimental".to_owned(), seven);
     result.insert("aptos_fungible_asset".to_owned(), ten);
     result.insert("core_resources".to_owned(), resources);

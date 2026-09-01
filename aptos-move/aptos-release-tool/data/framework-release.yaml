@@ -2,7 +2,7 @@
 # Config for the regular framework releases.
 #
 # Replace `vX.YY.Z` with the actual version number to prepare for an actual release.
-name: "aptos-framework-vX.YY.Z"
+name: "topo-framework-vX.YY.Z"
 metadata:
   title: "Multi-step proposal to upgrade mainnet framework, version vX.YY.Z"
   description: "This includes changes in https://github.com/aptos-labs/aptos-core/releases/tag/aptos-node-vX.YY.Z"

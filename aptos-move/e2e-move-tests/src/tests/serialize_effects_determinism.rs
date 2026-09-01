@@ -33,7 +33,7 @@ fn agg_source(addr: &str) -> String {
 
     let mut s = String::new();
     s.push_str(&format!("module {}::agg {{\n", addr));
-    s.push_str("    use aptos_framework::aggregator_v2::{Self, Aggregator};\n");
+    s.push_str("    use topo_framework::aggregator_v2::{Self, Aggregator};\n");
     s.push_str("    struct A has key {\n");
     for i in 0..NUM_AGGS {
         s.push_str(&format!("        a{}: Aggregator<u64>,\n", i));
@@ -101,8 +101,8 @@ fn setup() -> (MoveHarness, Account) {
 
     for (name, path) in [
         ("MoveStdlib", "move-stdlib"),
-        ("AptosStdlib", "aptos-stdlib"),
-        ("AptosFramework", "aptos-framework"),
+        ("TopoStdlib", "topo-stdlib"),
+        ("TopoFramework", "topo-framework"),
     ] {
         builder.add_local_dep(name, &common::framework_dir_path(path).to_string_lossy());
     }

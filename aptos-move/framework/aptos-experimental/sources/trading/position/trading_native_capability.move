@@ -7,9 +7,9 @@ module aptos_experimental::trading_native_capability {
     use std::error;
     use std::signer;
 
-    use aptos_framework::big_ordered_map::{Self, BigOrderedMap};
-    use aptos_framework::features;
-    use aptos_framework::system_addresses;
+    use topo_framework::big_ordered_map::{Self, BigOrderedMap};
+    use topo_framework::features;
+    use topo_framework::system_addresses;
 
     /// Feature `TRADING_NATIVE` is not enabled on this chain.
     const EFEATURE_DISABLED: u64 = 1;
@@ -70,7 +70,7 @@ module aptos_experimental::trading_native_capability {
 
     /// Governance-only: enroll an `exchange`. Idempotent.
     public fun register(framework: &signer, exchange: address) acquires ExchangeRegistry {
-        system_addresses::assert_aptos_framework(framework);
+        system_addresses::assert_topo_framework(framework);
         assert!(
             features::is_trading_native_enabled(),
             error::permission_denied(EFEATURE_DISABLED),
@@ -119,7 +119,7 @@ module aptos_experimental::trading_native_capability {
     /// untouched). Deliberately does not check `TRADING_NATIVE` —
     /// governance must be able to lock out even with the flag off.
     public fun deny(framework: &signer, exchange: address) acquires ExchangeRegistry {
-        system_addresses::assert_aptos_framework(framework);
+        system_addresses::assert_topo_framework(framework);
         let registry = borrow_global_mut<ExchangeRegistry>(@aptos_experimental);
         if (!registry.denied.contains(&exchange)) {
             registry.denied.add(exchange, Empty {});
@@ -129,7 +129,7 @@ module aptos_experimental::trading_native_capability {
     /// Governance-only: clear a `deny`. Like `deny`, does not check
     /// `TRADING_NATIVE`.
     public fun reenable(framework: &signer, exchange: address) acquires ExchangeRegistry {
-        system_addresses::assert_aptos_framework(framework);
+        system_addresses::assert_topo_framework(framework);
         let registry = borrow_global_mut<ExchangeRegistry>(@aptos_experimental);
         if (registry.denied.contains(&exchange)) {
             registry.denied.remove(&exchange);
@@ -153,7 +153,7 @@ module aptos_experimental::trading_native_capability {
         );
     }
 
-    #[test(framework = @aptos_framework, trading = @aptos_experimental, exchange = @0x1234)]
+    #[test(framework = @topo_framework, trading = @aptos_experimental, exchange = @0x1234)]
     fun test_register_then_get_capability(
         framework: &signer, trading: &signer, exchange: &signer
     ) acquires ExchangeRegistry {
@@ -165,7 +165,7 @@ module aptos_experimental::trading_native_capability {
         assert!(exchange(&cap) == addr, 0);
     }
 
-    #[test(framework = @aptos_framework, trading = @aptos_experimental, exchange = @0x1234)]
+    #[test(framework = @topo_framework, trading = @aptos_experimental, exchange = @0x1234)]
     #[expected_failure(abort_code = 0x50002, location = Self)]
     fun test_get_capability_unregistered_aborts(
         framework: &signer, trading: &signer, exchange: &signer
@@ -175,7 +175,7 @@ module aptos_experimental::trading_native_capability {
         get_capability(exchange);
     }
 
-    #[test(framework = @aptos_framework, trading = @aptos_experimental, exchange = @0x1234)]
+    #[test(framework = @topo_framework, trading = @aptos_experimental, exchange = @0x1234)]
     #[expected_failure(abort_code = 0x50003, location = Self)]
     fun test_denied_exchange_cannot_get_capability(
         framework: &signer, trading: &signer, exchange: &signer
@@ -189,7 +189,7 @@ module aptos_experimental::trading_native_capability {
         get_capability(exchange);
     }
 
-    #[test(framework = @aptos_framework, trading = @aptos_experimental, exchange = @0x1234)]
+    #[test(framework = @topo_framework, trading = @aptos_experimental, exchange = @0x1234)]
     fun test_reenable_restores_capability(
         framework: &signer, trading: &signer, exchange: &signer
     ) acquires ExchangeRegistry {
@@ -204,7 +204,7 @@ module aptos_experimental::trading_native_capability {
         assert!(exchange(&cap) == addr, 1);
     }
 
-    #[test(framework = @aptos_framework, trading = @aptos_experimental, exchange = @0x1234)]
+    #[test(framework = @topo_framework, trading = @aptos_experimental, exchange = @0x1234)]
     #[expected_failure(abort_code = 0x50001, location = Self)]
     fun test_get_capability_requires_trading_native_flag(
         framework: &signer, trading: &signer, exchange: &signer
@@ -221,7 +221,7 @@ module aptos_experimental::trading_native_capability {
         get_capability(exchange);
     }
 
-    #[test(framework = @aptos_framework, trading = @aptos_experimental, exchange = @0x1234)]
+    #[test(framework = @topo_framework, trading = @aptos_experimental, exchange = @0x1234)]
     fun test_assert_valid_passes_when_active(
         framework: &signer, trading: &signer, exchange: &signer
     ) acquires ExchangeRegistry {
@@ -232,7 +232,7 @@ module aptos_experimental::trading_native_capability {
         assert_valid(&cap);
     }
 
-    #[test(framework = @aptos_framework, trading = @aptos_experimental, exchange = @0x1234)]
+    #[test(framework = @topo_framework, trading = @aptos_experimental, exchange = @0x1234)]
     #[expected_failure(abort_code = 0x50003, location = Self)]
     fun test_held_cap_invalidated_by_deny(
         framework: &signer, trading: &signer, exchange: &signer
@@ -248,7 +248,7 @@ module aptos_experimental::trading_native_capability {
         assert_valid(&cap);
     }
 
-    #[test(framework = @aptos_framework, trading = @aptos_experimental, exchange = @0x1234)]
+    #[test(framework = @topo_framework, trading = @aptos_experimental, exchange = @0x1234)]
     #[expected_failure(abort_code = 0x50001, location = Self)]
     fun test_held_cap_invalidated_by_flag_off(
         framework: &signer, trading: &signer, exchange: &signer

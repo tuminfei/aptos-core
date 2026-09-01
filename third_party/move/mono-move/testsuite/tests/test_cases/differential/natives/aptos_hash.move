@@ -1,6 +1,6 @@
 // Differential test for the `aptos_hash` natives.
 //
-// The aptos-framework is not pre-published here, so the natives are re-declared
+// The topo-framework is not pre-published here, so the natives are re-declared
 // inline (same pattern as signer.move).
 //
 // TODO: re-declaring the natives inline can drift from their real framework

@@ -75,7 +75,7 @@ async fn main() -> Result<()> {
     info!("Successfully retrieved resource {} with JSON", resource);
 
     let balance_from_new_api = client
-        .get_account_balance(address, "0x1::aptos_coin::AptosCoin")
+        .get_account_balance(address, "0x1::topo_coin::TopoCoin")
         .await
         .context("Failed get_account_balance")?;
     info!(

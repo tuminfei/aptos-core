@@ -2,7 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_language_e2e_tests::{account::Account, executor::FakeExecutor};
 use aptos_package_builder::PackageBuilder;
 use aptos_types::{
@@ -18,12 +17,13 @@ use move_core_types::{
     vm_status::{sub_status::NFE_BCS_SERIALIZATION_FAILURE, AbortLocation, StatusCode},
 };
 use std::str::FromStr;
+use topo_framework::BuildOptions;
 
 fn initialize(h: &mut MoveHarness) {
     let build_options = BuildOptions::move_2().set_latest_language();
     let path = common::test_dir_path("bcs.data/function-values");
 
-    let framework_account = h.aptos_framework_account();
+    let framework_account = h.topo_framework_account();
     let status = h.publish_package_with_options(&framework_account, path.as_path(), build_options);
     assert_success!(status);
 }
@@ -302,8 +302,8 @@ fn publish_deep_deser(h: &mut MoveHarness, acc: &Account) {
     let mut builder = PackageBuilder::new("P");
     builder.add_source("test", &deep_deser_source(120));
     builder.add_local_dep(
-        "AptosStdlib",
-        &common::framework_dir_path("aptos-stdlib").to_string_lossy(),
+        "TopoStdlib",
+        &common::framework_dir_path("topo-stdlib").to_string_lossy(),
     );
     builder.add_local_dep(
         "MoveStdlib",

@@ -22,7 +22,7 @@ pub fn generate_fee_distribution_proposal(
         is_testnet,
         next_execution_hash,
         is_multi_step,
-        &["aptos_framework::transaction_fee"],
+        &["topo_framework::transaction_fee"],
         |writer| {
             emitln!(
                 writer,

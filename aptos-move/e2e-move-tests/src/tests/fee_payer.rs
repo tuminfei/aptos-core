@@ -15,7 +15,7 @@ use aptos_types::{
     transaction::{
         Auth, EntryFunction, ExecutionStatus, Script, TransactionPayload, TransactionStatus,
     },
-    AptosCoinType,
+    TopoCoinType,
 };
 use aptos_vm_types::storage::StorageGasParameters;
 use move_core_types::{move_resource::MoveStructType, vm_status::StatusCode};
@@ -49,7 +49,7 @@ fn test_existing_account_with_fee_payer() {
     let alice_start = h.read_aptos_balance(alice.address());
     let bob_start = h.read_aptos_balance(bob.address());
 
-    let payload = aptos_stdlib::aptos_coin_transfer(*alice.address(), 0);
+    let payload = aptos_stdlib::topo_coin_transfer(*alice.address(), 0);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)
@@ -84,7 +84,7 @@ fn test_existing_account_with_fee_payer_aborts() {
     let alice_start = h.read_aptos_balance(alice.address());
     let bob_start = h.read_aptos_balance(bob.address());
 
-    let payload = aptos_stdlib::aptos_coin_transfer(*alice.address(), 1);
+    let payload = aptos_stdlib::topo_coin_transfer(*alice.address(), 1);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)
@@ -117,14 +117,14 @@ fn test_account_not_exist_with_fee_payer() {
     let alice = Account::new();
     let bob = h.new_account_at(AccountAddress::from_hex_literal("0xb0b").unwrap());
 
-    let alice_start = h.read_resource::<CoinStoreResource<AptosCoinType>>(
+    let alice_start = h.read_resource::<CoinStoreResource<TopoCoinType>>(
         alice.address(),
-        CoinStoreResource::<AptosCoinType>::struct_tag(),
+        CoinStoreResource::<TopoCoinType>::struct_tag(),
     );
     assert!(alice_start.is_none());
     let bob_start = h.read_aptos_balance(bob.address());
 
-    let payload = aptos_stdlib::aptos_account_set_allow_direct_coin_transfers(true);
+    let payload = aptos_stdlib::topo_account_set_allow_direct_coin_transfers(true);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)
@@ -136,9 +136,9 @@ fn test_account_not_exist_with_fee_payer() {
     let output = h.run_raw(transaction);
     assert_success!(*output.status());
 
-    let alice_after = h.read_resource::<CoinStoreResource<AptosCoinType>>(
+    let alice_after = h.read_resource::<CoinStoreResource<TopoCoinType>>(
         alice.address(),
-        CoinStoreResource::<AptosCoinType>::struct_tag(),
+        CoinStoreResource::<TopoCoinType>::struct_tag(),
     );
     assert!(alice_after.is_none());
     let bob_after = h.read_aptos_balance(bob.address());
@@ -159,14 +159,14 @@ fn test_account_not_exist_with_fee_payer_insufficient_gas() {
     let alice = Account::new();
     let bob = h.new_account_at(AccountAddress::from_hex_literal("0xb0b").unwrap());
 
-    let alice_start = h.read_resource::<CoinStoreResource<AptosCoinType>>(
+    let alice_start = h.read_resource::<CoinStoreResource<TopoCoinType>>(
         alice.address(),
-        CoinStoreResource::<AptosCoinType>::struct_tag(),
+        CoinStoreResource::<TopoCoinType>::struct_tag(),
     );
     assert!(alice_start.is_none());
     let bob_start = h.read_aptos_balance(bob.address());
 
-    let payload = aptos_stdlib::aptos_coin_transfer(*alice.address(), 1);
+    let payload = aptos_stdlib::topo_coin_transfer(*alice.address(), 1);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)
@@ -181,9 +181,9 @@ fn test_account_not_exist_with_fee_payer_insufficient_gas() {
         &TransactionStatus::Discard(StatusCode::MAX_GAS_UNITS_BELOW_MIN_TRANSACTION_GAS_UNITS),
     ));
 
-    let alice_after = h.read_resource::<CoinStoreResource<AptosCoinType>>(
+    let alice_after = h.read_resource::<CoinStoreResource<TopoCoinType>>(
         alice.address(),
-        CoinStoreResource::<AptosCoinType>::struct_tag(),
+        CoinStoreResource::<TopoCoinType>::struct_tag(),
     );
     assert!(alice_after.is_none());
     let bob_after = h.read_aptos_balance(bob.address());
@@ -203,9 +203,9 @@ fn test_account_not_exist_and_move_abort_with_fee_payer_create_account() {
     let alice = Account::new();
     let bob = h.new_account_at(AccountAddress::from_hex_literal("0xb0b").unwrap());
 
-    let alice_start = h.read_resource::<CoinStoreResource<AptosCoinType>>(
+    let alice_start = h.read_resource::<CoinStoreResource<TopoCoinType>>(
         alice.address(),
-        CoinStoreResource::<AptosCoinType>::struct_tag(),
+        CoinStoreResource::<TopoCoinType>::struct_tag(),
     );
     assert!(alice_start.is_none());
     let bob_start = h.read_aptos_balance(bob.address());
@@ -240,9 +240,9 @@ fn test_account_not_exist_and_move_abort_with_fee_payer_create_account() {
     assert!(output.gas_used() <= PRICING.new_account_upfront(GAS_UNIT_PRICE));
     assert!(output.gas_used() > PRICING.new_account_min_abort(GAS_UNIT_PRICE));
 
-    let alice_after = h.read_resource::<CoinStoreResource<AptosCoinType>>(
+    let alice_after = h.read_resource::<CoinStoreResource<TopoCoinType>>(
         alice.address(),
-        CoinStoreResource::<AptosCoinType>::struct_tag(),
+        CoinStoreResource::<TopoCoinType>::struct_tag(),
     );
     assert!(alice_after.is_none());
     let bob_after = h.read_aptos_balance(bob.address());
@@ -347,13 +347,13 @@ fn test_account_not_exist_with_fee_payer_without_create_account() {
     let alice = Account::new();
     let bob = h.new_account_at(AccountAddress::from_hex_literal("0xb0b").unwrap());
 
-    let alice_start = h.read_resource::<CoinStoreResource<AptosCoinType>>(
+    let alice_start = h.read_resource::<CoinStoreResource<TopoCoinType>>(
         alice.address(),
-        CoinStoreResource::<AptosCoinType>::struct_tag(),
+        CoinStoreResource::<TopoCoinType>::struct_tag(),
     );
     assert!(alice_start.is_none());
 
-    let payload = aptos_stdlib::aptos_account_set_allow_direct_coin_transfers(true);
+    let payload = aptos_stdlib::topo_account_set_allow_direct_coin_transfers(true);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)
@@ -382,7 +382,7 @@ fn test_normal_tx_with_fee_payer_insufficient_funds() {
     let alice = h.new_account_at(AccountAddress::from_hex_literal("0xa11ce").unwrap());
     let bob = h.new_account_with_balance_and_sequence_number(1, 0);
 
-    let payload = aptos_stdlib::aptos_account_set_allow_direct_coin_transfers(true);
+    let payload = aptos_stdlib::topo_account_set_allow_direct_coin_transfers(true);
     let transaction = TransactionBuilder::new(alice.clone())
         .fee_payer(bob.clone())
         .payload(payload)
@@ -440,7 +440,7 @@ fn test_prologue_same_address_fee_payer_rejects() {
 
     let fee_payer = Account::new();
     let txn = TransactionBuilder::new(sender.clone())
-        .payload(aptos_stdlib::aptos_account_set_allow_direct_coin_transfers(
+        .payload(aptos_stdlib::topo_account_set_allow_direct_coin_transfers(
             true,
         ))
         .sequence_number(sender_balance_seq_num)
@@ -479,7 +479,7 @@ fn account_at_address_with_key(address: AccountAddress, key_owner: &Account) -> 
 
 #[test]
 fn test_sponsored_new_account_sender_auth_key_not_skipped_when_default_account_resource_disabled() {
-    let payload = aptos_stdlib::aptos_account_set_allow_direct_coin_transfers(true);
+    let payload = aptos_stdlib::topo_account_set_allow_direct_coin_transfers(true);
     let victim_address = AccountAddress::from_hex_literal("0xca11ed").unwrap();
     let attacker_key_owner = Account::new();
 

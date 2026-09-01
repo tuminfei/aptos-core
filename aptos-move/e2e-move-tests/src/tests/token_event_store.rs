@@ -9,7 +9,7 @@ fn test_token_creation_with_token_events_store() {
     let mut h = MoveHarness::new();
 
     // Deploy a package that initially does not have the module that has the init_module function.
-    let acc = h.aptos_framework_account();
+    let acc = h.topo_framework_account();
     let token_owner = acc.address();
     let collection_name = b"collection_name".to_vec();
     let token_name = b"token_name".to_vec();

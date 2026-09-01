@@ -149,7 +149,7 @@ impl PackageData {
         Ok(env)
     }
 
-    /// Lower-level helper that calls `aptos_framework::build_model` with the given
+    /// Lower-level helper that calls `topo_framework::build_model` with the given
     /// `target_filter`. Shared between `init` (session-global filter) and
     /// `build_filtered_env` (per-call filter).
     fn build_env(
@@ -162,7 +162,7 @@ impl PackageData {
             .iter()
             .map(|(name, addr)| (name.clone(), addr.into_inner()))
             .collect();
-        aptos_framework::build_model(
+        topo_framework::build_model(
             args.dev_mode,
             // test_mode off: test code is handled separately by run_move_unit_tests.
             // verify_mode on: #[verify_only] specs are needed by the prover.
@@ -175,7 +175,7 @@ impl PackageData {
             None,
             Some(args.language_version),
             false,
-            aptos_framework::extended_checks::get_all_attribute_names().clone(),
+            topo_framework::extended_checks::get_all_attribute_names().clone(),
             args.experiments.clone(),
             true,  // always build with bytecode
             false, // all_files_as_targets

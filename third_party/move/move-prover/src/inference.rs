@@ -762,7 +762,7 @@ fn output_unified(env: &GlobalEnv, inferred_sym: Symbol, options: &Options) -> a
                 );
                 // Filter out spec-level `use` declarations for modules already
                 // imported at module level (e.g. the original source has
-                // `use aptos_framework::object::{Self, …}` so we don't need
+                // `use topo_framework::object::{Self, …}` so we don't need
                 // `use 0x1::object;` inside the spec block).
                 let use_text = filter_redundant_uses(&source, &use_text);
 

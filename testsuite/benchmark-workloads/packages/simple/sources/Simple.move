@@ -6,9 +6,9 @@ module 0xABCD::simple {
     use std::signer;
     use std::string::{Self, String, utf8};
     use std::vector;
-    use aptos_framework::event::{Self, EventHandle};
-    use aptos_framework::account;
-    use aptos_framework::code;
+    use topo_framework::event::{Self, EventHandle};
+    use topo_framework::account;
+    use topo_framework::code;
     use aptos_std::table::{Self, Table};
 
     // Through the constant pool it will be possible to change this

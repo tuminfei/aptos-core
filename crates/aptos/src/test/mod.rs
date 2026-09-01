@@ -46,7 +46,6 @@ use aptos_crypto::{
     ed25519::{Ed25519PrivateKey, Ed25519PublicKey},
     x25519, PrivateKey,
 };
-use aptos_framework::chunked_publish::CHUNK_SIZE_IN_BYTES;
 use aptos_genesis::config::HostAndPort;
 use aptos_keygen::KeyGen;
 use aptos_logger::warn;
@@ -79,6 +78,7 @@ use std::{
 use tempfile::TempDir;
 use thiserror::__private::AsDisplay;
 use tokio::time::{sleep, Instant};
+use topo_framework::chunked_publish::CHUNK_SIZE_IN_BYTES;
 
 #[cfg(test)]
 mod tests;
@@ -88,7 +88,7 @@ pub const INVALID_ACCOUNT: &str = "0xDEADBEEFCAFEBABE";
 pub const FIRST_MOVE_FILE: &str = "
 module NamedAddress0::store {
     use std::string;
-    use aptos_framework::coin::{Self};
+    use topo_framework::coin::{Self};
 
     struct CoolCoin has key {}
 
@@ -316,8 +316,8 @@ impl CliTestFramework {
                 type_arg_vec: TypeArgVec {
                     type_args: vec![MoveType::Struct(MoveStructTag::new(
                         AccountAddress::ONE.into(),
-                        ident_str!("aptos_coin").into(),
-                        ident_str!("AptosCoin").into(),
+                        ident_str!("topo_coin").into(),
+                        ident_str!("TopoCoin").into(),
                         vec![],
                     ))],
                 },
@@ -959,7 +959,7 @@ impl CliTestFramework {
         .await
     }
 
-    /// Runs the given script contents using the local aptos_framework directory.
+    /// Runs the given script contents using the local topo_framework directory.
     pub async fn run_script(
         &self,
         index: usize,
@@ -967,7 +967,7 @@ impl CliTestFramework {
     ) -> CliTypedResult<TransactionSummary> {
         self.run_script_with_framework_package(index, script_contents, FrameworkPackageArgs {
             framework_git_rev: None,
-            framework_local_dir: Some(Self::aptos_framework_dir()),
+            framework_local_dir: Some(Self::topo_framework_dir()),
             skip_fetch_latest_git_deps: false,
         })
         .await
@@ -984,7 +984,7 @@ impl CliTestFramework {
             script_contents,
             FrameworkPackageArgs {
                 framework_git_rev: None,
-                framework_local_dir: Some(Self::aptos_framework_dir()),
+                framework_local_dir: Some(Self::topo_framework_dir()),
                 skip_fetch_latest_git_deps: false,
             },
             gas_options,
@@ -992,7 +992,7 @@ impl CliTestFramework {
         .await
     }
 
-    /// Runs the given script contents using the aptos_framework from aptos-core git repository.
+    /// Runs the given script contents using the topo_framework from aptos-core git repository.
     pub async fn run_script_with_default_framework(
         &self,
         index: usize,
@@ -1074,7 +1074,7 @@ impl CliTestFramework {
                 script_path: Some(script_path.parse().unwrap()),
                 framework_package_args: FrameworkPackageArgs {
                     framework_git_rev: None,
-                    framework_local_dir: Some(Self::aptos_framework_dir()),
+                    framework_local_dir: Some(Self::topo_framework_dir()),
                     skip_fetch_latest_git_deps: false,
                 },
                 ..CompileScriptFunction::default()
@@ -1090,13 +1090,13 @@ impl CliTestFramework {
         .await
     }
 
-    pub fn aptos_framework_dir() -> PathBuf {
+    pub fn topo_framework_dir() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("..")
             .join("..")
             .join("aptos-move")
             .join("framework")
-            .join("aptos-framework")
+            .join("topo-framework")
     }
 
     pub fn move_options(&self, account_strs: BTreeMap<&str, &str>) -> MovePackageOptions {
@@ -1215,7 +1215,7 @@ impl CliTestFramework {
                     script_path: Some(script_path),
                     framework_package_args: FrameworkPackageArgs {
                         framework_git_rev: None,
-                        framework_local_dir: Some(Self::aptos_framework_dir()),
+                        framework_local_dir: Some(Self::topo_framework_dir()),
                         skip_fetch_latest_git_deps: false,
                     },
                     ..CompileScriptFunction::default()
@@ -1260,7 +1260,7 @@ impl CliTestFramework {
                 script_path: Some(script_path.parse().unwrap()),
                 framework_package_args: FrameworkPackageArgs {
                     framework_git_rev: None,
-                    framework_local_dir: Some(Self::aptos_framework_dir()),
+                    framework_local_dir: Some(Self::topo_framework_dir()),
                     skip_fetch_latest_git_deps: false,
                 },
                 ..CompileScriptFunction::default()

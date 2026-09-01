@@ -3,7 +3,7 @@
 # - the framework release is limited to move-stdlib to keep compilation fast;
 # - the gas change points at the synthetic snapshots in this directory so the
 #   generated summary is fully deterministic.
-name: "aptos-framework-test"
+name: "topo-framework-test"
 metadata:
   title: "Test framework release"
   description: "Synthetic bundle used by aptos-release-tool's tests."

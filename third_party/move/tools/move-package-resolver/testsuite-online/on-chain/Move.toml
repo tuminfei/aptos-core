@@ -4,4 +4,4 @@ version = "0.1.2"
 
 [dependencies]
 MoveStdlib = { aptos = "https://archive.mainnet.aptoslabs.com", address = "0x1" }
-AptosStdlib = { aptos = "https://archive.mainnet.aptoslabs.com", address = "0x1" }
+TopoStdlib = { aptos = "https://archive.mainnet.aptoslabs.com", address = "0x1" }

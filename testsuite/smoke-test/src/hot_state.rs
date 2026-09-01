@@ -85,11 +85,11 @@ async fn enable_txn_info_v1_via_governance(
     let script = format!(
         r#"
 script {{
-    use aptos_framework::aptos_governance;
+    use topo_framework::topo_governance;
 
     fun main(core_resources: &signer) {{
-        let framework_signer = aptos_governance::get_signer_testnet_only(core_resources, @0x1);
-        aptos_governance::toggle_features(&framework_signer, vector[{}, {}], vector[]);
+        let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
+        topo_governance::toggle_features(&framework_signer, vector[{}, {}], vector[]);
     }}
 }}
 "#,

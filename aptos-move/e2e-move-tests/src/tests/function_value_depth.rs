@@ -5,11 +5,11 @@
 //! construct values that are too deep, as this can cause stack overflow.
 
 use crate::{assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_package_builder::PackageBuilder;
 use aptos_transaction_simulation::Account;
 use aptos_types::transaction::TransactionStatus;
 use move_core_types::{account_address::AccountAddress, vm_status::StatusCode};
+use topo_framework::BuildOptions;
 
 #[test]
 fn test_vm_value_too_deep_with_function_values() {

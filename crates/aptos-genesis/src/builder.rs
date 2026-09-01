@@ -22,7 +22,6 @@ use aptos_crypto::{
     ed25519::{Ed25519PrivateKey, Ed25519PublicKey},
     PrivateKey,
 };
-use aptos_framework::ReleaseBundle;
 use aptos_keygen::KeyGen;
 use aptos_logger::prelude::*;
 use aptos_types::{
@@ -47,6 +46,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Arc,
 };
+use topo_framework::ReleaseBundle;
 
 const VALIDATOR_IDENTITY: &str = "validator-identity.yaml";
 const VFN_IDENTITY: &str = "vfn-identity.yaml";

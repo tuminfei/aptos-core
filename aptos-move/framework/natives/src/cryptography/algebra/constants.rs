@@ -16,7 +16,7 @@ use crate::{
     store_element, structure_from_ty_arg,
 };
 use aptos_gas_schedule::{
-    gas_feature_versions::RELEASE_V1_46, gas_params::natives::aptos_framework::*,
+    gas_feature_versions::RELEASE_V1_46, gas_params::natives::topo_framework::*,
 };
 use aptos_native_interface::{SafeNativeContext, SafeNativeError, SafeNativeResult};
 use ark_ec::PrimeGroup;

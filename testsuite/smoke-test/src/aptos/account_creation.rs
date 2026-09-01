@@ -19,12 +19,12 @@ async fn test_account_auto_creation() {
     let account2 = info.random_account();
 
     let migrate_txn = account1.sign_with_transaction_builder(info.transaction_factory().payload(
-        aptos_stdlib::coin_migrate_to_fungible_store(aptos_types::AptosCoinType::type_tag()),
+        aptos_stdlib::coin_migrate_to_fungible_store(aptos_types::TopoCoinType::type_tag()),
     ));
     info.client().submit_and_wait(&migrate_txn).await.unwrap();
 
     let send_fa_txn = account1.sign_with_transaction_builder(info.transaction_factory().payload(
-        aptos_stdlib::aptos_account_fungible_transfer_only(account2.address(), 10_000_000_000),
+        aptos_stdlib::topo_account_fungible_transfer_only(account2.address(), 10_000_000_000),
     ));
     info.client().submit_and_wait(&send_fa_txn).await.unwrap();
 
@@ -32,7 +32,7 @@ async fn test_account_auto_creation() {
     // account2 should be created automatically by sending this transaction.
     let send_back_fa_txn = account2.sign_with_transaction_builder(
         info.transaction_factory()
-            .payload(aptos_stdlib::aptos_account_fungible_transfer_only(
+            .payload(aptos_stdlib::topo_account_fungible_transfer_only(
                 account1.address(),
                 1,
             ))

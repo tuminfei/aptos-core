@@ -29,17 +29,6 @@ use aptos_cli_common::{
     TransactionOptions, TransactionSummary, GIT_IGNORE,
 };
 use aptos_crypto::HashValue;
-use aptos_framework::{
-    build_model,
-    chunked_publish::{
-        chunk_package_and_create_payloads, large_packages_cleanup_staging_area, PublishType,
-    },
-    docgen::DocgenOptions,
-    extended_checks,
-    natives::code::{PackageRegistry, UpgradePolicy},
-    prover::ProverOptions,
-    BuildOptions, BuiltPackage,
-};
 use aptos_gas_schedule::{MiscGasParameters, NativeGasParameters};
 use aptos_rest_client::{
     aptos_api_types::{EntryFunctionId, HexEncodedBytes, IdentifierWrapper, MoveModuleId},
@@ -84,6 +73,17 @@ use std::{
     sync::Arc,
 };
 use tokio::task;
+use topo_framework::{
+    build_model,
+    chunked_publish::{
+        chunk_package_and_create_payloads, large_packages_cleanup_staging_area, PublishType,
+    },
+    docgen::DocgenOptions,
+    extended_checks,
+    natives::code::{PackageRegistry, UpgradePolicy},
+    prover::ProverOptions,
+    BuildOptions, BuiltPackage,
+};
 use url::Url;
 
 const HELLO_BLOCKCHAIN_EXAMPLE: &str =
@@ -212,9 +212,9 @@ impl FrameworkPackageArgs {
         addresses: BTreeMap<String, ManifestNamedAddress>,
         prompt_options: PromptOptions,
     ) -> CliTypedResult<()> {
-        const APTOS_FRAMEWORK: &str = "AptosFramework";
-        const APTOS_GIT_PATH: &str = "https://github.com/aptos-labs/aptos-framework.git";
-        const SUBDIR_PATH: &str = "aptos-framework";
+        const APTOS_FRAMEWORK: &str = "TopoFramework";
+        const APTOS_GIT_PATH: &str = "https://github.com/aptos-labs/topo-framework.git";
+        const SUBDIR_PATH: &str = "topo-framework";
         const DEFAULT_BRANCH: &str = "mainnet";
 
         let move_toml = package_dir.join(SourcePackageLayout::Manifest.path());
@@ -2572,7 +2572,7 @@ mod simulate_flag_tests {
         let simulate = parse_simulate(&[
             "simulate",
             "--function-id",
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             "--args",
             "address:0x1",
             "u64:1",
@@ -2585,7 +2585,7 @@ mod simulate_flag_tests {
         let simulate = parse_simulate(&[
             "simulate",
             "--function-id",
-            "0x1::aptos_account::transfer",
+            "0x1::topo_account::transfer",
             "--args",
             "address:0x1",
             "u64:1",

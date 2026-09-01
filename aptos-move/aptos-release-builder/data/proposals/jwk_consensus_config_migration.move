@@ -1,13 +1,13 @@
-// Initialize `aptos_framework::jwk_consensus_config::JWKConsensusConfig` with Google.
-// Start to ignore `aptos_framework::jwks::SupportedOIDCProviders`.
+// Initialize `topo_framework::jwk_consensus_config::JWKConsensusConfig` with Google.
+// Start to ignore `topo_framework::jwks::SupportedOIDCProviders`.
 // Start to ignore move feature flag `std::features::JWK_CONSENSUS`.
 script {
-    use aptos_framework::aptos_governance;
-    use aptos_framework::jwk_consensus_config;
+    use topo_framework::topo_governance;
+    use topo_framework::jwk_consensus_config;
     use std::string::utf8;
 
     fun main(proposal_id: u64) {
-        let framework = aptos_governance::resolve_multi_step_proposal(
+        let framework = topo_governance::resolve_multi_step_proposal(
             proposal_id,
             @0x1,
             {{ script_hash }},
@@ -18,6 +18,6 @@ script {
         );
         let config = jwk_consensus_config::new_v1(vector[provider_google]);
         jwk_consensus_config::initialize(&framework, config);
-        aptos_governance::reconfigure(&framework);
+        topo_governance::reconfigure(&framework);
     }
 }

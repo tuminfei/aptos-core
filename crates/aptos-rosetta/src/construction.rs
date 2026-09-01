@@ -635,7 +635,7 @@ async fn construction_parse(
     })
 }
 
-/// Parses 0x1::aptos_account::create(auth_key: address)
+/// Parses 0x1::topo_account::create(auth_key: address)
 fn parse_create_account_operation(
     sender: AccountAddress,
     type_args: &[TypeTag],
@@ -718,7 +718,7 @@ fn parse_transfer_operation(
     Ok(operations)
 }
 
-/// Parses 0x1::aptos_account::transfer(receiver: address, amount: u64)
+/// Parses 0x1::topo_account::transfer(receiver: address, amount: u64)
 fn parse_account_transfer_operation(
     sender: AccountAddress,
     type_args: &[TypeTag],
@@ -768,7 +768,7 @@ fn parse_account_transfer_operation(
 }
 
 /// Parses 0x1::primary_fungible_store::transfer(metadata: address, receiver: address, amount: u64)
-/// or 0x1::aptos_account::transfer_fungible_assets(metadata: address, receiver: address, amount: u64)
+/// or 0x1::topo_account::transfer_fungible_assets(metadata: address, receiver: address, amount: u64)
 fn parse_primary_fa_transfer_operation(
     server_context: &RosettaContext,
     sender: AccountAddress,

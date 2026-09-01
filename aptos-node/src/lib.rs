@@ -24,7 +24,6 @@ use aptos_admin_service::AdminService;
 use aptos_api::bootstrap as bootstrap_api;
 use aptos_build_info::build_information;
 use aptos_config::config::{merge_node_config, NodeConfig, PersistableConfig};
-use aptos_framework::ReleaseBundle;
 use aptos_genesis::builder::GenesisConfiguration;
 use aptos_inspection_service::server::InspectionServiceComponents;
 use aptos_logger::{prelude::*, telemetry_log_writer::TelemetryLog, Level, LoggerFilterUpdater};
@@ -48,6 +47,7 @@ use std::{
     thread,
 };
 use tokio::runtime::Runtime;
+use topo_framework::ReleaseBundle;
 
 const EPOCH_LENGTH_SECS: u64 = 60;
 

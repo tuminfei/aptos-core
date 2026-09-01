@@ -9,7 +9,6 @@ use super::super::{
     session::FlowSession,
     McpArgs,
 };
-use aptos_framework::extended_checks;
 use aptos_gas_schedule::{MiscGasParameters, NativeGasParameters, LATEST_GAS_FEATURE_VERSION};
 use aptos_types::on_chain_config::{
     aptos_test_feature_flags_genesis, Features, TimedFeaturesBuilder,
@@ -37,6 +36,7 @@ use std::{
     sync::Once,
     time::Duration,
 };
+use topo_framework::extended_checks;
 
 // ========== MCP Tool types ==========
 

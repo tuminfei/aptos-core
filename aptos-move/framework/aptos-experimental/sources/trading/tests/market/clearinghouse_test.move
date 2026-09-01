@@ -19,9 +19,9 @@ module aptos_experimental::clearinghouse_test {
     use std::option;
     use std::signer;
     use std::vector;
-    use aptos_std::table;
-    use aptos_std::table::Table;
-    use aptos_trading::order_book_types::OrderId;
+    use topo_std::table;
+    use topo_std::table::Table;
+    use topo_trading::order_book_types::OrderId;
     use aptos_experimental::market_types::{
         SettleTradeResult,
         new_settle_trade_result,

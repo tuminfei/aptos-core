@@ -9,7 +9,6 @@ pub mod cli {
         Authenticator, ExecVariant, FundAmount, RunnableState, RunnableStateWithOperations,
         UserAccount,
     };
-    use aptos_framework::{BuildOptions, BuiltPackage};
     use aptos_types::{
         account_address::AccountAddress,
         transaction::{EntryFunction, Script, TransactionPayload},
@@ -40,6 +39,7 @@ pub mod cli {
         io::Write,
         path::PathBuf,
     };
+    use topo_framework::{BuildOptions, BuiltPackage};
     use walkdir::WalkDir;
 
     macro_rules! debug_println_error {

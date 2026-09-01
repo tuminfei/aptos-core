@@ -158,7 +158,7 @@
 /// ### Event
 ///
 /// - An **event** is the user-facing representation of the effects of executing a transaction.
-/// - A transaction may be designed to emit any number of events as a list. For example, a `Coin<AptosCoin>` transfer emits a `WithdrawEvent` for the sender account and a `DepositEvent` for the recipient account.
+/// - A transaction may be designed to emit any number of events as a list. For example, a `Coin<TopoCoin>` transfer emits a `WithdrawEvent` for the sender account and a `DepositEvent` for the recipient account.
 /// - In the Aptos protocol, events provide evidence that the successful execution of a transaction resulted in a specific effect. The `DepositEvent` (in the above example) allows the recipient to confirm that a payment was received into their account.
 /// - Events are persisted on the blockchain and are used to answer queries by [clients](#client).
 ///
@@ -195,7 +195,7 @@
 ///
 /// - A **fungible asset** is an asset, such as a currency, share, in-game resource, etc., that is interchangeable with another identical asset without any loss in its value. For example, APT is a fungible asset because you can exchange one APT for another.
 /// - Follow the [Digital Asset Standards](../standards/index.md#digital-asset-standards) to create fungible assets on the Aptos blockchain.
-/// - Next generation of the Coin standard that addresses shortcomings of `aptos_framework::coin` such as lack of guaranteed enforcement of freeze and burn and advanced functionalities such as programmable transfers, e.g., approve in ERC-20.
+/// - Next generation of the Coin standard that addresses shortcomings of `topo_framework::coin` such as lack of guaranteed enforcement of freeze and burn and advanced functionalities such as programmable transfers, e.g., approve in ERC-20.
 ///
 /// ### Fungible Token
 ///
@@ -399,9 +399,9 @@
 ///
 /// ### Table
 ///
-/// - A [**table**](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-stdlib/doc/table.md) implements the Table type and in Aptos is used to store information as key-value data within an account at large scale.
+/// - A [**table**](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/topo-stdlib/doc/table.md) implements the Table type and in Aptos is used to store information as key-value data within an account at large scale.
 ///
-/// See [`table.move`](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/aptos-stdlib/sources/table.move) for the associated Aptos source file.
+/// See [`table.move`](https://github.com/aptos-labs/aptos-core/blob/main/aptos-move/framework/topo-stdlib/sources/table.move) for the associated Aptos source file.
 ///
 /// ### Testnet
 ///

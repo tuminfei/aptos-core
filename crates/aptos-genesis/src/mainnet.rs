@@ -7,7 +7,6 @@ use aptos_config::config::{
     DEFAULT_MAX_NUM_NODES_PER_LRU_CACHE_SHARD, NO_OP_STORAGE_PRUNER_CONFIG,
 };
 use aptos_db::AptosDB;
-use aptos_framework::ReleaseBundle;
 use aptos_storage_interface::DbReaderWriter;
 use aptos_temppath::TempPath;
 use aptos_types::{
@@ -20,6 +19,7 @@ use aptos_types::{
 };
 use aptos_vm::aptos_vm::AptosVMBlockExecutor;
 use aptos_vm_genesis::{AccountBalance, EmployeePool, ValidatorWithCommissionRate};
+use topo_framework::ReleaseBundle;
 
 /// Holder object for all pieces needed to generate a genesis transaction
 #[derive(Clone)]

@@ -18,7 +18,7 @@ testing = ["aptos-move-stdlib/testing"]
 profiling = ["move-vm-runtime/profiling"]
 
 [dependencies]
-aptos-framework-natives = { workspace = true }
+topo-framework-natives = { workspace = true }
 aptos-gas-algebra = { workspace = true }
 aptos-gas-schedule = { workspace = true }
 aptos-move-stdlib = { workspace = true }

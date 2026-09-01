@@ -3,7 +3,6 @@
 
 use crate::stored_package::CachedPackageRegistry;
 use aptos_cli_common::load_account_arg;
-use aptos_framework::UPGRADE_POLICY_CUSTOM_FIELD;
 use aptos_rest_client::Client;
 use futures::executor::block_on;
 use move_package::{
@@ -12,6 +11,7 @@ use move_package::{
 };
 use move_symbol_pool::Symbol;
 use reqwest::Url;
+use topo_framework::UPGRADE_POLICY_CUSTOM_FIELD;
 
 pub fn register_package_hooks() {
     move_package::package_hooks::register_package_hooks(Box::new(AptosPackageHooks {}))

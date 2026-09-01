@@ -3,9 +3,9 @@ name = "framework_usecases"
 version = "0.0.0"
 
 [dependencies]
-AptosFramework = { local = "../../../../aptos-move/framework/aptos-framework" }
-AptosToken = { local = "../../../../aptos-move/framework/aptos-token" }
-AptosTokenObjects = { local = "../../../../aptos-move/framework/aptos-token-objects" }
+TopoFramework = { local = "../../../../aptos-move/framework/topo-framework" }
+TopoToken = { local = "../../../../aptos-move/framework/topo-token" }
+TopoTokenObjects = { local = "../../../../aptos-move/framework/topo-token-objects" }
 
 # testing exchanging of constant address works as well.
 [addresses]

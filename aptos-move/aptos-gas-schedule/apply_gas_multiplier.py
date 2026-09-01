@@ -49,7 +49,7 @@ STORAGE_FEE_TYPES = {
 }
 
 DEFAULT_FILES = [
-    "src/gas_schedule/aptos_framework.rs",
+    "src/gas_schedule/topo_framework.rs",
     "src/gas_schedule/instr.rs",
     "src/gas_schedule/misc.rs",
     "src/gas_schedule/move_stdlib.rs",

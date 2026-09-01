@@ -252,7 +252,7 @@ impl FlowSession {
                 if let Some(n) = error_limit {
                     options.backend.error_limit = n;
                 }
-                aptos_framework::prover::configure_aptos_custom_natives(&mut options);
+                topo_framework::prover::configure_aptos_custom_natives(&mut options);
                 #[cfg(test)]
                 {
                     options.prover.stable_test_output = true;

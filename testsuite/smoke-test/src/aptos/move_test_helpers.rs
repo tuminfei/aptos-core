@@ -5,9 +5,9 @@
 
 use anyhow::Result;
 use aptos_forge::AptosPublicInfo;
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_sdk::transaction_builder::TransactionFactory;
 use std::path::PathBuf;
+use topo_framework::{BuildOptions, BuiltPackage};
 
 /// New style publishing via `code::publish_package`
 pub async fn publish_package(

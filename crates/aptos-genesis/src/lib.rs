@@ -18,7 +18,6 @@ use aptos_config::config::{
 };
 use aptos_crypto::ed25519::Ed25519PublicKey;
 use aptos_db::AptosDB;
-use aptos_framework::ReleaseBundle;
 use aptos_storage_interface::DbReaderWriter;
 use aptos_temppath::TempPath;
 use aptos_types::{
@@ -35,6 +34,7 @@ use aptos_types::{
 use aptos_vm::aptos_vm::AptosVMBlockExecutor;
 use aptos_vm_genesis::Validator;
 use std::convert::TryInto;
+use topo_framework::ReleaseBundle;
 
 /// Holder object for all pieces needed to generate a genesis transaction
 #[derive(Clone)]

@@ -15,8 +15,8 @@ func demo_coin_transfer() {
 			Address: aptos.AccountAddress(
 				[32]uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 			),
-			Module:     aptos.Identifier("aptos_coin"),
-			Name:       aptos.Identifier("AptosCoin"),
+			Module:     aptos.Identifier("topo_coin"),
+			Name:       aptos.Identifier("TopoCoin"),
 		},
 	}
 

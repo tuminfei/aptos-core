@@ -1,6 +1,6 @@
 script {
-    use aptos_framework::coin;
-    use aptos_framework::aptos_coin::AptosCoin;
+    use topo_framework::coin;
+    use topo_framework::topo_coin::TopoCoin;
 
     /// Reads a plain resource under `target` (a data read) and framework coin state via
     /// `coin::supply` (whose module is an immediate dependency of this script). Nothing is
@@ -8,6 +8,6 @@ script {
     /// dependency must all be promoted to hot state.
     fun main(target: address) {
         0xcafe::read_helper::read_plain(target);
-        let _ = coin::supply<AptosCoin>();
+        let _ = coin::supply<TopoCoin>();
     }
 }

@@ -11,13 +11,13 @@
 //! only once per group, dramatically reducing total test time.
 
 use crate::{assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::{BuildOptions, BuiltPackage};
 use aptos_types::{account_address::AccountAddress, on_chain_config::FeatureFlag};
 use move_core_types::{
     value::{MoveStruct, MoveValue},
     vm_status::StatusCode,
 };
 use serde::{Deserialize, Serialize};
+use topo_framework::{BuildOptions, BuiltPackage};
 
 /// Mimics `0xcafe::public_struct_test::TestResult`
 #[derive(Serialize, Deserialize, Debug)]

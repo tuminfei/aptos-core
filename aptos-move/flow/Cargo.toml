@@ -26,7 +26,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 aptos-cli-common = { workspace = true }
-aptos-framework = { workspace = true }
+topo-framework = { workspace = true }
 aptos-gas-profiling = { workspace = true }
 aptos-gas-schedule = { workspace = true }
 aptos-move-cli = { workspace = true }

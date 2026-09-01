@@ -247,24 +247,24 @@ cargo run -p move-prover -- \
 ```
 
 To verify files that depend on multiple packages, provide each package's sources directory as a separate `-d` flag.
-For example, to verify a file in `aptos-stdlib`:
+For example, to verify a file in `topo-stdlib`:
 
 ```
 cargo run -p move-prover -- \
     --language-version 2.4 \
     --aptos \
     -d aptos-move/framework/move-stdlib/sources \
-    -d aptos-move/framework/aptos-stdlib/sources \
+    -d aptos-move/framework/topo-stdlib/sources \
     -a std=0x1 aptos_std=0x1 \
     -- <source-files-or-directory>
 ```
 
 ## Running the Prover on a Move Package
 
-To run the prover on a Move package (e.g. `aptos-stdlib`), use the Move CLI:
+To run the prover on a Move package (e.g. `topo-stdlib`), use the Move CLI:
 
 ```
-cargo run -p aptos-move-cli --features="binary" -- prove --package-dir aptos-move/framework/aptos-stdlib
+cargo run -p aptos-move-cli --features="binary" -- prove --package-dir aptos-move/framework/topo-stdlib
 ```
 
 The `prove` accepts multiple options, among those:
@@ -274,7 +274,7 @@ The `prove` accepts multiple options, among those:
           ...or --language LANGUAGE_VERSION
           Specify the language version to be supported.
           Defaults to the latest stable language version.
-          
+
           [default: 2.3]
 
   -v, --verbosity <VERBOSITY>
@@ -383,7 +383,7 @@ MVP_TEST_FLAGS="-T=20" cargo test           # Custom flags
 To use the Aptos framework specifications as an integration test, run
 
 ```
-cargo test -p aptos-framework \
+cargo test -p topo-framework \
         move_stdlib_prover_tests \
         move_aptos_stdlib_prover_tests \
         move_framework_prover_tests \

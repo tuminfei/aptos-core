@@ -1,13 +1,13 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use aptos_framework::extended_checks;
 use aptos_types::account_address::AccountAddress;
 use move_model::metadata::{CompilerVersion, LanguageVersion};
 use move_package::CompilerConfig;
 use move_prover::package_prove::run_move_prover;
 use std::{collections::BTreeMap, path::PathBuf};
 use tempfile::tempdir;
+use topo_framework::extended_checks;
 
 pub fn path_in_crate<S>(relative: S) -> PathBuf
 where

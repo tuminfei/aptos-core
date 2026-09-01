@@ -2,7 +2,6 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{assert_success, assert_vm_status, tests::common, MoveHarness};
-use aptos_framework::BuildOptions;
 use aptos_language_e2e_tests::executor::FakeExecutor;
 use aptos_transaction_simulation::Account;
 use aptos_types::move_utils::MemberId;
@@ -11,6 +10,7 @@ use move_core_types::{
 };
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use topo_framework::BuildOptions;
 
 #[derive(Deserialize, Serialize)]
 struct Aggregator {
@@ -33,7 +33,7 @@ fn initialize(h: &mut MoveHarness) {
     let build_options = BuildOptions::move_2().set_latest_language();
     let path = common::test_dir_path("aggregator_v2.data/function_values");
 
-    let framework_account = h.aptos_framework_account();
+    let framework_account = h.topo_framework_account();
     let status = h.publish_package_with_options(&framework_account, path.as_path(), build_options);
     assert_success!(status);
 }

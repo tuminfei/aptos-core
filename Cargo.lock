@@ -308,7 +308,6 @@ dependencies = [
  "aptos-config",
  "aptos-crypto",
  "aptos-faucet-core",
- "aptos-framework",
  "aptos-genesis",
  "aptos-github-client",
  "aptos-global-constants",
@@ -368,6 +367,7 @@ dependencies = [
  "thiserror 1.0.69",
  "tikv-jemallocator",
  "tokio",
+ "topo-framework",
  "tracing",
  "tracing-subscriber 0.3.18",
  "url",
@@ -451,7 +451,6 @@ dependencies = [
  "aptos-cached-packages",
  "aptos-config",
  "aptos-crypto",
- "aptos-framework",
  "aptos-gas-meter",
  "aptos-gas-schedule",
  "aptos-global-constants",
@@ -492,6 +491,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "topo-framework",
  "warp",
 ]
 
@@ -507,7 +507,6 @@ dependencies = [
  "aptos-db",
  "aptos-executor",
  "aptos-executor-types",
- "aptos-framework",
  "aptos-genesis",
  "aptos-indexer-grpc-table-info",
  "aptos-mempool",
@@ -527,6 +526,7 @@ dependencies = [
  "regex",
  "serde_json",
  "tokio",
+ "topo-framework",
  "warp",
  "warp-reverse-proxy",
 ]
@@ -538,7 +538,6 @@ dependencies = [
  "anyhow",
  "aptos-api-types",
  "aptos-cached-packages",
- "aptos-framework",
  "aptos-logger",
  "aptos-push-metrics",
  "aptos-rest-client",
@@ -552,6 +551,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "topo-framework",
  "url",
 ]
 
@@ -800,7 +800,6 @@ dependencies = [
 name = "aptos-cached-packages"
 version = "0.1.0"
 dependencies = [
- "aptos-framework",
  "aptos-package-builder",
  "aptos-release-bundle",
  "aptos-types",
@@ -809,6 +808,7 @@ dependencies = [
  "once_cell",
  "proptest",
  "proptest-derive",
+ "topo-framework",
 ]
 
 [[package]]
@@ -882,7 +882,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "aptos-block-executor",
- "aptos-framework",
  "aptos-language-e2e-tests",
  "aptos-replay-benchmark",
  "aptos-rest-client",
@@ -903,6 +902,7 @@ dependencies = [
  "serde",
  "tempfile",
  "tokio",
+ "topo-framework",
  "url",
 ]
 
@@ -1914,7 +1914,6 @@ dependencies = [
  "aptos-cli-common",
  "aptos-config",
  "aptos-db",
- "aptos-framework",
  "aptos-genesis",
  "aptos-global-constants",
  "aptos-infallible",
@@ -1958,6 +1957,7 @@ dependencies = [
  "termcolor",
  "thiserror 1.0.69",
  "tokio",
+ "topo-framework",
  "url",
  "uuid 1.11.0",
 ]
@@ -1993,115 +1993,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aptos-framework"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "aptos-aggregator",
- "aptos-crypto",
- "aptos-framework-natives",
- "aptos-gas-meter",
- "aptos-gas-schedule",
- "aptos-move-stdlib",
- "aptos-release-bundle",
- "aptos-sdk-builder",
- "aptos-types",
- "aptos-vm",
- "bcs 0.1.4",
- "claims",
- "clap 4.5.60",
- "codespan-reporting",
- "flate2",
- "itertools 0.13.0",
- "legacy-move-compiler",
- "log",
- "move-binary-format",
- "move-command-line-common",
- "move-compiler-v2",
- "move-core-types",
- "move-docgen",
- "move-model",
- "move-package",
- "move-prover",
- "move-prover-boogie-backend",
- "move-prover-bytecode-pipeline",
- "move-prover-lab",
- "move-prover-test-utils",
- "move-stackless-bytecode",
- "move-unit-test",
- "move-vm-runtime",
- "move-vm-types",
- "num-traits",
- "once_cell",
- "regex",
- "serde",
- "tempfile",
- "toml 0.7.8",
-]
-
-[[package]]
-name = "aptos-framework-book-builder"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "aptos-framework",
- "move-docgen",
- "move-model",
- "tempfile",
-]
-
-[[package]]
-name = "aptos-framework-natives"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "aptos-aggregator",
- "aptos-crypto",
- "aptos-gas-algebra",
- "aptos-gas-schedule",
- "aptos-native-interface",
- "aptos-types",
- "aptos-vm-types",
- "ark-bls12-381 0.5.0",
- "ark-bn254",
- "ark-ec 0.5.0",
- "ark-ff 0.5.0",
- "ark-serialize 0.5.0",
- "ark-std 0.5.0",
- "bcs 0.1.4",
- "better_any",
- "blake2-rfc",
- "bulletproofs",
- "byteorder",
- "claims",
- "curve25519-dalek-ng",
- "either",
- "flate2",
- "hex",
- "itertools 0.13.0",
- "libsecp256k1",
- "merlin",
- "move-binary-format",
- "move-core-types",
- "move-vm-runtime",
- "move-vm-types",
- "num-traits",
- "once_cell",
- "rand 0.7.3",
- "rand_core 0.5.1",
- "ripemd",
- "serde",
- "serde_bytes",
- "sha2 0.10.9",
- "sha2 0.9.9",
- "sha3 0.9.1",
- "siphasher 0.3.11",
- "smallvec",
- "tiny-keccak",
- "triomphe",
-]
-
-[[package]]
 name = "aptos-gas-algebra"
 version = "0.0.1"
 dependencies = [
@@ -2116,7 +2007,6 @@ dependencies = [
  "anyhow",
  "aptos-abstract-gas-usage",
  "aptos-cached-packages",
- "aptos-framework",
  "aptos-gas-algebra",
  "aptos-gas-schedule",
  "aptos-language-e2e-tests",
@@ -2128,6 +2018,7 @@ dependencies = [
  "move-binary-format",
  "move-core-types",
  "nalgebra",
+ "topo-framework",
  "walkdir",
 ]
 
@@ -2184,7 +2075,6 @@ name = "aptos-gas-schedule-updator"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-framework",
  "aptos-gas-schedule",
  "aptos-package-builder",
  "aptos-types",
@@ -2193,6 +2083,7 @@ dependencies = [
  "move-core-types",
  "move-model",
  "tempfile",
+ "topo-framework",
 ]
 
 [[package]]
@@ -2205,7 +2096,6 @@ dependencies = [
  "aptos-crypto",
  "aptos-db",
  "aptos-executor",
- "aptos-framework",
  "aptos-keygen",
  "aptos-logger",
  "aptos-storage-interface",
@@ -2217,6 +2107,7 @@ dependencies = [
  "rand 0.7.3",
  "serde",
  "serde_yaml 0.8.26",
+ "topo-framework",
 ]
 
 [[package]]
@@ -2405,7 +2296,6 @@ dependencies = [
  "aptos-db",
  "aptos-executor",
  "aptos-executor-types",
- "aptos-framework",
  "aptos-genesis",
  "aptos-global-constants",
  "aptos-indexer-grpc-utils",
@@ -2443,6 +2333,7 @@ dependencies = [
  "tokio-stream",
  "tonic 0.12.3",
  "tonic-reflection",
+ "topo-framework",
 ]
 
 [[package]]
@@ -2963,7 +2854,6 @@ dependencies = [
  "aptos-block-executor",
  "aptos-cached-packages",
  "aptos-crypto",
- "aptos-framework",
  "aptos-gas-algebra",
  "aptos-gas-meter",
  "aptos-gas-profiling",
@@ -2999,6 +2889,7 @@ dependencies = [
  "proptest-derive",
  "rand 0.7.3",
  "serde",
+ "topo-framework",
 ]
 
 [[package]]
@@ -3173,7 +3064,6 @@ dependencies = [
  "aptos-cached-packages",
  "aptos-cli-common",
  "aptos-crypto",
- "aptos-framework",
  "aptos-gas-profiling",
  "aptos-gas-schedule",
  "aptos-package-builder",
@@ -3230,6 +3120,7 @@ dependencies = [
  "tikv-jemallocator",
  "tokio",
  "toml 0.7.8",
+ "topo-framework",
  "url",
 ]
 
@@ -3291,7 +3182,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
- "aptos-framework",
  "aptos-gas-profiling",
  "aptos-gas-schedule",
  "aptos-language-e2e-tests",
@@ -3307,13 +3197,13 @@ dependencies = [
  "project-root",
  "proptest",
  "serde",
+ "topo-framework",
 ]
 
 [[package]]
 name = "aptos-move-examples"
 version = "0.1.0"
 dependencies = [
- "aptos-framework",
  "aptos-gas-schedule",
  "aptos-types",
  "aptos-vm",
@@ -3324,6 +3214,7 @@ dependencies = [
  "move-unit-test",
  "move-vm-runtime",
  "tempfile",
+ "topo-framework",
 ]
 
 [[package]]
@@ -3333,7 +3224,6 @@ dependencies = [
  "anyhow",
  "aptos-cli-common",
  "aptos-crypto",
- "aptos-framework",
  "aptos-gas-profiling",
  "aptos-gas-schedule",
  "aptos-move-cli",
@@ -3372,6 +3262,7 @@ dependencies = [
  "tempfile",
  "tera",
  "tokio",
+ "topo-framework",
  "tracing-log",
  "url",
  "walkdir",
@@ -3639,7 +3530,6 @@ dependencies = [
  "aptos-dkg-runtime",
  "aptos-event-notifications",
  "aptos-executor",
- "aptos-framework",
  "aptos-genesis",
  "aptos-indexer-grpc-fullnode",
  "aptos-indexer-grpc-table-info",
@@ -3686,6 +3576,7 @@ dependencies = [
  "serde_json",
  "serde_yaml 0.8.26",
  "tokio",
+ "topo-framework",
  "ureq",
 ]
 
@@ -3753,11 +3644,11 @@ name = "aptos-package-builder"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-framework-natives",
  "itertools 0.13.0",
  "move-command-line-common",
  "move-package",
  "tempfile",
+ "topo-framework-natives",
 ]
 
 [[package]]
@@ -3927,7 +3818,6 @@ dependencies = [
  "aptos-build-info",
  "aptos-cli-common",
  "aptos-crypto",
- "aptos-framework",
  "aptos-gas-profiling",
  "aptos-gas-schedule",
  "aptos-gas-schedule-updator",
@@ -3967,6 +3857,7 @@ dependencies = [
  "strum 0.27.1",
  "strum_macros 0.27.1",
  "tokio",
+ "topo-framework",
  "url",
  "walkdir",
 ]
@@ -3977,13 +3868,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "aptos-crypto",
- "aptos-framework-natives",
  "aptos-types",
  "bcs 0.1.4",
  "move-binary-format",
  "move-core-types",
  "move-model",
  "serde",
+ "topo-framework-natives",
 ]
 
 [[package]]
@@ -4038,7 +3929,6 @@ dependencies = [
  "aptos-block-executor",
  "aptos-cached-packages",
  "aptos-crypto",
- "aptos-framework",
  "aptos-gas-schedule",
  "aptos-logger",
  "aptos-move-debugger",
@@ -4056,6 +3946,7 @@ dependencies = [
  "rand 0.7.3",
  "serde",
  "tokio",
+ "topo-framework",
  "url",
 ]
 
@@ -4276,7 +4167,6 @@ version = "0.2.0"
 dependencies = [
  "anyhow",
  "aptos-cached-packages",
- "aptos-framework",
  "aptos-types",
  "bcs 0.1.4",
  "clap 4.5.60",
@@ -4288,6 +4178,7 @@ dependencies = [
  "serde_yaml 0.8.26",
  "tempfile",
  "textwrap 0.15.2",
+ "topo-framework",
  "which",
 ]
 
@@ -4845,7 +4736,6 @@ name = "aptos-transaction-generator-lib"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "aptos-framework",
  "aptos-infallible",
  "aptos-logger",
  "aptos-sdk",
@@ -4859,6 +4749,7 @@ dependencies = [
  "once_cell",
  "rand 0.7.3",
  "serde",
+ "topo-framework",
 ]
 
 [[package]]
@@ -4927,7 +4818,6 @@ dependencies = [
 name = "aptos-transaction-workloads-lib"
 version = "0.0.0"
 dependencies = [
- "aptos-framework",
  "aptos-sdk",
  "aptos-transaction-generator-lib",
  "async-trait",
@@ -4937,6 +4827,7 @@ dependencies = [
  "rand 0.7.3",
  "rand_core 0.5.1",
  "serde",
+ "topo-framework",
 ]
 
 [[package]]
@@ -4948,7 +4839,6 @@ dependencies = [
  "aptos-block-executor",
  "aptos-cached-packages",
  "aptos-crypto",
- "aptos-framework",
  "aptos-gas-schedule",
  "aptos-resource-viewer",
  "aptos-storage-interface",
@@ -4976,6 +4866,7 @@ dependencies = [
  "once_cell",
  "serde_json",
  "tempfile",
+ "topo-framework",
 ]
 
 [[package]]
@@ -5069,7 +4960,6 @@ dependencies = [
  "aptos-api-types",
  "aptos-config",
  "aptos-db",
- "aptos-framework",
  "aptos-rest-client",
  "aptos-storage-interface",
  "aptos-types",
@@ -5081,6 +4971,7 @@ dependencies = [
  "lru",
  "move-core-types",
  "tokio",
+ "topo-framework",
 ]
 
 [[package]]
@@ -5124,7 +5015,6 @@ dependencies = [
  "aptos-block-partitioner",
  "aptos-crypto",
  "aptos-experimental-runtimes",
- "aptos-framework-natives",
  "aptos-gas-algebra",
  "aptos-gas-meter",
  "aptos-gas-schedule",
@@ -5168,6 +5058,7 @@ dependencies = [
  "rustc-hash 2.1.1",
  "serde",
  "test-case",
+ "topo-framework-natives",
  "triomphe",
 ]
 
@@ -5176,20 +5067,19 @@ name = "aptos-vm-benchmarks"
 version = "0.1.0"
 dependencies = [
  "aptos-cached-packages",
- "aptos-framework",
  "aptos-language-e2e-tests",
  "aptos-types",
  "bcs 0.1.4",
  "clap 4.5.60",
  "move-binary-format",
  "move-core-types",
+ "topo-framework",
 ]
 
 [[package]]
 name = "aptos-vm-environment"
 version = "0.0.1"
 dependencies = [
- "aptos-framework-natives",
  "aptos-gas-algebra",
  "aptos-gas-schedule",
  "aptos-move-stdlib",
@@ -5209,6 +5099,7 @@ dependencies = [
  "once_cell",
  "serde",
  "sha3 0.9.1",
+ "topo-framework-natives",
  "triomphe",
 ]
 
@@ -8862,7 +8753,6 @@ dependencies = [
  "aptos-block-executor",
  "aptos-cached-packages",
  "aptos-crypto",
- "aptos-framework",
  "aptos-gas-algebra",
  "aptos-gas-profiling",
  "aptos-gas-schedule",
@@ -8898,6 +8788,7 @@ dependencies = [
  "test-case",
  "thousands",
  "tokio",
+ "topo-framework",
  "triomphe",
 ]
 
@@ -10058,7 +9949,6 @@ dependencies = [
 name = "fuzzer"
 version = "0.1.0"
 dependencies = [
- "aptos-framework",
  "aptos-language-e2e-tests",
  "aptos-types",
  "arbitrary",
@@ -10074,6 +9964,7 @@ dependencies = [
  "move-transactional-test-runner",
  "rayon",
  "sha2 0.9.9",
+ "topo-framework",
  "walkdir",
 ]
 
@@ -10085,7 +9976,6 @@ dependencies = [
  "aptos-cached-packages",
  "aptos-consensus",
  "aptos-crypto",
- "aptos-framework",
  "aptos-language-e2e-tests",
  "aptos-transaction-simulation",
  "aptos-types",
@@ -10108,6 +9998,7 @@ dependencies = [
  "ring 0.16.20",
  "serde",
  "serde_json",
+ "topo-framework",
 ]
 
 [[package]]
@@ -12892,7 +12783,6 @@ name = "mono-move-aptos-state-view-providers"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-framework",
  "aptos-types",
  "bcs 0.1.4",
  "bytes",
@@ -12905,6 +12795,7 @@ dependencies = [
  "move-bytecode-verifier",
  "move-core-types",
  "thiserror 1.0.69",
+ "topo-framework",
  "triomphe",
 ]
 
@@ -13077,7 +12968,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "aptos-crypto",
- "aptos-framework-natives",
  "aptos-gas-schedule",
  "aptos-move-stdlib",
  "aptos-types",
@@ -13111,6 +13001,7 @@ dependencies = [
  "specializer",
  "tempfile",
  "thiserror 1.0.69",
+ "topo-framework-natives",
  "walkdir",
 ]
 
@@ -13523,7 +13414,6 @@ name = "move-package-cache"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-framework",
  "aptos-rest-client",
  "fs2",
  "futures",
@@ -13533,6 +13423,7 @@ dependencies = [
  "percent-encoding",
  "tempfile",
  "tokio",
+ "topo-framework",
  "url",
 ]
 
@@ -13800,7 +13691,6 @@ name = "move-transactional-test-runner"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "aptos-framework",
  "arbitrary",
  "bcs 0.1.4",
  "clap 4.5.60",
@@ -13828,6 +13718,7 @@ dependencies = [
  "tempfile",
  "tera",
  "termcolor",
+ "topo-framework",
 ]
 
 [[package]]
@@ -18522,7 +18413,6 @@ dependencies = [
  "aptos-dkg",
  "aptos-faucet-core",
  "aptos-forge",
- "aptos-framework",
  "aptos-gas-schedule",
  "aptos-genesis",
  "aptos-global-constants",
@@ -18565,6 +18455,7 @@ dependencies = [
  "serde_yaml 0.8.26",
  "tempfile",
  "tokio",
+ "topo-framework",
 ]
 
 [[package]]
@@ -19934,6 +19825,115 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tonic 0.12.3",
+]
+
+[[package]]
+name = "topo-framework"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aptos-aggregator",
+ "aptos-crypto",
+ "aptos-gas-meter",
+ "aptos-gas-schedule",
+ "aptos-move-stdlib",
+ "aptos-release-bundle",
+ "aptos-sdk-builder",
+ "aptos-types",
+ "aptos-vm",
+ "bcs 0.1.4",
+ "claims",
+ "clap 4.5.60",
+ "codespan-reporting",
+ "flate2",
+ "itertools 0.13.0",
+ "legacy-move-compiler",
+ "log",
+ "move-binary-format",
+ "move-command-line-common",
+ "move-compiler-v2",
+ "move-core-types",
+ "move-docgen",
+ "move-model",
+ "move-package",
+ "move-prover",
+ "move-prover-boogie-backend",
+ "move-prover-bytecode-pipeline",
+ "move-prover-lab",
+ "move-prover-test-utils",
+ "move-stackless-bytecode",
+ "move-unit-test",
+ "move-vm-runtime",
+ "move-vm-types",
+ "num-traits",
+ "once_cell",
+ "regex",
+ "serde",
+ "tempfile",
+ "toml 0.7.8",
+ "topo-framework-natives",
+]
+
+[[package]]
+name = "topo-framework-book-builder"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "move-docgen",
+ "move-model",
+ "tempfile",
+ "topo-framework",
+]
+
+[[package]]
+name = "topo-framework-natives"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "aptos-aggregator",
+ "aptos-crypto",
+ "aptos-gas-algebra",
+ "aptos-gas-schedule",
+ "aptos-native-interface",
+ "aptos-types",
+ "aptos-vm-types",
+ "ark-bls12-381 0.5.0",
+ "ark-bn254",
+ "ark-ec 0.5.0",
+ "ark-ff 0.5.0",
+ "ark-serialize 0.5.0",
+ "ark-std 0.5.0",
+ "bcs 0.1.4",
+ "better_any",
+ "blake2-rfc",
+ "bulletproofs",
+ "byteorder",
+ "claims",
+ "curve25519-dalek-ng",
+ "either",
+ "flate2",
+ "hex",
+ "itertools 0.13.0",
+ "libsecp256k1",
+ "merlin",
+ "move-binary-format",
+ "move-core-types",
+ "move-vm-runtime",
+ "move-vm-types",
+ "num-traits",
+ "once_cell",
+ "rand 0.7.3",
+ "rand_core 0.5.1",
+ "ripemd",
+ "serde",
+ "serde_bytes",
+ "sha2 0.10.9",
+ "sha2 0.9.9",
+ "sha3 0.9.1",
+ "siphasher 0.3.11",
+ "smallvec",
+ "tiny-keccak",
+ "triomphe",
 ]
 
 [[package]]
