@@ -9,6 +9,7 @@ module topo_framework::block {
     use topo_framework::decryption;
 
     use topo_framework::account;
+    use topo_framework::chunky_dkg_config;
     use topo_framework::event::{Self, EventHandle};
     use topo_framework::reconfiguration;
     use topo_framework::reconfiguration_with_dkg;
@@ -257,7 +258,14 @@ module topo_framework::block {
         decryption::on_new_block(&vm, epoch, round, option::none());
 
         if (timestamp - reconfiguration::last_reconfiguration_time() >= epoch_interval) {
-            reconfiguration_with_dkg::try_start();
+            // The first epoch with Chunky DKG enabled does not have a
+            // decryption key yet, so consensus still emits V1 block metadata.
+            // Bootstrap both DKG sessions here; later epochs use V2/V3.
+            if (chunky_dkg_config::enabled()) {
+                reconfiguration_with_dkg::try_start_with_chunky_dkg();
+            } else {
+                reconfiguration_with_dkg::try_start();
+            };
             reconfiguration_with_dkg::try_advance_reconfig();
         };
     }

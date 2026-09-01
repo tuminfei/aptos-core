@@ -3,6 +3,7 @@
 /// WARNING: `reconfiguration_state::initialize()` is required before `RECONFIGURE_WITH_DKG` can be enabled.
 module topo_framework::reconfiguration_state {
     use std::error;
+    use std::type_info;
     use topo_std::copyable_any;
     use topo_std::copyable_any::Any;
     use topo_framework::system_addresses;
@@ -58,8 +59,7 @@ module topo_framework::reconfiguration_state {
         };
 
         let state = borrow_global<State>(@topo_framework);
-        let variant_type_name = *state.variant.type_name().bytes();
-        variant_type_name == b"0x1::reconfiguration_state::StateActive"
+        *state.variant.type_name() == type_info::type_name<StateActive>()
     }
 
     /// Called at the beginning of a reconfiguration (either immediate or async)
@@ -69,8 +69,7 @@ module topo_framework::reconfiguration_state {
     public(friend) fun on_reconfig_start() acquires State {
         if (exists<State>(@topo_framework)) {
             let state = borrow_global_mut<State>(@topo_framework);
-            let variant_type_name = *state.variant.type_name().bytes();
-            if (variant_type_name == b"0x1::reconfiguration_state::StateInactive") {
+            if (*state.variant.type_name() == type_info::type_name<StateInactive>()) {
                 state.variant = copyable_any::pack(
                     StateActive { start_time_secs: timestamp::now_seconds() }
                 );
@@ -82,8 +81,7 @@ module topo_framework::reconfiguration_state {
     /// Abort if the reconfiguration state is not "in progress".
     public(friend) fun start_time_secs(): u64 acquires State {
         let state = borrow_global<State>(@topo_framework);
-        let variant_type_name = *state.variant.type_name().bytes();
-        if (variant_type_name == b"0x1::reconfiguration_state::StateActive") {
+        if (*state.variant.type_name() == type_info::type_name<StateActive>()) {
             let active = state.variant.unpack<StateActive>();
             active.start_time_secs
         } else {
@@ -96,8 +94,7 @@ module topo_framework::reconfiguration_state {
     public(friend) fun on_reconfig_finish() acquires State {
         if (exists<State>(@topo_framework)) {
             let state = borrow_global_mut<State>(@topo_framework);
-            let variant_type_name = *state.variant.type_name().bytes();
-            if (variant_type_name == b"0x1::reconfiguration_state::StateActive") {
+            if (*state.variant.type_name() == type_info::type_name<StateActive>()) {
                 state.variant = copyable_any::pack(StateInactive {});
             } else {
                 abort(error::invalid_state(ERECONFIG_NOT_IN_PROGRESS))

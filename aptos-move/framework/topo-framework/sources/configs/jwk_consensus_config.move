@@ -3,6 +3,8 @@ module topo_framework::jwk_consensus_config {
     use std::error;
     use std::option;
     use std::string::String;
+    #[test_only]
+    use std::type_info;
     use topo_std::copyable_any;
     use topo_std::copyable_any::Any;
     use topo_std::simple_map;
@@ -106,8 +108,7 @@ module topo_framework::jwk_consensus_config {
     #[test_only]
     fun enabled(): bool acquires JWKConsensusConfig {
         let variant= borrow_global<JWKConsensusConfig>(@topo_framework).variant;
-        let variant_type_name = *variant.type_name().bytes();
-        variant_type_name != b"0x1::jwk_consensus_config::ConfigOff"
+        *variant.type_name() != type_info::type_name<ConfigOff>()
     }
 
     #[test_only]

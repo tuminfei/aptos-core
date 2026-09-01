@@ -1,5 +1,6 @@
 /// Structs and functions for on-chain randomness configurations.
 module topo_framework::randomness_config {
+    use std::type_info;
     use topo_std::copyable_any;
     use topo_std::copyable_any::Any;
     use topo_std::fixed_point64::FixedPoint64;
@@ -74,8 +75,7 @@ module topo_framework::randomness_config {
     public fun enabled(): bool acquires RandomnessConfig {
         if (exists<RandomnessConfig>(@topo_framework)) {
             let config = borrow_global<RandomnessConfig>(@topo_framework);
-            let variant_type_name = *config.variant.type_name().bytes();
-            variant_type_name != b"0x1::randomness_config::ConfigOff"
+            *config.variant.type_name() != type_info::type_name<ConfigOff>()
         } else {
             false
         }

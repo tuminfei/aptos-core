@@ -2,6 +2,7 @@
 module topo_framework::chunky_dkg_config {
     use std::option;
     use std::option::Option;
+    use std::type_info;
     use topo_std::copyable_any;
     use topo_std::copyable_any::Any;
     use topo_std::fixed_point64::FixedPoint64;
@@ -75,8 +76,7 @@ module topo_framework::chunky_dkg_config {
     public fun enabled(): bool acquires ChunkyDKGConfig {
         if (exists<ChunkyDKGConfig>(@topo_framework)) {
             let config = borrow_global<ChunkyDKGConfig>(@topo_framework);
-            let variant_type_name = *config.variant.type_name().bytes();
-            variant_type_name != b"0x1::chunky_dkg_config::ConfigOff"
+            *config.variant.type_name() != type_info::type_name<ConfigOff>()
         } else { false }
     }
 
@@ -115,8 +115,7 @@ module topo_framework::chunky_dkg_config {
     public fun grace_period_secs(): Option<u64> acquires ChunkyDKGConfig {
         if (exists<ChunkyDKGConfig>(@topo_framework)) {
             let config = borrow_global<ChunkyDKGConfig>(@topo_framework);
-            let variant_type_name = *config.variant.type_name().bytes();
-            if (variant_type_name == b"0x1::chunky_dkg_config::ConfigShadowV1") {
+            if (*config.variant.type_name() == type_info::type_name<ConfigShadowV1>()) {
                 let shadow_v1 = copyable_any::unpack<ConfigShadowV1>(config.variant);
                 return std::option::some(shadow_v1.grace_period_secs)
             }
