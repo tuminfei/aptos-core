@@ -11,9 +11,9 @@ use once_cell::sync::Lazy;
 use std::{env, path::PathBuf, process::Command};
 
 const WORKSPACE_BUILD_ERROR_MSG: &str = r#"
-    Unable to build all workspace binaries. Cannot continue running tests.
+    Unable to build the workspace binaries required by smoke tests. Cannot continue running tests.
 
-    Try running 'cargo build --release --all --bins --exclude aptos-node' yourself.
+    Try running 'cargo build --release --package aptos --package aptos-debugger --bins' yourself.
 "#;
 
 // Global flag indicating if all binaries in the workspace have been built.
@@ -26,8 +26,33 @@ static WORKSPACE_BUILT: Lazy<bool> = Lazy::new(|| {
     }
 
     info!("Building project binaries");
-    let mut args = cargo_build_common_args();
-    args.append(&mut vec!["--all", "--bins", "--exclude", "aptos-node"]);
+    let common_args = cargo_build_common_args();
+    let mut args = Vec::new();
+    let mut index = 0;
+    while index < common_args.len() {
+        let arg = common_args[index];
+        if arg == "--features" {
+            index += 2;
+            continue;
+        }
+        if arg.starts_with("--features=") {
+            index += 1;
+            continue;
+        }
+        args.push(arg);
+        index += 1;
+    }
+    // Smoke tests only access these two workspace binaries through `get_bin()`.
+    // Building every workspace binary also pulls in unrelated system dependencies
+    // (for example, libpq for the NFT metadata crawler), which makes these tests
+    // fail before the requested binaries are built.
+    args.append(&mut vec![
+        "--package",
+        "aptos",
+        "--package",
+        "aptos-debugger",
+        "--bins",
+    ]);
 
     let cargo_build = Command::new("cargo")
         .current_dir(workspace_root())

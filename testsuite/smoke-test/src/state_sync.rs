@@ -143,7 +143,10 @@ async fn test_fullnode_fast_and_intelligent_sync_epoch_changes() {
         .state_sync
         .aptos_data_client
         .max_num_output_reductions = 2;
-    vfn_config.state_sync.aptos_data_client.response_timeout_ms = 1;
+    // A 1 ms timeout is below the minimum reliable round-trip time for state
+    // value chunks on macOS and causes fast sync to retry forever at version 0.
+    // Keep this low enough to exercise output reduction without starving sync.
+    vfn_config.state_sync.aptos_data_client.response_timeout_ms = 100;
 
     // Create the fullnode and test its ability to sync
     let vfn_peer_id = state_sync_utils::create_fullnode(vfn_config, &mut swarm).await;

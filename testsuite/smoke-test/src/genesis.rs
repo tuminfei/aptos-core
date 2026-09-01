@@ -411,6 +411,15 @@ async fn delete_storage_and_wait_for_catchup(env: &mut LocalSwarm, validator_ind
     // Stop the validator and delete the DB
     let validator = env.validators_mut().nth(validator_index).unwrap();
     validator.stop();
+
+    // The preceding test step puts every validator into sync-only mode. Clear
+    // that setting on the wiped validator before restarting it so it can leave
+    // the old consensus round after state sync and rejoin the network.
+    let mut validator_config = validator.config().clone();
+    validator_config.consensus.sync_only = false;
+    validator_config
+        .save_to_path(validator.config_path())
+        .unwrap();
     validator.clear_storage().await.unwrap();
 
     // Restart the validator and wait for it to catch up
