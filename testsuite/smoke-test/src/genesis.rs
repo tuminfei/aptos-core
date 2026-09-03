@@ -195,11 +195,11 @@ async fn test_fullnode_genesis_transaction_flow() {
 /// The test does the following:
 /// 1. Start a 5 node validator network.
 /// 2. Enable consensus `sync_only` mode for the last validator and verify that it can sync.
-/// 3. Use consensus `sync_only` mode to force all nodes to stop at the same version (i.e., emulate a halt).
-/// 4. Use the aptos CLI to generate a genesis transaction that removes the last validator from the set.
-/// 5. Use the aptos-debugger to manually apply the genesis transaction to all remaining validators.
-/// 6. Verify that the network is able to resume consensus and that the last validator is no longer in the set.
-/// 7. Verify that a failed validator node is able to db-restore and rejoin the network.
+/// 3. Verify that a failed validator node can recover its deleted DB while the network is live.
+/// 4. Use consensus `sync_only` mode to force all nodes to stop at the same version (i.e., emulate a halt).
+/// 5. Use the aptos CLI to generate a genesis transaction that removes the last validator from the set.
+/// 6. Use the aptos-debugger to manually apply the genesis transaction to all remaining validators.
+/// 7. Verify that the network is able to resume consensus and that the last validator is no longer in the set.
 async fn test_validator_genesis_transaction_and_db_restore_flow() {
     println!("0. Building the Aptos CLI and debugger!");
     workspace_builder::get_bin("aptos-debugger");
@@ -225,13 +225,13 @@ async fn test_validator_genesis_transaction_and_db_restore_flow() {
         .await
         .unwrap();
 
-    println!("3. Enabling `sync_only` mode for every validator!");
+    println!("3. Deleting one validator's DB and verifying that it can still catch up!");
+    delete_storage_and_wait_for_catchup(&mut swarm, 3).await;
+
+    println!("4. Enabling `sync_only` mode for every validator!");
     for validator in swarm.validators_mut() {
         enable_sync_only_mode(num_validators, validator).await;
     }
-
-    println!("4. Deleting one validator's DB and verifying that it can still catch up!");
-    delete_storage_and_wait_for_catchup(&mut swarm, 3).await;
 
     println!("5. Stopping three validator nodes!");
     for node in swarm.validators_mut().take(3) {
@@ -412,14 +412,6 @@ async fn delete_storage_and_wait_for_catchup(env: &mut LocalSwarm, validator_ind
     let validator = env.validators_mut().nth(validator_index).unwrap();
     validator.stop();
 
-    // The preceding test step puts every validator into sync-only mode. Clear
-    // that setting on the wiped validator before restarting it so it can leave
-    // the old consensus round after state sync and rejoin the network.
-    let mut validator_config = validator.config().clone();
-    validator_config.consensus.sync_only = false;
-    validator_config
-        .save_to_path(validator.config_path())
-        .unwrap();
     validator.clear_storage().await.unwrap();
 
     // Restart the validator and wait for it to catch up

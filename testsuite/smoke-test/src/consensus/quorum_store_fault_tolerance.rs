@@ -6,9 +6,10 @@ use crate::{
     smoke_test_environment::SwarmBuilder, txn_emitter::generate_traffic,
     utils::update_consensus_config,
 };
+use aptos_cached_packages::aptos_stdlib;
 use aptos_consensus::QUORUM_STORE_DB_NAME;
 use aptos_forge::{
-    args::TransactionTypeArg, reconfig, wait_for_all_nodes_to_catchup, NodeExt, Swarm, SwarmExt,
+    args::TransactionTypeArg, wait_for_all_nodes_to_catchup, NodeExt, Swarm, SwarmExt,
 };
 use aptos_logger::info;
 use aptos_rest_client::Client;
@@ -242,6 +243,12 @@ async fn test_swarm_with_bad_non_qs_node() {
         .with_aptos()
         .with_init_config(Arc::new(|_, conf, _| {
             conf.api.failpoints_enabled = true;
+            // Keep proposer rotation bounded after the non-QS node is injected.
+            // Otherwise timeout backoff can prevent the first post-reconfig
+            // block from being produced before the REST client's wait expires.
+            conf.consensus.round_initial_timeout_ms = 1000;
+            conf.consensus.round_timeout_backoff_exponent_base = 1.0;
+            conf.consensus.quorum_store_poll_time_ms = 500;
         }))
         // TODO: remove when quorum store becomes the in-code default
         .with_init_genesis_config(Arc::new(|genesis_config| {
@@ -290,12 +297,19 @@ async fn test_swarm_with_bad_non_qs_node() {
         .await
         .unwrap();
 
-    reconfig(
-        &rest_client,
-        &transaction_factory,
-        swarm.chain_info().root_account(),
-    )
-    .await;
+    // Submit the reconfiguration transaction without using `reconfig()`: that
+    // helper waits for an additional post-reconfiguration version before it
+    // returns. This test deliberately disables QS on one node at the epoch
+    // boundary, so the traffic below must be what drives that next version.
+    let reconfig_txn = swarm
+        .chain_info()
+        .root_account()
+        .sign_with_transaction_builder(
+            transaction_factory
+                .clone()
+                .payload(aptos_stdlib::topo_governance_force_end_epoch_test_only()),
+        );
+    rest_client.submit_and_wait(&reconfig_txn).await.unwrap();
 
     wait_for_all_nodes_to_catchup(&honest_peers, Duration::from_secs(MAX_WAIT_SECS))
         .await
