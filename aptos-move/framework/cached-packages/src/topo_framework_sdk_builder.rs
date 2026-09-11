@@ -820,6 +820,140 @@ pub enum EntryFunctionCall {
         _permissions_storage_addr: AccountAddress,
     },
 
+    /// 治理可撤销未安装参数，用于修复换届预检失败；冻结时拒绝变更。
+    PocAllocationCancelPendingPowerParams {},
+
+    /// 冻结期间可领取已入账的历史奖励；不触发版本同步或推进下一 Epoch。
+    /// 注册代币接收存储后，将奖励存入本人账户；任一步失败都回滚整笔交易。
+    PocAllocationClaimRewards {
+        pools: Vec<AccountAddress>,
+    },
+
+    /// 治理仅为已注册的验证者池开放 PoC 分配；贡献应用注册表不承担验证者准入。
+    PocAllocationEnablePool {
+        pool: AccountAddress,
+    },
+
+    /// 首次启用前可调整激活 Epoch，保留原有基线和已准备的用户分配。
+    PocAllocationRescheduleActivation {
+        epoch: u64,
+    },
+
+    /// 根据已写入的算力版本快照重建下一 Epoch 的分配；尚无算力的用户按零份额配置。
+    PocAllocationSetAllocations {
+        pools: Vec<AccountAddress>,
+        bps: Vec<u64>,
+    },
+
+    /// 写入源周期 0 的初始原始算力，仅框架可在真实创世阶段调用。
+    /// 时钟提交次数与源周期必须均为零；同步写入标准化版本与分配。
+    PocPowerStoreSetGenesisCommittedPower {
+        user: AccountAddress,
+        power: u64,
+    },
+
+    /// 更换获授权的上传地址，仅框架可调用；冻结期间拒绝修改，地址未变时不重复发事件。
+    PocPowerStoreSetOperator {
+        new_operator: AccountAddress,
+    },
+
+    /// 设置下一个算力周期的长度，保持当前倒计时和已确定的边界 B 不变。
+    /// 按链 Epoch 计算 B = E + r + 1，并以 u256 检查 B + 新长度是否超过 u64 上限。
+    PocPowerStoreSetPowerPeriodInEpochs {
+        power_period_in_epochs: u64,
+    },
+
+    /// 批量写入下一算力周期的原始版本，仅 operator 或框架可调用，users 与 powers 必须等长。
+    /// 同一用户、同一生效周期保留首次写入；新用户零值不建记录，已有用户零值从下一周期生效。
+    /// 仅对实际新增版本执行标准化和分配同步，任何失败均回滚整批写入。
+    /// 冻结期间也拒绝重复上报，所有请求均须先通过冻结检查。
+    PocPowerStoreStageBatchUpdate {
+        target_period: u64,
+        users: Vec<AccountAddress>,
+        powers: Vec<u64>,
+    },
+
+    /// 仅 @topo_framework 可初始化应用注册表；资源已存在时直接返回。
+    PocRegistryInitializeRegistry {},
+
+    /// 应用管理员将运行状态设为 PAUSED，暂停通过 poc_contribution 发出可信贡献事件。
+    /// 可调用 resume_app 恢复为 ACTIVE；已经暂停时重复调用不发事件。
+    PocRegistryPauseApp {},
+
+    /// 任意地址可签名注册为应用管理员；成功后运行状态为 ACTIVE，PoC 准入状态为 REGISTERED。
+    /// 每个管理员只能注册一个应用；合约、股权代币和托管地址各自在对应索引中全局唯一。
+    /// 股权代币地址必须通过 `object::address_to_object<Metadata>` 验证，确认为有效 FA 元数据对象。
+    /// 验证失败或重复注册均会中止并回滚，原有记录保持不变。
+    ///
+    /// 参数：
+    /// - app_admin：管理员签名，调用者成为应用管理员。
+    /// - app_address：应用合约部署地址，即链上入口模块所在地址。
+    /// - equity_token_address：股权代币的 FA Metadata 对象地址。
+    /// - custody_address：持有待分配股权代币的托管地址。
+    /// - metadata_uri：应用官网或权威信息链接。
+    PocRegistryRegisterApp {
+        app_address: AccountAddress,
+        equity_token_address: AccountAddress,
+        custody_address: AccountAddress,
+        metadata_uri: Vec<u8>,
+    },
+
+    /// 应用管理员将 PAUSED 恢复为 ACTIVE；当前为 STOPPED 时直接恢复会中止。
+    /// 已经处于 ACTIVE 时重复调用不发事件。
+    PocRegistryResumeApp {},
+
+    /// 仅 @topo_framework 可设置应用贡献的有效权重，单位为万分比，范围为 0–10000。
+    /// 10000 表示计入 100% 贡献，5000 表示 50%；数值未变时直接返回且不发事件。
+    PocRegistrySetEffectiveWeightPbs {
+        app_admin: AccountAddress,
+        new_effective_weight_pbs: u64,
+    },
+
+    /// 仅 @topo_framework 可设置应用的 PoC 贡献准入状态。
+    /// new_poc_listing_status 取 REGISTERED（1）、WHITELISTED（2）或 SUSPENDED（3）。
+    /// 白名单和暂停入口共用此设置逻辑；状态未变时直接返回且不发事件。
+    PocRegistrySetPocListingStatus {
+        app_admin: AccountAddress,
+        new_poc_listing_status: u8,
+    },
+
+    /// 应用管理员将运行状态设为 STOPPED，此时不能发出可信贡献事件。
+    /// resume_app 拒绝直接恢复此状态；重复停止不发事件。
+    PocRegistryStopApp {},
+
+    /// 仅 @topo_framework 可将应用的贡献准入状态设为 SUSPENDED，暂停其发出可信贡献事件的资格。
+    /// 重新审核后可用 whitelist_app_for_poc 恢复准入；重复暂停不发事件。
+    PocRegistrySuspendPocListing {
+        app_admin: AccountAddress,
+    },
+
+    /// 应用管理员可在升级或重新部署后更新合约地址，新地址不能被其他应用用作合约地址。
+    /// 更新不改变 PoC 准入状态（poc_listing_status）；地址未变时直接返回且不发事件。
+    PocRegistryUpdateAppAddress {
+        new_app_address: AccountAddress,
+    },
+
+    /// 应用管理员更新托管地址，新地址不能被其他应用用作托管地址。
+    /// 发放可信贡献时，由该地址签名授权代币转出；更新不改变 PoC 准入状态（poc_listing_status）。
+    /// 地址未变时直接返回，重复调用不发事件。
+    PocRegistryUpdateCustodyAddress {
+        new_custody_address: AccountAddress,
+    },
+
+    /// 应用管理员更新股权代币；新地址须为有效 FA Metadata 对象，且不能与其他应用的股权代币地址重复。
+    /// 更换资产后需重新审核，因此 PoC 准入状态重置为 REGISTERED，审核通过后可恢复 WHITELISTED。
+    /// 地址未变时直接返回，保留原状态且不发事件。
+    PocRegistryUpdateEquityTokenAddress {
+        new_equity_token_address: AccountAddress,
+    },
+
+    /// 仅 @topo_framework 可将应用加入 PoC 贡献白名单（WHITELISTED）。
+    /// 应用还须处于 ACTIVE 才能发出可信贡献事件；此入口不改变应用运行状态。
+    /// 贡献白名单与验证者池准入分别管理，治理投票仍按原生代币计权；重复调用不发事件。
+    PocRegistryWhitelistAppForPoc {
+        app_admin: AccountAddress,
+    },
+
     /// Creates a new resource account and rotates the authentication key to either
     /// the optional auth key if it is non-empty (though auth keys are 32-bytes)
     /// or the source accounts current auth key.
@@ -852,6 +986,12 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
+    /// 只撤销当前 Epoch 的自主退出，恢复原 ValidatorInfo 和索引，保留当前权重与奖励。
+    /// 恢复后候选人数不能超过部署上限；其他不合格条件可稍后修复。
+    StakeCancelLeaveValidatorSet {
+        pool: AccountAddress,
+    },
+
     /// Similar to increase_lockup_with_cap but will use ownership capability from the signing account.
     StakeIncreaseLockup {},
 
@@ -878,12 +1018,8 @@ pub enum EntryFunctionCall {
         pool_address: AccountAddress,
     },
 
-    /// Request to have `pool_address` leave the validator set. The validator is only actually removed from the set when
-    /// the next epoch starts.
-    /// The last validator in the set cannot leave. This is an edge case that should never happen as long as the network
-    /// is still operational.
-    ///
-    /// Can only be called by the operator of the validator/staking pool.
+    /// 运营者申请下一 Epoch 退出，当前 Epoch 仍可投票并获得奖励。
+    /// PoC 先校验退出后的完整目标；原生模式继续禁止最后一名在任者退出。
     StakeLeaveValidatorSet {
         pool_address: AccountAddress,
     },
@@ -1773,6 +1909,67 @@ impl EntryFunctionCall {
             PermissionedSignerRevokePermissionStorageAddress {
                 _permissions_storage_addr,
             } => permissioned_signer_revoke_permission_storage_address(_permissions_storage_addr),
+            PocAllocationCancelPendingPowerParams {} => {
+                poc_allocation_cancel_pending_power_params()
+            },
+            PocAllocationClaimRewards { pools } => poc_allocation_claim_rewards(pools),
+            PocAllocationEnablePool { pool } => poc_allocation_enable_pool(pool),
+            PocAllocationRescheduleActivation { epoch } => {
+                poc_allocation_reschedule_activation(epoch)
+            },
+            PocAllocationSetAllocations { pools, bps } => {
+                poc_allocation_set_allocations(pools, bps)
+            },
+            PocPowerStoreSetGenesisCommittedPower { user, power } => {
+                poc_power_store_set_genesis_committed_power(user, power)
+            },
+            PocPowerStoreSetOperator { new_operator } => poc_power_store_set_operator(new_operator),
+            PocPowerStoreSetPowerPeriodInEpochs {
+                power_period_in_epochs,
+            } => poc_power_store_set_power_period_in_epochs(power_period_in_epochs),
+            PocPowerStoreStageBatchUpdate {
+                target_period,
+                users,
+                powers,
+            } => poc_power_store_stage_batch_update(target_period, users, powers),
+            PocRegistryInitializeRegistry {} => poc_registry_initialize_registry(),
+            PocRegistryPauseApp {} => poc_registry_pause_app(),
+            PocRegistryRegisterApp {
+                app_address,
+                equity_token_address,
+                custody_address,
+                metadata_uri,
+            } => poc_registry_register_app(
+                app_address,
+                equity_token_address,
+                custody_address,
+                metadata_uri,
+            ),
+            PocRegistryResumeApp {} => poc_registry_resume_app(),
+            PocRegistrySetEffectiveWeightPbs {
+                app_admin,
+                new_effective_weight_pbs,
+            } => poc_registry_set_effective_weight_pbs(app_admin, new_effective_weight_pbs),
+            PocRegistrySetPocListingStatus {
+                app_admin,
+                new_poc_listing_status,
+            } => poc_registry_set_poc_listing_status(app_admin, new_poc_listing_status),
+            PocRegistryStopApp {} => poc_registry_stop_app(),
+            PocRegistrySuspendPocListing { app_admin } => {
+                poc_registry_suspend_poc_listing(app_admin)
+            },
+            PocRegistryUpdateAppAddress { new_app_address } => {
+                poc_registry_update_app_address(new_app_address)
+            },
+            PocRegistryUpdateCustodyAddress {
+                new_custody_address,
+            } => poc_registry_update_custody_address(new_custody_address),
+            PocRegistryUpdateEquityTokenAddress {
+                new_equity_token_address,
+            } => poc_registry_update_equity_token_address(new_equity_token_address),
+            PocRegistryWhitelistAppForPoc { app_admin } => {
+                poc_registry_whitelist_app_for_poc(app_admin)
+            },
             ResourceAccountCreateResourceAccount {
                 seed,
                 optional_auth_key,
@@ -1796,6 +1993,7 @@ impl EntryFunctionCall {
                 code,
             ),
             StakeAddStake { amount } => stake_add_stake(amount),
+            StakeCancelLeaveValidatorSet { pool } => stake_cancel_leave_validator_set(pool),
             StakeIncreaseLockup {} => stake_increase_lockup(),
             StakeInitializeStakeOwner {
                 initial_stake_amount,
@@ -4160,6 +4358,417 @@ pub fn permissioned_signer_revoke_permission_storage_address(
     ))
 }
 
+/// 治理可撤销未安装参数，用于修复换届预检失败；冻结时拒绝变更。
+pub fn poc_allocation_cancel_pending_power_params() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_allocation").to_owned(),
+        ),
+        ident_str!("cancel_pending_power_params").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+/// 冻结期间可领取已入账的历史奖励；不触发版本同步或推进下一 Epoch。
+/// 注册代币接收存储后，将奖励存入本人账户；任一步失败都回滚整笔交易。
+pub fn poc_allocation_claim_rewards(pools: Vec<AccountAddress>) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_allocation").to_owned(),
+        ),
+        ident_str!("claim_rewards").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&pools).unwrap()],
+    ))
+}
+
+/// 治理仅为已注册的验证者池开放 PoC 分配；贡献应用注册表不承担验证者准入。
+pub fn poc_allocation_enable_pool(pool: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_allocation").to_owned(),
+        ),
+        ident_str!("enable_pool").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&pool).unwrap()],
+    ))
+}
+
+/// 首次启用前可调整激活 Epoch，保留原有基线和已准备的用户分配。
+pub fn poc_allocation_reschedule_activation(epoch: u64) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_allocation").to_owned(),
+        ),
+        ident_str!("reschedule_activation").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&epoch).unwrap()],
+    ))
+}
+
+/// 根据已写入的算力版本快照重建下一 Epoch 的分配；尚无算力的用户按零份额配置。
+pub fn poc_allocation_set_allocations(
+    pools: Vec<AccountAddress>,
+    bps: Vec<u64>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_allocation").to_owned(),
+        ),
+        ident_str!("set_allocations").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&pools).unwrap(), bcs::to_bytes(&bps).unwrap()],
+    ))
+}
+
+/// 写入源周期 0 的初始原始算力，仅框架可在真实创世阶段调用。
+/// 时钟提交次数与源周期必须均为零；同步写入标准化版本与分配。
+pub fn poc_power_store_set_genesis_committed_power(
+    user: AccountAddress,
+    power: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("set_genesis_committed_power").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&user).unwrap(),
+            bcs::to_bytes(&power).unwrap(),
+        ],
+    ))
+}
+
+/// 更换获授权的上传地址，仅框架可调用；冻结期间拒绝修改，地址未变时不重复发事件。
+pub fn poc_power_store_set_operator(new_operator: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("set_operator").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&new_operator).unwrap()],
+    ))
+}
+
+/// 设置下一个算力周期的长度，保持当前倒计时和已确定的边界 B 不变。
+/// 按链 Epoch 计算 B = E + r + 1，并以 u256 检查 B + 新长度是否超过 u64 上限。
+pub fn poc_power_store_set_power_period_in_epochs(
+    power_period_in_epochs: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("set_power_period_in_epochs").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&power_period_in_epochs).unwrap()],
+    ))
+}
+
+/// 批量写入下一算力周期的原始版本，仅 operator 或框架可调用，users 与 powers 必须等长。
+/// 同一用户、同一生效周期保留首次写入；新用户零值不建记录，已有用户零值从下一周期生效。
+/// 仅对实际新增版本执行标准化和分配同步，任何失败均回滚整批写入。
+/// 冻结期间也拒绝重复上报，所有请求均须先通过冻结检查。
+pub fn poc_power_store_stage_batch_update(
+    target_period: u64,
+    users: Vec<AccountAddress>,
+    powers: Vec<u64>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_power_store").to_owned(),
+        ),
+        ident_str!("stage_batch_update").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&target_period).unwrap(),
+            bcs::to_bytes(&users).unwrap(),
+            bcs::to_bytes(&powers).unwrap(),
+        ],
+    ))
+}
+
+/// 仅 @topo_framework 可初始化应用注册表；资源已存在时直接返回。
+pub fn poc_registry_initialize_registry() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("initialize_registry").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+/// 应用管理员将运行状态设为 PAUSED，暂停通过 poc_contribution 发出可信贡献事件。
+/// 可调用 resume_app 恢复为 ACTIVE；已经暂停时重复调用不发事件。
+pub fn poc_registry_pause_app() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("pause_app").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+/// 任意地址可签名注册为应用管理员；成功后运行状态为 ACTIVE，PoC 准入状态为 REGISTERED。
+/// 每个管理员只能注册一个应用；合约、股权代币和托管地址各自在对应索引中全局唯一。
+/// 股权代币地址必须通过 `object::address_to_object<Metadata>` 验证，确认为有效 FA 元数据对象。
+/// 验证失败或重复注册均会中止并回滚，原有记录保持不变。
+///
+/// 参数：
+/// - app_admin：管理员签名，调用者成为应用管理员。
+/// - app_address：应用合约部署地址，即链上入口模块所在地址。
+/// - equity_token_address：股权代币的 FA Metadata 对象地址。
+/// - custody_address：持有待分配股权代币的托管地址。
+/// - metadata_uri：应用官网或权威信息链接。
+pub fn poc_registry_register_app(
+    app_address: AccountAddress,
+    equity_token_address: AccountAddress,
+    custody_address: AccountAddress,
+    metadata_uri: Vec<u8>,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("register_app").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&app_address).unwrap(),
+            bcs::to_bytes(&equity_token_address).unwrap(),
+            bcs::to_bytes(&custody_address).unwrap(),
+            bcs::to_bytes(&metadata_uri).unwrap(),
+        ],
+    ))
+}
+
+/// 应用管理员将 PAUSED 恢复为 ACTIVE；当前为 STOPPED 时直接恢复会中止。
+/// 已经处于 ACTIVE 时重复调用不发事件。
+pub fn poc_registry_resume_app() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("resume_app").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+/// 仅 @topo_framework 可设置应用贡献的有效权重，单位为万分比，范围为 0–10000。
+/// 10000 表示计入 100% 贡献，5000 表示 50%；数值未变时直接返回且不发事件。
+pub fn poc_registry_set_effective_weight_pbs(
+    app_admin: AccountAddress,
+    new_effective_weight_pbs: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("set_effective_weight_pbs").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&app_admin).unwrap(),
+            bcs::to_bytes(&new_effective_weight_pbs).unwrap(),
+        ],
+    ))
+}
+
+/// 仅 @topo_framework 可设置应用的 PoC 贡献准入状态。
+/// new_poc_listing_status 取 REGISTERED（1）、WHITELISTED（2）或 SUSPENDED（3）。
+/// 白名单和暂停入口共用此设置逻辑；状态未变时直接返回且不发事件。
+pub fn poc_registry_set_poc_listing_status(
+    app_admin: AccountAddress,
+    new_poc_listing_status: u8,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("set_poc_listing_status").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&app_admin).unwrap(),
+            bcs::to_bytes(&new_poc_listing_status).unwrap(),
+        ],
+    ))
+}
+
+/// 应用管理员将运行状态设为 STOPPED，此时不能发出可信贡献事件。
+/// resume_app 拒绝直接恢复此状态；重复停止不发事件。
+pub fn poc_registry_stop_app() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("stop_app").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
+/// 仅 @topo_framework 可将应用的贡献准入状态设为 SUSPENDED，暂停其发出可信贡献事件的资格。
+/// 重新审核后可用 whitelist_app_for_poc 恢复准入；重复暂停不发事件。
+pub fn poc_registry_suspend_poc_listing(app_admin: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("suspend_poc_listing").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&app_admin).unwrap()],
+    ))
+}
+
+/// 应用管理员可在升级或重新部署后更新合约地址，新地址不能被其他应用用作合约地址。
+/// 更新不改变 PoC 准入状态（poc_listing_status）；地址未变时直接返回且不发事件。
+pub fn poc_registry_update_app_address(new_app_address: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("update_app_address").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&new_app_address).unwrap()],
+    ))
+}
+
+/// 应用管理员更新托管地址，新地址不能被其他应用用作托管地址。
+/// 发放可信贡献时，由该地址签名授权代币转出；更新不改变 PoC 准入状态（poc_listing_status）。
+/// 地址未变时直接返回，重复调用不发事件。
+pub fn poc_registry_update_custody_address(
+    new_custody_address: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("update_custody_address").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&new_custody_address).unwrap()],
+    ))
+}
+
+/// 应用管理员更新股权代币；新地址须为有效 FA Metadata 对象，且不能与其他应用的股权代币地址重复。
+/// 更换资产后需重新审核，因此 PoC 准入状态重置为 REGISTERED，审核通过后可恢复 WHITELISTED。
+/// 地址未变时直接返回，保留原状态且不发事件。
+pub fn poc_registry_update_equity_token_address(
+    new_equity_token_address: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("update_equity_token_address").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&new_equity_token_address).unwrap()],
+    ))
+}
+
+/// 仅 @topo_framework 可将应用加入 PoC 贡献白名单（WHITELISTED）。
+/// 应用还须处于 ACTIVE 才能发出可信贡献事件；此入口不改变应用运行状态。
+/// 贡献白名单与验证者池准入分别管理，治理投票仍按原生代币计权；重复调用不发事件。
+pub fn poc_registry_whitelist_app_for_poc(app_admin: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("whitelist_app_for_poc").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&app_admin).unwrap()],
+    ))
+}
+
 /// Creates a new resource account and rotates the authentication key to either
 /// the optional auth key if it is non-empty (though auth keys are 32-bytes)
 /// or the source accounts current auth key.
@@ -4253,6 +4862,23 @@ pub fn stake_add_stake(amount: u64) -> TransactionPayload {
     ))
 }
 
+/// 只撤销当前 Epoch 的自主退出，恢复原 ValidatorInfo 和索引，保留当前权重与奖励。
+/// 恢复后候选人数不能超过部署上限；其他不合格条件可稍后修复。
+pub fn stake_cancel_leave_validator_set(pool: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("stake").to_owned(),
+        ),
+        ident_str!("cancel_leave_validator_set").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&pool).unwrap()],
+    ))
+}
+
 /// Similar to increase_lockup_with_cap but will use ownership capability from the signing account.
 pub fn stake_increase_lockup() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -4338,12 +4964,8 @@ pub fn stake_join_validator_set(pool_address: AccountAddress) -> TransactionPayl
     ))
 }
 
-/// Request to have `pool_address` leave the validator set. The validator is only actually removed from the set when
-/// the next epoch starts.
-/// The last validator in the set cannot leave. This is an edge case that should never happen as long as the network
-/// is still operational.
-///
-/// Can only be called by the operator of the validator/staking pool.
+/// 运营者申请下一 Epoch 退出，当前 Epoch 仍可投票并获得奖励。
+/// PoC 先校验退出后的完整目标；原生模式继续禁止最后一名在任者退出。
 pub fn stake_leave_validator_set(pool_address: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
         ModuleId::new(
@@ -6905,6 +7527,243 @@ mod decoder {
         }
     }
 
+    pub fn poc_allocation_cancel_pending_power_params(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocAllocationCancelPendingPowerParams {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_allocation_claim_rewards(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocAllocationClaimRewards {
+                pools: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_allocation_enable_pool(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocAllocationEnablePool {
+                pool: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_allocation_reschedule_activation(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocAllocationRescheduleActivation {
+                epoch: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_allocation_set_allocations(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocAllocationSetAllocations {
+                pools: bcs::from_bytes(script.args().get(0)?).ok()?,
+                bps: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_power_store_set_genesis_committed_power(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreSetGenesisCommittedPower {
+                user: bcs::from_bytes(script.args().get(0)?).ok()?,
+                power: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_power_store_set_operator(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreSetOperator {
+                new_operator: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_power_store_set_power_period_in_epochs(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreSetPowerPeriodInEpochs {
+                power_period_in_epochs: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_power_store_stage_batch_update(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocPowerStoreStageBatchUpdate {
+                target_period: bcs::from_bytes(script.args().get(0)?).ok()?,
+                users: bcs::from_bytes(script.args().get(1)?).ok()?,
+                powers: bcs::from_bytes(script.args().get(2)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_initialize_registry(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocRegistryInitializeRegistry {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_pause_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocRegistryPauseApp {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_register_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryRegisterApp {
+                app_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                equity_token_address: bcs::from_bytes(script.args().get(1)?).ok()?,
+                custody_address: bcs::from_bytes(script.args().get(2)?).ok()?,
+                metadata_uri: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_resume_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocRegistryResumeApp {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_set_effective_weight_pbs(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistrySetEffectiveWeightPbs {
+                app_admin: bcs::from_bytes(script.args().get(0)?).ok()?,
+                new_effective_weight_pbs: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_set_poc_listing_status(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistrySetPocListingStatus {
+                app_admin: bcs::from_bytes(script.args().get(0)?).ok()?,
+                new_poc_listing_status: bcs::from_bytes(script.args().get(1)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_stop_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocRegistryStopApp {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_suspend_poc_listing(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistrySuspendPocListing {
+                app_admin: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_update_app_address(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryUpdateAppAddress {
+                new_app_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_update_custody_address(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryUpdateCustodyAddress {
+                new_custody_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_update_equity_token_address(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryUpdateEquityTokenAddress {
+                new_equity_token_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_whitelist_app_for_poc(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryWhitelistAppForPoc {
+                app_admin: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn resource_account_create_resource_account(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -6954,6 +7813,18 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::StakeAddStake {
                 amount: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn stake_cancel_leave_validator_set(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::StakeCancelLeaveValidatorSet {
+                pool: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
         } else {
             None
@@ -8202,6 +9073,90 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::permissioned_signer_revoke_permission_storage_address),
         );
         map.insert(
+            "poc_allocation_cancel_pending_power_params".to_string(),
+            Box::new(decoder::poc_allocation_cancel_pending_power_params),
+        );
+        map.insert(
+            "poc_allocation_claim_rewards".to_string(),
+            Box::new(decoder::poc_allocation_claim_rewards),
+        );
+        map.insert(
+            "poc_allocation_enable_pool".to_string(),
+            Box::new(decoder::poc_allocation_enable_pool),
+        );
+        map.insert(
+            "poc_allocation_reschedule_activation".to_string(),
+            Box::new(decoder::poc_allocation_reschedule_activation),
+        );
+        map.insert(
+            "poc_allocation_set_allocations".to_string(),
+            Box::new(decoder::poc_allocation_set_allocations),
+        );
+        map.insert(
+            "poc_power_store_set_genesis_committed_power".to_string(),
+            Box::new(decoder::poc_power_store_set_genesis_committed_power),
+        );
+        map.insert(
+            "poc_power_store_set_operator".to_string(),
+            Box::new(decoder::poc_power_store_set_operator),
+        );
+        map.insert(
+            "poc_power_store_set_power_period_in_epochs".to_string(),
+            Box::new(decoder::poc_power_store_set_power_period_in_epochs),
+        );
+        map.insert(
+            "poc_power_store_stage_batch_update".to_string(),
+            Box::new(decoder::poc_power_store_stage_batch_update),
+        );
+        map.insert(
+            "poc_registry_initialize_registry".to_string(),
+            Box::new(decoder::poc_registry_initialize_registry),
+        );
+        map.insert(
+            "poc_registry_pause_app".to_string(),
+            Box::new(decoder::poc_registry_pause_app),
+        );
+        map.insert(
+            "poc_registry_register_app".to_string(),
+            Box::new(decoder::poc_registry_register_app),
+        );
+        map.insert(
+            "poc_registry_resume_app".to_string(),
+            Box::new(decoder::poc_registry_resume_app),
+        );
+        map.insert(
+            "poc_registry_set_effective_weight_pbs".to_string(),
+            Box::new(decoder::poc_registry_set_effective_weight_pbs),
+        );
+        map.insert(
+            "poc_registry_set_poc_listing_status".to_string(),
+            Box::new(decoder::poc_registry_set_poc_listing_status),
+        );
+        map.insert(
+            "poc_registry_stop_app".to_string(),
+            Box::new(decoder::poc_registry_stop_app),
+        );
+        map.insert(
+            "poc_registry_suspend_poc_listing".to_string(),
+            Box::new(decoder::poc_registry_suspend_poc_listing),
+        );
+        map.insert(
+            "poc_registry_update_app_address".to_string(),
+            Box::new(decoder::poc_registry_update_app_address),
+        );
+        map.insert(
+            "poc_registry_update_custody_address".to_string(),
+            Box::new(decoder::poc_registry_update_custody_address),
+        );
+        map.insert(
+            "poc_registry_update_equity_token_address".to_string(),
+            Box::new(decoder::poc_registry_update_equity_token_address),
+        );
+        map.insert(
+            "poc_registry_whitelist_app_for_poc".to_string(),
+            Box::new(decoder::poc_registry_whitelist_app_for_poc),
+        );
+        map.insert(
             "resource_account_create_resource_account".to_string(),
             Box::new(decoder::resource_account_create_resource_account),
         );
@@ -8216,6 +9171,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "stake_add_stake".to_string(),
             Box::new(decoder::stake_add_stake),
+        );
+        map.insert(
+            "stake_cancel_leave_validator_set".to_string(),
+            Box::new(decoder::stake_cancel_leave_validator_set),
         );
         map.insert(
             "stake_increase_lockup".to_string(),

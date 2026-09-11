@@ -7,6 +7,8 @@ pub mod builder;
 pub mod config;
 pub mod keys;
 pub mod mainnet;
+/// 导出 PoC 创世参数与编码入口，供本地构建器及调用者使用。
+pub use aptos_vm_genesis::poc;
 
 #[cfg(any(test, feature = "testing"))]
 pub mod test_utils;
@@ -49,6 +51,8 @@ pub struct GenesisInfo {
     framework: ReleaseBundle,
     /// The genesis transaction, once it's been generated
     genesis: Option<Transaction>,
+    /// 根据实际验证者身份生成后保存的清单；后续编码直接使用，不再调用生成回调。
+    poc_genesis_config: Option<poc::PocGenesisConfiguration>,
 
     /// Whether to allow new validators to join the set after genesis
     pub allow_new_validators: bool,
@@ -98,6 +102,11 @@ impl GenesisInfo {
         for config in configs {
             validators.push(config.try_into()?)
         }
+        // 先解析真实验证者记录，再一次性生成包含池地址的 PoC 清单。
+        let poc_genesis_config = genesis_config
+            .poc_genesis_config
+            .as_ref()
+            .map(|build| build(&validators));
 
         Ok(GenesisInfo {
             chain_id,
@@ -105,6 +114,7 @@ impl GenesisInfo {
             validators,
             framework,
             genesis: None,
+            poc_genesis_config,
             allow_new_validators: genesis_config.allow_new_validators,
             epoch_duration_secs: genesis_config.epoch_duration_secs,
             is_test: genesis_config.is_test,
@@ -139,37 +149,53 @@ impl GenesisInfo {
     }
 
     fn generate_genesis_txn(&self) -> Transaction {
-        aptos_vm_genesis::encode_genesis_transaction(
-            self.root_key.clone(),
-            &self.validators,
-            &self.framework,
-            self.chain_id,
-            &aptos_vm_genesis::GenesisConfiguration {
-                allow_new_validators: self.allow_new_validators,
-                epoch_duration_secs: self.epoch_duration_secs,
-                is_test: true,
-                min_stake: self.min_stake,
-                min_voting_threshold: self.min_voting_threshold,
-                max_stake: self.max_stake,
-                recurring_lockup_duration_secs: self.recurring_lockup_duration_secs,
-                required_proposer_stake: self.required_proposer_stake,
-                rewards_apy_percentage: self.rewards_apy_percentage,
-                voting_duration_secs: self.voting_duration_secs,
-                voting_power_increase_limit: self.voting_power_increase_limit,
-                employee_vesting_start: 1663456089,
-                employee_vesting_period_duration: 5 * 60, // 5 minutes
-                initial_features_override: self.initial_features_override.clone(),
-                randomness_config_override: self.randomness_config_override.clone(),
-                chunky_dkg_config_override: self.chunky_dkg_config_override.clone(),
-                jwk_consensus_config_override: self.jwk_consensus_config_override.clone(),
-                initial_jwks: self.initial_jwks.clone(),
-                keyless_groth16_vk: self.keyless_groth16_vk.clone(),
-                initialize_decryption_at_genesis: self.initialize_decryption_at_genesis,
-            },
-            &self.consensus_config,
-            &self.execution_config,
-            &self.gas_schedule,
-        )
+        let config = aptos_vm_genesis::GenesisConfiguration {
+            allow_new_validators: self.allow_new_validators,
+            epoch_duration_secs: self.epoch_duration_secs,
+            is_test: true,
+            min_stake: self.min_stake,
+            min_voting_threshold: self.min_voting_threshold,
+            max_stake: self.max_stake,
+            recurring_lockup_duration_secs: self.recurring_lockup_duration_secs,
+            required_proposer_stake: self.required_proposer_stake,
+            rewards_apy_percentage: self.rewards_apy_percentage,
+            voting_duration_secs: self.voting_duration_secs,
+            voting_power_increase_limit: self.voting_power_increase_limit,
+            employee_vesting_start: 1663456089,
+            employee_vesting_period_duration: 5 * 60, // 5 分钟
+            initial_features_override: self.initial_features_override.clone(),
+            randomness_config_override: self.randomness_config_override.clone(),
+            chunky_dkg_config_override: self.chunky_dkg_config_override.clone(),
+            jwk_consensus_config_override: self.jwk_consensus_config_override.clone(),
+            initial_jwks: self.initial_jwks.clone(),
+            keyless_groth16_vk: self.keyless_groth16_vk.clone(),
+            initialize_decryption_at_genesis: self.initialize_decryption_at_genesis,
+        };
+        // 两种模式共用原生基础配置；提供 PoC 清单时使用 PoC 编码入口，None 保留原生行为。
+        if let Some(poc_config) = &self.poc_genesis_config {
+            poc::encode_genesis_transaction(
+                &self.root_key,
+                &self.validators,
+                &self.framework,
+                self.chain_id,
+                &config,
+                &self.consensus_config,
+                &self.execution_config,
+                &self.gas_schedule,
+                poc_config,
+            )
+        } else {
+            aptos_vm_genesis::encode_genesis_transaction(
+                self.root_key.clone(),
+                &self.validators,
+                &self.framework,
+                self.chain_id,
+                &config,
+                &self.consensus_config,
+                &self.execution_config,
+                &self.gas_schedule,
+            )
+        }
     }
 
     pub fn generate_waypoint(&mut self) -> anyhow::Result<Waypoint> {

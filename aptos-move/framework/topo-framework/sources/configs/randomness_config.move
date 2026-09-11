@@ -6,6 +6,7 @@ module topo_framework::randomness_config {
     use topo_std::fixed_point64::FixedPoint64;
     use topo_framework::config_buffer;
     use topo_framework::system_addresses;
+    use topo_framework::reconfiguration_state;
 
     friend topo_framework::reconfiguration_with_dkg;
 
@@ -43,6 +44,7 @@ module topo_framework::randomness_config {
 
     /// Initialize the configuration. Used in genesis or governance.
     public fun initialize(framework: &signer, config: RandomnessConfig) {
+        reconfiguration_state::assert_not_in_progress();
         system_addresses::assert_topo_framework(framework);
         if (!exists<RandomnessConfig>(@topo_framework)) {
             move_to(framework, config)

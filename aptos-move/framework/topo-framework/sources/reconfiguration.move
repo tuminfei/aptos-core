@@ -62,6 +62,7 @@ module topo_framework::reconfiguration {
     const EINVALID_BLOCK_TIME: u64 = 4;
     /// An invalid block time was encountered.
     const EINVALID_GUID_FOR_EVENT: u64 = 5;
+    const ETRANSITION_DEFERRED: u64 = 6;
 
     /// Only called during genesis.
     /// Publishes `Configuration` resource. Can only be invoked by aptos framework account, and only a single time in Genesis.
@@ -106,52 +107,78 @@ module topo_framework::reconfiguration {
         !exists<DisableReconfiguration>(@topo_framework)
     }
 
-    /// Signal validators to start using new configuration. Must be called from friend config modules.
-    public(friend) fun reconfigure() acquires Configuration {
-        // Do not do anything if genesis has not finished.
-        if (chain_status::is_genesis()
-            || timestamp::now_microseconds() == 0
-            || !reconfiguration_enabled()) { return };
+    /// 构建计划前检查是否允许换届，排除创世、停用重配置和同一时间戳下的重复调用。
+    public(friend) fun transition_allowed(): bool acquires Configuration {
+        !chain_status::is_genesis()
+            && timestamp::now_microseconds() != 0
+            && reconfiguration_enabled()
+            && timestamp::now_microseconds() != last_reconfiguration_time()
+    }
 
-        let config_ref = borrow_global_mut<Configuration>(@topo_framework);
-        let current_time = timestamp::now_microseconds();
-
-        // Do not do anything if a reconfiguration event is already emitted within this transaction.
-        //
-        // This is OK because:
-        // - The time changes in every non-empty block
-        // - A block automatically ends after a transaction that emits a reconfiguration event, which is guaranteed by
-        //   VM spec that all transactions comming after a reconfiguration transaction will be returned as Retry
-        //   status.
-        // - Each transaction must emit at most one reconfiguration event
-        //
-        // Thus, this check ensures that a transaction that does multiple "reconfiguration required" actions emits only
-        // one reconfiguration event.
-        //
-        if (current_time == config_ref.last_reconfiguration_time) { return };
-
-        reconfiguration_state::on_reconfig_start();
-
-        // Call stake to compute the new validator set and distribute rewards and transaction fees.
-        stake::on_new_epoch();
-        storage_gas::on_reconfig();
-
-        assert!(
-            current_time > config_ref.last_reconfiguration_time,
-            error::invalid_state(EINVALID_BLOCK_TIME)
-        );
-        config_ref.last_reconfiguration_time = current_time;
-        spec {
-            assume config_ref.epoch + 1 <= MAX_U64;
+    /// 预检通过后缓存目标并冻结配置；目标不合格时返回 false，保留旧委员会和 Epoch。
+    public(friend) fun prepare_transition(): bool acquires Configuration {
+        if (!transition_allowed()) { return false };
+        if (stake::is_poc_prepared()) {
+            let epoch = current_epoch();
+            if (epoch == 18446744073709551615) { return false };
+            if (stake::try_cache_epoch_plan(epoch + 1, timestamp::now_seconds()) != 0) {
+                return false
+            };
         };
-        config_ref.epoch += 1;
+        reconfiguration_state::on_reconfig_start();
+        true
+    }
 
+    /// 配置与治理入口要求换届成功；预检失败会回滚同一事务中此前的配置写入。
+    public(friend) fun reconfigure() acquires Configuration {
+        if (!transition_allowed()) { return };
+        assert!(try_reconfigure(), error::invalid_state(ETRANSITION_DEFERRED));
+    }
+
+    /// 未准备 PoC 时沿用原生换届；准备后须改用统一换届流程，以完整安装缓冲配置。
+    public(friend) fun try_reconfigure(): bool acquires Configuration {
+        if (stake::is_poc_prepared()) { return false };
+        if (!prepare_transition()) { return false };
+        stake::on_new_epoch();
+        complete_epoch(false);
+        true
+    }
+
+    /// 调用前须按旧上下文结算奖励并应用缓冲配置；此处校验并安装原计划，不重新选举。
+    public(friend) fun complete_prepared_transition() acquires Configuration {
+        stake::install_epoch_plan(current_epoch() + 1);
+        complete_epoch(true);
+    }
+
+    /// 创世时仅安装一次 Epoch 1，随后由原有创世事件流程更新 Configuration。
+    public(friend) fun install_genesis_poc_epoch(framework: &signer) acquires Configuration {
+        system_addresses::assert_topo_framework(framework);
+        chain_status::assert_genesis();
+        assert!(current_epoch() == 0, error::invalid_state(ECONFIGURATION));
+        assert!(stake::try_cache_epoch_plan(1, timestamp::now_seconds()) == 0,
+            error::invalid_state(ETRANSITION_DEFERRED));
+        reconfiguration_state::on_reconfig_start();
+        stake::settle_closing_epoch();
+        stake::apply_cached_features(framework);
+        stake::install_epoch_plan(1);
+        stake::finish_epoch_plan();
+        reconfiguration_state::on_reconfig_finish();
+    }
+
+    /// 委员会安装成功后推进链 Epoch、发出事件，再清理计划并解除冻结。
+    fun complete_epoch(prepared: bool) acquires Configuration {
+        storage_gas::on_reconfig();
+        let current_time = timestamp::now_microseconds();
+        let config_ref = borrow_global_mut<Configuration>(@topo_framework);
+        assert!(current_time > config_ref.last_reconfiguration_time,
+            error::invalid_state(EINVALID_BLOCK_TIME));
+        config_ref.last_reconfiguration_time = current_time;
+        config_ref.epoch += 1;
         event::emit(NewEpoch { epoch: config_ref.epoch });
         event::emit_event<NewEpochEvent>(
-            &mut config_ref.events,
-            NewEpochEvent { epoch: config_ref.epoch }
+            &mut config_ref.events, NewEpochEvent { epoch: config_ref.epoch }
         );
-
+        if (prepared) { stake::finish_epoch_plan() };
         reconfiguration_state::on_reconfig_finish();
     }
 
@@ -180,7 +207,13 @@ module topo_framework::reconfiguration {
         );
     }
 
-    // For tests, skips the guid validation.
+    /// 仅供测试复用真实创世事件流程，验证初始 Epoch 只推进一次。
+    #[test_only]
+    public fun emit_genesis_event_for_test() acquires Configuration {
+        emit_genesis_reconfiguration_event();
+    }
+
+    // 测试初始化跳过 GUID 校验。
     #[test_only]
     public fun initialize_for_test(account: &signer) {
         system_addresses::assert_topo_framework(account);

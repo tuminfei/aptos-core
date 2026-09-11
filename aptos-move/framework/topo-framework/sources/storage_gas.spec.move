@@ -119,6 +119,7 @@ spec topo_framework::storage_gas {
 
     /// Signer address must be @topo_framework and StorageGasConfig exists.
     spec set_config(topo_framework: &signer, config: StorageGasConfig) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         include system_addresses::AbortsIfNotTopoFramework{ account: topo_framework };
         aborts_if !exists<StorageGasConfig>(@topo_framework);
     }
@@ -161,6 +162,7 @@ spec topo_framework::storage_gas {
     /// Address @topo_framework must exist StorageGasConfig and StorageGas and StateStorageUsage.
     spec on_reconfig {
         use topo_framework::chain_status;
+        modifies global<StorageGas>(@topo_framework);
         requires chain_status::is_operating();
         aborts_if !exists<StorageGasConfig>(@topo_framework);
         aborts_if !exists<StorageGas>(@topo_framework);

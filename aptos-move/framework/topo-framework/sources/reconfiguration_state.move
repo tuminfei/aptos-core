@@ -14,6 +14,7 @@ module topo_framework::reconfiguration_state {
     friend topo_framework::stake;
 
     const ERECONFIG_NOT_IN_PROGRESS: u64 = 1;
+    const ERECONFIGURATION_IN_PROGRESS: u64 = 2;
 
     /// Reconfiguration drivers update this resources to notify other modules of some reconfiguration state.
     struct State has key {
@@ -52,8 +53,9 @@ module topo_framework::reconfiguration_state {
         initialize(fx)
     }
 
-    /// Return whether the reconfiguration state is marked "in progress".
-    public(friend) fun is_in_progress(): bool acquires State {
+    /// 查询是否正在换届；资源缺失时仍返回 false，以兼容原生流程。
+    /// PoC 准备入口要求此资源已初始化，防止因资源缺失而绕过冻结检查。
+    public fun is_in_progress(): bool acquires State {
         if (!exists<State>(@topo_framework)) {
             return false
         };
@@ -61,6 +63,19 @@ module topo_framework::reconfiguration_state {
         let state = borrow_global<State>(@topo_framework);
         *state.variant.type_name() == type_info::type_name<StateActive>()
     }
+
+    /// 外部设置入口统一检查冻结状态；按已校验计划安装配置时不调用此检查。
+    public fun assert_not_in_progress() acquires State {
+        assert!(!is_in_progress(), error::invalid_state(ERECONFIGURATION_IN_PROGRESS));
+    }
+
+    /// 在测试中进入冻结状态，验证通过上层合约转调的能力接口也受冻结限制。
+    #[test_only]
+    public fun start_for_test() acquires State { on_reconfig_start() }
+
+    /// 测试中结束冻结，不暴露运行期的取消换届入口。
+    #[test_only]
+    public fun finish_for_test() acquires State { on_reconfig_finish() }
 
     /// Called at the beginning of a reconfiguration (either immediate or async)
     /// to mark the reconfiguration state "in progress" if it is currently "stopped".

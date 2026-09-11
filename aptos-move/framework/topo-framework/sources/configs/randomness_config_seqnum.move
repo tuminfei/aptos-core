@@ -27,6 +27,7 @@
 module topo_framework::randomness_config_seqnum {
     use topo_framework::config_buffer;
     use topo_framework::system_addresses;
+    use topo_framework::reconfiguration_state;
 
     friend topo_framework::reconfiguration_with_dkg;
 
@@ -53,6 +54,7 @@ module topo_framework::randomness_config_seqnum {
 
     /// Initialize the configuration. Used in genesis or governance.
     public fun initialize(framework: &signer) {
+        reconfiguration_state::assert_not_in_progress();
         system_addresses::assert_topo_framework(framework);
         if (!exists<RandomnessConfigSeqNum>(@topo_framework)) {
             move_to(framework, RandomnessConfigSeqNum { seq_num: 0 })

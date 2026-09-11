@@ -22,6 +22,7 @@ module topo_framework::jwks {
     use topo_framework::event::emit;
     use topo_framework::reconfiguration;
     use topo_framework::system_addresses;
+    use topo_framework::reconfiguration_state;
     #[test_only]
     use topo_framework::account::create_account_for_test;
 
@@ -377,6 +378,7 @@ module topo_framework::jwks {
 
     /// Set the `Patches`. Only called in governance proposals.
     public fun set_patches(fx: &signer, patches: vector<Patch>) acquires Patches, PatchedJWKs, ObservedJWKs {
+        reconfiguration_state::assert_not_in_progress();
         system_addresses::assert_topo_framework(fx);
         borrow_global_mut<Patches>(@topo_framework).patches = patches;
         regenerate_patched_jwks();

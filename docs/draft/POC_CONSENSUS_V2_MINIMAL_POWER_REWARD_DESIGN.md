@@ -6,6 +6,10 @@
 >
 > 核心方案：原生质押机制管理保证金本金与锁仓，PoC 管理算力分配与奖励。每次 Epoch 切换时，根据池内算力和保证金确定委员会权重；该 Epoch 的奖励也按这份生效算力结算。
 
+## 修订说明（2026-09-10：算力与保证金单位）
+
+统一采用 `OHMP`（One Hundred Million Power，亿算力）作为算力展示单位：`1 OHMP = 100,000,000 power`。代币最小单位为 `Octa`，`1 TOPO = 100,000,000 Octa`。保证金配置统一为 `bond_octa_per_ohmp`，表示每 1 OHMP 所需的 Octa 数；换算分母固定为 `POWER_PER_OHMP = 100,000,000`，不再配置。原始算力和共识权重仍以整数 `power` 计量，标准化精度保持不变。
+
 ## 修订说明（2026-09-08）
 
 本次按 MVP 范围补齐换届恢复、数值边界、重配置冻结和首次启用规则，保留标准化算力、最多两条变更、奖励检查点及单份 `EpochPlan` 的架构。
@@ -32,6 +36,10 @@ MVP 继续采用池级共享保证金、零 PoC 运营佣金、奖励余数不�
 | pool / validator pool | 质押池，简称池 | 验证者对应的底层质押池，以 `StakePool` 地址标识；不专指委托池 `DelegationPool` |
 | allocation | 算力分配 | 用户配置分配给各池的算力比例 |
 | power period / period | 算力周期 | 包含多个 Epoch 的算力更新与衰减周期 |
+| power（计量单位） | 最小算力单位 | 原始算力与已安装 PoC 共识权重的整数计量单位 |
+| OHMP | 亿算力 | One Hundred Million Power；`1 OHMP = 100,000,000 power` |
+| TOPO | 代币展示单位 | `1 TOPO = 100,000,000 Octa`，`decimals = 8` |
+| Octa | 代币最小单位 | 保证金、计奖基数、奖励与交易费的整数计量单位 |
 | units | 标准化算力单位 | 消除共同衰减因子后的记账单位；正文简称标准化算力，字段名为 `units` |
 | position | 算力持仓 | 用户在某个池中的算力分配及奖励记录 |
 | vault | 奖励金库 | 池账本中保存奖励代币的字段，不是额外资源 |
@@ -39,6 +47,23 @@ MVP 继续采用池级共享保证金、零 PoC 运营佣金、奖励余数不�
 | shares | 质押份额 | 原生质押机制中的本金与收益份额，与标准化算力单位不同 |
 
 状态名称按对象区分：算力分配配置使用“已生效 / 待生效”，验证者成员状态使用“在任 / 待加入 / 待退出”。涉及保证金余额时保留 `active`、`pending_active`、`pending_inactive`、`inactive` 等字段名，避免混淆不同层级的状态。
+
+### 算力与代币单位
+
+```text
+1 OHMP  = 100,000,000 power
+1 power = 0.00000001 OHMP
+1 TOPO  = 100,000,000 Octa
+1 Octa  = 0.00000001 TOPO
+```
+
+OHMP 与 TOPO 均采用 8 位小数展示精度，分别计量算力和代币资产。保证金比例由正整数 `bond_octa_per_ohmp` 配置：例如 `250,000,000` 表示每 1 OHMP 需要 `250,000,000 Octa = 2.5 TOPO` 保证金。相同展示精度不决定担保比例。
+
+全文公式、配置、链上接口与未标注 OHMP 的算力数值，均沿用底层计量：`raw_power`、`pool_power`、已安装的 `ValidatorInfo.voting_power`、`min_power`、`max_power` 和 `initial_raw_power` 以整数 `power` 计量；`bond_octa`、`reward_base_octa`、奖励与交易费以代币最小单位计量。例如 `raw_power = 17` 表示 `17 power = 0.00000017 OHMP`，不是 `17 OHMP`。
+
+`units` 是内部标准化记账值，不是 `power`，不能直接除以 `100,000,000` 后标为 OHMP。须先按第 3.1 节还原目标周期算力；展示生效共识权重时，则使用最终已安装的整数 `power`。`POWER_PER_OHMP = 100,000,000` 仅用于算力与金额换算；`UNIT_SCALE = 2^32`、`INDEX_SCALE = 2^64` 和奖励精度 `Q` 保持各自用途与取值。
+
+展示转换须使用十进制定点或大整数格式化，保留最多 8 位小数；不能用链上整数除法丢掉不足 `1 OHMP` 的算力，也不能通过浮点数转换大整数。若工具提供 OHMP 输入，应在边界精确换算成整数 `power` 后再调用既有接口。
 
 ## 1. 设计约束
 
@@ -119,7 +144,7 @@ poc_accounting  -> 不依赖以上三个模块
 
 `raw_power` 表示 `poc_power_store` 中的用户原始算力；`units` 是消除共同衰减因子后的标准化算力记账值；`power` 是写入 `ValidatorSet` 并生效的整数共识权重。
 
-设 `I[p]` 为算力周期 `p` 的共同衰减指数；`UNIT_SCALE`、`INDEX_SCALE`、`POWER_SCALE` 为固定协议常量：
+设 `I[p]` 为算力周期 `p` 的共同衰减指数；`UNIT_SCALE`、`INDEX_SCALE`、`POWER_PER_OHMP` 为固定协议常量：
 
 ```text
 I[0] = INDEX_SCALE
@@ -132,9 +157,9 @@ pool_power = floor(sum(position_units) * I[target_period]
                    / (UNIT_SCALE * INDEX_SCALE))
 ```
 
-`PowerVersion` 的逻辑记录保存派生标准化算力 `units`、原始算力 `power` 及其生效周期 `effective_period`。新部署可直接采用该结构；已有链须按第 8.2 节使用兼容存储，不能直接修改已发布普通结构的字段布局。`PeriodClock` 保存当前和下一算力周期的衰减指数；版本与指数绑定后不再重算，因此读取旧版本无需查询完整的历史指数表。
+`PowerVersion` 同时保存标准化算力 `units`、原始算力 `power` 及其生效周期 `effective_period`，统一存入 `PowerStore.users` 的两个 `Option` 版本槽。`PowerStore.normalization` 直接保存 `NormalizationState`，包含共同指数、初始化 Epoch 及支持期限；`PeriodClock` 独立保存周期倒计时，与算力表和标准化状态在同一次初始化中创建。当前开发阶段直接使用新结构，不承接旧版算力迁移。版本与指数绑定后不再重算，因此读取既有版本无需查询完整的历史指数表。
 
-逐用户、逐算力周期取整的衰减，与先汇总全池算力、再取整的结果不等价。PoC 共识与奖励统一使用上述标准化算力记账值；接入模块的旧整数查询接口可供旧模式使用，但不能参与 PoC 聚合。用户界面展示的整数算力之和也不要求等于池权重。
+逐用户、逐算力周期取整的衰减，与先汇总全池算力、再取整的结果不等价。PoC 共识与奖励统一使用上述标准化算力记账值；原始算力的整数查询可用于展示，但不能参与 PoC 聚合。用户界面展示的整数算力之和也不要求等于池权重。
 
 MVP 接受向下取整带来的整数门槛效应。即使新版本刚生效、`allocation_bps = 10_000`，两次除法也可能使 `raw_power = 100` 对应 `pool_power = 99`；增大精度常量不能保证消除这一现象。最低权重判断始终使用计算完成后的整数 `power`，不能用界面展示值或未取整的理论值替代。
 
@@ -142,15 +167,15 @@ MVP 在部署时确定 `retention_bps`，要求 `0 < retention_bps <= 10_000`，
 
 ### 3.2 保证金限制池的总生效算力
 
-`bond_per_power` 表示每 `POWER_SCALE` 单位原始算力所需的保证金数量，以代币最小单位计量，且必须大于 `0`：
+`bond_octa_per_ohmp` 表示每 1 OHMP（固定 `100,000,000 power`）所需的保证金 Octa 数，且必须大于 `0`：
 
 ```text
-bond = active + pending_active + unexpired pending_inactive
-bond_cap = floor(bond * POWER_SCALE / bond_per_power)
-candidate = min(pool_power, bond_cap, max_power)
+bond_octa = active + pending_active + unexpired pending_inactive
+bond_cap_power = floor(bond_octa * POWER_PER_OHMP / bond_octa_per_ohmp)
+candidate = min(pool_power, bond_cap_power, max_power)
 ```
 
-`bond` 是按原生质押状态推算的目标 Epoch 可用保证金。已转为 `inactive` 的余额、在本次截止时间 `cutoff_secs` 已到期的 `pending_inactive` 余额，以及奖励金库中尚未复投的奖励，均不计入。同步重配置与 DKG 使用一致的截止时间规则。
+`bond_octa` 是按原生质押状态推算的目标 Epoch 可用保证金。已转为 `inactive` 的余额、在本次截止时间 `cutoff_secs` 已到期的 `pending_inactive` 余额，以及奖励金库中尚未复投的奖励，均不计入。同步重配置与 DKG 使用一致的截止时间规则。
 
 候选验证者必须同时满足：已注册并启用 PoC、原有验证者配置有效、处于在任或待加入状态、达到原生质押的最低额度，且 `candidate >= min_power`。待退出的验证者仍参与当前 Epoch 的共识，但不参与下一届选举。
 
@@ -190,13 +215,13 @@ floor(min_validators * min_power * increase_limit / 100) >= min_power
 
 ```text
 ValidatorInfo.voting_power = power
-reward_base = floor(power * bond_per_power / POWER_SCALE)
+reward_base_octa = floor(power * bond_octa_per_ohmp / POWER_PER_OHMP)
 
-inflation = native_reward_formula(reward_base, epoch_rate, validator_performance)
+inflation = native_reward_formula(reward_base_octa, epoch_rate, validator_performance)
 pool_reward = inflation + native_distributable_fee
 ```
 
-计奖基数 `reward_base` 随共识权重一起确定，并在该 Epoch 内保持不变；结算时仍使用这一基数，不读取下一 Epoch 的新担保参数。通胀奖励继续按原有奖励公式和出块表现计算，不设置固定总额的全网奖励池。
+计奖基数 `reward_base_octa` 随共识权重一起确定，并在该 Epoch 内保持不变；结算时仍使用这一基数，不读取下一 Epoch 的新担保参数。通胀奖励继续按原有奖励公式和出块表现计算，不设置固定总额的全网奖励池。
 
 `stake` 在每次安装 Epoch 时保存一份全局 `RewardContext`，固定该期的计奖模式、奖励率、交易费分发开关与每池费用限额。计划准备和提交均使用待结束 Epoch 的这份上下文；与奖励有关的治理修改只影响下一 Epoch。原生奖励率的周期性下降仍在旧期奖励结算后计算，再写入新期上下文。上下文不包含出块计数或实际费用余额，后两者在 DKG 等待期间继续累计，提交时按旧验证者索引读取。
 
@@ -207,7 +232,7 @@ user_effective_power = power * user_units / pool_units
 user_reward_share = user_units / pool_units
 ```
 
-共同衰减、保证金约束导致的算力折减，以及权重增长限制，都对同池用户按相同比例生效，因此无需存储或逐用户取整 `user_effective_power`。例如，两名用户的标准化算力之比为 `60 : 40`，池的最终生效权重为 `50`，则两人的理论生效算力分别为 `30` 和 `20`；该池获得 `10` 单位奖励时，两人分别分得 `6` 和 `4`。
+共同衰减、保证金约束导致的算力折减，以及权重增长限制，都对同池用户按相同比例生效，因此无需存储或逐用户取整 `user_effective_power`。例如，两名用户的标准化算力之比为 `60 : 40`，池的最终生效权重为 `50 power`，则两人的理论生效算力分别为 `30 power` 和 `20 power`；该池获得 `10` 个代币最小单位的奖励时，两人分别分得 `6` 和 `4` 个代币最小单位。
 
 交易费沿用原有的验证者归属规则、功能开关和每池限额，再按池内各用户生效的标准化算力分配。不同池的奖励还取决于出块表现和交易费收入，因此每单位生效算力的收益可能不同。
 
@@ -225,12 +250,12 @@ user_reward_share = user_units / pool_units
 | `Q` | `2^128` | 奖励精度，以 `u256` 表示 |
 | `MAX_TOTAL_POWER` | `2^64 - 1` | 目标委员会总权重上限 |
 
-`POWER_SCALE` 为部署时确定的正 `u64` 常量，启用后不可修改。`retention_bps`、担保参数、奖励率上限、交易费限额和支持期限属于部署参数，必须在部署清单中给出具体值并通过以下校验；示例值不能自动作为生产配置。
+`POWER_PER_OHMP` 为固定协议单位常量，类型为 `u64`，值为 `100,000,000`，不属于部署配置。`retention_bps`、`bond_octa_per_ohmp`、奖励率上限、交易费限额和支持期限属于部署参数，必须在部署清单中给出具体值并通过以下校验；示例值不能自动作为生产配置。
 
 1. 以 PoC 标准化基线的周期 `0` 为起点，选定有限的支持周期上限 `P_MAX`，逐次验证该范围内的 `I[p]`，保证当前和任何已排定版本的生效指数均不小于 `MIN_PERIOD_INDEX`。例如保留比例为 `99%` 时，本组常量允许的最大有效周期为 `1655`；`p = 1656` 已低于下限。保留比例为 `100%` 时指数不衰减，但仍须按部署期限及源周期编号的 `u64` 容量确定有限的 `P_MAX`。这些是周期数，不能在未确定 Epoch 时长和周期长度时直接换算为运行年限。
 2. 在该范围内，`MAX_RAW_POWER * UNIT_SCALE * INDEX_SCALE / MIN_PERIOD_INDEX < 2^120`，单版本可由 `u128` 表示。每次修改算力或分配配置，都须在同一事务中校验相关池当前、`E+1`、`B` 的聚合值及增减记录，确保均不超过 `MAX_POOL_UNITS`，引用计数不超过 `u64`。失败时回滚用户写入，不能仅依赖 Epoch 提交时的算术异常。
-3. 先用宽整数计算 `bond`、`pool_power`、`bond_cap` 并应用 `max_power`，再转换为最终 `u64` 权重。目标委员会须满足 `0 < sum(power) <= MAX_TOTAL_POWER`。现有 DKG 和 Chunky DKG 共用的舍入代码使用 `u64` 求和；只限制单池权重或只验证 Move 的 `u128` 总和不够。MVP 同时采用保守的配置约束 `MAX_VALIDATOR_SET_SIZE * max_power <= MAX_TOTAL_POWER`，使合法候选组合不会因总权重过大而阻塞换届；仍保留计划中的实际总和检查。
-4. 部署清单须固定允许的 `reward_base` 上限 `B_MAX`、奖励率上限 `rate_max`、启用费用分发时的限额上限 `fee_max`，以及从首次 PoC Epoch 起最多结算的 Epoch 数 `H`。要求 `floor(max_power * bond_per_power / POWER_SCALE) <= B_MAX <= u64::MAX`，并按最优出块表现计算 `R_MAX = floor(B_MAX * rate_max) + fee_max`，满足 `H > 0`、`H * R_MAX <= u64::MAX`、`first_poc_epoch + H <= u64::MAX`；首次启用前用拟启用 Epoch 校验最后一个条件。参数更新也必须保持这些上限；不能使用默认无限额的费用配置替代验证。
+3. 先用宽整数计算 `bond_octa`、`pool_power`、`bond_cap_power` 并应用 `max_power`，再转换为最终 `u64` 权重。目标委员会须满足 `0 < sum(power) <= MAX_TOTAL_POWER`。现有 DKG 和 Chunky DKG 共用的舍入代码使用 `u64` 求和；只限制单池权重或只验证 Move 的 `u128` 总和不够。MVP 同时采用保守的配置约束 `MAX_VALIDATOR_SET_SIZE * max_power <= MAX_TOTAL_POWER`，使合法候选组合不会因总权重过大而阻塞换届；仍保留计划中的实际总和检查。
+4. 部署清单须固定允许的 `reward_base_octa` 上限 `B_MAX`、奖励率上限 `rate_max`、启用费用分发时的限额上限 `fee_max`，以及从首次 PoC Epoch 起最多结算的 Epoch 数 `H`。要求 `floor(max_power * bond_octa_per_ohmp / POWER_PER_OHMP) <= B_MAX <= u64::MAX`，并按最优出块表现计算 `R_MAX = floor(B_MAX * rate_max) + fee_max`，满足 `H > 0`、`H * R_MAX <= u64::MAX`、`first_poc_epoch + H <= u64::MAX`；首次启用前用拟启用 Epoch 校验最后一个条件。参数更新也必须保持这些上限；不能使用默认无限额的费用配置替代验证。
 5. PoC 金库初始余额为零，不接受用户直接捐款或额外注资。上一项因此覆盖整个支持期限内用户从不领取的情况，保证 `Coin<TopoCoin>` 的 `u64` 余额不会溢出。每池累计入账乘 `Q` 小于 `2^192`；结合正确的持仓分段和池级聚合不变量，可界定奖励指数与用户累计权益，不能把互不相关的最大值直接相乘来替代证明。奖励公式的中间运算也须使用宽整数，覆盖长期延期时仍在增长的出块统计。
 
 `P_MAX` 从标准化基线周期 `0` 累计，`H` 从首次 PoC Epoch 累计；准备阶段经过的算力周期也消耗指数期限。修改周期长度、延期首次启用、重配置重试或更新参数不能重置指数；已启用后也不能重置奖励期限。部署须约定预警阈值并在到达任一上限前完成升级；到期保护不能替代升级计划，也不承诺到期后继续换届。MVP 不实现自动重基准或临时改精度。首次启用检查、参数校验和验收报告必须包含部署清单及边界计算结果。
@@ -249,7 +274,7 @@ user_reward_share = user_units / pool_units
 
 ```move
 struct PowerParams has copy, drop, store {
-    bond_per_power: u64,
+    bond_octa_per_ohmp: u64,
     min_power: u64,
     max_power: u64,
     min_validators: u64,
@@ -288,7 +313,7 @@ struct PoolLedger has store {
     epoch: u64,
     units: u128,
     changes: vector<PoolChange>,
-    reward_base: u64,
+    reward_base_octa: u64,
     reward_epoch: u64,
     index: u256,
     checkpoints: Table<u64, Checkpoint>,
@@ -304,7 +329,7 @@ struct PoolLedger has store {
 | `PoolChange.remove_units / add_units` | 用无符号整数分别记录扣减量与增加量，按先减后加计算净变化，无需引入有符号算力类型 |
 | `Checkpoint.index / refs` | 保存持仓变更生效时的累计奖励指数；最后一个引用结算后删除检查点 |
 | `Position.cursor / accrued` | 防止重复结算，累计未领取奖励，并保留不足一个代币最小单位的余量；`accrued` 按“代币最小单位 × 奖励精度”记账 |
-| `PoolLedger.reward_base / reward_epoch` | `reward_base` 固定当期计奖基数；`reward_epoch` 记录最后已入账的 Epoch，安装新基数时不能提前把新 Epoch 标记为已结算 |
+| `PoolLedger.reward_base_octa / reward_epoch` | `reward_base_octa` 固定当期计奖基数；`reward_epoch` 记录最后已入账的 Epoch，安装新基数时不能提前把新 Epoch 标记为已结算 |
 | `PoolLedger.vault` | 保存实际奖励代币，独立于原生质押份额记账 |
 
 框架地址下的全局账本还保存链的绝对 Epoch 编号 `epoch`。上层在初始化时将它与链上编号对齐，此后每次成功提交 Epoch 变更时同步更新；算力存储模块和用户入口据此安排生效时间。接入时须核实 `PeriodClock.last_epoch` 的语义，局部提交次数不能直接当作链上的 Epoch 编号；`B` 由绝对 Epoch 编号与算力周期剩余计数推导。周期时钟还须固定标准化基线对应的源周期编号，使指数的相对周期 `p` 与原始版本的生效周期之间有唯一映射，不能在首次启用延期后重新归零。
@@ -329,7 +354,7 @@ struct PoolLedger has store {
 4. 合并生效 Epoch 相同的变更，省略标准化算力没有变化的记录。每条记录以上一段的标准化算力为起点，重新累计 `remove_units`、`add_units` 和 `refs`。
 5. 写回持仓、分配配置与原始算力版本。任一步骤失败，整笔事务回滚；重配置冻结期间拒绝这些写入。
 
-例如，忽略衰减，用户当前原始算力为 `100`，已上链的下一算力周期原始算力为 `200`。用户在当前算力周期中途，将分配给某个池的比例从 `50%` 改为 `25%`：
+例如，忽略衰减，用户当前原始算力为 `100 power`，已上链的下一算力周期原始算力为 `200 power`。用户在当前算力周期中途，将分配给某个池的比例从 `50%` 改为 `25%`。为突出变更顺序，下表的标准化记账值统一省略 `UNIT_SCALE` 倍率，实际 `units` 及增减量须乘回该倍率；表中数值不是 OHMP：
 
 | 生效时间 | 用户在该池的标准化算力 | 对池总量的变更 |
 | --- | --- | --- |
@@ -365,7 +390,7 @@ struct PoolTarget has copy, drop, store {
     pool: address,
     units: u128,
     power: u64,
-    reward_base: u64,
+    reward_base_octa: u64,
 }
 
 struct EpochPlan has key {
@@ -378,7 +403,7 @@ struct EpochPlan has key {
 }
 ```
 
-`epoch` 是目标 Epoch 编号，`closing_rewards.epoch` 必须等于 `epoch - 1`。`closing_rewards` 从已安装 Epoch 的全局上下文复制，不能在完成阶段从新配置反向推算。`targets` 包含当前参与共识的池与下一届候选池的并集；未入选池的 `power` 和 `reward_base` 均为 `0`。沿用原有确定性顺序，无需对全部池地址排序。
+`epoch` 是目标 Epoch 编号，`closing_rewards.epoch` 必须等于 `epoch - 1`。`closing_rewards` 从已安装 Epoch 的全局上下文复制，不能在完成阶段从新配置反向推算。`targets` 包含当前参与共识的池与下一届候选池的并集；未入选池的 `power` 和 `reward_base_octa` 均为 `0`。沿用原有确定性顺序，无需对全部池地址排序。
 
 同步重配置在预检后立即提交计划；DKG 路径在同一事务中缓存计划与 PVS，并冻结所有影响结果的写入。计划与 PVS 只能由框架成对生成、提交后成对移除；读取缓存时必须确认其目标为当前 Epoch 的下一 Epoch。无需另存含义不明确或需要遍历用户才能计算的 `state_hash`；计划中的非零权重、验证者配置与 PVS 必须来自同一次构建。
 
@@ -529,20 +554,16 @@ cursor = pool.index
 
 MVP 不提供启用后退回原生计奖模式的开关。调整尚未提交的首次启用 Epoch 不会重算已绑定的标准化算力，也不能移动已经排定的周期边界。
 
-### 8.2 创世部署与已有链迁移
+### 8.2 开发阶段的算力初始化
 
-全新创世可直接初始化新结构，并对齐初始 Epoch、周期基线和首份计奖上下文。已有链升级须保持已经发布的普通 Move 结构布局兼容：若 `PowerVersion` 或 `PeriodClock` 已存在，采用 V2 资源或旁路派生表保存新增字段，不能直接向原结构追加字段；兼容性依据本仓库的结构布局检查。
+当前使用新布局初始化 PoC，不承接旧版算力迁移，也不提供只保存原始算力的未标准化存储。原始算力与标准化单位统一保存在 `PowerStore.users`，共同指数与基线保存在 `PowerStore.normalization`。
 
-已有链的迁移方案须固定以下规则：
+1. 全新 PoC 创世一次性创建算力表、标准化状态及周期时钟，为每个验证者 owner 写入配置项 `initial_raw_power` 指定的周期 0 原始算力，按 `units = power * UNIT_SCALE` 初始化；自动启用本池、按 `10000 bps` 全额分配到本池并安装 Epoch 1。初始算力配置独立于代币保证金，最终权重仍受保证金与权重上限约束。
+2. 算力存储只能初始化一次，周期编号与提交计数均从 0 开始，保留比例自初始化起固定。尚未初始化 PoC 的原生链不创建算力存储；准备入口同样直接创建完整状态。
+3. 无算力记录的用户快照返回零，可先配置分配；后续上传同步已有持仓。版本只在创建时计算 units，首次访问和周期推进不重算。
+4. 首份 PoC 计划只使用已准备且保证金、算力均可推算的池，历史原生资产仍按原有所有权处理。两种初始化路径都须对齐链 Epoch、周期基线和首份计奖上下文。
 
-1. 记录标准化基线所在的源周期，固定用于解释旧数据的衰减规则。旧版本迁入时，以该基线周期的有效整数算力建立初始标准化记录；尚未生效的原始版本按其自身生效周期绑定指数。不能把首次访问时的当前整数算力当作历史基线。
-2. 优先在用户首次配置或原始版本更新前，按固定基线惰性迁移该用户所需的至多两个版本；必须先完成迁移和账本同步，再清理旧版本。幂等标记与派生记录共同保证重复访问不重复记账。该过程不增加 Epoch 内的全用户扫描。
-3. 惰性迁移要求接入模块能稳定重现基线周期的数据；若做不到，须先通过有权限的迁移流程提供可验证的基线数据，再允许该用户进入 PoC 分配。不能宣称仅凭当前分支已经具备这一能力。
-4. 第一份 PoC 计划只能使用已完成准备、保证金与算力均可推算的池；未准备完毕不能通过自动回退放行。历史原生资产不迁入 PoC 金库。
-
-迁移方式、对应源码提交和部署参数清单必须在已有链发布前确定，并通过升级兼容性与首次切换测试。
-
-源码核对入口：[原生质押与奖励](../../aptos-move/framework/topo-framework/sources/stake.move)、[重配置与 DKG](../../aptos-move/framework/topo-framework/sources/reconfiguration_with_dkg.move)、[冻结状态](../../aptos-move/framework/topo-framework/sources/reconfiguration_state.move)、[质押配置](../../aptos-move/framework/topo-framework/sources/configs/staking_config.move)、[委托池](../../aptos-move/framework/topo-framework/sources/delegation_pool.move)、[治理权重](../../aptos-move/framework/topo-framework/sources/topo_governance.move)、[DKG 权重舍入](../../types/src/dkg/real_dkg/rounding/mod.rs)、[Move 结构兼容性](../../third_party/move/move-binary-format/src/compatibility.rs)。`poc_power_store` 及双版本、周期时钟的实现路径待接入后补齐。
+源码核对入口：[原生质押与奖励](../../aptos-move/framework/topo-framework/sources/stake.move)、[重配置与 DKG](../../aptos-move/framework/topo-framework/sources/reconfiguration_with_dkg.move)、[冻结状态](../../aptos-move/framework/topo-framework/sources/reconfiguration_state.move)、[质押配置](../../aptos-move/framework/topo-framework/sources/configs/staking_config.move)、[委托池](../../aptos-move/framework/topo-framework/sources/delegation_pool.move)、[治理权重](../../aptos-move/framework/topo-framework/sources/topo_governance.move)、[DKG 权重舍入](../../types/src/dkg/real_dkg/rounding/mod.rs)、[统一算力存储与周期时钟](../../aptos-move/framework/topo-framework/sources/poc/poc_power_store.move)。
 
 ## 9. 不变量与验收
 
@@ -554,7 +575,7 @@ position / pool changes 数量 <= 2
 pool.index 单调不减，reward_epoch 每次入账严格递增
 当前 BFT 权重只来自已安装 ValidatorSet
 0 < sum(selected power) <= MAX_TOTAL_POWER
-reward_base 对应同一已安装 Epoch 的 power 与担保比例
+reward_base_octa 对应同一已安装 Epoch 的 power 与担保比例
 RewardContext.epoch 对应已安装 Epoch，计划的 closing_rewards 对应待结束 Epoch
 冻结计划与 PVS 成对存在、目标相同，完成后成对移除
 取消自主退出不改变当期权重、验证者索引或奖励归属，不能撤销治理移除

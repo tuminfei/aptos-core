@@ -59,6 +59,11 @@ spec topo_framework::staking_config {
         use topo_framework::chain_status;
         invariant [suspendable] chain_status::is_operating() ==> exists<StakingConfig>(@topo_framework);
         invariant [suspendable] chain_status::is_operating() ==> exists<StakingRewardsConfig>(@topo_framework);
+        // 待生效开关可能在换届时启用周期性奖励率。
+        // 即使当前未启用，其周期起点也不能晚于链上时间。
+        invariant [suspendable] chain_status::is_operating() ==>
+            global<StakingRewardsConfig>(@topo_framework).last_rewards_rate_period_start_in_secs
+                <= timestamp::spec_now_seconds();
         pragma verify = true;
         pragma aborts_if_is_strict;
     }
@@ -88,6 +93,18 @@ spec topo_framework::staking_config {
         invariant fixed_point64::spec_ceil(rewards_rate_decrease_rate) <= 1;
     }
 
+    // 准备后两种奖励率都须符合部署清单，避免功能开关切换到未校验的配置。
+    spec validate_poc_configuration {
+        include StakingRewardsConfigRequirement;
+        pragma aborts_if_is_partial;
+        aborts_if poc_accounting::is_prepared()
+            && !exists<StakingRewardsConfig>(@topo_framework);
+    }
+
+    spec validate_poc_lockup_duration {
+        aborts_if poc_accounting::is_prepared() && duration + MAX_U64 / 1_000_000 > MAX_U64;
+    }
+
     /// Caller must be @topo_framework.
     /// The maximum_stake must be greater than maximum_stake in the range of Specified stake and the maximum_stake greater than zero.
     /// The rewards_rate_denominator must greater than zero.
@@ -109,6 +126,9 @@ spec topo_framework::staking_config {
         let addr = signer::address_of(topo_framework);
         requires exists<timestamp::CurrentTimeMicroseconds>(@topo_framework);
         /// [high-level-req-1.1]
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
+        aborts_if rewards_rate_denominator > 0 && !poc_accounting::spec_valid_fixed_reward_rate(
+            rewards_rate * 18446744073709551616 / rewards_rate_denominator);
         aborts_if addr != @topo_framework;
         aborts_if minimum_stake > maximum_stake || maximum_stake == 0;
         /// [high-level-req-3.1]
@@ -137,6 +157,8 @@ spec topo_framework::staking_config {
         rewards_rate_decrease_rate: FixedPoint64,
     ) {
         use std::signer;
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
+        aborts_if !poc_accounting::spec_valid_fixed_reward_rate(rewards_rate.value);
         requires exists<timestamp::CurrentTimeMicroseconds>(@topo_framework);
         let addr = signer::address_of(topo_framework);
         /// [high-level-req-1.2]
@@ -199,6 +221,7 @@ spec topo_framework::staking_config {
         maximum_stake: u64,
     ) {
         use std::signer;
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         modifies global<StakingConfig>(@topo_framework);
         let addr = signer::address_of(topo_framework);
@@ -218,6 +241,7 @@ spec topo_framework::staking_config {
         new_recurring_lockup_duration_secs: u64,
     ) {
         use std::signer;
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         modifies global<StakingConfig>(@topo_framework);
         let addr = signer::address_of(topo_framework);
@@ -225,6 +249,8 @@ spec topo_framework::staking_config {
         aborts_if addr != @topo_framework;
         /// [high-level-req-3.2]
         aborts_if new_recurring_lockup_duration_secs == 0;
+        aborts_if poc_accounting::is_prepared()
+            && new_recurring_lockup_duration_secs + MAX_U64 / 1_000_000 > MAX_U64;
         aborts_if !exists<StakingConfig>(@topo_framework);
         ensures global<StakingConfig>(@topo_framework).recurring_lockup_duration_secs == new_recurring_lockup_duration_secs;
     }
@@ -240,6 +266,8 @@ spec topo_framework::staking_config {
         new_rewards_rate_denominator: u64,
     ) {
         use std::signer;
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
+        aborts_if !poc_accounting::spec_valid_reward_rate(new_rewards_rate, new_rewards_rate_denominator);
         pragma opaque;
         modifies global<StakingConfig>(@topo_framework);
         aborts_if features::spec_periodical_reward_rate_decrease_enabled();
@@ -265,6 +293,8 @@ spec topo_framework::staking_config {
         rewards_rate_decrease_rate: FixedPoint64,
     ) {
         use std::signer;
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
+        aborts_if !poc_accounting::spec_valid_fixed_reward_rate(rewards_rate.value);
         include StakingRewardsConfigRequirement;
         let addr = signer::address_of(topo_framework);
         /// [high-level-req-1.6]
@@ -287,6 +317,7 @@ spec topo_framework::staking_config {
         new_voting_power_increase_limit: u64,
     ) {
         use std::signer;
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         modifies global<StakingConfig>(@topo_framework);
         let addr = signer::address_of(topo_framework);
@@ -295,6 +326,8 @@ spec topo_framework::staking_config {
         /// [high-level-req-2.2]
         aborts_if new_voting_power_increase_limit == 0 || new_voting_power_increase_limit > 50;
         aborts_if !exists<StakingConfig>(@topo_framework);
+        aborts_if !poc_accounting::spec_valid_native_config(new_voting_power_increase_limit,
+            global<StakingConfig>(@topo_framework).allow_validator_set_change);
         ensures global<StakingConfig>(@topo_framework).voting_power_increase_limit == new_voting_power_increase_limit;
     }
 

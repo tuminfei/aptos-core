@@ -448,11 +448,21 @@ pub struct GenesisConfiguration {
     pub keyless_groth16_vk: Option<Groth16VerificationKey>,
     /// See `aptos_vm_genesis::GenesisConfiguration::initialize_decryption_at_genesis`.
     pub initialize_decryption_at_genesis: bool,
+    /// 可选的本地 PoC 创世清单生成回调，在验证者身份确定后调用；None 保持原生创世。
+    pub poc_genesis_config: Option<InitPocGenesisConfigFn>,
 }
 
 pub type InitConfigFn = Arc<dyn Fn(usize, &mut NodeConfig, &mut NodeConfig) + Send + Sync>;
 pub type InitGenesisStakeFn = Arc<dyn Fn(usize, &mut u64) + Send + Sync>;
 pub type InitGenesisConfigFn = Arc<dyn Fn(&mut GenesisConfiguration) + Send + Sync>;
+/// 根据已确定的验证者记录生成 PoC 配置，可按验证者数量确定部署上限。
+/// 初始算力由配置统一指定，Move 创世自动向各 owner 写入并全额分配到本池。
+/// 参数与委员会约束由后续 Move 创世流程校验，调用者须自行提供生产部署参数。
+pub type InitPocGenesisConfigFn = Arc<
+    dyn Fn(&[aptos_vm_genesis::Validator]) -> aptos_vm_genesis::poc::PocGenesisConfiguration
+        + Send
+        + Sync,
+>;
 
 /// Builder that builds a network of validator nodes that can run locally
 #[derive(Clone)]
@@ -673,6 +683,7 @@ impl Builder {
             initial_jwks: vec![],
             keyless_groth16_vk: None,
             initialize_decryption_at_genesis: true,
+            poc_genesis_config: None,
         };
         if let Some(init_genesis_config) = &self.init_genesis_config {
             (init_genesis_config)(&mut genesis_config);

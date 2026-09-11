@@ -696,16 +696,16 @@ module topo_framework::delegation_pool {
         pool_address: address,
         amount: u64
     ): u64 acquires DelegationPool, NextCommissionPercentage {
-        if (stake::is_current_epoch_validator(pool_address)) {
-            let (rewards_rate, rewards_rate_denominator) = staking_config::get_reward_rate(&staking_config::get());
-            if (rewards_rate_denominator > 0) {
-                assert_delegation_pool_exists(pool_address);
-
-                rewards_rate *= (MAX_FEE - operator_commission_percentage(pool_address));
-                rewards_rate_denominator *= MAX_FEE;
-                ((((amount as u128) * (rewards_rate as u128)) / ((rewards_rate as u128) + (rewards_rate_denominator as u128))) as u64)
-            } else { 0 }
-        } else { 0 }
+        if (!stake::is_current_epoch_validator(pool_address)) { return 0 };
+        // 最后一个原生 Epoch 的收益仍计入委托份额，须按已安装的奖励率收取入池费。
+        // 切换到 PoC 后，奖励存入池级账本金库，不增加委托份额，因此入池费为零。
+        let (poc_enabled, rate, denominator) = stake::get_installed_reward_rate();
+        if (poc_enabled || denominator == 0) { return 0 };
+        assert_delegation_pool_exists(pool_address);
+        // 用 u256 计算佣金与奖励率的乘积，仍按原公式在最后一步向下取整。
+        let numerator = (rate as u256) * ((MAX_FEE - operator_commission_percentage(pool_address)) as u256);
+        let denominator = (denominator as u256) * (MAX_FEE as u256);
+        ((amount as u256) * numerator / (numerator + denominator)) as u64
     }
 
     #[view]

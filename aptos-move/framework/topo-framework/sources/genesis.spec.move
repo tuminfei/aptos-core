@@ -123,23 +123,66 @@ spec topo_framework::genesis {
     spec create_initialize_validators_with_commission {
         pragma verify_duration_estimate = 120;
 
+        // 原生验证者创建流程要求尚未准备 PoC，满足原生 Epoch 安装入口的前置条件。
+        requires !exists<topo_framework::poc_accounting::AccountingState>(@topo_framework);
         include stake::ResourceRequirement;
         include stake::GetReconfigStartTimeRequirement;
         include CompareTimeRequires;
         include topo_coin::ExistsTopoCoin;
+    }
+
+    spec create_initialize_poc_validators {
+        pragma aborts_if_is_partial;
+        // 两种验证者创建分支之前均已执行共同的原生资源初始化。
+        include stake::ResourceRequirement;
+        include stake::GetReconfigStartTimeRequirement;
+        include staking_config::StakingRewardsConfigRequirement;
+        include CompareTimeRequires;
+        include topo_coin::ExistsTopoCoin;
+        // 直接 PoC 创世从链 Epoch 0 开始，要求尚未准备 PoC，也没有缓存计划。
+        requires exists<reconfiguration::Configuration>(@topo_framework);
+        requires global<reconfiguration::Configuration>(@topo_framework).epoch == 0;
+        requires !exists<topo_framework::poc_accounting::AccountingState>(@topo_framework);
+        requires !exists<topo_framework::poc_power_store::PowerStore>(@topo_framework);
+        requires !exists<topo_framework::poc_power_store::PeriodClock>(@topo_framework);
+        requires !exists<stake::InstalledRewardContext>(@topo_framework);
+        requires !exists<stake::EpochPlan>(@topo_framework);
+        requires !exists<stake::PrecomputedValidatorSet>(@topo_framework);
+        aborts_if !chain_status::is_genesis();
+        aborts_if std::signer::address_of(framework) != @topo_framework;
+        aborts_if initial_raw_power == 0;
+        ensures topo_framework::poc_accounting::current_epoch() == 1;
+        ensures stake::spec_poc_enabled();
+        // 可治理的初始配置由创世入口统一选择，不由清单重复覆盖。
+        ensures exists<topo_framework::poc_power_store::PowerStore>(@topo_framework);
+        ensures exists<topo_framework::poc_power_store::PeriodClock>(@topo_framework);
+        ensures global<topo_framework::poc_power_store::PowerStore>(@topo_framework).operator == @topo_framework;
+        ensures global<topo_framework::poc_power_store::PeriodClock>(@topo_framework).power_period_in_epochs
+            == POC_POWER_PERIOD_IN_EPOCHS;
+        ensures exists<stake::TransactionFeeConfig>(@topo_framework);
+        ensures global<stake::TransactionFeeConfig>(@topo_framework).max_fee_octa_allowed_per_epoch_per_pool == 0;
+        ensures global<stake::InstalledRewardContext>(@topo_framework).context.epoch == 1;
+        // 委员会与账本已安装 Epoch 1，链配置随后由既有创世事件步骤推进。
+        ensures reconfiguration::current_epoch() == 0;
     }
 
     spec create_initialize_validators {
         pragma verify_duration_estimate = 120;
 
+        requires !exists<topo_framework::poc_accounting::AccountingState>(@topo_framework);
         include stake::ResourceRequirement;
         include stake::GetReconfigStartTimeRequirement;
         include CompareTimeRequires;
         include topo_coin::ExistsTopoCoin;
     }
 
+    // 单池初始化后，后续循环和 Epoch 安装所需的验证者集合与代币资源仍须存在。
     spec create_initialize_validator {
+        pragma opaque;
         include stake::ResourceRequirement;
+        include topo_coin::ExistsTopoCoin;
+        ensures exists<stake::ValidatorSet>(@topo_framework);
+        ensures exists<coin::CoinInfo<TopoCoin>>(@topo_framework);
     }
 
     spec initialize_for_verification {
@@ -164,6 +207,7 @@ spec topo_framework::genesis {
     spec schema InitalizeRequires {
         execution_config: vector<u8>;
         requires !exists<account::Account>(@topo_framework);
+        requires !exists<topo_framework::poc_accounting::AccountingState>(@topo_framework);
         requires chain_status::is_operating();
         requires len(execution_config) > 0;
         requires exists<staking_config::StakingRewardsConfig>(@topo_framework);

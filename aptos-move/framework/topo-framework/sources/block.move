@@ -227,7 +227,12 @@ module topo_framework::block {
         decryption::on_new_block(&vm, epoch, round, option::none());
 
         if (timestamp - reconfiguration::last_reconfiguration_time() >= epoch_interval) {
-            reconfiguration::reconfigure();
+            // 区块触发换届时，目标不合格则延期；本块及后续统计仍计入当前 Epoch。
+            if (stake::is_poc_prepared()) {
+                reconfiguration_with_dkg::try_finish_for_block();
+            } else {
+                reconfiguration::try_reconfigure();
+            };
         };
     }
 

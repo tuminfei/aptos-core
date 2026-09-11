@@ -230,8 +230,7 @@ module topo_framework::poc_registry {
         initialize_registry(topo_framework);
     }
 
-    /// Initialize the Registry resource.
-    /// Only callable by @topo_framework. Idempotent — skips if already initialized.
+    /// 仅 @topo_framework 可初始化应用注册表；资源已存在时直接返回。
     public entry fun initialize_registry(topo_framework: &signer) {
         system_addresses::assert_topo_framework(topo_framework);
         if (!exists<Registry>(@topo_framework)) {
@@ -246,27 +245,17 @@ module topo_framework::poc_registry {
 
     // ========== Registration Entry ==========
 
-    /// Dapp application registration entry point.
+    /// 任意地址可签名注册为应用管理员；成功后运行状态为 ACTIVE，PoC 准入状态为 REGISTERED。
+    /// 每个管理员只能注册一个应用；合约、股权代币和托管地址各自在对应索引中全局唯一。
+    /// 股权代币地址必须通过 `object::address_to_object<Metadata>` 验证，确认为有效 FA 元数据对象。
+    /// 验证失败或重复注册均会中止并回滚，原有记录保持不变。
     ///
-    /// Any address may call this function to register as a Dapp application administrator.
-    /// After successful registration, the application defaults to ACTIVE state with
-    /// POC listing status REGISTERED (not yet whitelisted by the platform).
-    ///
-    /// Uniqueness constraints (all enforced atomically):
-    /// - One admin address can only register one application
-    /// - app_address / equity_token_address / custody_address must each be globally unique
-    ///   across all registered applications
-    ///
-    /// The equity_token_address is validated as a real Fungible Asset Metadata object
-    /// via `object::address_to_object<Metadata>` — this aborts if the address is not
-    /// a valid FA metadata object, preventing registration with fake token addresses.
-    ///
-    /// Parameters:
-    /// - app_admin: Administrator signer (the caller becomes the admin)
-    /// - app_address: Contract deployment address (the on-chain entry module address)
-    /// - equity_token_address: Equity token address; must be a valid FA Metadata object
-    /// - custody_address: Custody address holding equity tokens pending distribution
-    /// - metadata_uri: Application's official website or authoritative information link
+    /// 参数：
+    /// - app_admin：管理员签名，调用者成为应用管理员。
+    /// - app_address：应用合约部署地址，即链上入口模块所在地址。
+    /// - equity_token_address：股权代币的 FA Metadata 对象地址。
+    /// - custody_address：持有待分配股权代币的托管地址。
+    /// - metadata_uri：应用官网或权威信息链接。
     public entry fun register_app(
         app_admin: &signer,
         app_address: address,
@@ -326,13 +315,8 @@ module topo_framework::poc_registry {
 
     // ========== Update Entry Points ==========
 
-    /// Update the contract deployment address.
-    ///
-    /// Use case: after a contract upgrade or redeployment, bind the new deployment address
-    /// to the same admin. The new address must be globally unique.
-    /// Idempotent: if the new address equals the current address, returns immediately.
-    ///
-    /// This does NOT reset poc_listing_status — only equity token changes trigger a reset.
+    /// 应用管理员可在升级或重新部署后更新合约地址，新地址不能被其他应用用作合约地址。
+    /// 更新不改变 PoC 准入状态（poc_listing_status）；地址未变时直接返回且不发事件。
     public entry fun update_app_address(
         app_admin: &signer,
         new_app_address: address,
@@ -367,20 +351,9 @@ module topo_framework::poc_registry {
         });
     }
 
-    /// Update the equity token address.
-    ///
-    /// The new address must be a valid FA Metadata object and globally unique.
-    ///
-    /// IMPORTANT SECURITY INVARIANT: Changing the equity token address automatically resets
-    /// poc_listing_status to REGISTERED, requiring platform re-review before the app can
-    /// regain WHITELISTED status. This is intentional:
-    /// - The equity token is the core asset identifier for the application.
-    /// - Previous platform audits were conducted against the old token; a new token means
-    ///   the audit assumptions may no longer hold (different supply, different transfer hooks, etc.).
-    /// - Requiring re-review prevents an app from swapping to a malicious token while retaining
-    ///   its trusted whitelist status.
-    ///
-    /// Idempotent: if the new address equals the current address, returns immediately.
+    /// 应用管理员更新股权代币；新地址须为有效 FA Metadata 对象，且不能与其他应用的股权代币地址重复。
+    /// 更换资产后需重新审核，因此 PoC 准入状态重置为 REGISTERED，审核通过后可恢复 WHITELISTED。
+    /// 地址未变时直接返回，保留原状态且不发事件。
     public entry fun update_equity_token_address(
         app_admin: &signer,
         new_equity_token_address: address,
@@ -418,13 +391,9 @@ module topo_framework::poc_registry {
         reset_poc_listing_status_if_needed(info, app_admin_address);
     }
 
-    /// Update the custody address.
-    ///
-    /// The new address must be globally unique across all registered applications.
-    /// The custody address is the signer that authorizes token transfers during trusted
-    /// contribution events. Changing it does NOT reset poc_listing_status.
-    ///
-    /// Idempotent: if the new address equals the current address, returns immediately.
+    /// 应用管理员更新托管地址，新地址不能被其他应用用作托管地址。
+    /// 发放可信贡献时，由该地址签名授权代币转出；更新不改变 PoC 准入状态（poc_listing_status）。
+    /// 地址未变时直接返回，重复调用不发事件。
     public entry fun update_custody_address(
         app_admin: &signer,
         new_custody_address: address,
@@ -461,18 +430,14 @@ module topo_framework::poc_registry {
 
     // ========== App Self-Managed State (called by app_admin) ==========
 
-    /// Pause the application. The admin voluntarily suspends operations (e.g., emergency response).
-    ///
-    /// While paused, trusted contribution events cannot be emitted via `poc_contribution`.
-    /// The application can be resumed via `resume_app` as long as it has not been permanently stopped.
+    /// 应用管理员将运行状态设为 PAUSED，暂停通过 poc_contribution 发出可信贡献事件。
+    /// 可调用 resume_app 恢复为 ACTIVE；已经暂停时重复调用不发事件。
     public entry fun pause_app(app_admin: &signer) {
         update_app_state(signer::address_of(app_admin), APP_STATE_PAUSED);
     }
 
-    /// Resume the application from PAUSED state back to ACTIVE.
-    ///
-    /// Aborts if the application is in STOPPED state — permanent stops cannot be reversed.
-    /// This guard prevents accidental resurrection of a stopped application.
+    /// 应用管理员将 PAUSED 恢复为 ACTIVE；当前为 STOPPED 时直接恢复会中止。
+    /// 已经处于 ACTIVE 时重复调用不发事件。
     public entry fun resume_app(app_admin: &signer) {
         let app_admin_address = signer::address_of(app_admin);
         assert!(
@@ -482,23 +447,17 @@ module topo_framework::poc_registry {
         update_app_state(app_admin_address, APP_STATE_ACTIVE);
     }
 
-    /// Permanently stop the application. This operation is irreversible.
-    ///
-    /// Once stopped, the application cannot be restored to ACTIVE or PAUSED state.
-    /// Use this only when the application is being permanently decommissioned.
+    /// 应用管理员将运行状态设为 STOPPED，此时不能发出可信贡献事件。
+    /// resume_app 拒绝直接恢复此状态；重复停止不发事件。
     public entry fun stop_app(app_admin: &signer) {
         update_app_state(signer::address_of(app_admin), APP_STATE_STOPPED);
     }
 
     // ========== Platform POC Inclusion Status Management (controlled by @topo_framework / DAO governance) ==========
 
-    /// Set the POC inclusion status for an application.
-    ///
-    /// Only callable by @topo_framework (currently centralized governance; can be migrated to DAO later).
-    /// Valid values: REGISTERED / WHITELISTED / SUSPENDED.
-    ///
-    /// This is the master setter; `whitelist_app_for_poc` and `suspend_poc_listing` are
-    /// convenience wrappers around this function.
+    /// 仅 @topo_framework 可设置应用的 PoC 贡献准入状态。
+    /// new_poc_listing_status 取 REGISTERED（1）、WHITELISTED（2）或 SUSPENDED（3）。
+    /// 白名单和暂停入口共用此设置逻辑；状态未变时直接返回且不发事件。
     public entry fun set_poc_listing_status(
         topo_framework: &signer,
         app_admin: address,
@@ -509,11 +468,8 @@ module topo_framework::poc_registry {
         update_poc_listing_status(app_admin, new_poc_listing_status);
     }
 
-    /// Suspend an application's POC inclusion (e.g., suspected fraud, under investigation).
-    ///
-    /// While suspended, the application's contribution events are NOT counted toward POC power.
-    /// The suspension can be lifted by calling `whitelist_app_for_poc` after investigation.
-    /// Only callable by @topo_framework.
+    /// 仅 @topo_framework 可将应用的贡献准入状态设为 SUSPENDED，暂停其发出可信贡献事件的资格。
+    /// 重新审核后可用 whitelist_app_for_poc 恢复准入；重复暂停不发事件。
     public entry fun suspend_poc_listing(
         topo_framework: &signer,
         app_admin: address,
@@ -521,11 +477,9 @@ module topo_framework::poc_registry {
         set_poc_listing_status(topo_framework, app_admin, POC_LISTING_STATUS_SUSPENDED);
     }
 
-    /// Add an application to the POC whitelist (WHITELISTED / active state).
-    ///
-    /// After whitelisting, contribution events emitted by this application are scanned
-    /// by off-chain indexers and counted toward POC power, which can participate in governance voting.
-    /// Only callable by @topo_framework.
+    /// 仅 @topo_framework 可将应用加入 PoC 贡献白名单（WHITELISTED）。
+    /// 应用还须处于 ACTIVE 才能发出可信贡献事件；此入口不改变应用运行状态。
+    /// 贡献白名单与验证者池准入分别管理，治理投票仍按原生代币计权；重复调用不发事件。
     public entry fun whitelist_app_for_poc(
         topo_framework: &signer,
         app_admin: address,
@@ -533,11 +487,8 @@ module topo_framework::poc_registry {
         set_poc_listing_status(topo_framework, app_admin, POC_LISTING_STATUS_WHITELISTED);
     }
 
-    /// Set the effective weight for an application (in per-basis-points, 0–10000).
-    ///
-    /// Only callable by @topo_framework (DAO governance).
-    /// 10000 means 100% weight (full contribution counted); 5000 means 50%, etc.
-    /// Idempotent: if the new value equals the current value, returns without emitting an event.
+    /// 仅 @topo_framework 可设置应用贡献的有效权重，单位为万分比，范围为 0–10000。
+    /// 10000 表示计入 100% 贡献，5000 表示 50%；数值未变时直接返回且不发事件。
     public entry fun set_effective_weight_pbs(
         topo_framework: &signer,
         app_admin: address,

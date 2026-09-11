@@ -10,6 +10,7 @@ module topo_framework::jwk_consensus_config {
     use topo_std::simple_map;
     use topo_framework::config_buffer;
     use topo_framework::system_addresses;
+    use topo_framework::reconfiguration_state;
     #[test_only]
     use std::string::utf8;
 
@@ -42,6 +43,7 @@ module topo_framework::jwk_consensus_config {
 
     /// Initialize the configuration. Used in genesis or governance.
     public fun initialize(framework: &signer, config: JWKConsensusConfig) {
+        reconfiguration_state::assert_not_in_progress();
         system_addresses::assert_topo_framework(framework);
         if (!exists<JWKConsensusConfig>(@topo_framework)) {
             move_to(framework, config);

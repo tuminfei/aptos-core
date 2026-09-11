@@ -32,7 +32,19 @@ spec topo_framework::reconfiguration_state {
         exists<State>(@topo_framework) && spec_state_is_active(global<State>(@topo_framework))
     }
 
-    spec fun spec_state_is_active(s: State): bool;
+    spec assert_not_in_progress {
+        aborts_if spec_is_in_progress();
+    }
+
+    spec fun spec_state_is_active(s: State): bool {
+        copyable_any::type_name(s.variant).bytes == b"0x1::reconfiguration_state::StateActive"
+    }
+
+    spec fun spec_active_state_is_valid(): bool {
+        exists<State>(@topo_framework)
+            && topo_std::type_info::type_name<StateActive>() == global<State>(@topo_framework).variant.type_name
+            && topo_std::from_bcs::deserializable<StateActive>(global<State>(@topo_framework).variant.data)
+    }
 
     spec State {
         use topo_std::from_bcs;
@@ -53,6 +65,7 @@ spec topo_framework::reconfiguration_state {
         use topo_std::from_bcs;
         use topo_std::type_info;
         use std::bcs;
+        modifies global<State>(@topo_framework);
         aborts_if false;
         requires exists<timestamp::CurrentTimeMicroseconds>(@topo_framework);
         let state = Any {
@@ -74,6 +87,12 @@ spec topo_framework::reconfiguration_state {
 
     spec start_time_secs(): u64 {
         include StartTimeSecsAbortsIf;
+    }
+
+    spec on_reconfig_finish {
+        modifies global<State>(@topo_framework);
+        aborts_if exists<State>(@topo_framework) && !spec_is_in_progress();
+        ensures !spec_is_in_progress();
     }
 
     spec fun spec_start_time_secs(): u64 {

@@ -15,6 +15,7 @@ spec topo_framework::randomness_api_v0_config {
     }
 
     spec set_for_next_epoch(framework: &signer, gas_amount: Option<u64>) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         include config_buffer::SetForNextEpoch<RequiredGasDeposit> {
             new_config: RequiredGasDeposit { gas_amount }
@@ -22,6 +23,7 @@ spec topo_framework::randomness_api_v0_config {
     }
 
     spec set_allow_max_gas_flag_for_next_epoch(framework: &signer, value: bool) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         include config_buffer::SetForNextEpoch<AllowCustomMaxGasFlag> {
             new_config: AllowCustomMaxGasFlag { value }
@@ -30,7 +32,17 @@ spec topo_framework::randomness_api_v0_config {
 
     spec on_new_epoch(framework: &signer) {
         pragma opaque;
-        include config_buffer::OnNewEpochApply<RequiredGasDeposit>;
-        include config_buffer::OnNewEpochApply<AllowCustomMaxGasFlag>;
+        aborts_if reconfiguration_state::spec_is_in_progress();
+        include !reconfiguration_state::spec_is_in_progress() ==>
+            config_buffer::OnNewEpochApplyPair<RequiredGasDeposit, AllowCustomMaxGasFlag>;
+    }
+
+    spec on_new_epoch_for_reconfiguration(framework: &signer) {
+        pragma opaque;
+        include config_buffer::OnNewEpochApplyPair<RequiredGasDeposit, AllowCustomMaxGasFlag>;
+    }
+
+    spec apply_pending_config(framework: &signer) {
+        include config_buffer::OnNewEpochApplyPair<RequiredGasDeposit, AllowCustomMaxGasFlag>;
     }
 }

@@ -1,10 +1,12 @@
 spec topo_framework::randomness_config {
     spec initialize(framework: &signer, config: RandomnessConfig) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         include config_buffer::InitializeResource<RandomnessConfig>;
     }
 
     spec set_for_next_epoch(framework: &signer, new_config: RandomnessConfig) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         include config_buffer::SetForNextEpoch<RandomnessConfig>;
     }

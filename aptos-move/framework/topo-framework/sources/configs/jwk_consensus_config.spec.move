@@ -1,10 +1,12 @@
 spec topo_framework::jwk_consensus_config {
     spec initialize(framework: &signer, config: JWKConsensusConfig) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         include config_buffer::InitializeResource<JWKConsensusConfig>;
     }
 
     spec set_for_next_epoch(framework: &signer, config: JWKConsensusConfig) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         include config_buffer::SetForNextEpoch<JWKConsensusConfig> { new_config: config };
     }

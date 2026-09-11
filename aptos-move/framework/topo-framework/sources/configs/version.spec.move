@@ -61,6 +61,7 @@ spec topo_framework::version {
     }
 
     spec set_for_next_epoch(account: &signer, major: u64) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         modifies global<config_buffer::PendingConfigs>(@topo_framework);
         aborts_if !exists<SetVersionCapability>(signer::address_of(account));

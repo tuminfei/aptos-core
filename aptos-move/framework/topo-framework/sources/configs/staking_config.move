@@ -4,6 +4,8 @@ module topo_framework::staking_config {
     use std::features;
 
     use topo_framework::system_addresses;
+    use topo_framework::reconfiguration_state;
+    use topo_framework::poc_accounting;
     use topo_framework::timestamp;
 
     use topo_std::fixed_point64::{Self, FixedPoint64};
@@ -34,6 +36,8 @@ module topo_framework::staking_config {
     const EDEPRECATED_FUNCTION: u64 = 10;
     /// The function is disabled or hasn't been enabled.
     const EDISABLED_FUNCTION: u64 = 11;
+    /// 即使换届延迟完成，续期后的锁仓时间也必须在 u64 范围内。
+    const ELOCKUP_DURATION_OUT_OF_RANGE: u64 = 12;
 
     /// Limit the maximum value of `rewards_rate` in order to avoid any arithmetic overflow.
     const MAX_REWARDS_RATE: u64 = 1000000;
@@ -161,7 +165,9 @@ module topo_framework::staking_config {
         last_rewards_rate_period_start_in_secs: u64,
         rewards_rate_decrease_rate: FixedPoint64,
     ) {
+        reconfiguration_state::assert_not_in_progress();
         system_addresses::assert_topo_framework(topo_framework);
+        poc_accounting::validate_fixed_reward_rate(fixed_point64::get_raw_value(rewards_rate));
 
         validate_rewards_config(
             rewards_rate,
@@ -185,6 +191,29 @@ module topo_framework::staking_config {
 
     public fun get(): StakingConfig acquires StakingConfig {
         *borrow_global<StakingConfig>(@topo_framework)
+    }
+
+    /// 待生效功能开关可能在提交时切换奖励率来源。
+    /// 冻结前校验两份奖励配置和锁仓时长，避免提交时才发现无法安装目标。
+    public fun validate_poc_configuration() acquires StakingConfig, StakingRewardsConfig {
+        if (!poc_accounting::is_prepared()) return;
+        let config = borrow_global<StakingConfig>(@topo_framework);
+        validate_poc_lockup_duration(config.recurring_lockup_duration_secs);
+        poc_accounting::validate_reward_rate(config.rewards_rate, config.rewards_rate_denominator);
+        assert!(exists<StakingRewardsConfig>(@topo_framework), error::invalid_state(EDISABLED_FUNCTION));
+        poc_accounting::validate_fixed_reward_rate(fixed_point64::get_raw_value(
+            borrow_global<StakingRewardsConfig>(@topo_framework).rewards_rate,
+        ));
+    }
+
+    /// 校验以秒计量的续期时长，确保 DKG 延迟完成后时间相加仍不会溢出。
+    fun validate_poc_lockup_duration(duration: u64) {
+        if (poc_accounting::is_prepared()) {
+            // 链上时间戳以 u64 微秒存储。按其最大秒数预留续期空间，
+            // 确保 DKG 在计划截止时间之后完成时，锁仓时间也不会溢出。
+            assert!((duration as u256) + ((MAX_U64 / 1_000_000) as u256) <= (MAX_U64 as u256),
+                error::out_of_range(ELOCKUP_DURATION_OUT_OF_RANGE));
+        }
     }
 
     /// Return whether validator set changes are allowed
@@ -271,6 +300,7 @@ module topo_framework::staking_config {
         minimum_stake: u64,
         maximum_stake: u64,
     ) acquires StakingConfig {
+        reconfiguration_state::assert_not_in_progress();
         system_addresses::assert_topo_framework(topo_framework);
         validate_required_stake(minimum_stake, maximum_stake);
 
@@ -285,6 +315,8 @@ module topo_framework::staking_config {
         topo_framework: &signer,
         new_recurring_lockup_duration_secs: u64,
     ) acquires StakingConfig {
+        reconfiguration_state::assert_not_in_progress();
+        validate_poc_lockup_duration(new_recurring_lockup_duration_secs);
         assert!(new_recurring_lockup_duration_secs > 0, error::invalid_argument(EZERO_LOCKUP_DURATION));
         system_addresses::assert_topo_framework(topo_framework);
 
@@ -300,6 +332,8 @@ module topo_framework::staking_config {
         new_rewards_rate: u64,
         new_rewards_rate_denominator: u64,
     ) acquires StakingConfig {
+        reconfiguration_state::assert_not_in_progress();
+        poc_accounting::validate_reward_rate(new_rewards_rate, new_rewards_rate_denominator);
         assert!(!features::periodical_reward_rate_decrease_enabled(), error::invalid_state(EDEPRECATED_FUNCTION));
         system_addresses::assert_topo_framework(topo_framework);
         assert!(
@@ -326,6 +360,8 @@ module topo_framework::staking_config {
         rewards_rate_period_in_secs: u64,
         rewards_rate_decrease_rate: FixedPoint64,
     ) acquires StakingRewardsConfig {
+        reconfiguration_state::assert_not_in_progress();
+        poc_accounting::validate_fixed_reward_rate(fixed_point64::get_raw_value(rewards_rate));
         system_addresses::assert_topo_framework(topo_framework);
 
         validate_rewards_config(
@@ -354,10 +390,16 @@ module topo_framework::staking_config {
         topo_framework: &signer,
         new_voting_power_increase_limit: u64,
     ) acquires StakingConfig {
+        reconfiguration_state::assert_not_in_progress();
         system_addresses::assert_topo_framework(topo_framework);
         assert!(
             new_voting_power_increase_limit > 0 && new_voting_power_increase_limit <= 50,
             error::invalid_argument(EINVALID_VOTING_POWER_INCREASE_LIMIT),
+        );
+        // 用当前和待生效的 PoC 参数共同校验增长比例，为最低人数下的单个替补保留必要预算。
+        poc_accounting::validate_native_config(
+            new_voting_power_increase_limit,
+            borrow_global<StakingConfig>(@topo_framework).allow_validator_set_change,
         );
 
         let staking_config = borrow_global_mut<StakingConfig>(@topo_framework);

@@ -1,0 +1,23 @@
+{
+  "params": {
+    "bond_octa_per_ohmp": 100000000,
+    "min_power": 10,
+    "max_power": 1000,
+    "min_validators": 4
+  },
+  "limits": {
+    "max_allocations": 4,
+    "max_claim_pools": 4,
+    "max_upload_users": 4,
+    "validator_limit": 5,
+    "max_reward_base_octa": 1000,
+    "rate_max_num": 1,
+    "rate_max_den": 1,
+    "fee_max": 10,
+    "reward_epoch_limit": 1000
+  },
+  "deployment_mode": "Open",
+  "retention_bps": 10000,
+  "max_relative_period": 20,
+  "initial_raw_power": 17
+}

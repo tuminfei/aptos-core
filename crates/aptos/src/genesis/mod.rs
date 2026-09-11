@@ -264,6 +264,8 @@ pub fn fetch_mainnet_genesis_info(git_options: GitOptions) -> CliTypedResult<Mai
             initial_jwks: vec![],
             keyless_groth16_vk: None,
             initialize_decryption_at_genesis: true,
+            // 标准主网创世流程保持原生模式；直接启用 PoC 须使用接受完整 PoC 清单的入口。
+            poc_genesis_config: None,
         },
     )?)
 }
@@ -311,6 +313,8 @@ pub fn fetch_genesis_info(git_options: GitOptions) -> CliTypedResult<GenesisInfo
             initial_jwks: layout.initial_jwks.clone(),
             keyless_groth16_vk: layout.keyless_groth16_vk_override.clone(),
             initialize_decryption_at_genesis: true,
+            // 现有创世配置不包含 PoC 清单，不能从其他字段推断 PoC 启用参数。
+            poc_genesis_config: None,
         },
     )?)
 }

@@ -27,6 +27,7 @@ spec topo_framework::execution_config {
     }
 
     spec set_for_next_epoch(account: &signer, config: vector<u8>) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         modifies global<config_buffer::PendingConfigs>(@topo_framework);
         include config_buffer::SetForNextEpochAbortsIf;

@@ -4,6 +4,7 @@
 #![forbid(unsafe_code)]
 
 mod genesis_context;
+pub mod poc;
 
 use crate::genesis_context::GenesisStateView;
 use aptos_crypto::{
@@ -287,6 +288,32 @@ pub fn encode_genesis_change_set(
     execution_config: &OnChainExecutionConfig,
     gas_schedule: &GasScheduleV2,
 ) -> ChangeSet {
+    encode_genesis_change_set_internal(
+        core_resources_key,
+        validators,
+        framework,
+        chain_id,
+        genesis_config,
+        consensus_config,
+        execution_config,
+        gas_schedule,
+        None,
+    )
+}
+
+/// 执行共用的创世初始化流程；传入 PoC 清单时改用 PoC 验证者创建入口。
+/// 两个分支共用后续初始 Epoch 事件和创世结束步骤，避免重复安装。
+fn encode_genesis_change_set_internal(
+    core_resources_key: &Ed25519PublicKey,
+    validators: &[Validator],
+    framework: &ReleaseBundle,
+    chain_id: ChainId,
+    genesis_config: &GenesisConfiguration,
+    consensus_config: &OnChainConsensusConfig,
+    execution_config: &OnChainExecutionConfig,
+    gas_schedule: &GasScheduleV2,
+    poc_config: Option<&poc::PocGenesisConfiguration>,
+) -> ChangeSet {
     validate_genesis_config(genesis_config);
 
     let mut state_view = GenesisStateView::new();
@@ -377,12 +404,23 @@ pub fn encode_genesis_change_set(
         genesis_config,
     );
     initialize_account_abstraction(&mut session, &module_storage, &mut traversal_context);
-    create_and_initialize_validators(
-        &mut session,
-        &module_storage,
-        &mut traversal_context,
-        validators,
-    );
+    // 调用者提供 PoC 清单时才直接安装 PoC；默认构建流程继续使用原生委员会。
+    if let Some(poc_config) = poc_config {
+        poc::create_and_initialize_validators(
+            &mut session,
+            &module_storage,
+            &mut traversal_context,
+            validators,
+            poc_config,
+        );
+    } else {
+        create_and_initialize_validators(
+            &mut session,
+            &module_storage,
+            &mut traversal_context,
+            validators,
+        );
+    }
     if genesis_config.is_test {
         allow_core_resources_to_set_version(&mut session, &module_storage, &mut traversal_context);
     }
@@ -1492,34 +1530,39 @@ pub fn generate_test_genesis(
         validators,
         framework,
         ChainId::test(),
-        &GenesisConfiguration {
-            allow_new_validators: true,
-            epoch_duration_secs: 3600,
-            is_test: true,
-            min_stake: 0,
-            min_voting_threshold: 0,
-            // 1M APTOS coins (with 8 decimals).
-            max_stake: 100_000_000_000_000,
-            recurring_lockup_duration_secs: 7200,
-            required_proposer_stake: 0,
-            rewards_apy_percentage: 10,
-            voting_duration_secs: 3600,
-            voting_power_increase_limit: 50,
-            employee_vesting_start: 1663456089,
-            employee_vesting_period_duration: 5 * 60, // 5 minutes
-            initial_features_override: None,
-            randomness_config_override: None,
-            chunky_dkg_config_override: None,
-            jwk_consensus_config_override: None,
-            initial_jwks: vec![],
-            keyless_groth16_vk: None,
-            initialize_decryption_at_genesis: true,
-        },
+        &test_genesis_config(),
         &OnChainConsensusConfig::default_for_genesis(),
         &OnChainExecutionConfig::default_for_genesis(),
         &default_gas_schedule(),
     );
     (genesis, test_validators)
+}
+
+/// 原生测试创世与 PoC 测试网验收共用的 TOPO 参数，保持原有取值。
+fn test_genesis_config() -> GenesisConfiguration {
+    GenesisConfiguration {
+        allow_new_validators: true,
+        epoch_duration_secs: 3600,
+        is_test: true,
+        min_stake: 0,
+        min_voting_threshold: 0,
+        // 1M APTOS coins (with 8 decimals).
+        max_stake: 100_000_000_000_000,
+        recurring_lockup_duration_secs: 7200,
+        required_proposer_stake: 0,
+        rewards_apy_percentage: 10,
+        voting_duration_secs: 3600,
+        voting_power_increase_limit: 50,
+        employee_vesting_start: 1663456089,
+        employee_vesting_period_duration: 5 * 60, // 5 minutes
+        initial_features_override: None,
+        randomness_config_override: None,
+        chunky_dkg_config_override: None,
+        jwk_consensus_config_override: None,
+        initial_jwks: vec![],
+        keyless_groth16_vk: None,
+        initialize_decryption_at_genesis: true,
+    }
 }
 
 pub fn generate_mainnet_genesis(

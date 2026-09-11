@@ -523,8 +523,11 @@ spec topo_framework::staking_contract {
 
     spec schema IncreaseLockupWithCapAbortsIf {
         use topo_framework::timestamp;
+        use topo_framework::reconfiguration_state;
         staker: address;
         operator: address;
+        // 能力入口在冻结期间禁止延长锁仓，质押合约调用也不能绕过此限制。
+        aborts_if reconfiguration_state::spec_is_in_progress();
 
         let store = global<Store>(staker);
         let staking_contract = simple_map::spec_get(store.staking_contracts, operator);

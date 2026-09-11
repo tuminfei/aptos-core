@@ -74,6 +74,8 @@ spec topo_framework::gas_schedule {
         use topo_framework::coin::CoinInfo;
         use topo_framework::topo_coin::TopoCoin;
         use topo_framework::staking_config;
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
+        aborts_if poc_accounting::is_prepared();
 
         pragma verify_duration_estimate = 600;
         requires exists<CoinInfo<TopoCoin>>(@topo_framework);
@@ -85,6 +87,7 @@ spec topo_framework::gas_schedule {
 
     spec set_for_next_epoch(topo_framework: &signer, gas_schedule_blob: vector<u8>) {
         use topo_framework::util;
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
 
         include system_addresses::AbortsIfNotTopoFramework{ account: topo_framework };
         include config_buffer::SetForNextEpochAbortsIf {
@@ -101,6 +104,7 @@ spec topo_framework::gas_schedule {
         use std::bcs;
         use std::features;
         use topo_framework::util;
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
 
         include system_addresses::AbortsIfNotTopoFramework{ account: topo_framework };
         include config_buffer::SetForNextEpochAbortsIf {
@@ -118,12 +122,8 @@ spec topo_framework::gas_schedule {
         include config_buffer::OnNewEpochApply<GasScheduleV2>;
     }
 
-    spec set_storage_gas_config(topo_framework: &signer, config: storage_gas::StorageGasConfig) {
-        include system_addresses::AbortsIfNotTopoFramework{ account: topo_framework };
-        aborts_if !exists<storage_gas::StorageGasConfig>(@topo_framework);
-    }
-
     spec set_storage_gas_config_for_next_epoch(topo_framework: &signer, config: storage_gas::StorageGasConfig) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         include system_addresses::AbortsIfNotTopoFramework{ account: topo_framework };
         aborts_if !exists<storage_gas::StorageGasConfig>(@topo_framework);
     }

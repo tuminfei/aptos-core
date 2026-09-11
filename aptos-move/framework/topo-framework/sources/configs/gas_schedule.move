@@ -9,6 +9,7 @@ module topo_framework::gas_schedule {
     use topo_framework::config_buffer;
 
     use topo_framework::reconfiguration;
+    use topo_framework::poc_accounting;
     use topo_framework::system_addresses;
     use topo_framework::util::from_bytes;
     use topo_framework::storage_gas::StorageGasConfig;
@@ -23,6 +24,7 @@ module topo_framework::gas_schedule {
     const EINVALID_GAS_SCHEDULE: u64 = 1;
     const EINVALID_GAS_FEATURE_VERSION: u64 = 2;
     const EINVALID_GAS_SCHEDULE_HASH: u64 = 3;
+    const EPOC_REQUIRES_GOVERNANCE_TRANSITION: u64 = 4;
 
     struct GasEntry has store, copy, drop {
         key: String,
@@ -143,7 +145,10 @@ module topo_framework::gas_schedule {
         }
     }
 
+    /// PoC 准备后，在同一事务中先调用 set_storage_gas_config_for_next_epoch，
+    /// 再调用 topo_governance::reconfigure，确保完整安装冻结的配置。
     public fun set_storage_gas_config(topo_framework: &signer, config: StorageGasConfig) {
+        assert!(!poc_accounting::is_prepared(), error::invalid_state(EPOC_REQUIRES_GOVERNANCE_TRANSITION));
         storage_gas::set_config(topo_framework, config);
         // Need to trigger reconfiguration so the VM is guaranteed to load the new gas fee starting from the next
         // transaction.

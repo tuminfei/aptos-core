@@ -149,6 +149,7 @@
 module topo_framework::storage_gas {
 
     use topo_framework::system_addresses;
+    use topo_framework::reconfiguration_state;
     use std::error;
     use topo_framework::state_storage;
     #[test_only]
@@ -362,6 +363,7 @@ module topo_framework::storage_gas {
     }
 
     public(friend) fun set_config(topo_framework: &signer, config: StorageGasConfig) acquires StorageGasConfig {
+        reconfiguration_state::assert_not_in_progress();
         system_addresses::assert_topo_framework(topo_framework);
         *borrow_global_mut<StorageGasConfig>(@topo_framework) = config;
     }

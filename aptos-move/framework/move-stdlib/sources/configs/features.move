@@ -1000,6 +1000,8 @@ module std::features {
 
     /// The provided signer has not a framework address.
     const EFRAMEWORK_SIGNER_NEEDED: u64 = 1;
+    const ERECONFIGURATION_IN_PROGRESS: u64 = 4;
+    const ERECONFIGURATION_NOT_IN_PROGRESS: u64 = 5;
 
     /// The enabled features, represented by a bitset stored on chain.
     struct Features has key {
@@ -1010,6 +1012,31 @@ module std::features {
     /// On epoch change, the updates take effect and this buffer is cleared.
     struct PendingFeatures has key {
         features: vector<u8>
+    }
+
+    /// 与框架的冻结换届计划成对存在，避免标准库反向依赖框架模块。
+    struct PendingFeatureFreeze has key {}
+
+    /// 安装功能开关所需的唯一令牌，不可复制或丢弃，由换届计划持有并在提交结束时消耗。
+    struct FeatureFreezeToken has store {}
+
+    /// 查询功能配置是否已随换届计划冻结，不修改任何配置。
+    public fun is_reconfiguration_frozen(): bool {
+        exists<PendingFeatureFreeze>(@std)
+    }
+
+    /// 冻结待生效开关并签发唯一令牌；只有框架 signer 能启动，禁止重复冻结。
+    public fun begin_reconfiguration_freeze(framework: &signer): FeatureFreezeToken {
+        ensure_framework_signer(framework);
+        assert!(!is_reconfiguration_frozen(), error::invalid_state(ERECONFIGURATION_IN_PROGRESS));
+        move_to(framework, PendingFeatureFreeze {});
+        FeatureFreezeToken {}
+    }
+
+    /// 消耗计划持有的令牌并删除冻结标记；仅持有 signer 无法提前解除冻结。
+    public fun end_reconfiguration_freeze(token: FeatureFreezeToken) acquires PendingFeatureFreeze {
+        let FeatureFreezeToken {} = token;
+        let PendingFeatureFreeze {} = move_from<PendingFeatureFreeze>(@std);
     }
 
     /// Deprecated to prevent validator set changes during DKG.
@@ -1047,6 +1074,7 @@ module std::features {
     public fun change_feature_flags_for_next_epoch(
         framework: &signer, enable: vector<u64>, disable: vector<u64>
     ) acquires PendingFeatures, Features {
+        assert!(!is_reconfiguration_frozen(), error::invalid_state(ERECONFIGURATION_IN_PROGRESS));
         assert!(
             signer::address_of(framework) == @std,
             error::permission_denied(EFRAMEWORK_SIGNER_NEEDED)
@@ -1071,11 +1099,22 @@ module std::features {
         move_to(framework, PendingFeatures { features: new_feature_vec });
     }
 
-    /// Apply all the pending feature flag changes. Should only be used at the end of a reconfiguration with DKG.
-    ///
-    /// While the scope is public, it can only be usd in system transactions like `block_prologue` and governance proposals,
-    /// who have permission to set the flag that's checked in `extract()`.
+    /// 允许框架 signer 在未冻结时安装待生效开关；冻结期间须改用持有计划令牌的专用入口。
     public fun on_new_epoch(framework: &signer) acquires Features, PendingFeatures {
+        assert!(!is_reconfiguration_frozen(), error::invalid_state(ERECONFIGURATION_IN_PROGRESS));
+        apply_pending_features(framework);
+    }
+
+    /// 已校验的换届计划凭令牌安装开关，安装期间仍保持全局冻结。
+    public fun on_new_epoch_with_freeze_token(
+        framework: &signer, _token: &FeatureFreezeToken
+    ) acquires Features, PendingFeatures {
+        assert!(is_reconfiguration_frozen(), error::invalid_state(ERECONFIGURATION_NOT_IN_PROGRESS));
+        apply_pending_features(framework);
+    }
+
+    /// 两种安装入口共用写入逻辑；调用者先完成各自的冻结权限检查。
+    fun apply_pending_features(framework: &signer) acquires Features, PendingFeatures {
         ensure_framework_signer(framework);
         if (exists<PendingFeatures>(@std)) {
             let PendingFeatures { features } = move_from<PendingFeatures>(@std);
@@ -1157,6 +1196,37 @@ module std::features {
         assert!(!contains(&features, 5), 1);
         assert!(!contains(&features, 17), 2);
         assert!(contains(&features, 23), 3);
+    }
+
+    #[test(framework = @std)]
+    fun poc_feature_freeze_commit(framework: signer) {
+        change_feature_flags_internal(&framework, vector[], vector[1]);
+        change_feature_flags_for_next_epoch(&framework, vector[1], vector[]);
+        let token = begin_reconfiguration_freeze(&framework);
+        assert!(!is_enabled(1), 0);
+        on_new_epoch_with_freeze_token(&framework, &token);
+        assert!(is_enabled(1), 0);
+        end_reconfiguration_freeze(token);
+        change_feature_flags_for_next_epoch(&framework, vector[], vector[1]);
+        on_new_epoch(&framework);
+        assert!(!is_enabled(1), 0);
+    }
+
+    #[test(framework = @std)]
+    #[expected_failure(abort_code = 0x30004, location = Self)]
+    fun poc_feature_freeze_rejects_set(framework: signer) {
+        let token = begin_reconfiguration_freeze(&framework);
+        change_feature_flags_for_next_epoch(&framework, vector[1], vector[]);
+        end_reconfiguration_freeze(token);
+    }
+
+    #[test(framework = @std)]
+    #[expected_failure(abort_code = 0x30004, location = Self)]
+    fun poc_feature_freeze_rejects_public_install(framework: signer) {
+        change_feature_flags_for_next_epoch(&framework, vector[1], vector[]);
+        let token = begin_reconfiguration_freeze(&framework);
+        on_new_epoch(&framework);
+        end_reconfiguration_freeze(token);
     }
 
     #[test(fx = @std)]

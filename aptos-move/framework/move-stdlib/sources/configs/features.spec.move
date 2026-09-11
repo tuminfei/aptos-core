@@ -32,6 +32,7 @@ spec std::features {
 
     spec change_feature_flags_for_next_epoch(framework: &signer, enable: vector<u64>, disable: vector<u64>) {
         aborts_if signer::address_of(framework) != @std;
+        aborts_if exists<PendingFeatureFreeze>(@std);
         // TODO(tengzhang): add functional spec
         // TODO(#12526): undo declaring opaque once fixed
         pragma opaque;
@@ -133,7 +134,25 @@ spec std::features {
         let features_pending = global<PendingFeatures>(@std).features;
         let post features_std = global<Features>(@std).features;
         ensures exists<PendingFeatures>(@std) ==> features_std == features_pending;
+        aborts_if exists<PendingFeatureFreeze>(@std);
+    }
+
+    spec is_reconfiguration_frozen {
         aborts_if false;
+        ensures result == exists<PendingFeatureFreeze>(@std);
+    }
+
+    spec begin_reconfiguration_freeze {
+        modifies global<PendingFeatureFreeze>(@std);
+        aborts_if signer::address_of(framework) != @std;
+        aborts_if exists<PendingFeatureFreeze>(@std);
+        ensures exists<PendingFeatureFreeze>(@std);
+    }
+
+    spec end_reconfiguration_freeze {
+        modifies global<PendingFeatureFreeze>(@std);
+        aborts_if !exists<PendingFeatureFreeze>(@std);
+        ensures !exists<PendingFeatureFreeze>(@std);
     }
 
     spec fun spec_sha_512_and_ripemd_160_enabled(): bool {

@@ -131,6 +131,11 @@ module topo_framework::chunky_dkg {
         }
     }
 
+    /// 只读返回会话目标，确保 Chunky DKG 结果与冻结计划及普通 DKG 使用同一委员会。
+    public fun session_target_validators(session: &ChunkyDKGSessionState): vector<ValidatorConsensusInfo> {
+        session.metadata.target_validator_set
+    }
+
     /// Return the dealer epoch of a `ChunkyDKGSessionState`.
     public fun session_dealer_epoch(session: &ChunkyDKGSessionState): u64 {
         session.metadata.dealer_epoch

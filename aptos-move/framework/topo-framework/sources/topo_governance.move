@@ -652,11 +652,12 @@ module topo_framework::topo_governance {
     /// since such updates are applied whenever we enter an new epoch.
     public entry fun reconfigure(topo_framework: &signer) {
         system_addresses::assert_topo_framework(topo_framework);
+        // 治理要求启动换届时，目标不合格就中止事务，同时回滚该事务内的配置修改。
         if (consensus_config::validator_txn_enabled() && randomness_config::enabled()) {
             if (chunky_dkg_config::enabled()) {
-                reconfiguration_with_dkg::try_start_with_chunky_dkg();
+                reconfiguration_with_dkg::require_start_with_chunky_dkg();
             } else {
-                reconfiguration_with_dkg::try_start();
+                reconfiguration_with_dkg::require_start();
             }
         } else {
             reconfiguration_with_dkg::finish(topo_framework);
@@ -699,15 +700,14 @@ module topo_framework::topo_governance {
     }
 
     #[view]
-    /// Return the voting power a stake pool has with respect to governance proposals.
+    /// 治理权重按原生代币计算；PoC 委员会即使禁止成员变更，也不使用共识算力投票。
     public fun get_voting_power(pool_address: address): u64 {
         let allow_validator_set_change = staking_config::get_allow_validator_set_change(&staking_config::get());
-        if (allow_validator_set_change) {
+        if (stake::is_poc_enabled() || allow_validator_set_change) {
             let (active, _, pending_active, pending_inactive) = stake::get_stake(pool_address);
-            // We calculate the voting power as total non-inactive stakes of the pool. Even if the validator is not in the
-            // active validator set, as long as they have a lockup (separately checked in create_proposal and voting), their
-            // stake would still count in their voting power for governance proposals.
-            active + pending_active + pending_inactive
+            // 计入 active、pending_active 和 pending_inactive 本金。
+            // 提案和投票入口另行校验锁仓与权限，未在任的池也可按原规则参与治理。
+            ((active as u256) + (pending_active as u256) + (pending_inactive as u256)) as u64
         } else {
             stake::get_current_epoch_voting_power(pool_address)
         }

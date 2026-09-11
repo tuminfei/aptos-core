@@ -5,9 +5,8 @@ spec topo_framework::jwks {
     }
 
     spec on_new_epoch(framework: &signer) {
-        requires @topo_framework == std::signer::address_of(framework);
-        include config_buffer::OnNewEpochRequirement<SupportedOIDCProviders>;
-        aborts_if false;
+        pragma opaque;
+        include config_buffer::OnNewEpochApply<SupportedOIDCProviders>;
     }
 
     spec initialize(fx: &signer) {
@@ -52,6 +51,7 @@ spec topo_framework::jwks {
     }
 
     spec upsert_oidc_provider_for_next_epoch(fx: &signer, name: vector<u8>, config_url: vector<u8>): Option<vector<u8>> {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma verify_duration_estimate = 120; // TODO: set because of timeout (property proved)
         pragma opaque;
         pragma aborts_if_is_partial;
@@ -60,6 +60,7 @@ spec topo_framework::jwks {
     }
 
     spec remove_oidc_provider_for_next_epoch(fx: &signer, name: vector<u8>): Option<vector<u8>> {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         pragma aborts_if_is_partial;
         aborts_if std::signer::address_of(fx) != @topo_framework;
@@ -95,6 +96,11 @@ spec topo_framework::jwks {
     }
 
     spec apply_patch(jwks: &mut AllProvidersJWKs, patch: Patch) {
+        pragma aborts_if_is_partial;
+        aborts_if patch.variant.type_name.bytes != b"0x1::jwks::PatchRemoveAll"
+            && patch.variant.type_name.bytes != b"0x1::jwks::PatchRemoveIssuer"
+            && patch.variant.type_name.bytes != b"0x1::jwks::PatchRemoveJWK"
+            && patch.variant.type_name.bytes != b"0x1::jwks::PatchUpsertJWK";
         pragma verify_duration_estimate = 80;
     }
 
@@ -103,6 +109,14 @@ spec topo_framework::jwks {
     }
 
     spec set_patches(fx: &signer, patches: vector<Patch>) {
+        // 原有补丁应用可能因输入数据而失败；保留其部分失败契约，
+        // 此处补证新增冻结检查及可直接确定的权限、资源缺失条件。
+        pragma aborts_if_is_partial;
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
+        aborts_if std::signer::address_of(fx) != @topo_framework;
+        aborts_if !exists<Patches>(@topo_framework);
+        aborts_if !exists<ObservedJWKs>(@topo_framework);
+        aborts_if !exists<PatchedJWKs>(@topo_framework);
         pragma verify_duration_estimate = 80;
     }
 

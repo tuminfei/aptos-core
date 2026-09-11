@@ -2,6 +2,7 @@
 /// is updated in every block prologue. The decryption key is the key used to
 /// decrypt the encrypted transactions in the block.
 module topo_framework::decryption {
+    use std::error;
     use std::option;
     use std::option::Option;
 
@@ -10,6 +11,8 @@ module topo_framework::decryption {
 
     friend topo_framework::block;
     friend topo_framework::reconfiguration_with_dkg;
+
+    const ETARGET_EPOCH_MISMATCH: u64 = 1;
 
     /// Decryption key unique to every block.
     /// This resource is updated in every block prologue.
@@ -127,9 +130,14 @@ module topo_framework::decryption {
         }
     }
 
-    /// Buffer the encryption key for the next epoch.
+    /// 准备 PoC 前检查是否有残留的目标密钥，防止沿用旧会话结果。
+    public fun has_pending_epoch_key(): bool {
+        config_buffer::does_exist<PerEpochEncryptionKey>()
+    }
+
+    /// 换届流程核验已完成会话的目标 Epoch 后，才可在冻结期间缓冲对应加密密钥。
     public(friend) fun set_for_next_epoch(epoch: u64, encryption_key: vector<u8>) {
-        config_buffer::upsert(PerEpochEncryptionKey {
+        config_buffer::upsert_session_result(PerEpochEncryptionKey {
             epoch,
             encryption_key: option::some(encryption_key)
         });
@@ -143,6 +151,8 @@ module topo_framework::decryption {
         system_addresses::assert_topo_framework(framework);
         if (config_buffer::does_exist<PerEpochEncryptionKey>()) {
             let new_key = config_buffer::extract_v2<PerEpochEncryptionKey>();
+            // 密钥必须属于正在安装的目标，不能将迟到会话的结果交给另一届委员会。
+            assert!(new_key.epoch == new_epoch, error::invalid_state(ETARGET_EPOCH_MISMATCH));
             if (exists<PerEpochEncryptionKey>(@topo_framework)) {
                 *borrow_global_mut<PerEpochEncryptionKey>(@topo_framework) = new_key;
             } else {

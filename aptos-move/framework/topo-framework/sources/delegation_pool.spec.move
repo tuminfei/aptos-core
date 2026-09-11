@@ -93,4 +93,9 @@ spec topo_framework::delegation_pool {
         // TODO: verification disabled until this module is specified.
         pragma verify=false;
     }
+    // 入池费取决于已安装的奖励上下文；准备完成或排定启用时间不会提前免除费用。
+    spec get_add_stake_fee {
+        ensures stake::spec_poc_enabled() ==> result == 0;
+        ensures result <= amount;
+    }
 }

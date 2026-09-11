@@ -122,7 +122,98 @@ spec topo_framework::reconfiguration {
     spec last_reconfiguration_time {
         aborts_if !exists<Configuration>(@topo_framework);
         ensures result
-            == global<Configuration>(@topo_framework).last_reconfiguration_time;
+                == global<Configuration>(@topo_framework).last_reconfiguration_time;
+    }
+
+    spec transition_allowed {
+        pragma opaque;
+        aborts_if false;
+        ensures result == spec_transition_allowed();
+    }
+
+    spec fun spec_transition_allowed(): bool {
+        !chain_status::is_genesis()
+            && timestamp::spec_now_microseconds() != 0
+            && !exists<DisableReconfiguration>(@topo_framework)
+            && timestamp::spec_now_microseconds()
+                != global<Configuration>(@topo_framework).last_reconfiguration_time
+    }
+
+    spec prepare_transition {
+        pragma opaque;
+        include stake::ResourceRequirement;
+        include stake::GetReconfigStartTimeRequirement;
+        include topo_framework::staking_config::StakingRewardsConfigRequirement;
+        pragma aborts_if_is_partial;
+        modifies global<reconfiguration_state::State>(@topo_framework);
+        modifies global<stake::EpochPlan>(@topo_framework);
+        modifies global<stake::PrecomputedValidatorSet>(@topo_framework);
+        modifies global<std::features::PendingFeatureFreeze>(@std);
+        ensures global<Configuration>(@topo_framework) == old(global<Configuration>(@topo_framework));
+        ensures !old(stake::is_poc_prepared()) && old(spec_transition_allowed()) ==> result;
+        ensures result ==> old(spec_transition_allowed());
+        ensures result ==> chain_status::is_operating();
+        ensures result && exists<reconfiguration_state::State>(@topo_framework) ==>
+            reconfiguration_state::spec_is_in_progress();
+        ensures result && exists<reconfiguration_state::State>(@topo_framework) ==>
+            reconfiguration_state::spec_active_state_is_valid();
+        ensures result && stake::is_poc_prepared() ==>
+            exists<stake::EpochPlan>(@topo_framework) && exists<stake::PrecomputedValidatorSet>(@topo_framework);
+        ensures result && stake::is_poc_prepared() ==>
+            global<stake::EpochPlan>(@topo_framework).data.epoch
+                == global<Configuration>(@topo_framework).epoch + 1;
+        ensures !result ==> reconfiguration_state::spec_is_in_progress()
+            == old(reconfiguration_state::spec_is_in_progress());
+    }
+
+    spec complete_epoch {
+        pragma opaque;
+        requires chain_status::is_operating();
+        pragma aborts_if_is_partial;
+        modifies global<Configuration>(@topo_framework);
+        modifies global<reconfiguration_state::State>(@topo_framework);
+        modifies global<stake::EpochPlan>(@topo_framework);
+        modifies global<stake::PrecomputedValidatorSet>(@topo_framework);
+        modifies global<std::features::PendingFeatureFreeze>(@std);
+        modifies global<storage_gas::StorageGas>(@topo_framework);
+        aborts_if timestamp::spec_now_microseconds()
+            <= global<Configuration>(@topo_framework).last_reconfiguration_time;
+        aborts_if global<Configuration>(@topo_framework).epoch == MAX_U64;
+        ensures exists<Configuration>(@topo_framework);
+        ensures global<Configuration>(@topo_framework).epoch <= MAX_U64;
+        ensures global<Configuration>(@topo_framework).epoch
+            == old(global<Configuration>(@topo_framework).epoch) + 1;
+        ensures global<Configuration>(@topo_framework).last_reconfiguration_time
+            == timestamp::spec_now_microseconds();
+        ensures !reconfiguration_state::spec_is_in_progress();
+    }
+
+    spec complete_prepared_transition {
+        requires chain_status::is_operating();
+        include stake::ResourceRequirement;
+        include topo_framework::staking_config::StakingRewardsConfigRequirement;
+        pragma aborts_if_is_partial;
+        aborts_if global<Configuration>(@topo_framework).epoch == MAX_U64;
+        ensures global<Configuration>(@topo_framework).epoch
+            == old(global<Configuration>(@topo_framework).epoch) + 1;
+        ensures global<topo_framework::poc_accounting::AccountingState>(@topo_framework).epoch
+            == global<Configuration>(@topo_framework).epoch;
+        ensures !reconfiguration_state::spec_is_in_progress();
+    }
+
+    spec install_genesis_poc_epoch {
+        include stake::ResourceRequirement;
+        include stake::GetReconfigStartTimeRequirement;
+        include topo_framework::staking_config::StakingRewardsConfigRequirement;
+        include topo_framework::topo_coin::ExistsTopoCoin;
+        pragma aborts_if_is_partial;
+        aborts_if chain_status::is_operating();
+        aborts_if !exists<Configuration>(@topo_framework);
+        aborts_if global<Configuration>(@topo_framework).epoch != 0;
+        ensures global<Configuration>(@topo_framework).epoch == 0;
+        ensures !reconfiguration_state::spec_is_in_progress();
+        ensures !exists<stake::EpochPlan>(@topo_framework);
+        ensures !exists<stake::PrecomputedValidatorSet>(@topo_framework);
     }
 
     spec reconfigure {
@@ -130,21 +221,16 @@ spec topo_framework::reconfiguration {
         use topo_framework::staking_config;
         use std::features;
 
-        // TODO: set because of timeout (property proved)
         pragma verify = true;
-        pragma verify_duration_estimate = 600;
 
-        let success = !(
-            chain_status::is_genesis()
-                || timestamp::spec_now_microseconds() == 0
-                || !reconfiguration_enabled()
-        )
-            && timestamp::spec_now_microseconds()
-                != global<Configuration>(@topo_framework).last_reconfiguration_time;
+        let success = spec_transition_allowed();
         include features::spec_periodical_reward_rate_decrease_enabled() ==>
             staking_config::StakingRewardsConfigEnabledRequirement;
         include success ==> topo_coin::ExistsTopoCoin;
-        aborts_if false;
+        // PoC 目标可能不合格而延期，冻结状态损坏时则必须中止。
+        // 原生流程的前提不足以证明新增计划的不变量，不能沿用原有的无中止假设。
+        pragma aborts_if_is_partial;
+        aborts_if success && global<Configuration>(@topo_framework).epoch == MAX_U64;
         // The ensure conditions of the reconfigure function are not fully written, because there is a new cycle in it,
         // but its existing ensure conditions satisfy hp.
         // The property below is not proved within 500s and still cause an timeout
@@ -164,6 +250,29 @@ spec topo_framework::reconfiguration {
         ensures !success ==>
             global<Configuration>(@topo_framework).epoch
                 == old(global<Configuration>(@topo_framework).epoch);
+    }
+
+    spec try_reconfigure {
+        pragma opaque;
+        modifies global<Configuration>(@topo_framework);
+        include stake::ResourceRequirement;
+        include stake::GetReconfigStartTimeRequirement;
+        include topo_framework::staking_config::StakingRewardsConfigRequirement;
+        include topo_framework::topo_coin::ExistsTopoCoin;
+        pragma aborts_if_is_partial;
+        aborts_if !stake::is_poc_prepared() && spec_transition_allowed()
+            && global<Configuration>(@topo_framework).epoch == MAX_U64;
+        ensures old(stake::is_poc_prepared()) || !old(spec_transition_allowed()) ==> !result;
+        ensures !result ==> global<Configuration>(@topo_framework).epoch
+            == old(global<Configuration>(@topo_framework).epoch);
+        ensures !result ==> global<Configuration>(@topo_framework).last_reconfiguration_time
+            == old(global<Configuration>(@topo_framework).last_reconfiguration_time);
+        ensures result ==> global<Configuration>(@topo_framework).epoch
+            == old(global<Configuration>(@topo_framework).epoch) + 1;
+        ensures result ==> old(global<Configuration>(@topo_framework).epoch) < MAX_U64;
+        ensures result ==> global<Configuration>(@topo_framework).last_reconfiguration_time
+            == timestamp::spec_now_microseconds();
+        ensures result ==> !reconfiguration_state::spec_is_in_progress();
     }
 
     spec reconfiguration_enabled {

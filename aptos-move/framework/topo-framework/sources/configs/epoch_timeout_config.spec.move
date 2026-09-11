@@ -1,5 +1,6 @@
 spec topo_framework::epoch_timeout_config {
     spec initialize(framework: &signer) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         include config_buffer::InitializeResource<EpochTimeoutConfig> {
             config: EpochTimeoutConfig { force_end_grace_period_secs: std::option::spec_none() }
@@ -7,6 +8,7 @@ spec topo_framework::epoch_timeout_config {
     }
 
     spec set_for_next_epoch(framework: &signer, new_config: EpochTimeoutConfig) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         include config_buffer::SetForNextEpoch<EpochTimeoutConfig>;
     }

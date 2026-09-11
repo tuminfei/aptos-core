@@ -233,7 +233,7 @@ spec topo_framework::topo_governance {
         // verify get_voting_power(stake_pool)
         include GetVotingPowerAbortsIf { pool_address: stake_pool };
         let staking_config = global<staking_config::StakingConfig>(@topo_framework);
-        let allow_validator_set_change = staking_config.allow_validator_set_change;
+        let allow_validator_set_change = stake::spec_poc_enabled() || staking_config.allow_validator_set_change;
         let stake_pool_res = global<stake::StakePool>(stake_pool);
         // Three results of get_voting_power(stake_pool)
         let stake_balance_0 = stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value;
@@ -601,7 +601,7 @@ spec topo_framework::topo_governance {
         include GetVotingPowerAbortsIf;
 
         let staking_config = global<staking_config::StakingConfig>(@topo_framework);
-        let allow_validator_set_change = staking_config.allow_validator_set_change;
+        let allow_validator_set_change = stake::spec_poc_enabled() || staking_config.allow_validator_set_change;
         let stake_pool_res = global<stake::StakePool>(pool_address);
 
         ensures allow_validator_set_change ==> result == stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value;
@@ -614,7 +614,8 @@ spec topo_framework::topo_governance {
     }
 
     spec fun spec_get_voting_power(pool_address: address, staking_config: staking_config::StakingConfig): u64 {
-        let allow_validator_set_change = staking_config.allow_validator_set_change;
+        // PoC 治理按原生本金计算权重，即使委员会禁止成员变更也保持这一规则。
+        let allow_validator_set_change = stake::spec_poc_enabled() || staking_config.allow_validator_set_change;
         let stake_pool_res = global<stake::StakePool>(pool_address);
         if (allow_validator_set_change) {
             stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value
@@ -694,7 +695,7 @@ spec topo_framework::topo_governance {
 
         let staking_config = global<staking_config::StakingConfig>(@topo_framework);
         aborts_if !exists<staking_config::StakingConfig>(@topo_framework);
-        let allow_validator_set_change = staking_config.allow_validator_set_change;
+        let allow_validator_set_change = stake::spec_poc_enabled() || staking_config.allow_validator_set_change;
         let stake_pool_res = global<stake::StakePool>(pool_address);
         aborts_if allow_validator_set_change && (stake_pool_res.active.value + stake_pool_res.pending_active.value + stake_pool_res.pending_inactive.value) > MAX_U64;
         aborts_if !exists<stake::StakePool>(pool_address);

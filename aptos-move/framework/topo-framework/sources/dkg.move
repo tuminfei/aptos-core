@@ -127,6 +127,11 @@ module topo_framework::dkg {
         }
     }
 
+    /// 只读返回会话目标，接收 DKG 结果前用它核对冻结计划的地址、顺序、密钥和权重。
+    public fun session_target_validators(session: &DKGSessionState): vector<ValidatorConsensusInfo> {
+        session.metadata.target_validator_set
+    }
+
     /// Return the dealer epoch of a `DKGSessionState`.
     public fun session_dealer_epoch(session: &DKGSessionState): u64 {
         session.metadata.dealer_epoch

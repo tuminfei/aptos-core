@@ -7,6 +7,17 @@ spec topo_framework::decryption {
         invariant option::is_some(decryption_key) == option::is_some(decryption_round);
     }
 
+    spec set_for_next_epoch(epoch: u64, encryption_key: vector<u8>) {
+        pragma opaque;
+        aborts_if !topo_framework::reconfiguration_state::spec_is_in_progress();
+        include config_buffer::Upsert<PerEpochEncryptionKey> {
+            config: PerEpochEncryptionKey {
+                epoch,
+                encryption_key: option::spec_some(encryption_key),
+            }
+        };
+    }
+
     spec on_new_block(
         vm: &signer,
         epoch: u64,
@@ -80,6 +91,7 @@ spec topo_framework::decryption {
             && simple_map::spec_contains_key(configs, key);
         aborts_if pre_does_exist && key != stored.type_name;
         aborts_if pre_does_exist && !from_bcs::deserializable<PerEpochEncryptionKey>(stored.data);
+        aborts_if pre_does_exist && from_bcs::deserialize<PerEpochEncryptionKey>(stored.data).epoch != new_epoch;
         // Buffered key was installed and buffer entry removed.
         ensures pre_does_exist ==> exists<PerEpochEncryptionKey>(@topo_framework);
         ensures pre_does_exist ==>
@@ -87,6 +99,7 @@ spec topo_framework::decryption {
                 == from_bcs::deserialize<PerEpochEncryptionKey>(stored.data);
         let post post_configs = global<config_buffer::PendingConfigs>(@topo_framework).configs;
         ensures pre_does_exist ==> !simple_map::spec_contains_key(post_configs, key);
+        include config_buffer::BufferConsumed { first_key: key, second_key: key };
         // No buffered key: PerEpochEncryptionKey untouched.
         ensures !pre_does_exist ==>
             (exists<PerEpochEncryptionKey>(@topo_framework)

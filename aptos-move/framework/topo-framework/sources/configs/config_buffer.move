@@ -18,6 +18,7 @@ module topo_framework::config_buffer {
     use topo_std::simple_map::SimpleMap;
     use topo_std::type_info;
     use topo_framework::system_addresses;
+    use topo_framework::reconfiguration_state;
 
     friend topo_framework::chunky_dkg_config;
     friend topo_framework::chunky_dkg_config_seqnum;
@@ -63,14 +64,29 @@ module topo_framework::config_buffer {
         }
     }
 
-    /// Upsert an on-chain config to the buffer for the next epoch.
-    ///
-    /// Typically used in `X::set_for_next_epoch()` where X is an on-chain config.
+    /// 将下一 Epoch 的配置写入缓冲；计划冻结后禁止替换配置内容。
     public(friend) fun upsert<T: drop + store>(config: T) acquires PendingConfigs {
+        reconfiguration_state::assert_not_in_progress();
+        upsert_internal(config);
+    }
+
+    /// 供 DKG 完成流程在冻结期间写入目标 Epoch 的密钥；调用前须校验会话身份及目标。
+    /// 普通配置设置仍须调用 upsert，不能经此入口绕过冻结检查。
+    public(friend) fun upsert_session_result<T: drop + store>(config: T) acquires PendingConfigs {
+        assert!(reconfiguration_state::is_in_progress(), error::invalid_state(ESTD_SIGNER_NEEDED));
+        upsert_internal(config);
+    }
+
+    /// 仅替换指定类型的缓冲项，保留其他已冻结配置；权限由两个上层入口分别检查。
+    fun upsert_internal<T: drop + store>(config: T) acquires PendingConfigs {
         let configs = borrow_global_mut<PendingConfigs>(@topo_framework);
         let key = type_info::type_name<T>();
         let value = any::pack(config);
-        configs.configs.upsert(key, value);
+        if (configs.configs.contains_key(&key)) {
+            *configs.configs.borrow_mut(&key) = value;
+        } else {
+            configs.configs.add(key, value);
+        };
     }
 
     #[deprecated]
@@ -93,6 +109,24 @@ module topo_framework::config_buffer {
     #[test_only]
     struct DummyConfig has drop, store {
         data: u64,
+    }
+
+    #[test_only]
+    struct OtherConfig has drop, store {
+        data: u64,
+    }
+
+    #[test(fx = @std)]
+    fun test_config_buffer_preserves_other_payloads(fx: &signer) acquires PendingConfigs {
+        initialize(fx);
+        upsert(DummyConfig { data: 1 });
+        upsert(OtherConfig { data: 2 });
+        upsert(DummyConfig { data: 3 });
+        assert!(borrow_global<PendingConfigs>(@topo_framework).configs.keys()
+            == vector[type_info::type_name<DummyConfig>(), type_info::type_name<OtherConfig>()], 1);
+        assert!(extract_v2<DummyConfig>().data == 3, 2);
+        assert!(extract_v2<OtherConfig>().data == 2, 3);
+        assert!(!does_exist<DummyConfig>() && !does_exist<OtherConfig>(), 4);
     }
 
     #[test(fx = @std)]

@@ -1,10 +1,12 @@
 spec topo_framework::chunky_dkg_config {
     spec initialize(framework: &signer, config: ChunkyDKGConfig) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         include config_buffer::InitializeResource<ChunkyDKGConfig>;
     }
 
     spec set_for_next_epoch(framework: &signer, new_config: ChunkyDKGConfig) {
+        aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
         pragma opaque;
         include config_buffer::SetForNextEpoch<ChunkyDKGConfig>;
     }

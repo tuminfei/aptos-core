@@ -61,7 +61,16 @@ spec topo_framework::block {
     spec block_prologue_common {
         pragma opaque;
         include BlockRequirement;
-        aborts_if false;
+        let performance = global<stake::ValidatorPerformance>(@topo_framework).validators;
+        let proposer_index = global<stake::ValidatorConfig>(proposer).validator_index;
+        // 延期期间仍累加旧 Epoch 的 u64 计数器；仅当本次递增会溢出时中止，
+        // 不能再用“一个 Epoch 最多一天”的假设证明不会溢出。
+        aborts_if proposer != @vm_reserved && proposer_index < len(performance)
+            && performance[proposer_index].successful_proposals == MAX_U64
+            with std::error::OUT_OF_RANGE;
+        aborts_if exists i in 0..len(performance): performance[i].failed_proposals
+            + stake::spec_failure_count(failed_proposer_indices, i, len(failed_proposer_indices)) > MAX_U64
+            with std::error::OUT_OF_RANGE;
 
         modifies global<BlockResource>(@topo_framework);
         modifies global<CommitHistory>(@topo_framework);
