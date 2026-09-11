@@ -98,3 +98,25 @@ fn poc_mainnet_defaults_support_current_layout_and_validator_capacity() {
 fn poc_mainnet_defaults_reject_too_few_validators() {
     genesis_from_current_layout(4, Layout::default().min_stake);
 }
+
+#[test]
+fn poc_reward_split_manifest_defaults_and_explicit_zero() {
+    // 新创世的 JSON/YAML 清单省略此字段时，原生奖励占比默认 3000 bps。
+    // 显式设为 0 时，通胀奖励全部归 PoC。
+    let manifest = include_str!("../../../docs/draft/POC_GENESIS_TEST_MANIFEST.json");
+    let mut manifest_value: serde_yaml::Value = serde_yaml::from_str(manifest).unwrap();
+    let explicit_config: poc::PocGenesisConfiguration =
+        serde_yaml::from_value(manifest_value.clone()).unwrap();
+    assert_eq!(explicit_config.native_reward_bps, 3_000);
+    manifest_value
+        .as_mapping_mut()
+        .unwrap()
+        .remove(&serde_yaml::Value::String("native_reward_bps".into()));
+    let defaulted_config: poc::PocGenesisConfiguration =
+        serde_yaml::from_value(manifest_value.clone()).unwrap();
+    assert_eq!(defaulted_config.native_reward_bps, 3_000);
+    manifest_value["native_reward_bps"] = serde_yaml::Value::Number(0.into());
+    let zero_native_reward_config: poc::PocGenesisConfiguration =
+        serde_yaml::from_value(manifest_value).unwrap();
+    assert_eq!(zero_native_reward_config.native_reward_bps, 0);
+}

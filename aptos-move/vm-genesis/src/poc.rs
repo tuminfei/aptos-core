@@ -80,6 +80,15 @@ pub struct PocGenesisConfiguration {
     /// 每个创世验证者在周期 0 获得的原始算力，必须为正；自动写入 PowerStore 并 100% 分配到本池。
     /// 独立于代币保证金数量，最终权重仍受保证金及 params.max_power 限制。
     pub initial_raw_power: u64,
+    /// PoC 通胀与可分发交易费共用的原生奖励占比，以基点（bps）表示，范围为 0..=10_000。
+    /// 新创世配置省略此项时，默认 3000 bps：原生质押获得 30%，PoC 奖励金库获得 70%。
+    /// 两类收入分别分流并向下取整原生份额，余额各归 PoC 奖励金库。
+    #[serde(default = "default_native_reward_bps")]
+    pub native_reward_bps: u64,
+}
+
+fn default_native_reward_bps() -> u64 {
+    3_000
 }
 
 impl PocGenesisConfiguration {
@@ -115,6 +124,7 @@ impl PocGenesisConfiguration {
             retention_bps: 9_995,
             max_relative_period: 10_000,
             initial_raw_power: 1_000_000 * POWER_PER_OHMP,
+            native_reward_bps: default_native_reward_bps(),
         }
     }
 
@@ -190,13 +200,14 @@ pub(crate) fn create_and_initialize_validators(
         MoveValue::U64(config.retention_bps),
         MoveValue::U64(config.max_relative_period),
         MoveValue::U64(config.initial_raw_power),
+        MoveValue::U64(config.native_reward_bps),
     ]));
     exec_function(
         session,
         module_storage,
         traversal_context,
         "genesis",
-        "create_initialize_poc_validators",
+        "create_initialize_poc_validators_with_reward_split",
         vec![],
         arguments,
     );
@@ -231,6 +242,22 @@ mod tests {
     use move_vm_runtime::module_traversal::TraversalStorage;
     use move_vm_types::gas::UnmeteredGasMeter;
 
+    fn liquid_balance_at_genesis(genesis: &ChangeSet, address: AccountAddress) -> u64 {
+        let view = InstalledGenesis(genesis.write_set());
+        let output = aptos_vm::AptosVM::execute_view_function(
+            &view,
+            ModuleId::new(CORE_CODE_ADDRESS, Identifier::new("coin").unwrap()),
+            Identifier::new("balance").unwrap(),
+            vec![move_core_types::parser::parse_type_tag("0x1::topo_coin::TopoCoin").unwrap()],
+            vec![encode(&address)],
+            2_000_000,
+        );
+        let values = output
+            .values
+            .expect("The production balance view must succeed");
+        bcs::from_bytes(&values[0]).unwrap()
+    }
+
     /// 可复现的验收清单；这些数值不构成生产部署默认值。
     fn manifest() -> PocGenesisConfiguration {
         PocGenesisConfiguration {
@@ -255,6 +282,7 @@ mod tests {
             retention_bps: 10000,
             max_relative_period: 100,
             initial_raw_power: 10,
+            native_reward_bps: default_native_reward_bps(),
         }
     }
 
@@ -429,6 +457,11 @@ mod tests {
         assert_eq!(epoch, 1);
         assert!(poc);
         assert_eq!(fee_limit, 0);
+        let encoded_native_reward_bps = query("stake", "get_installed_native_reward_bps", vec![]);
+        assert_eq!(
+            bcs::from_bytes::<u64>(&encoded_native_reward_bps[0]).unwrap(),
+            config.native_reward_bps
+        );
         let period_length = query("poc_power_store", "get_power_period_in_epochs", vec![]);
         assert_eq!(bcs::from_bytes::<u64>(&period_length[0]).unwrap(), 60);
         let operator = query("poc_power_store", "get_operator", vec![]);
@@ -492,6 +525,12 @@ mod tests {
             changes.resource_write_set().is_empty(),
             "PoC views must not write state"
         );
+        let mint_cap = StateKey::resource(
+            &CORE_CODE_ADDRESS,
+            &move_core_types::parser::parse_struct_tag("0x1::topo_coin::MintCapStore").unwrap(),
+        )
+        .unwrap();
+        assert!(view.get_state_value(&mint_cap).unwrap().is_none());
     }
 
     #[test]
@@ -585,6 +624,15 @@ mod tests {
             &expected_powers,
             &expected_powers,
         );
+        if !native_config.is_test {
+            // 主网沿用只铸造并质押 stake_amount 的创世行为，不额外预留流动余额。
+            for validator in validators {
+                assert_eq!(
+                    liquid_balance_at_genesis(&genesis, validator.owner_address),
+                    0
+                );
+            }
+        }
 
         // 与同一份原生配置产生的链上资源逐字节比较，确保未通过改 TOPO 参数绕过 PoC 校验。
         let native = crate::encode_genesis_change_set(
@@ -638,6 +686,7 @@ mod tests {
             .collect::<Vec<_>>();
         let mut config = manifest();
         config.initial_raw_power = 17;
+        config.native_reward_bps = 6_750;
         assert_installed_genesis(&config, &validators, &[17, 17, 17, 17], &[17, 17, 17, 17]);
     }
 

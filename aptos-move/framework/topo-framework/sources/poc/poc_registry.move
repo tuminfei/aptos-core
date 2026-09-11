@@ -12,10 +12,12 @@
 //    during contribution event emission
 //
 // ## Design Principles
-// - The platform only manages "whether an app is included in the POC trusted contribution system";
+// - The platform approves application identity bindings and POC inclusion;
 //   it does not interfere with the application's own business logic.
 // - All key addresses (app_address / equity_token_address / custody_address) must be globally unique
 //   across all registered applications.
+// - Registration requires a one-use governance approval binding the admin to all three addresses.
+//   Updates require control of the new identity or a new governance approval.
 // - When the equity token address changes, the POC inclusion status is automatically reset to
 //   REGISTERED, requiring platform re-review. This is a security invariant: the core asset
 //   identifier changed, so previous audit assumptions may no longer hold.
@@ -50,7 +52,7 @@ module topo_framework::poc_registry {
     use topo_std::table::{Self, Table};
 
     use topo_framework::event;
-    use topo_framework::fungible_asset::Metadata;
+    use topo_framework::fungible_asset::{Self, Metadata, MintRef};
     use topo_framework::object;
     use topo_framework::system_addresses;
 
@@ -112,6 +114,8 @@ module topo_framework::poc_registry {
     const EAPP_STOPPED: u64 = 14;
     /// Invalid effective weight value (must be <= MAX_EFFECTIVE_WEIGHT_PBS)
     const EINVALID_EFFECTIVE_WEIGHT: u64 = 15;
+    /// Governance has not approved this admin's requested identity binding
+    const EIDENTITY_NOT_APPROVED: u64 = 16;
 
     // ========== Core Data Structures ==========
 
@@ -133,6 +137,18 @@ module topo_framework::poc_registry {
         custody_address_to_admin: Table<address, address>,
         /// Reverse lookup: equity token address → admin address
         equity_token_to_admin: Table<address, address>,
+    }
+
+    /// Separate resource so existing Registry values remain compatible after an upgrade.
+    /// Created lazily by governance; an approval does not reserve any identity.
+    struct IdentityApprovals has key {
+        by_admin: Table<address, AppIdentity>,
+    }
+
+    struct AppIdentity has drop, store {
+        app_address: address,
+        equity_token_address: address,
+        custody_address: address,
     }
 
     /// Complete registration record for a Dapp application.
@@ -163,6 +179,19 @@ module topo_framework::poc_registry {
     }
 
     // ========== Governance Events ==========
+
+    #[event]
+    struct AppIdentityApprovedEvent has drop, store {
+        app_admin: address,
+        app_address: address,
+        equity_token_address: address,
+        custody_address: address,
+    }
+
+    #[event]
+    struct AppIdentityApprovalRevokedEvent has drop, store {
+        app_admin: address,
+    }
 
     #[event]
     /// Emitted when a new application is successfully registered
@@ -243,9 +272,39 @@ module topo_framework::poc_registry {
         };
     }
 
+    // ========== Identity Authorization ==========
+
+    /// 仅治理可批准管理员下一次注册或更新后的完整身份组合，覆盖该管理员尚未使用的批准。
+    /// 批准不占用唯一索引，也不授予 PoC 白名单资格；成功注册或更新后自动消耗。
+    /// 更新优先使用控制权证明入口；无法提供证明时，批准该次更新后的完整组合。
+    public entry fun approve_app_identity(
+        topo_framework: &signer,
+        app_admin: address,
+        app_address: address,
+        equity_token_address: address,
+        custody_address: address,
+    ) {
+        system_addresses::assert_topo_framework(topo_framework);
+        if (!exists<IdentityApprovals>(@topo_framework)) {
+            move_to(topo_framework, IdentityApprovals { by_admin: table::new() });
+        };
+        borrow_global_mut<IdentityApprovals>(@topo_framework).by_admin.upsert(app_admin, AppIdentity {
+            app_address,
+            equity_token_address,
+            custody_address,
+        });
+        event::emit(AppIdentityApprovedEvent { app_admin, app_address, equity_token_address, custody_address });
+    }
+
+    /// 仅治理可撤销尚未使用的身份批准；不影响已登记的应用。
+    public entry fun revoke_app_identity_approval(topo_framework: &signer, app_admin: address) {
+        system_addresses::assert_topo_framework(topo_framework);
+        clear_identity_approval(app_admin);
+    }
+
     // ========== Registration Entry ==========
 
-    /// 任意地址可签名注册为应用管理员；成功后运行状态为 ACTIVE，PoC 准入状态为 REGISTERED。
+    /// 管理员须先获得治理对完整身份组合的批准，再签名注册；成功后为 ACTIVE / REGISTERED。
     /// 每个管理员只能注册一个应用；合约、股权代币和托管地址各自在对应索引中全局唯一。
     /// 股权代币地址必须通过 `object::address_to_object<Metadata>` 验证，确认为有效 FA 元数据对象。
     /// 验证失败或重复注册均会中止并回滚，原有记录保持不变。
@@ -268,6 +327,7 @@ module topo_framework::poc_registry {
             exists<Registry>(@topo_framework),
             error::not_found(EREGISTRY_NOT_INITIALIZED),
         );
+        consume_identity_approval(app_admin_address, app_address, equity_token_address, custody_address);
         let registry = borrow_global_mut<Registry>(@topo_framework);
 
         assert!(
@@ -316,16 +376,32 @@ module topo_framework::poc_registry {
     // ========== Update Entry Points ==========
 
     /// 应用管理员可在升级或重新部署后更新合约地址，新地址不能被其他应用用作合约地址。
+    /// 治理须预先批准更新后的完整身份组合。
     /// 更新不改变 PoC 准入状态（poc_listing_status）；地址未变时直接返回且不发事件。
     public entry fun update_app_address(
         app_admin: &signer,
         new_app_address: address,
+    ) {
+        update_app_address_internal(app_admin, new_app_address, false);
+    }
+
+    /// 管理员和新合约地址共同签名即可更新，无需治理批准。
+    public entry fun update_app_address_with_signer(app_admin: &signer, new_app: &signer) {
+        update_app_address_internal(app_admin, signer::address_of(new_app), true);
+    }
+
+    fun update_app_address_internal(
+        app_admin: &signer,
+        new_app_address: address,
+        has_identity_control: bool,
     ) {
         let app_admin_address = signer::address_of(app_admin);
         let current_info = get_app_info(app_admin_address);
         if (current_info.app_address == new_app_address) {
             return
         };
+        authorize_identity_update(app_admin_address, new_app_address,
+            current_info.equity_token_address, current_info.custody_address, has_identity_control);
 
         assert!(
             exists<Registry>(@topo_framework),
@@ -352,17 +428,36 @@ module topo_framework::poc_registry {
     }
 
     /// 应用管理员更新股权代币；新地址须为有效 FA Metadata 对象，且不能与其他应用的股权代币地址重复。
+    /// 治理须预先批准更新后的完整身份组合。
     /// 更换资产后需重新审核，因此 PoC 准入状态重置为 REGISTERED，审核通过后可恢复 WHITELISTED。
     /// 地址未变时直接返回，保留原状态且不发事件。
     public entry fun update_equity_token_address(
         app_admin: &signer,
         new_equity_token_address: address,
     ) {
+        update_equity_token_address_internal(app_admin, new_equity_token_address, false);
+    }
+
+    /// 管理员通过应用合约提供新代币的铸币能力即可更新，无需治理预先批准。
+    /// 代币地址直接由 MintRef 确定；持币或持有 Metadata 对象引用不构成发行权限。
+    /// 更新后仍重置 PoC 白名单资格，须经治理重新审核。
+    public fun update_equity_token_address_with_mint_ref(app_admin: &signer, mint_ref: &MintRef) {
+        let metadata = fungible_asset::mint_ref_metadata(mint_ref);
+        update_equity_token_address_internal(app_admin, object::object_address(&metadata), true);
+    }
+
+    fun update_equity_token_address_internal(
+        app_admin: &signer,
+        new_equity_token_address: address,
+        has_identity_control: bool,
+    ) {
         let app_admin_address = signer::address_of(app_admin);
         let current_info = get_app_info(app_admin_address);
         if (current_info.equity_token_address == new_equity_token_address) {
             return
         };
+        authorize_identity_update(app_admin_address, current_info.app_address,
+            new_equity_token_address, current_info.custody_address, has_identity_control);
 
         assert!(
             exists<Registry>(@topo_framework),
@@ -392,17 +487,33 @@ module topo_framework::poc_registry {
     }
 
     /// 应用管理员更新托管地址，新地址不能被其他应用用作托管地址。
+    /// 治理须预先批准更新后的完整身份组合。
     /// 发放可信贡献时，由该地址签名授权代币转出；更新不改变 PoC 准入状态（poc_listing_status）。
     /// 地址未变时直接返回，重复调用不发事件。
     public entry fun update_custody_address(
         app_admin: &signer,
         new_custody_address: address,
     ) {
+        update_custody_address_internal(app_admin, new_custody_address, false);
+    }
+
+    /// 管理员和新托管地址共同签名即可更新，无需治理批准。
+    public entry fun update_custody_address_with_signer(app_admin: &signer, new_custody: &signer) {
+        update_custody_address_internal(app_admin, signer::address_of(new_custody), true);
+    }
+
+    fun update_custody_address_internal(
+        app_admin: &signer,
+        new_custody_address: address,
+        has_identity_control: bool,
+    ) {
         let app_admin_address = signer::address_of(app_admin);
         let current_info = get_app_info(app_admin_address);
         if (current_info.custody_address == new_custody_address) {
             return
         };
+        authorize_identity_update(app_admin_address, current_info.app_address,
+            current_info.equity_token_address, new_custody_address, has_identity_control);
 
         assert!(
             exists<Registry>(@topo_framework),
@@ -760,6 +871,47 @@ module topo_framework::poc_registry {
     }
 
     // ========== Internal Helpers ==========
+
+    fun clear_identity_approval(app_admin: address) {
+        if (!exists<IdentityApprovals>(@topo_framework)) return;
+        let approvals = &mut borrow_global_mut<IdentityApprovals>(@topo_framework).by_admin;
+        if (approvals.contains(app_admin)) {
+            approvals.remove(app_admin);
+            event::emit(AppIdentityApprovalRevokedEvent { app_admin });
+        };
+    }
+
+    fun authorize_identity_update(
+        app_admin: address,
+        app_address: address,
+        equity_token_address: address,
+        custody_address: address,
+        has_identity_control: bool,
+    ) {
+        if (has_identity_control) {
+            // Any actual identity change invalidates pending approvals for the previous binding.
+            clear_identity_approval(app_admin);
+        } else {
+            consume_identity_approval(app_admin, app_address, equity_token_address, custody_address);
+        };
+    }
+
+    /// Consume only an exact approval; later failures roll this back with the transaction.
+    fun consume_identity_approval(
+        app_admin: address,
+        app_address: address,
+        equity_token_address: address,
+        custody_address: address,
+    ) {
+        assert!(exists<IdentityApprovals>(@topo_framework), error::permission_denied(EIDENTITY_NOT_APPROVED));
+        let approvals = &mut borrow_global_mut<IdentityApprovals>(@topo_framework).by_admin;
+        assert!(approvals.contains(app_admin), error::permission_denied(EIDENTITY_NOT_APPROVED));
+        let approved = approvals.remove(app_admin);
+        assert!(approved.app_address == app_address
+            && approved.equity_token_address == equity_token_address
+            && approved.custody_address == custody_address,
+            error::permission_denied(EIDENTITY_NOT_APPROVED));
+    }
 
     /// Borrow a mutable reference to an AppInfo entry by admin address (internal use only).
     /// Aborts if the admin address is not found in the registry.

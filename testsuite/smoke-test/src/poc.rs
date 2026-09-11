@@ -122,6 +122,8 @@ fn poc_swarm_builder(transition: Transition) -> SwarmBuilder {
             retention_bps: 10000,
             max_relative_period: 100,
             initial_raw_power: 10,
+            // 本组测试将原生奖励占比设为零，保持通胀奖励全部归 PoC；默认比例和两路分配由创世及奖励测试覆盖。
+            native_reward_bps: 0,
         }));
     }))
 }

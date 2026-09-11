@@ -152,7 +152,13 @@ impl GenesisInfo {
         let config = aptos_vm_genesis::GenesisConfiguration {
             allow_new_validators: self.allow_new_validators,
             epoch_duration_secs: self.epoch_duration_secs,
-            is_test: true,
+            // PoC 创世遵循调用者的网络模式，正式创世不生成测试根账户及铸币权限。
+            // 未配置 PoC 的调用继续保留原有测试创世行为。
+            is_test: if self.poc_genesis_config.is_some() {
+                self.is_test
+            } else {
+                true
+            },
             min_stake: self.min_stake,
             min_voting_threshold: self.min_voting_threshold,
             max_stake: self.max_stake,
@@ -213,5 +219,83 @@ impl GenesisInfo {
         )?;
         let db_rw = DbReaderWriter::new(aptosdb);
         aptos_executor::db_bootstrapper::generate_waypoint::<AptosVMBlockExecutor>(&db_rw, genesis)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Layout;
+    use aptos_types::{
+        account_config::{aptos_test_root_address, AccountResource},
+        state_store::state_key::StateKey,
+        transaction::WriteSetPayload,
+    };
+    use aptos_vm_genesis::{default_gas_schedule, TestValidator, GENESIS_KEYPAIR};
+
+    /// 使用生产 TOPO 参数及真实验证者身份，直接验证上层 GenesisInfo 的创世编码路径。
+    fn non_test_genesis_info() -> GenesisInfo {
+        let layout = Layout::default();
+        GenesisInfo {
+            chain_id: ChainId::mainnet(),
+            root_key: GENESIS_KEYPAIR.1.clone(),
+            validators: TestValidator::new_test_set(Some(5), Some(layout.min_stake))
+                .into_iter()
+                .map(|validator| validator.data)
+                .collect(),
+            framework: aptos_cached_packages::head_release_bundle().clone(),
+            genesis: None,
+            poc_genesis_config: Some(poc::PocGenesisConfiguration::mainnet()),
+            allow_new_validators: true,
+            epoch_duration_secs: layout.epoch_duration_secs,
+            is_test: false,
+            min_stake: layout.min_stake,
+            min_voting_threshold: layout.min_voting_threshold,
+            max_stake: layout.max_stake,
+            recurring_lockup_duration_secs: layout.recurring_lockup_duration_secs,
+            required_proposer_stake: layout.required_proposer_stake,
+            rewards_apy_percentage: layout.rewards_apy_percentage,
+            voting_duration_secs: layout.voting_duration_secs,
+            voting_power_increase_limit: layout.voting_power_increase_limit,
+            consensus_config: layout.on_chain_consensus_config,
+            execution_config: layout.on_chain_execution_config,
+            gas_schedule: default_gas_schedule(),
+            initial_features_override: layout.initial_features_override,
+            randomness_config_override: layout.randomness_config_override,
+            chunky_dkg_config_override: layout.chunky_dkg_config_override,
+            jwk_consensus_config_override: layout.jwk_consensus_config_override,
+            initial_jwks: layout.initial_jwks,
+            keyless_groth16_vk: layout.keyless_groth16_vk_override,
+            initialize_decryption_at_genesis: true,
+        }
+    }
+
+    fn genesis_contains_test_root(info: &mut GenesisInfo) -> bool {
+        let Transaction::GenesisTransaction(WriteSetPayload::Direct(genesis)) = info.get_genesis()
+        else {
+            panic!("Expected a direct genesis transaction");
+        };
+        let key = StateKey::resource_typed::<AccountResource>(&aptos_test_root_address()).unwrap();
+        genesis.write_set().as_v0().get(&key).is_some()
+    }
+
+    #[test]
+    fn poc_genesis_info_non_test_genesis_has_no_test_root() {
+        let mut info = non_test_genesis_info();
+        assert!(!genesis_contains_test_root(&mut info));
+    }
+
+    #[test]
+    fn poc_genesis_info_test_mode_has_test_root() {
+        let mut info = non_test_genesis_info();
+        info.is_test = true;
+        assert!(genesis_contains_test_root(&mut info));
+    }
+
+    #[test]
+    fn poc_genesis_info_native_path_preserves_test_root() {
+        let mut info = non_test_genesis_info();
+        info.poc_genesis_config = None;
+        assert!(genesis_contains_test_root(&mut info));
     }
 }

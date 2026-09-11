@@ -873,6 +873,16 @@ pub enum EntryFunctionCall {
         powers: Vec<u64>,
     },
 
+    /// 仅治理可批准管理员下一次注册或更新后的完整身份组合，覆盖该管理员尚未使用的批准。
+    /// 批准不占用唯一索引，也不授予 PoC 白名单资格；成功注册或更新后自动消耗。
+    /// 更新优先使用控制权证明入口；无法提供证明时，批准该次更新后的完整组合。
+    PocRegistryApproveAppIdentity {
+        app_admin: AccountAddress,
+        app_address: AccountAddress,
+        equity_token_address: AccountAddress,
+        custody_address: AccountAddress,
+    },
+
     /// 仅 @topo_framework 可初始化应用注册表；资源已存在时直接返回。
     PocRegistryInitializeRegistry {},
 
@@ -880,7 +890,7 @@ pub enum EntryFunctionCall {
     /// 可调用 resume_app 恢复为 ACTIVE；已经暂停时重复调用不发事件。
     PocRegistryPauseApp {},
 
-    /// 任意地址可签名注册为应用管理员；成功后运行状态为 ACTIVE，PoC 准入状态为 REGISTERED。
+    /// 管理员须先获得治理对完整身份组合的批准，再签名注册；成功后为 ACTIVE / REGISTERED。
     /// 每个管理员只能注册一个应用；合约、股权代币和托管地址各自在对应索引中全局唯一。
     /// 股权代币地址必须通过 `object::address_to_object<Metadata>` 验证，确认为有效 FA 元数据对象。
     /// 验证失败或重复注册均会中止并回滚，原有记录保持不变。
@@ -901,6 +911,11 @@ pub enum EntryFunctionCall {
     /// 应用管理员将 PAUSED 恢复为 ACTIVE；当前为 STOPPED 时直接恢复会中止。
     /// 已经处于 ACTIVE 时重复调用不发事件。
     PocRegistryResumeApp {},
+
+    /// 仅治理可撤销尚未使用的身份批准；不影响已登记的应用。
+    PocRegistryRevokeAppIdentityApproval {
+        app_admin: AccountAddress,
+    },
 
     /// 仅 @topo_framework 可设置应用贡献的有效权重，单位为万分比，范围为 0–10000。
     /// 10000 表示计入 100% 贡献，5000 表示 50%；数值未变时直接返回且不发事件。
@@ -928,19 +943,28 @@ pub enum EntryFunctionCall {
     },
 
     /// 应用管理员可在升级或重新部署后更新合约地址，新地址不能被其他应用用作合约地址。
+    /// 治理须预先批准更新后的完整身份组合。
     /// 更新不改变 PoC 准入状态（poc_listing_status）；地址未变时直接返回且不发事件。
     PocRegistryUpdateAppAddress {
         new_app_address: AccountAddress,
     },
 
+    /// 管理员和新合约地址共同签名即可更新，无需治理批准。
+    PocRegistryUpdateAppAddressWithSigner {},
+
     /// 应用管理员更新托管地址，新地址不能被其他应用用作托管地址。
+    /// 治理须预先批准更新后的完整身份组合。
     /// 发放可信贡献时，由该地址签名授权代币转出；更新不改变 PoC 准入状态（poc_listing_status）。
     /// 地址未变时直接返回，重复调用不发事件。
     PocRegistryUpdateCustodyAddress {
         new_custody_address: AccountAddress,
     },
 
+    /// 管理员和新托管地址共同签名即可更新，无需治理批准。
+    PocRegistryUpdateCustodyAddressWithSigner {},
+
     /// 应用管理员更新股权代币；新地址须为有效 FA Metadata 对象，且不能与其他应用的股权代币地址重复。
+    /// 治理须预先批准更新后的完整身份组合。
     /// 更换资产后需重新审核，因此 PoC 准入状态重置为 REGISTERED，审核通过后可恢复 WHITELISTED。
     /// 地址未变时直接返回，保留原状态且不发事件。
     PocRegistryUpdateEquityTokenAddress {
@@ -992,6 +1016,8 @@ pub enum EntryFunctionCall {
         pool: AccountAddress,
     },
 
+    StakeCancelPendingRewardSplit {},
+
     /// Similar to increase_lockup_with_cap but will use ownership capability from the signing account.
     StakeIncreaseLockup {},
 
@@ -1034,6 +1060,12 @@ pub enum EntryFunctionCall {
         pool_address: AccountAddress,
         new_consensus_pubkey: Vec<u8>,
         proof_of_possession: Vec<u8>,
+    },
+
+    /// 治理可设置下一 Epoch 或更晚生效的原生奖励占比；覆盖待生效配置不影响当期占比。
+    StakeScheduleRewardSplit {
+        native_reward_bps: u64,
+        activation_epoch: u64,
     },
 
     /// Allows an owner to change the delegated voter of the stake pool.
@@ -1932,6 +1964,17 @@ impl EntryFunctionCall {
                 users,
                 powers,
             } => poc_power_store_stage_batch_update(target_period, users, powers),
+            PocRegistryApproveAppIdentity {
+                app_admin,
+                app_address,
+                equity_token_address,
+                custody_address,
+            } => poc_registry_approve_app_identity(
+                app_admin,
+                app_address,
+                equity_token_address,
+                custody_address,
+            ),
             PocRegistryInitializeRegistry {} => poc_registry_initialize_registry(),
             PocRegistryPauseApp {} => poc_registry_pause_app(),
             PocRegistryRegisterApp {
@@ -1946,6 +1989,9 @@ impl EntryFunctionCall {
                 metadata_uri,
             ),
             PocRegistryResumeApp {} => poc_registry_resume_app(),
+            PocRegistryRevokeAppIdentityApproval { app_admin } => {
+                poc_registry_revoke_app_identity_approval(app_admin)
+            },
             PocRegistrySetEffectiveWeightPbs {
                 app_admin,
                 new_effective_weight_pbs,
@@ -1961,9 +2007,15 @@ impl EntryFunctionCall {
             PocRegistryUpdateAppAddress { new_app_address } => {
                 poc_registry_update_app_address(new_app_address)
             },
+            PocRegistryUpdateAppAddressWithSigner {} => {
+                poc_registry_update_app_address_with_signer()
+            },
             PocRegistryUpdateCustodyAddress {
                 new_custody_address,
             } => poc_registry_update_custody_address(new_custody_address),
+            PocRegistryUpdateCustodyAddressWithSigner {} => {
+                poc_registry_update_custody_address_with_signer()
+            },
             PocRegistryUpdateEquityTokenAddress {
                 new_equity_token_address,
             } => poc_registry_update_equity_token_address(new_equity_token_address),
@@ -1994,6 +2046,7 @@ impl EntryFunctionCall {
             ),
             StakeAddStake { amount } => stake_add_stake(amount),
             StakeCancelLeaveValidatorSet { pool } => stake_cancel_leave_validator_set(pool),
+            StakeCancelPendingRewardSplit {} => stake_cancel_pending_reward_split(),
             StakeIncreaseLockup {} => stake_increase_lockup(),
             StakeInitializeStakeOwner {
                 initial_stake_amount,
@@ -2021,6 +2074,10 @@ impl EntryFunctionCall {
             } => {
                 stake_rotate_consensus_key(pool_address, new_consensus_pubkey, proof_of_possession)
             },
+            StakeScheduleRewardSplit {
+                native_reward_bps,
+                activation_epoch,
+            } => stake_schedule_reward_split(native_reward_bps, activation_epoch),
             StakeSetDelegatedVoter { new_voter } => stake_set_delegated_voter(new_voter),
             StakeSetOperator { new_operator } => stake_set_operator(new_operator),
             StakeUnlock { amount } => stake_unlock(amount),
@@ -4527,6 +4584,34 @@ pub fn poc_power_store_stage_batch_update(
     ))
 }
 
+/// 仅治理可批准管理员下一次注册或更新后的完整身份组合，覆盖该管理员尚未使用的批准。
+/// 批准不占用唯一索引，也不授予 PoC 白名单资格；成功注册或更新后自动消耗。
+/// 更新优先使用控制权证明入口；无法提供证明时，批准该次更新后的完整组合。
+pub fn poc_registry_approve_app_identity(
+    app_admin: AccountAddress,
+    app_address: AccountAddress,
+    equity_token_address: AccountAddress,
+    custody_address: AccountAddress,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("approve_app_identity").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&app_admin).unwrap(),
+            bcs::to_bytes(&app_address).unwrap(),
+            bcs::to_bytes(&equity_token_address).unwrap(),
+            bcs::to_bytes(&custody_address).unwrap(),
+        ],
+    ))
+}
+
 /// 仅 @topo_framework 可初始化应用注册表；资源已存在时直接返回。
 pub fn poc_registry_initialize_registry() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -4560,7 +4645,7 @@ pub fn poc_registry_pause_app() -> TransactionPayload {
     ))
 }
 
-/// 任意地址可签名注册为应用管理员；成功后运行状态为 ACTIVE，PoC 准入状态为 REGISTERED。
+/// 管理员须先获得治理对完整身份组合的批准，再签名注册；成功后为 ACTIVE / REGISTERED。
 /// 每个管理员只能注册一个应用；合约、股权代币和托管地址各自在对应索引中全局唯一。
 /// 股权代币地址必须通过 `object::address_to_object<Metadata>` 验证，确认为有效 FA 元数据对象。
 /// 验证失败或重复注册均会中止并回滚，原有记录保持不变。
@@ -4610,6 +4695,22 @@ pub fn poc_registry_resume_app() -> TransactionPayload {
         ident_str!("resume_app").to_owned(),
         vec![],
         vec![],
+    ))
+}
+
+/// 仅治理可撤销尚未使用的身份批准；不影响已登记的应用。
+pub fn poc_registry_revoke_app_identity_approval(app_admin: AccountAddress) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("revoke_app_identity_approval").to_owned(),
+        vec![],
+        vec![bcs::to_bytes(&app_admin).unwrap()],
     ))
 }
 
@@ -4695,6 +4796,7 @@ pub fn poc_registry_suspend_poc_listing(app_admin: AccountAddress) -> Transactio
 }
 
 /// 应用管理员可在升级或重新部署后更新合约地址，新地址不能被其他应用用作合约地址。
+/// 治理须预先批准更新后的完整身份组合。
 /// 更新不改变 PoC 准入状态（poc_listing_status）；地址未变时直接返回且不发事件。
 pub fn poc_registry_update_app_address(new_app_address: AccountAddress) -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -4711,7 +4813,24 @@ pub fn poc_registry_update_app_address(new_app_address: AccountAddress) -> Trans
     ))
 }
 
+/// 管理员和新合约地址共同签名即可更新，无需治理批准。
+pub fn poc_registry_update_app_address_with_signer() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("update_app_address_with_signer").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 /// 应用管理员更新托管地址，新地址不能被其他应用用作托管地址。
+/// 治理须预先批准更新后的完整身份组合。
 /// 发放可信贡献时，由该地址签名授权代币转出；更新不改变 PoC 准入状态（poc_listing_status）。
 /// 地址未变时直接返回，重复调用不发事件。
 pub fn poc_registry_update_custody_address(
@@ -4731,7 +4850,24 @@ pub fn poc_registry_update_custody_address(
     ))
 }
 
+/// 管理员和新托管地址共同签名即可更新，无需治理批准。
+pub fn poc_registry_update_custody_address_with_signer() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("poc_registry").to_owned(),
+        ),
+        ident_str!("update_custody_address_with_signer").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 /// 应用管理员更新股权代币；新地址须为有效 FA Metadata 对象，且不能与其他应用的股权代币地址重复。
+/// 治理须预先批准更新后的完整身份组合。
 /// 更换资产后需重新审核，因此 PoC 准入状态重置为 REGISTERED，审核通过后可恢复 WHITELISTED。
 /// 地址未变时直接返回，保留原状态且不发事件。
 pub fn poc_registry_update_equity_token_address(
@@ -4879,6 +5015,21 @@ pub fn stake_cancel_leave_validator_set(pool: AccountAddress) -> TransactionPayl
     ))
 }
 
+pub fn stake_cancel_pending_reward_split() -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("stake").to_owned(),
+        ),
+        ident_str!("cancel_pending_reward_split").to_owned(),
+        vec![],
+        vec![],
+    ))
+}
+
 /// Similar to increase_lockup_with_cap but will use ownership capability from the signing account.
 pub fn stake_increase_lockup() -> TransactionPayload {
     TransactionPayload::EntryFunction(EntryFunction::new(
@@ -5017,6 +5168,28 @@ pub fn stake_rotate_consensus_key(
             bcs::to_bytes(&pool_address).unwrap(),
             bcs::to_bytes(&new_consensus_pubkey).unwrap(),
             bcs::to_bytes(&proof_of_possession).unwrap(),
+        ],
+    ))
+}
+
+/// 治理可设置下一 Epoch 或更晚生效的原生奖励占比；覆盖待生效配置不影响当期占比。
+pub fn stake_schedule_reward_split(
+    native_reward_bps: u64,
+    activation_epoch: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("stake").to_owned(),
+        ),
+        ident_str!("schedule_reward_split").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&native_reward_bps).unwrap(),
+            bcs::to_bytes(&activation_epoch).unwrap(),
         ],
     ))
 }
@@ -7631,6 +7804,21 @@ mod decoder {
         }
     }
 
+    pub fn poc_registry_approve_app_identity(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryApproveAppIdentity {
+                app_admin: bcs::from_bytes(script.args().get(0)?).ok()?,
+                app_address: bcs::from_bytes(script.args().get(1)?).ok()?,
+                equity_token_address: bcs::from_bytes(script.args().get(2)?).ok()?,
+                custody_address: bcs::from_bytes(script.args().get(3)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
     pub fn poc_registry_initialize_registry(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -7665,6 +7853,18 @@ mod decoder {
     pub fn poc_registry_resume_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
             Some(EntryFunctionCall::PocRegistryResumeApp {})
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_revoke_app_identity_approval(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::PocRegistryRevokeAppIdentityApproval {
+                app_admin: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
         } else {
             None
         }
@@ -7728,6 +7928,16 @@ mod decoder {
         }
     }
 
+    pub fn poc_registry_update_app_address_with_signer(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocRegistryUpdateAppAddressWithSigner {})
+        } else {
+            None
+        }
+    }
+
     pub fn poc_registry_update_custody_address(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -7735,6 +7945,16 @@ mod decoder {
             Some(EntryFunctionCall::PocRegistryUpdateCustodyAddress {
                 new_custody_address: bcs::from_bytes(script.args().get(0)?).ok()?,
             })
+        } else {
+            None
+        }
+    }
+
+    pub fn poc_registry_update_custody_address_with_signer(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::PocRegistryUpdateCustodyAddressWithSigner {})
         } else {
             None
         }
@@ -7831,6 +8051,16 @@ mod decoder {
         }
     }
 
+    pub fn stake_cancel_pending_reward_split(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(_script) = payload {
+            Some(EntryFunctionCall::StakeCancelPendingRewardSplit {})
+        } else {
+            None
+        }
+    }
+
     pub fn stake_increase_lockup(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
             Some(EntryFunctionCall::StakeIncreaseLockup {})
@@ -7900,6 +8130,17 @@ mod decoder {
                 pool_address: bcs::from_bytes(script.args().get(0)?).ok()?,
                 new_consensus_pubkey: bcs::from_bytes(script.args().get(1)?).ok()?,
                 proof_of_possession: bcs::from_bytes(script.args().get(2)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn stake_schedule_reward_split(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::StakeScheduleRewardSplit {
+                native_reward_bps: bcs::from_bytes(script.args().get(0)?).ok()?,
+                activation_epoch: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -9109,6 +9350,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::poc_power_store_stage_batch_update),
         );
         map.insert(
+            "poc_registry_approve_app_identity".to_string(),
+            Box::new(decoder::poc_registry_approve_app_identity),
+        );
+        map.insert(
             "poc_registry_initialize_registry".to_string(),
             Box::new(decoder::poc_registry_initialize_registry),
         );
@@ -9123,6 +9368,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "poc_registry_resume_app".to_string(),
             Box::new(decoder::poc_registry_resume_app),
+        );
+        map.insert(
+            "poc_registry_revoke_app_identity_approval".to_string(),
+            Box::new(decoder::poc_registry_revoke_app_identity_approval),
         );
         map.insert(
             "poc_registry_set_effective_weight_pbs".to_string(),
@@ -9145,8 +9394,16 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::poc_registry_update_app_address),
         );
         map.insert(
+            "poc_registry_update_app_address_with_signer".to_string(),
+            Box::new(decoder::poc_registry_update_app_address_with_signer),
+        );
+        map.insert(
             "poc_registry_update_custody_address".to_string(),
             Box::new(decoder::poc_registry_update_custody_address),
+        );
+        map.insert(
+            "poc_registry_update_custody_address_with_signer".to_string(),
+            Box::new(decoder::poc_registry_update_custody_address_with_signer),
         );
         map.insert(
             "poc_registry_update_equity_token_address".to_string(),
@@ -9177,6 +9434,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::stake_cancel_leave_validator_set),
         );
         map.insert(
+            "stake_cancel_pending_reward_split".to_string(),
+            Box::new(decoder::stake_cancel_pending_reward_split),
+        );
+        map.insert(
             "stake_increase_lockup".to_string(),
             Box::new(decoder::stake_increase_lockup),
         );
@@ -9203,6 +9464,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "stake_rotate_consensus_key".to_string(),
             Box::new(decoder::stake_rotate_consensus_key),
+        );
+        map.insert(
+            "stake_schedule_reward_split".to_string(),
+            Box::new(decoder::stake_schedule_reward_split),
         );
         map.insert(
             "stake_set_delegated_voter".to_string(),

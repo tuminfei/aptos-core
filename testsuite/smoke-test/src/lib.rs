@@ -42,6 +42,8 @@ mod network;
 #[cfg(test)]
 mod poc;
 #[cfg(test)]
+mod poc_defaults;
+#[cfg(test)]
 mod priority_fee;
 #[cfg(test)]
 mod randomness;

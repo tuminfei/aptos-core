@@ -105,6 +105,8 @@ script {
                 if (boundary_capacity) { 3 } else { 10000 },
                 if (boundary_capacity) { 2 } else { 200 },
                 if (boundary_capacity) { 4 } else { 1 }, @topo_framework);
+            // 原有账本和迁移边界用例将原生奖励占比设为零；五种换届路径的差分测试另设非零占比。
+            stake::schedule_reward_split(framework, 0, reconfiguration::current_epoch() + 1);
         } else if (operation == 1 || operation == 2) {
             poc_allocation::schedule_power_params(framework,
                 poc_accounting::new_power_params(100000000, value, 1000000, 4),
@@ -152,6 +154,16 @@ script {
             } else {
                 jwks::remove_oidc_provider_for_next_epoch(framework, b"missing-provider");
             };
+        } else if (operation == 14) {
+            stake::schedule_reward_split(framework, value, reconfiguration::current_epoch() + 1);
+        } else if (operation == 15) {
+            stake::cancel_pending_reward_split(framework);
+        } else if (operation == 16) {
+            stake::schedule_reward_split(framework, value, reconfiguration::current_epoch() + 1);
+            poc_allocation::schedule_power_params(framework,
+                poc_accounting::new_power_params(100000000, 10001, 1000000, 4),
+                reconfiguration::current_epoch() + 1);
+            topo_governance::force_end_epoch(framework);
         } else {
             abort 99
         };
@@ -247,6 +259,7 @@ impl PoCFixture {
             "poc_accounting::AccountingState",
             "poc_power_store::PowerStore",
             "poc_power_store::PeriodClock",
+            "poc_reward_split::RewardSplitConfig",
             "stake::ValidatorSet",
             "stake::EpochPlan",
             "stake::PrecomputedValidatorSet",
@@ -559,6 +572,10 @@ fn poc_governance_failure_rolls_back_parameters_and_epoch() {
     let output = fixture.governance(10, 321);
     assert_move_abort(&output);
     assert_eq!(fixture.snapshot(), before);
+    // 先排定原生奖励占比，再因目标委员会预检失败而回滚时，奖励分配配置也须恢复到事务前的状态。
+    let output = fixture.governance(16, 6000);
+    assert_move_abort(&output);
+    assert_eq!(fixture.snapshot(), before);
     let epoch = fixture.epoch();
     fixture.governance_success(9, 321);
     assert_eq!(fixture.epoch(), epoch + 1);
@@ -582,6 +599,7 @@ fn poc_frozen_direct_setters_and_claim_rollback() {
         .new_block_with_metadata(fixture.pools[0], vec![]);
     // 先缓存 OIDC 配置，覆盖冻结 setter 先 extract、再由底层 upsert 拒绝的回滚路径。
     fixture.governance_success(13, 0);
+    fixture.governance_success(14, 6000);
     let txn = fixture.harness.create_entry_function(
         &fixture.framework,
         "0x1::topo_governance::reconfigure".parse().unwrap(),
@@ -595,7 +613,7 @@ fn poc_frozen_direct_setters_and_claim_rollback() {
         .expect("DKG must freeze a plan");
     let pvs = fixture.resource("stake::PrecomputedValidatorSet").unwrap();
     let epoch = fixture.epoch();
-    for operation in [3, 4, 5, 6, 7, 8, 9, 10, 12, 13] {
+    for operation in [3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15] {
         let before = fixture.snapshot();
         let output = fixture.governance(operation, 321);
         if operation == 4 || operation == 5 {
@@ -606,6 +624,8 @@ fn poc_frozen_direct_setters_and_claim_rollback() {
         } else if operation == 12 {
             // 创世专用入口仍由链状态检查拒绝，不能在运行链上修改配置。
             assert_move_abort_at(&output, "chain_status", 0x30001);
+        } else if operation == 14 || operation == 15 {
+            assert_move_abort_at(&output, "poc_reward_split", 0x30003);
         } else {
             assert_move_abort_at(&output, "reconfiguration_state", 0x30002);
         }

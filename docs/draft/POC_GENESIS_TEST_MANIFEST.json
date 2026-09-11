@@ -19,5 +19,6 @@
   "deployment_mode": "Open",
   "retention_bps": 10000,
   "max_relative_period": 20,
-  "initial_raw_power": 17
+  "initial_raw_power": 17,
+  "native_reward_bps": 3000
 }

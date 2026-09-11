@@ -1318,6 +1318,16 @@ spec topo_framework::stake {
         ensures result <= base;
     }
 
+    spec split_native_reward_by_stake {
+        pragma opaque;
+        requires active_stake_octa + pending_inactive_stake_octa > 0 || native_reward_octa == 0;
+        ensures result_1 + result_2 == native_reward_octa;
+        ensures active_stake_octa + pending_inactive_stake_octa > 0 ==>
+            result_2 == native_reward_octa * pending_inactive_stake_octa / (active_stake_octa + pending_inactive_stake_octa);
+        ensures active_stake_octa == 0 ==> result_1 == 0;
+        ensures pending_inactive_stake_octa == 0 ==> result_2 == 0;
+    }
+
     spec validate_current_set {
         pragma opaque;
         ensures forall i in 0..len(set.active_validators):
@@ -1381,6 +1391,7 @@ spec topo_framework::stake {
         modifies global<InstalledRewardContext>(@topo_framework);
         modifies global<PendingTransactionFee>(@topo_framework);
         modifies global<VoluntaryLeaves>(@topo_framework);
+        modifies global<poc_reward_split::RewardSplitConfig>(@topo_framework);
         ensures exists<InstalledRewardContext>(@topo_framework);
         ensures global<InstalledRewardContext>(@topo_framework).context.epoch == epoch;
         ensures !global<InstalledRewardContext>(@topo_framework).context.poc_enabled;
@@ -1471,6 +1482,7 @@ spec topo_framework::stake {
         include staking_config::StakingRewardsConfigRequirement;
         modifies global<EpochPlan>(@topo_framework);
         modifies global<InstalledRewardContext>(@topo_framework);
+        modifies global<poc_reward_split::RewardSplitConfig>(@topo_framework);
         modifies global<ValidatorSet>(@topo_framework);
         modifies global<ValidatorPerformance>(@topo_framework);
         modifies global<PendingTransactionFee>(@topo_framework);

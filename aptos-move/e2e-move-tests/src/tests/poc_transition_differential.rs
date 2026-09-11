@@ -18,7 +18,7 @@ use aptos_types::{
     dkg::{chunky_dkg::ChunkyDKGState, DKGState},
     on_chain_config::ValidatorSet,
     state_store::{state_key::StateKey, StateView},
-    transaction::Transaction,
+    transaction::{BlockEndInfo, BlockEpiloguePayload, FeeDistribution, Transaction},
     validator_verifier::ValidatorConsensusInfoMoveStruct,
 };
 use aptos_vm::{data_cache::AsMoveResolver, move_vm_ext::SessionId, AptosVM};
@@ -57,6 +57,28 @@ struct Preview {
     targets: Vec<PoolTarget>,
     validator_set: ValidatorSet,
     is_liveness_fallback: bool,
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+struct RewardSplitEvent {
+    pool: AccountAddress,
+    closing_epoch: u64,
+    native_reward_bps: u64,
+    total_inflation_octa: u64,
+    active_native_reward_octa: u64,
+    pending_inactive_native_reward_octa: u64,
+    poc_inflation_octa: u64,
+}
+
+fn stake_balances_octa(state: &impl StateView, pool: &AccountAddress) -> [u64; 4] {
+    view(state, "stake", "get_stake", vec![
+        bcs::to_bytes(pool).unwrap()
+    ])
+    .iter()
+    .map(|value| bcs::from_bytes(value).unwrap())
+    .collect::<Vec<_>>()
+    .try_into()
+    .unwrap()
 }
 
 /// 读取指定分支中的完整资源字节，缺失资源保留为 None。
@@ -185,6 +207,8 @@ script {
     use topo_framework::chunky_dkg_config;
     use topo_framework::epoch_timeout_config;
     use topo_framework::randomness_config;
+    use topo_framework::reconfiguration;
+    use topo_framework::stake;
     use topo_framework::topo_governance;
     fun main(framework: &signer) {
         randomness_config::set_for_next_epoch(framework, randomness_config::new_v1(
@@ -193,7 +217,9 @@ script {
             fixed_point64::create_from_rational(1, 2), fixed_point64::create_from_rational(2, 3)));
         epoch_timeout_config::set_for_next_epoch(framework, epoch_timeout_config::new_with_grace_period(2));
         block::update_epoch_interval_microsecs(framework, 60000000);
+        stake::schedule_reward_split(framework, 3000, reconfiguration::current_epoch() + 1);
         topo_governance::force_end_epoch(framework);
+        stake::schedule_reward_split(framework, 6000, reconfiguration::current_epoch() + 1);
     }
 }
 "#,
@@ -228,6 +254,37 @@ script {
     );
     let output = fixture.harness.run_raw(txn);
     fixture.record_success(output);
+    let fee_recipient_validator_index: u64 = bcs::from_bytes(
+        &view(
+            fixture.harness.executor.get_state_view(),
+            "stake",
+            "get_validator_index",
+            vec![bcs::to_bytes(fixture.pools.last().unwrap()).unwrap()],
+        )[0],
+    )
+    .unwrap();
+    // 单笔交易测试不会自动生成区块尾处理事务，因此显式执行 VM 系统事务，记录交易费的验证者归属。
+    // 五种换届路径使用相同的 17 Octa 交易费，按旧期 30% 分为 native 5、PoC 12。
+    // 此处验证费用分发与结算，不验证上游的费用归属计算。
+    let fee_distribution_output = fixture
+        .harness
+        .executor
+        .execute_transaction_block(vec![Transaction::BlockEpilogue(BlockEpiloguePayload::V2 {
+            block_id: HashValue::zero(),
+            block_end_info: BlockEndInfo::new_empty(),
+            fee_distribution: FeeDistribution::new(BTreeMap::from([(
+                fee_recipient_validator_index,
+                17,
+            )])),
+            to_make_hot: Default::default(),
+        })])
+        .unwrap()
+        .remove(0);
+    fixture
+        .harness
+        .executor
+        .apply_write_set(fee_distribution_output.write_set());
+    fixture.record_success(fee_distribution_output);
     let force = fixture.harness.create_entry_function(
         &fixture.framework,
         "0x1::topo_governance::force_end_epoch".parse().unwrap(),
@@ -238,6 +295,29 @@ script {
     let base = fixture.harness.executor.get_state_view();
     let base_snapshot = fixture.snapshot();
     let epoch = fixture.epoch();
+    assert_eq!(
+        bcs::from_bytes::<u64>(&view(base, "stake", "get_installed_native_reward_bps", vec![])[0])
+            .unwrap(),
+        3000
+    );
+    let reward_split_config_bytes_before =
+        raw(base, "poc_reward_split::RewardSplitConfig").unwrap();
+    let stake_balances_before: BTreeMap<_, _> = fixture
+        .pools
+        .iter()
+        .map(|pool| (*pool, stake_balances_octa(base, pool)))
+        .collect();
+    let vault_balances_before_octa: BTreeMap<_, u64> = fixture
+        .pools
+        .iter()
+        .map(|pool| {
+            let values = view(base, "poc_accounting", "get_pool", vec![bcs::to_bytes(
+                pool,
+            )
+            .unwrap()]);
+            (*pool, bcs::from_bytes(&values[3]).unwrap())
+        })
+        .collect();
     assert!(raw(base, "stake::EpochPlan").is_none());
     assert!(raw(base, "stake::PrecomputedValidatorSet").is_none());
     let now_us: u64 =
@@ -267,6 +347,8 @@ script {
     let mut settled_pools = None;
     let mut closing_rewards = None;
     let mut reward_context = None;
+    let mut reference_reward_split_events = None;
+    let mut reference_reward_split_config_bytes = None;
 
     for completion in [
         Completion::Synchronous,
@@ -291,6 +373,10 @@ script {
             )
         };
         if !matches!(completion, Completion::Synchronous) {
+            assert_eq!(
+                raw(&branch, "poc_reward_split::RewardSplitConfig").unwrap(),
+                reward_split_config_bytes_before
+            );
             // 冻结后的较晚查询仍须返回原截止时间和同一目标，不能按新时间重选。
             assert_eq!(preview(&branch, epoch + 1, cutoff + 1), expected);
             let (pvs, fallback): (ValidatorSet, bool) =
@@ -378,6 +464,33 @@ script {
             bcs::from_bytes(&raw(&branch, "stake::InstalledRewardContext").unwrap()).unwrap();
         assert_eq!(context.0, expected.epoch);
         assert!(context.1);
+        let encoded_reward_split_config =
+            view(&branch, "stake", "get_reward_split_configuration", vec![]);
+        assert_eq!(
+            bcs::from_bytes::<u64>(&encoded_reward_split_config[0]).unwrap(),
+            expected.epoch
+        );
+        assert_eq!(
+            bcs::from_bytes::<u64>(&encoded_reward_split_config[1]).unwrap(),
+            6000
+        );
+        assert_eq!(
+            bcs::from_bytes::<u64>(&encoded_reward_split_config[2]).unwrap(),
+            6000
+        );
+        assert!(bcs::from_bytes::<Vec<u64>>(&encoded_reward_split_config[3])
+            .unwrap()
+            .is_empty());
+        assert!(bcs::from_bytes::<Vec<u64>>(&encoded_reward_split_config[4])
+            .unwrap()
+            .is_empty());
+        let reward_split_config_bytes =
+            raw(&branch, "poc_reward_split::RewardSplitConfig").unwrap();
+        if let Some(reference) = &reference_reward_split_config_bytes {
+            assert_eq!(&reward_split_config_bytes, reference, "{completion:?}");
+        } else {
+            reference_reward_split_config_bytes = Some(reward_split_config_bytes);
+        }
         if let Some(reference) = reward_context {
             assert_eq!(context, reference, "{completion:?}");
         } else {
@@ -405,7 +518,11 @@ script {
             let index: U256 = bcs::from_bytes(&values[4]).unwrap();
             assert_eq!(units, target.units);
             assert_eq!(base, target.reward_base_octa);
-            pool_results.insert(target.pool, (units, base, vault, index));
+            let pool_stake_balances_octa = stake_balances_octa(&branch, &target.pool);
+            pool_results.insert(
+                target.pool,
+                (units, base, vault, index, pool_stake_balances_octa),
+            );
         }
         let rewards: Vec<(AccountAddress, u64, u64, u64, u64, U256)> = events
             .iter()
@@ -422,6 +539,94 @@ script {
         assert!(rewards
             .iter()
             .all(|(_, _, _, inflation, ..)| *inflation > 0));
+        assert!(rewards.iter().any(|reward| reward.4 > 0));
+        let reward_split_events: Vec<RewardSplitEvent> = events
+            .iter()
+            .filter(|event| {
+                event
+                    .type_tag()
+                    .to_canonical_string()
+                    .ends_with("::stake::PoCRewardSplit")
+            })
+            .map(|event| bcs::from_bytes(event.event_data()).unwrap())
+            .collect();
+        assert_eq!(reward_split_events.len(), fixture.pools.len());
+        let native_reward_events: Vec<(AccountAddress, u64)> = events
+            .iter()
+            .filter(|event| {
+                event
+                    .type_tag()
+                    .to_canonical_string()
+                    .ends_with("::stake::DistributeRewards")
+            })
+            .map(|event| bcs::from_bytes(event.event_data()).unwrap())
+            .collect();
+        assert_eq!(native_reward_events.len(), fixture.pools.len());
+        let native_fee_events: Vec<(AccountAddress, u64)> = events
+            .iter()
+            .filter(|event| {
+                event
+                    .type_tag()
+                    .to_canonical_string()
+                    .ends_with("::stake::DistributeTransactionFee")
+            })
+            .map(|event| bcs::from_bytes(event.event_data()).unwrap())
+            .collect();
+        assert_eq!(native_fee_events, vec![(*fixture.pools.last().unwrap(), 5)]);
+        for split_event in &reward_split_events {
+            assert_eq!(split_event.closing_epoch, epoch);
+            assert_eq!(split_event.native_reward_bps, 3000);
+            let native_reward_octa = split_event.active_native_reward_octa
+                + split_event.pending_inactive_native_reward_octa;
+            assert_eq!(
+                native_reward_octa,
+                split_event.total_inflation_octa * 3000 / 10000
+            );
+            assert!(native_reward_octa > 0 && split_event.poc_inflation_octa > 0);
+            assert_eq!(
+                native_reward_events
+                    .iter()
+                    .find(|event| event.0 == split_event.pool)
+                    .unwrap()
+                    .1,
+                native_reward_octa
+            );
+            assert_eq!(
+                native_reward_octa + split_event.poc_inflation_octa,
+                split_event.total_inflation_octa
+            );
+            let poc_reward_event = rewards
+                .iter()
+                .find(|reward| reward.0 == split_event.pool)
+                .unwrap();
+            assert_eq!(poc_reward_event.3, split_event.poc_inflation_octa);
+            let (native_fee_octa, poc_fee_octa) =
+                if split_event.pool == *fixture.pools.last().unwrap() {
+                    (5, 12)
+                } else {
+                    (0, 0)
+                };
+            assert_eq!(poc_reward_event.4, poc_fee_octa);
+            let (_, _, vault_balance_octa, _, current_stake_balances_octa) =
+                pool_results[&split_event.pool];
+            let previous_stake_balances_octa = stake_balances_before[&split_event.pool];
+            // 快照中的质押余额均位于 active；同时核对余额增量和事件，确保奖励只铸造一次。
+            assert_eq!(previous_stake_balances_octa[1..], [0, 0, 0]);
+            assert_eq!(current_stake_balances_octa[1..], [0, 0, 0]);
+            assert_eq!(
+                current_stake_balances_octa[0] - previous_stake_balances_octa[0],
+                native_reward_octa + native_fee_octa
+            );
+            assert_eq!(
+                vault_balance_octa - vault_balances_before_octa[&split_event.pool],
+                split_event.poc_inflation_octa + poc_reward_event.4
+            );
+            assert_eq!(
+                (current_stake_balances_octa[0] - previous_stake_balances_octa[0])
+                    + (vault_balance_octa - vault_balances_before_octa[&split_event.pool]),
+                split_event.total_inflation_octa + native_fee_octa + poc_fee_octa
+            );
+        }
         if let Some(reference) = &settled_pools {
             assert_eq!(&pool_results, reference, "{completion:?}");
             assert_eq!(
@@ -429,9 +634,15 @@ script {
                 closing_rewards.as_ref().unwrap(),
                 "{completion:?}"
             );
+            assert_eq!(
+                &reward_split_events,
+                reference_reward_split_events.as_ref().unwrap(),
+                "{completion:?}"
+            );
         } else {
             settled_pools = Some(pool_results);
             closing_rewards = Some(rewards);
+            reference_reward_split_events = Some(reward_split_events);
         }
         // 同一时间戳下重复完成不能再次发放奖励或推进 Epoch，原始基线也须保持不变。
         let once = branch.delta();

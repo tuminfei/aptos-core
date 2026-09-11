@@ -358,6 +358,24 @@ module topo_framework::genesis {
         max_relative_period: u64,
         initial_raw_power: u64,
     ) {
+        create_initialize_poc_validators_with_reward_split(framework, validators, params, limits,
+            deployment_mode, retention_bps, max_relative_period, initial_raw_power,
+            topo_framework::poc_reward_split::default_native_reward_bps());
+    }
+
+    /// 按指定的原生奖励占比初始化 PoC 创世。
+    /// 原入口保留参数签名，原生奖励占比默认设为 3000 bps（30%）。
+    fun create_initialize_poc_validators_with_reward_split(
+        framework: &signer,
+        validators: vector<ValidatorConfiguration>,
+        params: topo_framework::poc_accounting::PowerParams,
+        limits: topo_framework::poc_accounting::DeploymentLimits,
+        deployment_mode: u8,
+        retention_bps: u64,
+        max_relative_period: u64,
+        initial_raw_power: u64,
+        native_reward_bps: u64,
+    ) {
         chain_status::assert_genesis();
         system_addresses::assert_topo_framework(framework);
         assert!(initial_raw_power > 0, error::invalid_argument(EINVALID_INITIAL_RAW_POWER));
@@ -378,6 +396,7 @@ module topo_framework::genesis {
         stake::set_transaction_fee_limit_per_epoch_per_pool(framework, 0);
         topo_framework::poc_allocation::prepare_poc(framework, params, limits,
             deployment_mode, 1, retention_bps, max_relative_period, POC_POWER_PERIOD_IN_EPOCHS, @topo_framework);
+        stake::schedule_reward_split(framework, native_reward_bps, 1);
         for (i in 0..validators.length()) {
             let owner = validators[i].owner_address;
             topo_framework::poc_allocation::enable_pool(framework, owner);
@@ -629,6 +648,7 @@ module topo_framework::genesis {
         let (epoch, poc, _, _, distribute_fees, fee_limit) =
             stake::get_reward_context_fields(&stake::get_installed_reward_context());
         assert!(epoch == 1 && poc && distribute_fees && fee_limit == 0 && chain_status::is_operating(), 3);
+        assert!(stake::get_installed_native_reward_bps() == 3000, 17);
         let (baseline, period, boundary, _, _, _) =
             topo_framework::poc_power_store::get_normalization_clock();
         assert!(baseline == 0 && period == 0 && boundary == 61, 4);
@@ -671,6 +691,7 @@ module topo_framework::genesis {
         topo_framework::poc_power_store::set_operator(&framework, std::signer::address_of(&operator));
         topo_framework::poc_power_store::set_power_period_in_epochs(&framework, 2);
         stake::set_transaction_fee_limit_per_epoch_per_pool(&framework, 3);
+        stake::schedule_reward_split(&framework, 5000, 2);
         // 新上传者立即可写下一算力周期；改长度不能移动已经确定的首个周期边界。
         topo_framework::poc_power_store::stage_batch_update(&operator, 1, vector[@0xa11], vector[20]);
         assert!(topo_framework::poc_power_store::get_operator() == std::signer::address_of(&operator)
@@ -681,18 +702,23 @@ module topo_framework::genesis {
         stake::record_fee(&vm, vector[index], vector[1]);
         assert!(stake::transaction_fee_limit() == 3
             && stake::get_installed_reward_context() == initial_context
-            && stake::get_pending_transaction_fee()[index] == 0, 4);
+            && stake::get_pending_transaction_fee()[index] == 0
+            && stake::get_installed_native_reward_bps() == 3000, 4);
 
         timestamp::fast_forward_seconds(1);
         topo_governance::force_end_epoch(&framework);
         let (epoch, poc, _, _, distribute_fees, fee_limit) =
             stake::get_reward_context_fields(&stake::get_installed_reward_context());
-        assert!(epoch == 2 && poc && distribute_fees && fee_limit == 3, 5);
+        assert!(epoch == 2 && poc && distribute_fees && fee_limit == 3
+            && stake::get_installed_native_reward_bps() == 5000, 5);
         assert!(topo_framework::poc_power_store::get_current_period() == 0
             && topo_framework::poc_power_store::next_boundary_epoch() == 61
             && topo_framework::poc_power_store::get_user_committed_power(@0xa11) == 10, 6);
-        let (_, _, _, vault, _) = topo_framework::poc_accounting::get_pool(@0xa11);
-        assert!(vault == 10, 7); // Epoch 1 的正通胀照常发放，限额为零时的费用不补发。
+        let (_, _, _, poc_vault_balance_octa, _) = topo_framework::poc_accounting::get_pool(@0xa11);
+        let (active_stake_octa, _, _, _) = stake::get_stake(@0xa11);
+        // Epoch 1 的 10 Octa 通胀奖励按当期原生奖励占比 30% 分配：原生质押增加 3 Octa，PoC 奖励金库增加 7 Octa。
+        // 当期交易费限额为零，后续提高限额也不补发。
+        assert!(poc_vault_balance_octa == 7 && active_stake_octa == 103, 7);
 
         let index = stake::get_validator_index(@0xa11);
         stake::update_performance_statistics(std::option::some(index), vector[]);
@@ -700,8 +726,10 @@ module topo_framework::genesis {
         assert!(stake::get_pending_transaction_fee()[index] == 3, 8);
         timestamp::fast_forward_seconds(1);
         topo_governance::force_end_epoch(&framework);
-        let (_, _, _, vault, _) = topo_framework::poc_accounting::get_pool(@0xa11);
-        assert!(vault == 23, 9); // Epoch 2 新增 10 通胀和限额内的 3 费用。
+        let (_, _, _, poc_vault_balance_octa, _) = topo_framework::poc_accounting::get_pool(@0xa11);
+        let (active_stake_octa, _, _, _) = stake::get_stake(@0xa11);
+        // Epoch 2 的通胀和交易费均按 50% 分流：10 Octa 通胀各得 5，3 Octa 费用原生得 1、PoC 得 2。
+        assert!(poc_vault_balance_octa == 14 && active_stake_octa == 109, 9);
     }
 
     #[test(framework = @topo_framework)]

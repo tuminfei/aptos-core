@@ -548,10 +548,21 @@ module topo_framework::delegation_pool {
     }
 
     #[view]
-    /// Return whether the commission percentage for the next lockup cycle is effective.
+    /// 判断下一锁仓周期的佣金比例是否满足生效条件。
     public fun is_next_commission_percentage_effective(pool_address: address): bool acquires NextCommissionPercentage {
-        exists<NextCommissionPercentage>(pool_address) &&
-            timestamp::now_seconds() >= borrow_global<NextCommissionPercentage>(pool_address).effective_after_secs
+        if (!exists<NextCommissionPercentage>(pool_address)
+            || timestamp::now_seconds() < borrow_global<NextCommissionPercentage>(pool_address).effective_after_secs) {
+            return false
+        };
+        if (stake::is_poc_enabled() && stake::is_current_epoch_validator(pool_address)) {
+            let (_, _, pending_active_stake_octa, _) = stake::get_stake(pool_address);
+            // 待激活资金的入池费按旧佣金比例收取。
+            // Epoch 因 DKG 等原因延长时，提前降低佣金会让新资金分走旧期原生奖励。
+            // 因此须等 Epoch 成功切换并清空 pending_active；
+            // 同步流程先按旧比例分配已入账的奖励和佣金，再启用新佣金比例。
+            if (pending_active_stake_octa > 0) { return false }
+        };
+        true
     }
 
     #[view]
@@ -684,26 +695,55 @@ module topo_framework::delegation_pool {
     }
 
     #[view]
-    /// Return refundable stake to be extracted from added `amount` at `add_stake` operation on pool `pool_address`.
-    /// If the validator produces rewards this epoch, added stake goes directly to `pending_active` and
-    /// does not earn rewards. However, all shares within a pool appreciate uniformly and when this epoch ends:
-    /// - either added shares are still `pending_active` and steal from rewards of existing `active` stake
-    /// - or have moved to `pending_inactive` and get full rewards (they displaced `active` stake at `unlock`)
-    /// To mitigate this, some of the added stake is extracted and fed back into the pool as placeholder
-    /// for the rewards the remaining stake would have earned if active:
-    /// extracted-fee = (amount - extracted-fee) * reward-rate% * (100% - operator-commission%)
+    /// 返回向池 `pool_address` 追加 `amount` 时应预留的入池费。
+    /// 当池参与当期共识时，新资金进入 `pending_active`，不参与当期原生计奖；
+    /// 但其委托份额仍会随池内奖励增值。若随后调用 `unlock`，还可能置换 `active` 资金，
+    /// 使对应的 `pending_inactive` 参与计奖。入池费用于补偿新增份额对原有质押收益的稀释：
+    /// 入池费 = (amount - 入池费) * 预期净收益率
+    /// 追加资金仍全额质押；入池费先记入 `NULL_SHAREHOLDER` 的临时份额，
+    /// Epoch 结束后由同步流程释放，让其余活跃份额共同分配这部分资金。
+    /// PoC 模式下，按当前 Epoch 的计奖基数、奖励率、费用开关与限额，以及原生占比估算总收益上限，
+    /// 再结合运营佣金估算原生净奖励，除以 `active + pending_inactive` 得到预期净收益率。
+    /// 按算力折算的计奖基数可能与实际质押额不同。
     public fun get_add_stake_fee(
         pool_address: address,
         amount: u64
     ): u64 acquires DelegationPool, NextCommissionPercentage {
         if (!stake::is_current_epoch_validator(pool_address)) { return 0 };
-        // 最后一个原生 Epoch 的收益仍计入委托份额，须按已安装的奖励率收取入池费。
-        // 切换到 PoC 后，奖励存入池级账本金库，不增加委托份额，因此入池费为零。
+        // PoC 准备阶段仍按当前原生 Epoch 已安装的奖励率估算入池费。
         let (poc_enabled, rate, denominator) = stake::get_installed_reward_rate();
-        if (poc_enabled || denominator == 0) { return 0 };
+        if (denominator == 0) { return 0 };
+        if (poc_enabled && stake::get_installed_native_reward_bps() == 0) { return 0 };
         assert_delegation_pool_exists(pool_address);
-        // 用 u256 计算佣金与奖励率的乘积，仍按原公式在最后一步向下取整。
-        let numerator = (rate as u256) * ((MAX_FEE - operator_commission_percentage(pool_address)) as u256);
+        let operator_commission_bps = operator_commission_percentage(pool_address);
+        if (poc_enabled) {
+            let native_reward_upper_bound_octa = stake::get_native_reward_upper_bound(pool_address);
+            if (native_reward_upper_bound_octa == 0 || operator_commission_bps == MAX_FEE) { return 0 };
+            let (active_stake_octa, _, _, pending_inactive_stake_octa) = stake::get_stake(pool_address);
+            let reward_eligible_stake_octa = (active_stake_octa as u256) + (pending_inactive_stake_octa as u256);
+            if (reward_eligible_stake_octa == 0) { return 0 };
+
+            // 按最优出块表现和整期可分发费用上限估算原生净收益，尚未收满费用时也预留全额。
+            // active 和 pending_inactive 的佣金分别向下取整，合计可能比对总奖励一次取整少 1 Octa。
+            // 因此在不超过原生奖励总额的前提下额外预留 1 Octa，覆盖两次取整的差异。
+            // 按整数佣金估算，可避免极小正奖励对应的入池费被低估。
+            let net_native_reward_upper_bound_octa = native_reward_upper_bound_octa
+                - math64::mul_div(native_reward_upper_bound_octa, operator_commission_bps, MAX_FEE);
+            if (operator_commission_bps > 0 && net_native_reward_upper_bound_octa < native_reward_upper_bound_octa) {
+                net_native_reward_upper_bound_octa += 1
+            };
+
+            // pending_active 不参与当期原生计奖，也不计入收益率分母。
+            // 在计奖参数不变时，重复追加质押，或通过 unlock 将 active 转入 pending_inactive，
+            // 都不会改变同一追加金额的入池费估算。PoC 入池费向上取整；原生模式保留原有规则。
+            // 通胀和费用分别按本金分配，每类余额的两次分配误差合计小于 2 Octa，佣金误差小于 1 Octa；
+            // 叠加后，每类余额的净收益与未取整的按比例结果相差小于 3 Octa，不包含份额换算误差。
+            let fee_numerator = (amount as u256) * (net_native_reward_upper_bound_octa as u256);
+            let fee_denominator = reward_eligible_stake_octa + (net_native_reward_upper_bound_octa as u256);
+            return ((fee_numerator + fee_denominator - 1) / fee_denominator) as u64
+        };
+        // 原生模式沿用原有公式，最后一步仍向下取整。
+        let numerator = (rate as u256) * ((MAX_FEE - operator_commission_bps) as u256);
         let denominator = (denominator as u256) * (MAX_FEE as u256);
         ((amount as u256) * numerator / (numerator + denominator)) as u64
     }
