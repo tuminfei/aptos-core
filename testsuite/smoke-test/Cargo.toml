@@ -18,7 +18,7 @@ aptos = { workspace = true, features = ["fuzzing"] }
 aptos-api-types = { workspace = true }
 aptos-bitvec = { path = "../../crates/aptos-bitvec" }
 aptos-cached-packages = { workspace = true }
-aptos-config = { workspace = true, features = ["smoke-test"] }
+aptos-config = { workspace = true, features = ["smoke-test", "failpoints"] }
 aptos-consensus = { workspace = true }
 aptos-crypto = { workspace = true }
 aptos-db = { workspace = true }

@@ -10,8 +10,12 @@ use aptos_config::config::{OverrideNodeConfig, PersistableConfig};
 use aptos_forge::{NodeExt, Swarm, SwarmExt};
 use aptos_logger::{debug, info};
 use aptos_types::{
+    account_config::CORE_CODE_ADDRESS,
     dkg::chunky_dkg::ChunkyDKGState,
-    on_chain_config::{FeatureFlag, Features, OnChainChunkyDKGConfig, OnChainRandomnessConfig},
+    on_chain_config::{
+        ChunkyDKGConfigSeqNum, ConfigurationResource, FeatureFlag, Features,
+        OnChainChunkyDKGConfig, OnChainConfig, OnChainRandomnessConfig,
+    },
 };
 use std::{
     ops::Add,
@@ -110,6 +114,8 @@ async fn chunky_dkg_stall_recovery() {
     assert!(liveness_check_result.is_ok());
 
     info!("Bump on-chain config seqnum to re-enable ChunkyDKG.");
+    // End the frozen epoch and stage the new config atomically, before another
+    // reconfiguration can freeze config writes again.
     let script = r#"
 script {
     use topo_framework::topo_governance;
@@ -117,8 +123,8 @@ script {
 
     fun main(core_resources: &signer) {
         let framework_signer = topo_governance::get_signer_testnet_only(core_resources, @0x1);
-        chunky_dkg_config_seqnum::set_for_next_epoch(&framework_signer, 2);
         topo_governance::force_end_epoch(&framework_signer);
+        chunky_dkg_config_seqnum::set_for_next_epoch(&framework_signer, 2);
     }
 }
     "#;
@@ -128,21 +134,56 @@ script {
         expiration_secs: 60,
     };
     let txn_summary = cli
-        .run_script_with_gas_options(root_idx, script, Some(gas_options))
+        .run_script_with_gas_options(root_idx, script, Some(gas_options.clone()))
         .await
         .expect("Txn execution error.");
     debug!("txn_summary={:?}", txn_summary);
 
-    tokio::time::sleep(Duration::from_secs(10)).await;
-
-    let epoch = rest_client
-        .get_ledger_information()
+    // Apply the staged config in a separate transaction: a second epoch change
+    // at the first transaction's timestamp would be skipped.
+    let activation_txn = cli
+        .run_function(
+            root_idx,
+            Some(gas_options),
+            "0x1::topo_governance::force_end_epoch_test_only"
+                .parse()
+                .expect("Invalid governance function ID"),
+            vec![],
+            vec![],
+        )
         .await
-        .unwrap()
+        .expect("Failed to apply the staged ChunkyDKG config seqnum");
+    let activation_version = activation_txn
+        .version
+        .expect("Missing activation txn version");
+
+    // Read both resources at the activation transaction's version so later
+    // epoch transitions cannot change the recovery epoch used by the assertions.
+    let epoch = rest_client
+        .get_account_resource_at_version_bcs::<ConfigurationResource>(
+            CORE_CODE_ADDRESS,
+            &ConfigurationResource::struct_tag().to_canonical_string(),
+            activation_version,
+        )
+        .await
+        .expect("Failed to read the ChunkyDKG activation epoch")
         .into_inner()
-        .epoch;
+        .epoch();
+    let config_seqnum = rest_client
+        .get_account_resource_at_version_bcs::<ChunkyDKGConfigSeqNum>(
+            CORE_CODE_ADDRESS,
+            &ChunkyDKGConfigSeqNum::struct_tag().to_canonical_string(),
+            activation_version,
+        )
+        .await
+        .expect("Failed to read the activated ChunkyDKG config seqnum")
+        .into_inner();
+    assert_eq!(
+        config_seqnum.seq_num, 2,
+        "ChunkyDKG config seqnum was not applied"
+    );
     info!(
-        "Current epoch is {}. Wait until epoch {}, and ChunkyDKG should be back.",
+        "ChunkyDKG re-enabled in epoch {}. Wait until epoch {} for a new session.",
         epoch,
         epoch + 1
     );
@@ -157,8 +198,13 @@ script {
 
     info!("Verify ChunkyDKG completed a new session after re-enable.");
     let dkg_state = get_on_chain_resource::<ChunkyDKGState>(&rest_client).await;
+    let session = dkg_state
+        .last_completed
+        .expect("ChunkyDKG should have a completed session after re-enable");
     assert!(
-        dkg_state.last_completed.is_some(),
-        "ChunkyDKG should have a completed session after re-enable"
+        session.metadata.dealer_epoch >= epoch,
+        "Expected a ChunkyDKG session started after re-enable in epoch {}, got dealer epoch {}",
+        epoch,
+        session.metadata.dealer_epoch,
     );
 }
