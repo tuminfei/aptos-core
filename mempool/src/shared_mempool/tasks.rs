@@ -67,6 +67,16 @@ pub(crate) async fn execute_broadcast<NetworkClient, TransactionValidator>(
 {
     let network_interface = &smp.network_interface.clone();
     counters::shared_mempool_broadcast_event_inc(counters::RUNNING_LABEL, peer.network_id());
+    sample!(
+        SampleRate::Duration(Duration::from_secs(BROADCAST_EVENT_LOG_SAMPLE_SECS)),
+        info!(
+            "Shared mempool broadcast scheduled task fired: peer={}, network={}, scheduled_backoff={}, connected={}",
+            peer,
+            peer.network_id(),
+            backoff,
+            network_interface.sync_states_exists(&peer),
+        )
+    );
 
     // If there's no connection, don't bother to broadcast
     if network_interface.sync_states_exists(&peer) {
@@ -105,6 +115,15 @@ pub(crate) async fn execute_broadcast<NetworkClient, TransactionValidator>(
             counters::DROP_BROADCAST_LABEL,
             peer.network_id(),
         );
+        sample!(
+            SampleRate::Duration(Duration::from_secs(BROADCAST_ERROR_LOG_SAMPLE_SECS)),
+            warn!(
+                "Shared mempool broadcast dropped because peer is disconnected: peer={}, network={}, scheduled_backoff={}",
+                peer,
+                peer.network_id(),
+                backoff,
+            )
+        );
         return;
     }
     let schedule_backoff = network_interface.is_backoff_mode(&peer);
@@ -114,6 +133,17 @@ pub(crate) async fn execute_broadcast<NetworkClient, TransactionValidator>(
     } else {
         smp.config.shared_mempool_tick_interval_ms
     };
+
+    sample!(
+        SampleRate::Duration(Duration::from_secs(BROADCAST_EVENT_LOG_SAMPLE_SECS)),
+        info!(
+            "Shared mempool broadcast rescheduled: peer={}, network={}, next_interval_ms={}, backoff_mode={}",
+            peer,
+            peer.network_id(),
+            interval_ms,
+            schedule_backoff,
+        )
+    );
 
     scheduled_broadcasts.push(ScheduledBroadcast::new(
         Instant::now() + Duration::from_millis(interval_ms),

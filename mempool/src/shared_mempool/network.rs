@@ -309,6 +309,16 @@ impl<NetworkClient: NetworkClientInterface<MempoolSyncMsg>> MempoolNetworkInterf
             state
         } else {
             counters::invalid_ack_inc(peer.network_id(), counters::UNKNOWN_PEER);
+            sample!(
+                SampleRate::Duration(Duration::from_secs(1)),
+                warn!(
+                    "Shared mempool ACK received from unknown peer: peer={}, message_id={:?}, retry={}, backoff={}",
+                    peer,
+                    message_id,
+                    retry,
+                    backoff,
+                )
+            );
             return;
         };
 
@@ -341,6 +351,18 @@ impl<NetworkClient: NetworkClientInterface<MempoolSyncMsg>> MempoolNetworkInterf
             retry = retry,
         );
         tasks::update_ack_counter(&peer, counters::RECEIVED_LABEL, retry, backoff);
+
+        sample!(
+            SampleRate::Duration(Duration::from_secs(5)),
+            info!(
+                "Shared mempool ACK received: peer={}, message_id={:?}, retry={}, backoff={}, pending_broadcasts={}",
+                peer,
+                message_id,
+                retry,
+                backoff,
+                sync_state.broadcast_info.sent_messages.len(),
+            )
+        );
 
         if retry {
             sync_state.broadcast_info.retry_messages.insert(message_id);
@@ -646,9 +668,35 @@ impl<NetworkClient: NetworkClientInterface<MempoolSyncMsg>> MempoolNetworkInterf
         let num_txns = transactions.len();
         let send_time = SystemTime::now();
         self.send_batch_to_peer(peer, message_id.clone(), transactions)
-            .await?;
+            .await
+            .map_err(|err| {
+                sample!(
+                    SampleRate::Duration(Duration::from_secs(1)),
+                    warn!(
+                        "Shared mempool broadcast send failed: peer={}, message_id={:?}, batch_size={}, scheduled_backoff={}, error={:?}",
+                        peer,
+                        message_id,
+                        num_txns,
+                        scheduled_backoff,
+                        err,
+                    )
+                );
+                err
+            })?;
         let num_pending_broadcasts =
             self.update_broadcast_state(peer, message_id.clone(), send_time)?;
+        sample!(
+            SampleRate::Duration(Duration::from_secs(5)),
+            info!(
+                "Shared mempool broadcast sent: peer={}, message_id={:?}, batch_size={}, pending_broadcasts={}, scheduled_backoff={}, metric_label={:?}",
+                peer,
+                message_id,
+                num_txns,
+                num_pending_broadcasts,
+                scheduled_backoff,
+                metric_label,
+            )
+        );
         notify_subscribers(SharedMempoolNotification::Broadcast, &smp.subscribers);
 
         // Log all the metrics

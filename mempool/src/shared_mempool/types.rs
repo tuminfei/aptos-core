@@ -38,7 +38,6 @@ use std::{
     fmt,
     pin::Pin,
     sync::Arc,
-    task::Waker,
     time::{Instant, SystemTime},
 };
 use tokio::runtime::Handle;
@@ -127,34 +126,23 @@ pub(crate) fn notify_subscribers(
 
 /// A future that represents a scheduled mempool txn broadcast
 pub(crate) struct ScheduledBroadcast {
-    /// Time of scheduled broadcast
-    deadline: Instant,
+    /// Own the timer so readiness and waker registration cannot race.
+    timer: Pin<Box<tokio::time::Sleep>>,
     peer: PeerNetworkId,
     backoff: bool,
-    waker: Arc<Mutex<Option<Waker>>>,
 }
 
 impl ScheduledBroadcast {
     pub fn new(deadline: Instant, peer: PeerNetworkId, backoff: bool, executor: Handle) -> Self {
-        let waker: Arc<Mutex<Option<Waker>>> = Arc::new(Mutex::new(None));
-        let waker_clone = waker.clone();
-
-        if deadline > Instant::now() {
-            let tokio_instant = tokio::time::Instant::from_std(deadline);
-            executor.spawn(async move {
-                tokio::time::sleep_until(tokio_instant).await;
-                let mut waker = waker_clone.lock();
-                if let Some(waker) = waker.take() {
-                    waker.wake()
-                }
-            });
-        }
-
+        // Sleep must be constructed in the supplied runtime, even when the caller
+        // is not currently inside it.
+        let _guard = executor.enter();
         Self {
-            deadline,
+            timer: Box::pin(tokio::time::sleep_until(tokio::time::Instant::from_std(
+                deadline,
+            ))),
             peer,
             backoff,
-            waker,
         }
     }
 }
@@ -164,16 +152,57 @@ impl Future for ScheduledBroadcast {
 
     // (peer, whether this broadcast was scheduled as a backoff broadcast)
 
-    fn poll(self: Pin<&mut Self>, context: &mut Context) -> Poll<Self::Output> {
-        if Instant::now() < self.deadline {
-            let waker_clone = context.waker().clone();
-            let mut waker = self.waker.lock();
-            *waker = Some(waker_clone);
-
-            Poll::Pending
-        } else {
-            Poll::Ready((self.peer, self.backoff))
+    fn poll(mut self: Pin<&mut Self>, context: &mut Context) -> Poll<Self::Output> {
+        match self.timer.as_mut().poll(context) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(()) => Poll::Ready((self.peer, self.backoff)),
         }
+    }
+}
+
+#[cfg(test)]
+mod scheduled_broadcast_tests {
+    use super::*;
+    use futures::{stream::FuturesUnordered, StreamExt};
+    use std::time::Duration;
+
+    #[tokio::test]
+    async fn broadcasts_continue_without_other_events() {
+        let peer = PeerNetworkId::random();
+        let mut broadcasts = FuturesUnordered::new();
+        tokio::time::timeout(Duration::from_secs(5), async {
+            for backoff in [false, true, false, true] {
+                broadcasts.push(ScheduledBroadcast::new(
+                    Instant::now() + Duration::from_millis(5),
+                    peer,
+                    backoff,
+                    Handle::current(),
+                ));
+                assert_eq!(broadcasts.next().await, Some((peer, backoff)));
+            }
+        })
+        .await
+        .expect("broadcast timer must wake FuturesUnordered without external events");
+    }
+
+    #[test]
+    fn expired_broadcast_can_be_created_outside_runtime() {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let peer = PeerNetworkId::random();
+        let broadcast = ScheduledBroadcast::new(
+            Instant::now() - Duration::from_secs(1),
+            peer,
+            true,
+            runtime.handle().clone(),
+        );
+        runtime.block_on(async {
+            assert_eq!(
+                tokio::time::timeout(Duration::from_secs(1), broadcast)
+                    .await
+                    .unwrap(),
+                (peer, true)
+            );
+        });
     }
 }
 

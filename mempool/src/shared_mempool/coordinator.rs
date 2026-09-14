@@ -426,6 +426,15 @@ async fn handle_update_peers<NetworkClient, TransactionValidator>(
 {
     if let Ok(connected_peers) = peers_and_metadata.get_connected_peers_and_metadata() {
         let (newly_added_upstream, disabled) = smp.network_interface.update_peers(&connected_peers);
+        sample!(
+            SampleRate::Duration(Duration::from_secs(5)),
+            info!(
+                "Shared mempool peer update: connected_peers={}, newly_added_upstream={}, disabled={}",
+                connected_peers.len(),
+                newly_added_upstream.len(),
+                disabled.len(),
+            )
+        );
         if !newly_added_upstream.is_empty() || !disabled.is_empty() {
             counters::shared_mempool_event_inc("peer_update");
             notify_subscribers(SharedMempoolNotification::PeerStateChange, &smp.subscribers);
