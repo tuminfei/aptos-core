@@ -241,6 +241,11 @@ async fn test_batch_id_on_restart_wiped_db() {
 async fn test_swarm_with_bad_non_qs_node() {
     let mut swarm = SwarmBuilder::new_local(4)
         .with_aptos()
+        // 预热手续费会在换届时并入质押；用足够大的等额质押避免投票权比例失衡。
+        // 保持非 QS 故障节点的投票权低于 1/3，使其余三个节点仍能形成 quorum。
+        .with_init_genesis_stake(Arc::new(|_, genesis_stake_amount| {
+            *genesis_stake_amount = 100_000_000_000_000;
+        }))
         .with_init_config(Arc::new(|_, conf, _| {
             conf.api.failpoints_enabled = true;
             // Keep proposer rotation bounded after the non-QS node is injected.

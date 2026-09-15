@@ -480,12 +480,13 @@ async fn test_keyless_groth16_verifies_using_rust_sdk() {
         .await
         .unwrap();
 
+    // 先完成治理配置变更再构造并签名，避免脚本编译和换届耗尽交易有效期。
+    remove_training_wheels(&mut cli, &mut info, root_idx).await;
+
     let builder = info
         .transaction_factory()
         .payload(aptos_stdlib::topo_coin_transfer(recipient.address(), 100));
     let signed_txn = account.sign_with_transaction_builder(builder);
-
-    remove_training_wheels(&mut cli, &mut info, root_idx).await;
 
     info!("Submit keyless Groth16 transaction");
     let result = swarm
@@ -545,12 +546,13 @@ async fn test_keyless_groth16_verifies_using_rust_sdk_from_jwt() {
         .await
         .unwrap();
 
+    // 先完成治理配置变更再构造并签名，避免脚本编译和换届耗尽交易有效期。
+    remove_training_wheels(&mut cli, &mut info, root_idx).await;
+
     let builder = info
         .transaction_factory()
         .payload(aptos_stdlib::topo_coin_transfer(recipient.address(), 100));
     let signed_txn = account.sign_with_transaction_builder(builder);
-
-    remove_training_wheels(&mut cli, &mut info, root_idx).await;
 
     info!("Submit keyless Groth16 transaction");
     let result = swarm

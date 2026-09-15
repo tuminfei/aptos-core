@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use super::shadow_mode::create_swarm_with_dkg_only;
-use crate::utils::get_on_chain_resource;
+use crate::{randomness::run_reconfiguration_script, utils::get_on_chain_resource};
 use aptos_api_types::Transaction;
 use aptos_forge::{Node, NodeExt, SwarmExt};
 use aptos_logger::info;
@@ -21,11 +21,21 @@ async fn find_force_end_event(
     max_txns: u64,
 ) -> Option<serde_json::Value> {
     const PAGE: u16 = 100;
+    // 固定本次扫描的账本上界，并限制最后一页大小，避免请求尚不存在的交易版本。
+    let end_version = client
+        .get_ledger_information()
+        .await
+        .expect("ledger info")
+        .into_inner()
+        .version;
     let mut cursor = start_version;
     let mut scanned: u64 = 0;
-    while scanned < max_txns {
+    while scanned < max_txns && cursor <= end_version {
+        let limit = (PAGE as u64)
+            .min(max_txns - scanned)
+            .min(end_version - cursor + 1) as u16;
         let txns = client
-            .get_transactions(Some(cursor), Some(PAGE))
+            .get_transactions(Some(cursor), Some(limit))
             .await
             .expect("get_transactions")
             .into_inner();
@@ -58,15 +68,10 @@ async fn find_force_end_event(
     None
 }
 
-/// Enable chunky DKG in real V1 mode (no shadow grace period) AND set the
-/// general epoch-timeout watchdog with a short grace period — all in one
-/// governance script.
-async fn enable_chunky_v1_and_watchdog(
-    cli: &aptos::test::CliTestFramework,
-    root_idx: usize,
-    watchdog_grace_period_secs: u64,
-) {
-    let script = format!(
+/// 生成同时启用 Chunky DKG V1 和短宽限期 watchdog 的治理脚本。
+/// 提交及生效 epoch 的确认由公共重配置辅助函数处理。
+fn script_to_enable_chunky_v1_and_watchdog(watchdog_grace_period_secs: u64) -> String {
+    format!(
         r#"
 script {{
     use topo_std::fixed_point64;
@@ -97,10 +102,7 @@ script {{
 }}
 "#,
         watchdog_grace_period_secs
-    );
-    cli.run_script(root_idx, &script)
-        .await
-        .expect("Failed to enable chunky V1 + watchdog via governance");
+    )
 }
 
 /// Test that the general epoch-timeout watchdog force-ends the epoch when
@@ -156,12 +158,19 @@ async fn epoch_timeout_watchdog_force_ends_epoch() {
         "Enabling chunky V1 + epoch watchdog (grace={}s) via governance...",
         watchdog_grace_period_secs
     );
-    enable_chunky_v1_and_watchdog(&cli, root_idx, watchdog_grace_period_secs).await;
+    let activation_epoch = run_reconfiguration_script(
+        &swarm,
+        &cli,
+        root_idx,
+        &client,
+        &script_to_enable_chunky_v1_and_watchdog(watchdog_grace_period_secs),
+        Duration::from_secs(epoch_duration_secs * 3),
+    )
+    .await;
 
-    // Wait for the epoch to advance past at least one regular boundary that
-    // crosses the watchdog deadline. The reconfig is stuck (chunky DKG never
-    // completes); only the watchdog can finalize it.
-    let target_epoch = epoch_before + 2;
+    // 从配置实际生效的 epoch 起验证下一次换届，避免脚本编译期间自然换届导致目标偏移。
+    // 此时 DKG 已被故障注入阻塞，必须由 watchdog 推进到下一 epoch。
+    let target_epoch = activation_epoch + 1;
     let time_limit_secs = epoch_duration_secs * 2 + watchdog_grace_period_secs + 60;
     let timer = tokio::time::Instant::now();
     let mut reached_target = false;

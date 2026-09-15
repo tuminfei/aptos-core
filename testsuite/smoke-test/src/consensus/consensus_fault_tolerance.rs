@@ -423,7 +423,7 @@ async fn test_changing_working_consensus() {
     run_fail_point_test(
         num_validators,
         6,
-        5.0,
+        15.0, // 为故障切换后的状态追赶和多轮 1 秒 round 超时预留时间。
         5,
         1.0,
         1,

@@ -321,6 +321,8 @@ async fn test_validator_restart(clear_storage: bool) {
         .with_aptos()
         .with_init_config(Arc::new(|_, config, _| {
             enable_consensus_observer(true, config);
+            // 每次启动由系统分配管理端口，避免停机期间原端口被其他测试占用。
+            config.admin_service.port = 0;
         }))
         .with_vfn_config(vfn_config)
         .build()

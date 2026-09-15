@@ -2,9 +2,12 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{
-    randomness::{decrypt_key_map, script_to_update_consensus_config, verify_dkg_transcript},
+    randomness::{
+        decrypt_key_map, get_on_chain_resource_at_version, run_reconfiguration_script,
+        script_to_update_consensus_config, verify_dkg_transcript, wait_for_epoch_start,
+    },
     smoke_test_environment::SwarmBuilder,
-    utils::{get_current_consensus_config, get_on_chain_resource},
+    utils::get_current_consensus_config,
 };
 use aptos_forge::{Node, Swarm, SwarmExt};
 use aptos_logger::{debug, info};
@@ -15,14 +18,19 @@ use aptos_types::{
 };
 use std::{sync::Arc, time::Duration};
 
-/// Disable on-chain randomness by only disabling validator transactions.
+/// 仅关闭 validator 交易，验证实际生效 epoch 及下一 epoch 的 DKG 和种子状态。
 #[tokio::test]
 async fn disable_feature_1() {
     let epoch_duration_secs = 20;
+    let timeout = Duration::from_secs(epoch_duration_secs * 2);
 
     let (swarm, mut cli, _faucet) = SwarmBuilder::new_local(4)
         .with_num_fullnodes(1)
         .with_aptos()
+        .with_init_config(Arc::new(|_, config, _| {
+            // 通过换届和首块事件定位断言快照，避免读取到后续 epoch 的状态。
+            config.indexer_db_config.enable_event = true;
+        }))
         .with_init_genesis_config(Arc::new(move |conf| {
             conf.epoch_duration_secs = epoch_duration_secs;
             conf.allow_new_validators = true;
@@ -50,47 +58,52 @@ async fn disable_feature_1() {
         .await
         .expect("Waited too long for epoch 3.");
 
-    info!("Now in epoch 3. Disabling validator transactions.");
+    info!("Disabling validator transactions.");
     let mut config = get_current_consensus_config(&client).await;
     assert!(config.is_vtxn_enabled());
     config.disable_validator_txns();
     let disable_vtxn_script = script_to_update_consensus_config(&config);
     debug!("disable_vtxn_script={}", disable_vtxn_script);
-    let txn_summary = cli
-        .run_script(root_idx, disable_vtxn_script.as_str())
-        .await
-        .expect("Txn execution error.");
-    debug!("disabling_vtxn_summary={:?}", txn_summary);
+    let epoch = run_reconfiguration_script(
+        &swarm,
+        &cli,
+        root_idx,
+        &client,
+        &disable_vtxn_script,
+        timeout,
+    )
+    .await;
+    let version = wait_for_epoch_start(&swarm, &client, epoch, timeout).await;
 
-    swarm
-        .wait_for_all_nodes_to_catchup_to_epoch(4, Duration::from_secs(epoch_duration_secs * 2))
-        .await
-        .expect("Waited too long for epoch 4.");
-
-    info!("Now in epoch 4. DKG transcript should still be available. Randomness seed should be unavailable.");
-    let dkg_session = get_on_chain_resource::<DKGState>(&client)
+    // 依赖在换届完成后关闭，保留最后一份 DKG 结果；新 epoch 首块的随机数种子应为空。
+    info!("Validator transactions disabled in epoch {epoch}. The final DKG transcript should still be available, but the seed should be absent.");
+    let dkg_session = get_on_chain_resource_at_version::<DKGState>(&client, version)
         .await
         .last_completed
-        .expect("dkg result for epoch 4 should be present");
-    assert_eq!(4, dkg_session.target_epoch());
+        .expect("The final DKG result should be present when validator transactions are disabled");
+    assert_eq!(epoch, dkg_session.target_epoch());
     assert!(verify_dkg_transcript(&dkg_session, &decrypt_key_map).is_ok());
 
-    let randomness_seed = get_on_chain_resource::<PerBlockRandomness>(&client).await;
+    let randomness_seed =
+        get_on_chain_resource_at_version::<PerBlockRandomness>(&client, version).await;
+    assert_eq!(epoch, randomness_seed.epoch);
     assert!(randomness_seed.seed.is_none());
 
-    swarm
-        .wait_for_all_nodes_to_catchup_to_epoch(5, Duration::from_secs(epoch_duration_secs * 2))
-        .await
-        .expect("Waited too long for epoch 5.");
+    // 下一 epoch 不应生成新的 DKG 结果，但允许保留历史 last_completed。
+    let next_epoch = epoch + 1;
+    let version = wait_for_epoch_start(&swarm, &client, next_epoch, timeout).await;
 
-    info!("Now in epoch 5. DKG transcript should be unavailable. Randomness seed should be unavailable.");
-    let maybe_last_complete = get_on_chain_resource::<DKGState>(&client)
+    info!("In epoch {next_epoch}, no new DKG transcript or randomness seed should be available.");
+    let maybe_last_complete = get_on_chain_resource_at_version::<DKGState>(&client, version)
         .await
         .last_completed;
     assert!(
-        maybe_last_complete.is_none() || maybe_last_complete.as_ref().unwrap().target_epoch() != 5
+        maybe_last_complete.is_none()
+            || maybe_last_complete.as_ref().unwrap().target_epoch() != next_epoch
     );
 
-    let randomness_seed = get_on_chain_resource::<PerBlockRandomness>(&client).await;
+    let randomness_seed =
+        get_on_chain_resource_at_version::<PerBlockRandomness>(&client, version).await;
+    assert_eq!(next_epoch, randomness_seed.epoch);
     assert!(randomness_seed.seed.is_none());
 }

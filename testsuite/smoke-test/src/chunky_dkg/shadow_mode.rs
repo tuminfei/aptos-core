@@ -5,8 +5,8 @@ use super::{
     get_encryption_key_resource, verify_chunky_dkg_transcript, wait_for_chunky_dkg_finish,
 };
 use crate::{
-    smoke_test_environment::SwarmBuilder, txn_emitter::generate_traffic,
-    utils::get_on_chain_resource,
+    randomness::run_reconfiguration_script, smoke_test_environment::SwarmBuilder,
+    txn_emitter::generate_traffic, utils::get_on_chain_resource,
 };
 use aptos_forge::{EmitJobMode, Node, NodeExt, Swarm, SwarmExt, TransactionType};
 use aptos_logger::info;
@@ -104,9 +104,9 @@ script {{
         .expect("Failed to enable shadow mode via governance");
 }
 
-/// Upgrade from shadow mode to full ConfigV1 via governance script.
-async fn upgrade_to_v1(cli: &aptos::test::CliTestFramework, root_idx: usize) {
-    let script = r#"
+/// 生成从 Shadow 升级到 ConfigV1 的脚本，提交和生效确认由公共重配置辅助函数处理。
+fn script_to_upgrade_to_v1() -> &'static str {
+    r#"
 script {
     use topo_std::fixed_point64;
     use topo_framework::topo_governance;
@@ -124,10 +124,7 @@ script {
         topo_governance::reconfigure(&framework_signer);
     }
 }
-"#;
-    cli.run_script(root_idx, script)
-        .await
-        .expect("Failed to upgrade to V1 via governance");
+"#
 }
 
 /// Test the full shadow mode lifecycle:
@@ -246,15 +243,24 @@ async fn chunky_dkg_shadow_to_v1() {
 
     // ---- Phase 2: Upgrade to V1 ----
     info!("Phase 2: Upgrading from shadow to V1...");
-    upgrade_to_v1(&cli, root_idx).await;
+    let activation_epoch = run_reconfiguration_script(
+        &swarm,
+        &cli,
+        root_idx,
+        &client,
+        script_to_upgrade_to_v1(),
+        Duration::from_secs(estimated_dkg_latency_secs),
+    )
+    .await;
 
-    // Wait for the next chunky DKG to complete under V1.
+    // 升级生效所用的 DKG 仍在旧配置下启动；只接受生效 epoch 之后的结果，
+    // 避免将残留的 Shadow transcript 当作 V1 的验证结果。
     info!("Waiting for chunky DKG under V1...");
     let timer = tokio::time::Instant::now();
     let v1_session = loop {
         let dkg_state = get_on_chain_resource::<ChunkyDKGState>(&client).await;
         if let Some(ref completed) = dkg_state.last_completed {
-            if completed.target_epoch() > shadow_epoch {
+            if completed.target_epoch() > activation_epoch {
                 info!(
                     "V1 chunky DKG completed for epoch {}",
                     completed.target_epoch()

@@ -2,9 +2,12 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{
-    randomness::{decrypt_key_map, verify_dkg_transcript},
+    randomness::{
+        decrypt_key_map, get_on_chain_resource_at_version, run_reconfiguration_script,
+        verify_dkg_transcript, wait_for_epoch_start,
+    },
     smoke_test_environment::SwarmBuilder,
-    utils::{get_current_consensus_config, get_on_chain_resource},
+    utils::get_current_consensus_config,
 };
 use aptos_forge::{Node, Swarm, SwarmExt};
 use aptos_logger::{debug, info};
@@ -14,15 +17,20 @@ use aptos_types::{
 };
 use std::{sync::Arc, time::Duration};
 
-/// Enable on-chain randomness by enabling validator transactions and randomness main logic.
+/// 同时启用两项依赖，验证首次 DKG 结果出现在配置生效后的下一 epoch。
 #[tokio::test]
 async fn enable_feature_2() {
     let epoch_duration_secs = 20;
     let estimated_dkg_latency_secs = 40;
+    let timeout = Duration::from_secs(epoch_duration_secs + estimated_dkg_latency_secs);
 
     let (swarm, mut cli, _faucet) = SwarmBuilder::new_local(4)
         .with_num_fullnodes(1)
         .with_aptos()
+        .with_init_config(Arc::new(|_, config, _| {
+            // 通过换届和首块事件定位断言快照，避免读取到后续 epoch 的状态。
+            config.indexer_db_config.enable_event = true;
+        }))
         .with_init_genesis_config(Arc::new(move |conf| {
             conf.epoch_duration_secs = epoch_duration_secs;
             conf.allow_new_validators = true;
@@ -49,7 +57,7 @@ async fn enable_feature_2() {
         .await
         .expect("Waited too long for epoch 3.");
 
-    info!("Now in epoch 3. Enabling all the dependencies at the same time.");
+    info!("Enabling all the dependencies at the same time.");
     let mut config = get_current_consensus_config(&client).await;
     config.enable_validator_txns();
     let config_bytes = bcs::to_bytes(&config).unwrap();
@@ -78,38 +86,28 @@ script {{
     );
 
     debug!("script={}", script);
-    let txn_summary = cli
-        .run_script(root_idx, script.as_str())
-        .await
-        .expect("Txn execution error.");
-    debug!("txn_summary={:?}", txn_summary);
+    let epoch = run_reconfiguration_script(&swarm, &cli, root_idx, &client, &script, timeout).await;
+    let version = wait_for_epoch_start(&swarm, &client, epoch, timeout).await;
 
-    swarm
-        .wait_for_all_nodes_to_catchup_to_epoch(4, Duration::from_secs(epoch_duration_secs * 2))
-        .await
-        .expect("Waited too long for epoch 4.");
-
-    info!("Now in epoch 4. Both DKG and vtxn are enabled. There should be no randomness since DKG did not happen at the end of last epoch.");
-    let maybe_last_complete = get_on_chain_resource::<DKGState>(&client)
+    // 依赖在该 epoch 才全部启用，上一 epoch 尚不能完成 DKG；结果应在下一 epoch 出现。
+    info!(
+        "Both dependencies activated in epoch {epoch}. No DKG result should exist for this epoch."
+    );
+    let maybe_last_complete = get_on_chain_resource_at_version::<DKGState>(&client, version)
         .await
         .last_completed;
     assert!(
-        maybe_last_complete.is_none() || maybe_last_complete.as_ref().unwrap().target_epoch() != 4
+        maybe_last_complete.is_none()
+            || maybe_last_complete.as_ref().unwrap().target_epoch() != epoch
     );
 
-    info!("Waiting for epoch 5.");
-    swarm
-        .wait_for_all_nodes_to_catchup_to_epoch(
-            5,
-            Duration::from_secs(epoch_duration_secs + estimated_dkg_latency_secs),
-        )
-        .await
-        .expect("Waited too long for epoch 5.");
-
-    let dkg_session = get_on_chain_resource::<DKGState>(&client)
+    let target_epoch = epoch + 1;
+    info!("Waiting for epoch {target_epoch}.");
+    let version = wait_for_epoch_start(&swarm, &client, target_epoch, timeout).await;
+    let dkg_session = get_on_chain_resource_at_version::<DKGState>(&client, version)
         .await
         .last_completed
-        .expect("dkg result for epoch 5 should be present");
-    assert_eq!(5, dkg_session.target_epoch());
+        .expect("DKG result should be present after the first enabled epoch");
+    assert_eq!(target_epoch, dkg_session.target_epoch());
     assert!(verify_dkg_transcript(&dkg_session, &decrypt_key_map).is_ok());
 }

@@ -329,8 +329,11 @@ async fn test_fee_payer_encrypted_transaction() {
         .into_inner()
         .version;
 
-    // Re-fetch the encryption key right before building the transaction, in case
-    // the epoch has changed while we were funding accounts.
+    // 资金准备可能跨 epoch；等新 epoch 后再取密钥并签名，降低提交前密钥轮换的风险。
+    let state = client.get_ledger_information().await.unwrap().into_inner();
+    wait_for_epoch(&client, state.epoch + 1, 240)
+        .await
+        .expect("Encryption key should exist in the new epoch");
     let state = client.get_ledger_information().await.unwrap().into_inner();
     if let Some(fresh_key) = &state.encryption_key {
         txn_factory

@@ -3,14 +3,15 @@
 
 use crate::utils;
 use anyhow::{anyhow, ensure, Result};
+use aptos::{common::types::GasOptions, test::CliTestFramework};
 use aptos_crypto::{compat::Sha3_256, Uniform};
 use aptos_dkg::weighted_vuf::traits::WeightedVUF;
-use aptos_forge::LocalSwarm;
+use aptos_forge::{LocalSwarm, SwarmExt};
 use aptos_logger::info;
 use aptos_rest_client::Client;
 use aptos_types::{
     dkg::{DKGSessionState, DKGState, DKGTrait, DefaultDKG},
-    on_chain_config::{OnChainConfig, OnChainConsensusConfig},
+    on_chain_config::{ConfigurationResource, OnChainConfig, OnChainConsensusConfig},
     randomness::{PerBlockRandomness, RandMetadata, WVUF},
     validator_verifier::ValidatorConsensusInfo,
 };
@@ -44,6 +45,7 @@ async fn get_current_version(rest_client: &Client) -> u64 {
         .version
 }
 
+/// 按指定版本读取历史资源，让多个断言使用同一账本快照。
 #[allow(dead_code)]
 async fn get_on_chain_resource_at_version<T: OnChainConfig>(
     rest_client: &Client,
@@ -58,6 +60,124 @@ async fn get_on_chain_resource_at_version<T: OnChainConfig>(
         .await;
     let response = maybe_response.unwrap();
     response.into_inner()
+}
+
+/// 提交治理脚本并返回缓冲配置实际生效的 epoch；脚本编译期间可能发生自然换届。
+pub(crate) async fn run_reconfiguration_script(
+    swarm: &LocalSwarm,
+    cli: &CliTestFramework,
+    root_idx: usize,
+    client: &Client,
+    script: &str,
+    timeout: Duration,
+) -> u64 {
+    let mut retries = 0;
+    let summary = loop {
+        // 显式 gas 上限跳过 CLI 模拟估算，让配置冻结错误在实际提交后统一处理。
+        match cli
+            .run_script_with_gas_options(
+                root_idx,
+                script,
+                Some(GasOptions {
+                    gas_unit_price: Some(1),
+                    max_gas: Some(2_000_000),
+                    expiration_secs: 60,
+                }),
+            )
+            .await
+        {
+            Ok(summary) => break summary,
+            Err(error)
+                if retries < 2
+                    && error
+                        .to_string()
+                        .contains("0x1::reconfiguration_state: ERECONFIGURATION_IN_PROGRESS(") =>
+            {
+                // 脚本编译可能跨过自然换届边界；仅重试配置冻结这一明确的 Move abort。
+                // 最多额外重试两次，其他错误直接暴露给测试。
+                retries += 1;
+                info!("Configuration is frozen; retrying governance script ({retries}/2)");
+                let epoch = client
+                    .get_ledger_information()
+                    .await
+                    .expect("Failed to fetch the reconfiguration epoch")
+                    .into_inner()
+                    .epoch;
+                // 等待当前换届真正完成，避免在 DKG 仍冻结配置时再次提交。
+                swarm
+                    .wait_for_all_nodes_to_catchup_to_epoch(epoch + 1, timeout)
+                    .await
+                    .expect("In-progress reconfiguration did not finish before retrying");
+            },
+            Err(error) => panic!("Reconfiguration transaction failed: {error}"),
+        }
+    };
+    let version = summary.version.expect("Missing reconfiguration version");
+    swarm
+        .wait_for_all_nodes_to_catchup_to_version(version, timeout)
+        .await
+        .expect("Nodes did not catch up to the reconfiguration transaction");
+
+    // 以治理交易执行前的 epoch 为准，其中已包含同块 prologue 的影响。
+    // 缓冲配置在下一 epoch 生效，兼容同步换届和等待 DKG 完成的路径。
+    get_on_chain_resource_at_version::<ConfigurationResource>(client, version - 1)
+        .await
+        .epoch()
+        + 1
+}
+
+/// 返回目标 epoch 的首块版本，让断言固定读取该时刻的状态，避免后续换届干扰。
+/// 客户端所连接的节点必须启用事件索引。
+async fn wait_for_epoch_start(
+    swarm: &LocalSwarm,
+    client: &Client,
+    epoch: u64,
+    timeout: Duration,
+) -> u64 {
+    swarm
+        .wait_for_all_nodes_to_catchup_to_epoch(epoch, timeout)
+        .await
+        .expect("Nodes did not reach the expected epoch");
+    tokio::time::timeout(timeout, async {
+        let epoch_version = loop {
+            // 创世 epoch 1 对应事件序号 0，按目标 epoch 定位换届事件。
+            let events = client
+                .get_account_events_bcs(
+                    CORE_CODE_ADDRESS,
+                    &ConfigurationResource::struct_tag().to_canonical_string(),
+                    "events",
+                    Some(epoch - 1),
+                    Some(1),
+                )
+                .await
+                .expect("Failed to fetch the epoch event")
+                .into_inner();
+            if let Some(event) = events.first() {
+                break event.transaction_version;
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        };
+        let closing_block = client
+            .get_block_by_version_bcs(epoch_version, false)
+            .await
+            .expect("Failed to fetch the epoch-ending block")
+            .into_inner();
+        loop {
+            // 换届事件位于上一 epoch 的收尾块；随机数要到新 epoch 的首块才会更新。
+            let blocks = client
+                .get_new_block_events_bcs(Some(closing_block.block_height + 1), Some(1))
+                .await
+                .expect("Failed to fetch the first block of the epoch")
+                .into_inner();
+            if let Some(block) = blocks.first() {
+                assert_eq!(block.event.epoch(), epoch);
+                return block.version;
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+    })
+    .await
+    .expect("Timed out waiting for the epoch's first block to be indexed")
 }
 
 /// Poll the on-chain state until we see a DKG session finishes.

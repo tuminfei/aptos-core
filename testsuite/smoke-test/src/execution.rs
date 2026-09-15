@@ -42,13 +42,23 @@ async fn fallback_test() {
         .await
         .unwrap();
 
-    let version_milestone_0 = get_current_version(&client).await;
+    // 故障注入前已执行的区块仍可能继续提交，需先等待执行流水线排空。
+    // 连续 5 秒没有版本增长才确认停滞，外层超时防止等待无限延长。
+    let version_milestone_0 = tokio::time::timeout(Duration::from_secs(MAX_WAIT_SECS), async {
+        loop {
+            let version = get_current_version(&client).await;
+            if swarm
+                .wait_for_all_nodes_to_catchup_to_version(version + 1, Duration::from_secs(5))
+                .await
+                .is_err()
+            {
+                break version;
+            }
+        }
+    })
+    .await
+    .expect("Chain did not stop after enabling the execution failpoint");
     let version_milestone_1 = version_milestone_0 + 1;
-    // We won't reach next version.
-    assert!(swarm
-        .wait_for_all_nodes_to_catchup_to_version(version_milestone_1, Duration::from_secs(5))
-        .await
-        .is_err());
 
     client
         .set_failpoint(
