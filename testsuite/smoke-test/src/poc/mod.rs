@@ -1,12 +1,18 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
+mod defaults;
+mod governance;
+mod recovery;
+mod testnet_compat;
+mod transactions;
+
 use crate::smoke_test_environment::SwarmBuilder;
-use aptos_api_types::Transaction;
+use aptos_api_types::{AptosErrorCode, Transaction};
 use aptos_cached_packages::aptos_stdlib;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm, SwarmExt};
 use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
-use aptos_rest_client::Client;
+use aptos_rest_client::{error::RestError, Client, Resource};
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
     account_address::AccountAddress,
@@ -172,6 +178,51 @@ async fn resource_at_version<T: OnChainConfig>(client: &Client, version: u64) ->
         .into_inner()
 }
 
+/// Historical resource enumeration requires an indexer. Read named resources
+/// directly so all smoke fixtures retain their native node configuration.
+async fn optional_resource_at_version(
+    client: &Client,
+    address: AccountAddress,
+    resource_type: &str,
+    version: u64,
+) -> Option<Resource> {
+    match client
+        .get_account_resource_at_version(address, resource_type, version)
+        .await
+    {
+        Ok(response) => response.into_inner(),
+        Err(RestError::Api(error))
+            if error.status_code == reqwest::StatusCode::NOT_FOUND
+                && error.error.error_code == AptosErrorCode::ResourceNotFound =>
+        {
+            None
+        },
+        Err(error) => {
+            panic!("Cannot read {resource_type} at {address}, version {version}: {error}")
+        },
+    }
+}
+
+async fn frozen_context_at(client: &Client, version: u64) -> Vec<Vec<u8>> {
+    let mut snapshot = Vec::new();
+    for resource in [
+        "0x1::stake::EpochPlan",
+        "0x1::stake::PrecomputedValidatorSet",
+        "0x1::stake::InstalledRewardContext",
+        "0x1::poc_reward_split::RewardSplitConfig",
+        "0x1::poc_power_store::PeriodClock",
+    ] {
+        snapshot.push(
+            client
+                .get_account_resource_at_version_bytes(CORE_CODE_ADDRESS, resource, version)
+                .await
+                .unwrap()
+                .into_inner(),
+        );
+    }
+    snapshot
+}
+
 /// 按原顺序比较目标地址、公钥和算力权重，验证实际安装集合与 DKG 输入一致。
 fn assert_targets(targets: &[ValidatorConsensusInfoMoveStruct], set: &ValidatorSet) {
     assert_eq!(targets.len(), set.active_validators.len());
@@ -226,6 +277,16 @@ async fn assert_installed_on_client(
     assert_eq!(context.0, epoch);
     assert!(context.1);
     assert_eq!(context.5, 0);
+    let split = client
+        .get_account_resource_at_version_bcs::<(u64, u64, u64, Vec<(u64, u64)>)>(
+            CORE_CODE_ADDRESS,
+            "0x1::poc_reward_split::RewardSplitConfig",
+            version,
+        )
+        .await
+        .unwrap()
+        .into_inner();
+    assert_eq!(split, (epoch, 0, 0, vec![]));
 }
 
 /// 等待真实 DKG 完成，在同一 ledger version 核对会话、委员会及目标 Epoch 的密钥。
@@ -494,7 +555,7 @@ async fn poc_frozen_dkg_force_end_and_restart() {
     let offline = swarm.validators().last().unwrap().peer_id();
 
     let deadline = Instant::now() + Duration::from_secs(90);
-    let (frozen_version, session, plan_bytes, cached, old_clock) = loop {
+    let (frozen_version, session, cached, old_clock) = loop {
         assert!(
             Instant::now() < deadline,
             "DKG did not freeze within 90 seconds"
@@ -514,15 +575,6 @@ async fn poc_frozen_dkg_force_end_and_restart() {
                 .into_inner();
             assert!(!fallback);
             assert_targets(&session.metadata.target_validator_set, &cached);
-            let plan = client
-                .get_account_resource_at_version_bytes(
-                    CORE_CODE_ADDRESS,
-                    "0x1::stake::EpochPlan",
-                    ledger.version,
-                )
-                .await
-                .unwrap()
-                .into_inner();
             let clock = client
                 .get_account_resource_at_version_bcs::<(u64, u64, u64, u64)>(
                     CORE_CODE_ADDRESS,
@@ -532,10 +584,11 @@ async fn poc_frozen_dkg_force_end_and_restart() {
                 .await
                 .unwrap()
                 .into_inner();
-            break (ledger.version, session, plan, cached, clock);
+            break (ledger.version, session, cached, clock);
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
     };
+    let frozen_context = frozen_context_at(&client, frozen_version).await;
     swarm.validator_mut(offline).unwrap().stop();
 
     // 四个等权验证者中有三个继续出块，统计和费用仍归属旧 Epoch。
@@ -553,22 +606,15 @@ async fn poc_frozen_dkg_force_end_and_restart() {
     };
     assert_eq!(waiting.epoch, session.metadata.dealer_epoch);
     assert_eq!(
+        frozen_context_at(&client, waiting.version).await,
+        frozen_context,
+        "Old-epoch blocks must preserve the frozen target, clock and reward snapshots",
+    );
+    assert_eq!(
         resource_at_version::<DKGState>(&client, waiting.version)
             .await
             .in_progress,
         Some(session.clone())
-    );
-    assert_eq!(
-        client
-            .get_account_resource_at_version_bytes(
-                CORE_CODE_ADDRESS,
-                "0x1::stake::EpochPlan",
-                waiting.version,
-            )
-            .await
-            .unwrap()
-            .into_inner(),
-        plan_bytes
     );
 
     // 冻结期间重启节点，其余三个节点的 DKG 任务仍暂停，
@@ -596,16 +642,9 @@ async fn poc_frozen_dkg_force_end_and_restart() {
         .into_inner();
     assert_eq!(restored.epoch, session.metadata.dealer_epoch);
     assert_eq!(
-        restarted
-            .get_account_resource_at_version_bytes(
-                CORE_CODE_ADDRESS,
-                "0x1::stake::EpochPlan",
-                restored.version,
-            )
-            .await
-            .unwrap()
-            .into_inner(),
-        plan_bytes
+        frozen_context_at(&restarted, restored.version).await,
+        frozen_context,
+        "Restart must preserve the original frozen plan and reward snapshots",
     );
 
     // 通过原有测试网治理入口调用同一强制结束函数，权限和计划校验与正常治理流程一致。
@@ -681,6 +720,19 @@ async fn poc_frozen_dkg_force_end_and_restart() {
         .await
         .in_progress
         .is_none());
+    for name in ["EpochPlan", "PrecomputedValidatorSet"] {
+        assert!(
+            optional_resource_at_version(
+                &client,
+                CORE_CODE_ADDRESS,
+                &format!("0x1::stake::{name}"),
+                version,
+            )
+            .await
+            .is_none(),
+            "Committed PoC transition left {name} at version {version}",
+        );
+    }
 
     for node in swarm.validators() {
         node.rest_client()

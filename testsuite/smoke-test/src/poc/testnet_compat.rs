@@ -76,10 +76,20 @@ async fn installed_at(client: &Client, version: u64) -> (ValidatorSet, RewardCon
         .unwrap()
         .into_inner();
     assert_eq!(context.0, configuration.epoch());
+    let split = client
+        .get_account_resource_at_version_bcs::<(u64, u64, u64, Vec<(u64, u64)>)>(
+            CORE_CODE_ADDRESS,
+            "0x1::poc_reward_split::RewardSplitConfig",
+            version,
+        )
+        .await
+        .unwrap()
+        .into_inner();
+    assert_eq!(split, (configuration.epoch(), 3000, 3000, vec![]));
     (validators, context)
 }
 
-/// 两个默认测试网验证者通过真实交易领取非零奖励，并在一个节点重启后继续换届。
+/// T2-S：关闭 Chunky DKG 的双节点变体，覆盖非零领取和立即重启；严格默认配置见 defaults。
 #[tokio::test]
 async fn poc_testnet_two_nodes_transfer_claim_and_restart() {
     let mut swarm = SwarmBuilder::new_local(2)
