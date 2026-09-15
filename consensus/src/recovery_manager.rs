@@ -146,6 +146,12 @@ impl RecoveryManager {
                                 self.sync_up(&sync_info, peer_id).await
                             )
                         }
+                        VerifiedEvent::RoundTimeoutMsg(round_timeout_msg) => {
+                            monitor!(
+                                "process_recovery",
+                                self.sync_up(round_timeout_msg.sync_info(), peer_id).await
+                            )
+                        }
                         unexpected_event => Err(anyhow!("Unexpected event: {:?}", unexpected_event)),
                     }
                     .with_context(|| format!("from peer {}", peer_id));
