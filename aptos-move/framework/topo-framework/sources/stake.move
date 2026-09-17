@@ -5113,6 +5113,135 @@ module topo_framework::stake {
         vector[active_stake_octa, inactive_stake_octa, pending_active_stake_octa, pending_inactive_stake_octa] == expected_balances_octa
     }
 
+    #[test_only]
+    /// 将指定池的四类余额之一填充到总本金目标；初始 1000 Octa active 保持不变。
+    fun fill_native_capacity_bucket(pool_address: address, bucket: u8, total_target: u64)
+    acquires StakePool, TopoCoinCapabilities {
+        assert!(total_target >= 1000, 1);
+        let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
+        let coins = coin::mint(total_target - 1000, mint_cap);
+        let pool = borrow_global_mut<StakePool>(pool_address);
+        if (bucket == 0) {
+            coin::merge(&mut pool.active, coins);
+        } else if (bucket == 1) {
+            coin::merge(&mut pool.inactive, coins);
+        } else if (bucket == 2) {
+            coin::merge(&mut pool.pending_active, coins);
+        } else {
+            assert!(bucket == 3, 2);
+            coin::merge(&mut pool.pending_inactive, coins);
+        };
+    }
+
+    #[test_only]
+    fun assert_add_stake_capacity_rejected_for_bucket(
+        framework: &signer, user: &signer, pool_address: address, bucket: u8,
+    ) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee,
+        PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig,
+        ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        poc_setup_reward_split(framework, user, 3000);
+        poc_commit(framework);
+        let upper_bound = get_native_reward_upper_bound(pool_address);
+        assert!(upper_bound == 3, 1);
+        fill_native_capacity_bucket(pool_address, bucket, (MAX_U64 as u64) - upper_bound);
+        let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
+        coin::deposit(pool_address, coin::mint(1, mint_cap));
+        let owner = create_signer::create_signer(pool_address);
+        add_stake(&owner, 1);
+    }
+
+    #[test(framework = @0x1, user = @0x777)]
+    fun poc_native_capacity_accepts_exact_limit_for_each_balance_bucket(
+        framework: signer, user: signer,
+    ) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee,
+        PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig,
+        ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        poc_setup_reward_split(&framework, &user, 3000);
+        poc_commit(&framework);
+        let pools = vector[@0x11, @0x22, @0x33, @0x44];
+        let i = 0;
+        while (i < 4) {
+            let pool_address = pools[i];
+            let closing_upper_bound = get_native_reward_upper_bound(pool_address);
+            assert!(closing_upper_bound == 3, 10 + i);
+            // 旧期费用关闭时上界为 3；目标期仍按部署费用限额预留 15，目标上界为 18。
+            let target_upper_bound = 18;
+            fill_native_capacity_bucket(pool_address, i as u8,
+                (MAX_U64 as u64) - closing_upper_bound - target_upper_bound);
+            assert!(total_stake_balance_octa(borrow_global<StakePool>(pool_address))
+                + (closing_upper_bound as u256) + (target_upper_bound as u256)
+                == (MAX_U64 as u256), 20 + i);
+            i += 1;
+        };
+        assert!(preview_epoch_transition(3, timestamp::now_seconds()).reason == 0, 30);
+    }
+
+    #[test(framework = @0x1, user = @0x777)]
+    fun poc_zero_native_upper_bound_allows_each_balance_bucket_without_aggregate_reserve(
+        framework: signer, user: signer,
+    ) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee,
+        PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig,
+        ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        poc_setup_reward_split(&framework, &user, 0);
+        poc_commit(&framework);
+        let pools = vector[@0x11, @0x22, @0x33, @0x44];
+        let i = 0;
+        while (i < 4) {
+            let pool_address = pools[i];
+            assert!(get_native_reward_upper_bound(pool_address) == 0, 10 + i);
+            fill_native_capacity_bucket(pool_address, i as u8, MAX_U64 as u64);
+            assert!(total_stake_balance_octa(borrow_global<StakePool>(pool_address))
+                == (MAX_U64 as u256), 20 + i);
+            i += 1;
+        };
+        // 原生奖励上界为零时不预留聚合空间；inactive 承载大额本金时，追加 1 Octa
+        // 只需满足目标 pending_active Coin 自身和原生最大质押约束。
+        let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
+        coin::deposit(@0x22, coin::mint(1, mint_cap));
+        let owner = create_signer::create_signer(@0x22);
+        add_stake(&owner, 1);
+        assert!(total_stake_balance_octa(borrow_global<StakePool>(@0x22))
+            == (MAX_U64 as u256) + 1, 30);
+        // 四类余额分别达到边界，且一个池的聚合本金已经加一，仍可生成零原生奖励目标。
+        assert!(preview_epoch_transition(3, timestamp::now_seconds()).reason == 0, 31);
+    }
+
+    #[test(framework = @0x1, user = @0x777)]
+    #[expected_failure(abort_code = 0x10025, location = Self)]
+    fun poc_add_stake_active_capacity_plus_one_rejected(framework: signer, user: signer)
+    acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee,
+        PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig,
+        ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        assert_add_stake_capacity_rejected_for_bucket(&framework, &user, @0x11, 0);
+    }
+
+    #[test(framework = @0x1, user = @0x777)]
+    #[expected_failure(abort_code = 0x10025, location = Self)]
+    fun poc_add_stake_inactive_capacity_plus_one_rejected(framework: signer, user: signer)
+    acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee,
+        PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig,
+        ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        assert_add_stake_capacity_rejected_for_bucket(&framework, &user, @0x22, 1);
+    }
+
+    #[test(framework = @0x1, user = @0x777)]
+    #[expected_failure(abort_code = 0x10025, location = Self)]
+    fun poc_add_stake_pending_active_capacity_plus_one_rejected(framework: signer, user: signer)
+    acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee,
+        PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig,
+        ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        assert_add_stake_capacity_rejected_for_bucket(&framework, &user, @0x33, 2);
+    }
+
+    #[test(framework = @0x1, user = @0x777)]
+    #[expected_failure(abort_code = 0x10025, location = Self)]
+    fun poc_add_stake_pending_inactive_capacity_plus_one_rejected(framework: signer, user: signer)
+    acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee,
+        PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig,
+        ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        assert_add_stake_capacity_rejected_for_bucket(&framework, &user, @0x44, 3);
+    }
+
     #[test(framework = @0x1, user = @0x777)]
     fun poc_capacity_accepts_deployment_rate_bound_above_one(framework: signer, user: signer) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee, PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
         initialize_for_test_custom(&framework, 100, 10000, 3600, true, 1, 100, 25);
@@ -5160,18 +5289,20 @@ module topo_framework::stake {
             && actual_pending_activation_epoch == pending_activation_epoch
     }
 
-    #[test(framework = @0x1, user = @0x777, vm = @vm_reserved)]
-    fun poc_mixed_rewards_preserve_native_ownership_and_fee_destination(framework: signer, user: signer, vm: signer) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee, PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
-        poc_setup_reward_split(&framework, &user, 3000);
+    #[test(framework = @0x1, power_only = @0x777, bond_only = @0x44, vm = @vm_reserved)]
+    fun poc_mixed_rewards_preserve_native_ownership_and_fee_destination(framework: signer, power_only: signer, bond_only: signer, vm: signer) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee, PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        poc_setup_reward_split(&framework, &power_only, 3000);
         features::change_feature_flags_for_testing(&framework, vector[features::get_distribute_transaction_fee_feature()], vector[]);
         assert!(get_installed_native_reward_bps() == 0, 1);
+        // 只出保证金的 owner 建立零 units 持仓，以生产领取路径证明其不能取得 PoC 金库收益。
+        poc_accounting::replace_allocation(&bond_only, vector[@0x44], vector[10000], 0, 0, 62);
+        coin::register<TopoCoin>(&power_only);
         poc_commit(&framework);
         assert!(get_installed_native_reward_bps() == 3000 && get_native_reward_upper_bound(@0x44) == 18, 2);
-        let owner = create_signer::create_signer(@0x44);
-        unlock(&owner, 400);
+        unlock(&bond_only, 400);
         let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
         coin::deposit(@0x44, coin::mint(100, mint_cap));
-        add_stake(&owner, 100);
+        add_stake(&bond_only, 100);
         coin::merge(&mut borrow_global_mut<StakePool>(@0x44).inactive, coin::mint(77, mint_cap));
         let validator_index = get_validator_index(@0x44);
         update_performance_statistics(option::some(validator_index), vector[]);
@@ -5181,12 +5312,63 @@ module topo_framework::stake {
         // 20 Octa 交易费分为原生 6、PoC 14；原生费用按同一旧本金分为 4 和 2 Octa。
         // pending_active 的 100 Octa 与 inactive 的 77 Octa 均不参与本次奖励分配。
         assert!(stake_balances_match(@0x44, vector[706, 77, 0, 403]), 3);
-        let (_, _, _, vault_balance_octa, _) = poc_accounting::get_pool(@0x44);
-        assert!(vault_balance_octa == 21, 4); // PoC 收到 7 Octa 通胀和 14 Octa 费用；两路总收益为 10 + 20 Octa。
-        let claimed_rewards = poc_accounting::claim_rewards(&user, vector[@0x44]);
-        assert!(coin::value(&claimed_rewards) == 21, 5);
+        let (units, _, reward_base_octa, vault_balance_octa, reward_index) = poc_accounting::get_pool(@0x44);
+        assert!(units == (1024u128 << 32) && reward_base_octa == 1000
+            && vault_balance_octa == 21 && reward_index == 1624796301562061610805100544, 4);
+        assert!(event::was_event_emitted(&DistributeRewards { pool_address: @0x44, rewards_amount: 3 })
+            && event::was_event_emitted(&DistributeTransactionFee { pool_address: @0x44, fee_amount: 6 }), 5);
+        assert!(event::was_event_emitted(&PoCRewardSplit { pool: @0x44, closing_epoch: 2,
+            native_reward_bps: 3000, total_inflation_octa: 10, active_native_reward_octa: 2,
+            pending_inactive_native_reward_octa: 1, poc_inflation_octa: 7 }), 6);
+        assert!(event::was_event_emitted(&PoCRewardCredited { pool: @0x44, closing_epoch: 2,
+            reward_base_octa: 1000, inflation: 7, fee: 14,
+            delta_index: 1624796301562061610805100544 }), 7);
+
+        let (_, _, bond_claimable, bond_fractional) = poc_accounting::get_position(@0x44, @0x44);
+        let (_, _, power_claimable, power_fractional) = poc_accounting::get_position(@0x777, @0x44);
+        assert!(bond_claimable == 0 && bond_fractional == 0
+            && power_claimable == 21 && power_fractional == 0, 8);
+        let bond_rewards = poc_accounting::claim_rewards(&bond_only, vector[@0x44]);
+        coin::destroy_zero(bond_rewards);
+        let claimed_rewards = poc_accounting::claim_rewards(&power_only, vector[@0x44]);
+        assert!(coin::value(&claimed_rewards) == 21 && coin::balance<TopoCoin>(@0x777) == 0
+            && coin::balance<TopoCoin>(@0x44) == 0, 9);
+        coin::deposit(@0x777, claimed_rewards);
+        assert!(coin::balance<TopoCoin>(@0x777) == 21 && coin::balance<TopoCoin>(@0x44) == 0, 10);
+        coin::destroy_zero(poc_accounting::claim_rewards(&power_only, vector[@0x44]));
+        coin::destroy_zero(poc_accounting::claim_rewards(&bond_only, vector[@0x44]));
+        let (_, _, _, remaining_vault, _) = poc_accounting::get_pool(@0x44);
+        assert!(remaining_vault == 0, 11);
+    }
+
+    #[test(framework = @0x1, dual_owner = @0x44, vm = @vm_reserved)]
+    fun poc_mixed_rewards_dual_owner_receives_native_and_poc_independently(framework: signer, dual_owner: signer, vm: signer) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee, PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        // 同一地址拥有池保证金并提供全部算力；两类收益仍分别进入质押余额和本人钱包。
+        poc_setup_reward_split(&framework, &dual_owner, 3000);
+        features::change_feature_flags_for_testing(&framework, vector[features::get_distribute_transaction_fee_feature()], vector[]);
+        poc_commit(&framework);
+        unlock(&dual_owner, 400);
+        let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
+        coin::deposit(@0x44, coin::mint(100, mint_cap));
+        add_stake(&dual_owner, 100);
+        coin::merge(&mut borrow_global_mut<StakePool>(@0x44).inactive, coin::mint(77, mint_cap));
+        let validator_index = get_validator_index(@0x44);
+        update_performance_statistics(option::some(validator_index), vector[]);
+        record_fee(&vm, vector[validator_index], vector[20]);
+        poc_commit(&framework);
+
+        assert!(stake_balances_match(@0x44, vector[706, 77, 0, 403])
+            && coin::balance<TopoCoin>(@0x44) == 0, 1);
+        let (_, _, claimable_octa, fractional_entitlement) = poc_accounting::get_position(@0x44, @0x44);
+        assert!(claimable_octa == 21 && fractional_entitlement == 0, 2);
+        let claimed_rewards = poc_accounting::claim_rewards(&dual_owner, vector[@0x44]);
+        assert!(coin::value(&claimed_rewards) == 21, 3);
         coin::deposit(@0x44, claimed_rewards);
-        coin::destroy_zero(poc_accounting::claim_rewards(&user, vector[@0x44]));
+        assert!(coin::balance<TopoCoin>(@0x44) == 21
+            && stake_balances_match(@0x44, vector[706, 77, 0, 403]), 4);
+        coin::destroy_zero(poc_accounting::claim_rewards(&dual_owner, vector[@0x44]));
+        let (_, _, _, vault_balance_octa, _) = poc_accounting::get_pool(@0x44);
+        assert!(vault_balance_octa == 0, 5);
     }
 
     #[test(framework = @0x1, user = @0x777, vm = @vm_reserved)]
@@ -5264,6 +5446,60 @@ module topo_framework::stake {
     }
 
     #[test(framework = @0x1, user = @0x777)]
+    fun poc_native_capacity_accepts_exact_u64_and_defers_one_over(framework: signer, user: signer) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee, PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        poc_setup_reward_split(&framework, &user, 3000);
+        features::change_feature_flags_for_testing(&framework,
+            vector[features::get_distribute_transaction_fee_feature()], vector[]);
+        poc_commit(&framework);
+        assert!(get_native_reward_upper_bound(@0x44) == 18, 1);
+
+        let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
+        // 四类余额都取非零值。按 u256 独立相加后，旧期 18 与目标期 18 的原生收益上界
+        // 恰好把总量推到 u64 上限，此边界必须允许生成目标。
+        coin::merge(&mut borrow_global_mut<StakePool>(@0x44).pending_active, coin::mint(11, mint_cap));
+        coin::merge(&mut borrow_global_mut<StakePool>(@0x44).pending_inactive, coin::mint(13, mint_cap));
+        coin::merge(&mut borrow_global_mut<StakePool>(@0x44).inactive,
+            coin::mint((MAX_U64 as u64) - 1060, mint_cap));
+        assert!(total_stake_balance_octa(borrow_global<StakePool>(@0x44)) + 18 + 18
+            == (MAX_U64 as u256), 2);
+        assert!(preview_epoch_transition(3, timestamp::now_seconds()).reason == 0, 3);
+
+        // 再增加 1 Octa 后只超出一位；延期必须发生在冻结前，不能残留计划或 PVS。
+        coin::merge(&mut borrow_global_mut<StakePool>(@0x44).inactive, coin::mint(1, mint_cap));
+        assert!(total_stake_balance_octa(borrow_global<StakePool>(@0x44)) + 18 + 18
+            == (MAX_U64 as u256) + 1, 4);
+        assert!(try_cache_epoch_plan(3, timestamp::now_seconds()) == TARGET_OUT_OF_RANGE, 5);
+        assert!(!exists<EpochPlan>(@topo_framework) && !exists<PrecomputedValidatorSet>(@topo_framework)
+            && !reconfiguration_state::is_in_progress() && !features::is_reconfiguration_frozen(), 6);
+    }
+
+    #[test(framework = @0x1, user = @0x777)]
+    fun poc_inactive_withdraw_repairs_native_capacity_deferred(framework: signer, user: signer) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee, PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        poc_setup_reward_split(&framework, &user, 3000);
+        features::change_feature_flags_for_testing(&framework,
+            vector[features::get_distribute_transaction_fee_feature()], vector[]);
+        poc_commit(&framework);
+        let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
+        coin::merge(&mut borrow_global_mut<StakePool>(@0x44).inactive,
+            coin::mint((MAX_U64 as u64) - 1035, mint_cap));
+        assert!(total_stake_balance_octa(borrow_global<StakePool>(@0x44)) + 18 + 18
+            == (MAX_U64 as u256) + 1, 1);
+        assert!(try_cache_epoch_plan(3, timestamp::now_seconds()) == TARGET_OUT_OF_RANGE, 2);
+        assert!(!exists<EpochPlan>(@topo_framework) && !exists<PrecomputedValidatorSet>(@topo_framework)
+            && !features::is_reconfiguration_frozen(), 3);
+
+        // owner 通过生产提取入口取出 1 Octa inactive，本金降到精确容量边界后即可完成换届。
+        let owner = create_signer::create_signer(@0x44);
+        withdraw(&owner, 1);
+        assert!(total_stake_balance_octa(borrow_global<StakePool>(@0x44)) + 18 + 18
+            == (MAX_U64 as u256), 4);
+        poc_commit(&framework);
+        assert!(poc_accounting::current_epoch() == 3 && !exists<EpochPlan>(@topo_framework)
+            && !exists<PrecomputedValidatorSet>(@topo_framework)
+            && !features::is_reconfiguration_frozen(), 5);
+    }
+
+    #[test(framework = @0x1, user = @0x777)]
     fun poc_fee_upper_bound_excludes_nonvoting_pools(framework: signer, user: signer) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee, PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
         poc_setup_reward_split(&framework, &user, 3000);
         features::change_feature_flags_for_testing(&framework, vector[features::get_distribute_transaction_fee_feature()], vector[]);
@@ -5299,6 +5535,25 @@ module topo_framework::stake {
         coin::deposit(@0x44, coin::mint(1, mint_cap));
         let owner = create_signer::create_signer(@0x44);
         add_stake(&owner, 1);
+    }
+
+    #[test(framework = @0x1, user = @0x777)]
+    fun poc_add_stake_accepts_exact_fee_only_capacity(framework: signer, user: signer) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee, PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        poc_setup_reward_split(&framework, &user, 3000);
+        staking_config::update_rewards_rate(&framework, 0, 100);
+        features::change_feature_flags_for_testing(&framework,
+            vector[features::get_distribute_transaction_fee_feature()], vector[]);
+        poc_commit(&framework);
+        let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
+        coin::merge(&mut borrow_global_mut<StakePool>(@0x44).inactive,
+            coin::mint((MAX_U64 as u64) - 1016, mint_cap));
+        coin::deposit(@0x44, coin::mint(1, mint_cap));
+        let owner = create_signer::create_signer(@0x44);
+        // 追加后四类本金与 15 Octa 原生费用上界之和恰好为 u64 上限。
+        add_stake(&owner, 1);
+        assert!(get_native_reward_upper_bound(@0x44) == 15
+            && total_stake_balance_octa(borrow_global<StakePool>(@0x44)) + 15
+                == (MAX_U64 as u256), 1);
     }
 
     #[test(framework = @0x1, user = @0x777)]
@@ -5389,13 +5644,16 @@ module topo_framework::stake {
         unlock(&owner, 400);
         let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
         let stake_pool = borrow_global_mut<StakePool>(@0x44);
-        coin::merge(&mut stake_pool.inactive, coin::mint((MAX_U64 as u64) - 400, mint_cap));
+        coin::merge(&mut stake_pool.inactive, coin::mint((MAX_U64 as u64) - 401, mint_cap));
         let cutoff_secs = timestamp::now_seconds();
         stake_pool.locked_until_secs = cutoff_secs;
-        assert!(can_settle_native_reward(stake_pool, 0, cutoff_secs), 1);
+        // 3 Octa 奖励按 600:400 分配，pending_inactive 获得 1；到期合并后恰好等于 u64 上限。
+        assert!(can_settle_native_reward(stake_pool, 3, cutoff_secs), 1);
+        coin::merge(&mut stake_pool.inactive, coin::mint(1, mint_cap));
         assert!(!can_settle_native_reward(stake_pool, 3, cutoff_secs), 2);
         assert!(try_cache_epoch_plan(3, cutoff_secs) == TARGET_OUT_OF_RANGE
-            && !exists<EpochPlan>(@topo_framework) && !features::is_reconfiguration_frozen(), 3);
+            && !exists<EpochPlan>(@topo_framework) && !exists<PrecomputedValidatorSet>(@topo_framework)
+            && !features::is_reconfiguration_frozen(), 3);
     }
 
     #[test(framework = @0x1, user = @0x777)]
@@ -5409,6 +5667,22 @@ module topo_framework::stake {
         let owner = create_signer::create_signer(@0x44);
         // 当前余额可容纳追加的 3 Octa，但还须为当期最多 3 Octa 的原生奖励预留容量。
         add_stake(&owner, 3);
+    }
+
+    #[test(framework = @0x1, user = @0x777)]
+    fun poc_add_stake_accepts_exact_installed_native_capacity(framework: signer, user: signer) acquires AllowedValidators, EpochPlan, InstalledRewardContext, OwnerCapability, PendingTransactionFee, PrecomputedValidatorSet, StakePool, TopoCoinCapabilities, TransactionFeeConfig, ValidatorConfig, ValidatorPerformance, ValidatorSet, VoluntaryLeaves {
+        poc_setup_reward_split(&framework, &user, 3000);
+        poc_commit(&framework);
+        let mint_cap = &borrow_global<TopoCoinCapabilities>(@topo_framework).mint_cap;
+        coin::merge(&mut borrow_global_mut<StakePool>(@0x44).inactive,
+            coin::mint((MAX_U64 as u64) - 1004, mint_cap));
+        coin::deposit(@0x44, coin::mint(1, mint_cap));
+        let owner = create_signer::create_signer(@0x44);
+        // 追加后四类本金与 3 Octa 当期原生通胀上界之和恰好为 u64 上限。
+        add_stake(&owner, 1);
+        assert!(get_native_reward_upper_bound(@0x44) == 3
+            && total_stake_balance_octa(borrow_global<StakePool>(@0x44)) + 3
+                == (MAX_U64 as u256), 1);
     }
 
     #[test(framework = @0x1, user = @0x777)]
@@ -5477,12 +5751,87 @@ module topo_framework::stake {
         assert!(allocate_growth(&vector[10, 10, 10], &vector[0, 0, 0], 10, 25, false) == vector[0, 0, 0], 3);
     }
 
+    #[test_only]
+    fun assert_poc_target_bounds() {
+        // 合法配置已保证 65536 * max_power <= u64::MAX，普通和 Chunky DKG 共用的
+        // 目标预览不可能产生这个向量；此处隔离验证损坏状态下的生产防御校验。
+        let (reason, total) = validate_target_powers(
+            &vector[1u64 << 63, 1u64 << 63], 2, 8, false
+        );
+        assert!(reason == TARGET_OUT_OF_RANGE && total == 1u256 << 64, 1);
+
+        // 总权重恰好等于 u64 上限仍可进入 DKG，第一项超过总和上限才被拒绝。
+        let (reason, total) = validate_target_powers(
+            &vector[1u64 << 63, (1u64 << 63) - 1], 2, 8, false
+        );
+        assert!(reason == 0 && total == (MAX_U64 as u256), 2);
+
+        // 生产预览只保留 power >= min_power 的成员，且 min_power 大于零；
+        // 零总权重同样只是对损坏目标的防御分支。
+        let (reason, total) = validate_target_powers(&vector[0, 0], 2, 8, false);
+        assert!(reason == ZERO_TARGET_POWER && total == 0, 3);
+    }
+
     #[test]
     fun poc_actual_total_rejects_dkg_overflow() {
-        let (reason, total) = validate_target_powers(&vector[1u64 << 63, 1u64 << 63], 2, 8, false);
-        assert!(reason == TARGET_OUT_OF_RANGE && total == 1u256 << 64, 1);
-        let (reason, total) = validate_target_powers(&vector[281474976710655, 281474976710655], 2, 8, false);
-        assert!(reason == 0 && total == 562949953421310, 2);
+        assert_poc_target_bounds();
+    }
+
+    #[test]
+    fun poc_valid_config_makes_target_total_overflow_unreachable() {
+        let protocol_limit = 65536u256;
+        let largest_valid_max_power = (1u64 << 48) - 1;
+        // 配置校验对协议人数上限而非较小的部署容量取上界，
+        // 因此任意合法目标的实际总权重都不可能溢出 u64。
+        assert!(protocol_limit * (largest_valid_max_power as u256)
+            == (MAX_U64 as u256) - 65535, 1);
+
+        // min_power 和 min_validators 均大于零。非空选中集的总权重至少为 1；
+        // 空选中集会先命中人数不足，不会形成零权重 DKG 目标。
+        let (reason, total) = validate_target_powers(&vector[1], 1, 65536, false);
+        assert!(reason == 0 && total == 1, 2);
+        let (reason, total) = validate_target_powers(&vector[], 1, 65536, false);
+        assert!(reason == INSUFFICIENT_VALIDATORS && total == 0, 3);
+    }
+
+    #[test(framework = @topo_framework)]
+    fun poc_dkg_conservative_config_boundary_accepted(framework: signer) {
+        initialize_for_test_custom(&framework, 1, 100, 3600, false, 1, 100, 25);
+        let max_power = (1u64 << 48) - 1;
+        // 65536 * (2^48 - 1) 是保守配置约束允许的最大乘积。
+        assert!(65536u256 * (max_power as u256) == (MAX_U64 as u256) - 65535, 1);
+        poc_accounting::prepare(
+            &framework,
+            1,
+            2,
+            poc_accounting::new_power_params(1, 1, max_power, 4),
+            poc_accounting::new_deployment_limits(4, 4, 4, 8, 2814749, 1, 1, 0, 1),
+            0,
+            25,
+            false,
+        );
+        let (_, _, _, _, params, _, _) = poc_accounting::get_config();
+        let (_, _, installed_max_power, _) = poc_accounting::get_power_params_fields(&params);
+        assert!(installed_max_power == max_power, 2);
+    }
+
+    #[test(framework = @topo_framework)]
+    #[expected_failure(abort_code = 0x10007, location = topo_framework::poc_accounting)]
+    fun poc_dkg_conservative_config_first_overflow_rejected(framework: signer) {
+        initialize_for_test_custom(&framework, 1, 100, 3600, false, 1, 100, 25);
+        let max_power = 1u64 << 48;
+        // 65536 * 2^48 恰为 2^64，必须在准备配置时精确拒绝。
+        assert!(65536u256 * (max_power as u256) == 1u256 << 64, 1);
+        poc_accounting::prepare(
+            &framework,
+            1,
+            2,
+            poc_accounting::new_power_params(1, 1, max_power, 4),
+            poc_accounting::new_deployment_limits(4, 4, 4, 8, 2814749, 1, 1, 0, 1),
+            0,
+            25,
+            false,
+        );
     }
 
     #[test]

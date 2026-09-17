@@ -1123,6 +1123,28 @@ impl<O: OutputLogger> FakeExecutorImpl<O> {
         self.execute_transaction_block_with_state_view(txn_block, &self.state_store, true)
     }
 
+    /// 通过生产 VM 的验证者交易入口执行单笔交易，并保留完整 VM 状态供端到端测试核对。
+    /// 此辅助函数不会应用输出写集；调用方可直接验证失败交易没有任何业务写入。
+    pub fn execute_validator_transaction_with_vm_status(
+        &self,
+        txn: aptos_types::validator_txn::ValidatorTransaction,
+    ) -> Result<(VMStatus, TransactionOutput), VMStatus> {
+        let env = AptosEnvironment::new(&self.state_store);
+        let vm = AptosVM::new(&env);
+        let resolver = self.state_store.as_move_resolver();
+        let code_storage = self.state_store.as_aptos_code_storage(&env);
+        let txn = SignatureVerifiedTransaction::Valid(Transaction::ValidatorTransaction(txn));
+        let log_context = AdapterLogSchema::new(self.state_store.id(), 0);
+        let (status, output) = vm.execute_single_transaction(
+            &txn,
+            &resolver,
+            &code_storage,
+            &log_context,
+            &AuxiliaryInfo::default(),
+        )?;
+        Ok((status, output.try_materialize_into_transaction_output()?))
+    }
+
     pub fn execute_transaction(&self, txn: SignedTransaction) -> TransactionOutput {
         let txn_block = vec![txn];
         let mut outputs = self
@@ -1213,6 +1235,11 @@ impl<O: OutputLogger> FakeExecutorImpl<O> {
         self.state_store
             .set_state_value(state_key, StateValue::new_legacy(data_blob.into()))
             .unwrap();
+    }
+
+    /// 删除指定状态值，供需要注入损坏账本状态的隔离测试使用。
+    pub fn remove_state_value(&mut self, state_key: &StateKey) {
+        self.state_store.remove_state_value(state_key).unwrap();
     }
 
     /// Validates the given transaction by running it through the VM validator.

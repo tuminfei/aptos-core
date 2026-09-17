@@ -230,6 +230,31 @@ module topo_framework::poc_accounting_tests {
         assert!(ledger::preview_pool_units(POOL, 10) == half + (MAX_UNITS - 2) / 4, 2);
     }
 
+    #[test(framework = @topo_framework, first = @0x11, second = @0x12)]
+    fun poc_pool_capacity_accepts_exact_limit_at_each_horizon(
+        framework: &signer, first: &signer, second: &signer,
+    ) {
+        setup(framework);
+        let half = MAX_UNITS / 2;
+        let quarter = MAX_UNITS / 4;
+
+        // 两笔分配先使 E+1 和 B 都恰好达到上限；推进后同一聚合值成为当前值。
+        allocate(first, half, half, 10000, 10);
+        allocate(second, half, half, 10000, 10);
+        assert!(ledger::preview_pool_units(POOL, 1) == 0, 0);
+        assert!(ledger::preview_pool_units(POOL, 2) == MAX_UNITS, 1);
+        assert!(ledger::preview_pool_units(POOL, 10) == MAX_UNITS, 2);
+        ledger::advance_for_test(2, vector[POOL], true);
+        assert!(ledger::preview_pool_units(POOL, 2) == MAX_UNITS, 3);
+
+        // 当前池保持恰好上限；把两名用户转向另一池后，单独构造 E+1 未满、B 恰好上限。
+        ledger::replace_for_test(first, vector[OTHER_POOL], vector[10000], quarter, half, 10);
+        ledger::replace_for_test(second, vector[OTHER_POOL], vector[10000], quarter, half, 10);
+        assert!(ledger::preview_pool_units(POOL, 2) == MAX_UNITS, 4);
+        assert!(ledger::preview_pool_units(OTHER_POOL, 3) == MAX_UNITS / 2, 5);
+        assert!(ledger::preview_pool_units(OTHER_POOL, 10) == MAX_UNITS, 6);
+    }
+
     #[test(framework = @topo_framework, user = @0x11)]
     fun poc_matured_withdrawal_is_settled_before_configuration_promotion(framework: &signer, user: &signer) {
         setup(framework);
@@ -352,16 +377,57 @@ module topo_framework::poc_accounting_tests {
     fun poc_future_pool_capacity_rejected(framework: &signer, first: &signer, second: &signer) {
         setup(framework);
         allocate(first, MAX_UNITS / 2, MAX_UNITS / 2, 10000, 10);
+        assert!(ledger::preview_pool_units(POOL, 2) == MAX_UNITS / 2, 0);
+        // E+1 增至上限加一时立即拒绝，变化不能留待 Epoch 推进时才发现。
         allocate(second, MAX_UNITS / 2 + 1, MAX_UNITS / 2 + 1, 10000, 10);
+    }
+
+    #[test(framework = @topo_framework, first = @0x11, second = @0x12)]
+    #[expected_failure(abort_code = 0x20008, location = topo_framework::poc_accounting)]
+    fun poc_boundary_only_pool_capacity_rejected(
+        framework: &signer, first: &signer, second: &signer,
+    ) {
+        setup(framework);
+        let half = MAX_UNITS / 2;
+        let quarter = MAX_UNITS / 4;
+        ledger::replace_for_test(first, vector[POOL], vector[10000], quarter, half, 10);
+        assert!(ledger::preview_pool_units(POOL, 2) == quarter, 0);
+        assert!(ledger::preview_pool_units(POOL, 10) == half, 1);
+        // E+1 合计仅为上限一半；第二笔只让 B 达到上限加一，必须在写入阶段拒绝。
+        ledger::replace_for_test(second, vector[POOL], vector[10000], quarter, half + 1, 10);
     }
 
     #[test(framework = @topo_framework)]
     #[expected_failure(abort_code = 0x3000d, location = topo_framework::poc_accounting)]
     fun poc_zero_reward_still_prevents_double_credit(framework: &signer) {
         setup(framework);
-        ledger::advance_for_test(2, vector[POOL], true);
+        // 启用池尚无任何持仓，当前和下一 Epoch 的聚合 units 及计奖基数都为零。
+        ledger::advance_zero_pool_for_test(2, POOL);
+        let (before_units, before_next_units, before_base, before_vault, before_index) =
+            ledger::get_pool(POOL);
+        assert!(before_units == 0 && before_next_units == 0 && before_base == 0
+            && before_vault == 0 && before_index == 0, 0);
+        let delta = ledger::credit_for_test(POOL, coin::zero());
+        let (units, next_units, base, vault, index) = ledger::get_pool(POOL);
+        assert!(delta == 0 && units == before_units && next_units == before_next_units
+            && base == before_base && vault == before_vault && index == before_index, 1);
+        // 零额入账仍须推进内部 reward_epoch；同一 Epoch 再次入账精确拒绝。
         ledger::credit_for_test(POOL, coin::zero());
-        ledger::credit_for_test(POOL, coin::zero());
+    }
+
+    #[test(framework = @topo_framework)]
+    #[expected_failure(abort_code = 0x3000e, location = topo_framework::poc_accounting)]
+    fun poc_zero_unit_pool_rejects_positive_reward_atomically(framework: &signer) {
+        setup(framework);
+        let (burn, mint) = topo_coin::initialize_for_test(framework);
+        ledger::advance_zero_pool_for_test(2, POOL);
+        let (units, next_units, base, vault, index) = ledger::get_pool(POOL);
+        assert!(units == 0 && next_units == 0 && base == 0 && vault == 0 && index == 0, 0);
+        // 正奖励已在同一事务内铸造；生产入口因零 units 以金库不变量错误中止，
+        // Move 测试事务随之整体回滚，不提交铸币、金库、指数或 reward_epoch 修改。
+        let _ = ledger::credit_for_test(POOL, coin::mint(1, &mint));
+        coin::destroy_mint_cap(mint);
+        coin::destroy_burn_cap(burn);
     }
 
     #[test(framework = @topo_framework, user = @0x11)]
@@ -428,6 +494,45 @@ module topo_framework::poc_accounting_tests {
         assert!(ledger::reward_epoch_supported(10011), 1);
         assert!(!ledger::reward_epoch_supported(10012), 2);
         assert!(!ledger::reward_epoch_supported(11), 3);
+    }
+
+    #[test(framework = @topo_framework)]
+    fun poc_default_reward_horizon_wide_integer_report(framework: &signer) {
+        // 主网默认上限：R_MAX = floor(2,000,000 TOPO * 1 / 100) + 1,000 TOPO。
+        let maximum = 18446744073709551615u256;
+        let horizon = 600060u64;
+        let reward_max = 2100000000000u256;
+        let lifetime_max = (horizon as u256) * reward_max;
+        assert!(lifetime_max == 1260126000000000000 && lifetime_max < maximum, 0);
+
+        ledger::prepare_limits_for_test(framework, 1, 2,
+            ledger::new_power_params(100000000, 100000000, 200000000000000, 5),
+            ledger::new_deployment_limits(
+                4, 4, 32, 128, 200000000000000, 1, 100, 100000000000, horizon,
+            ));
+        let (base, rate_num, rate_den, fee_max, installed_horizon) = ledger::get_reward_limits();
+        assert!(base == 200000000000000 && rate_num == 1 && rate_den == 100
+            && fee_max == 100000000000 && installed_horizon == horizon, 1);
+
+        // 首次安装把 F 固定为 2；支持区间严格为 [F, F+H)，无需实际运行 600060 个 Epoch。
+        ledger::advance_for_test(2, vector[], true);
+        let (_, _, first, _, _, pending, _) = ledger::get_config();
+        assert!(first == option::some(2) && pending.is_none(), 2);
+        assert!(!ledger::reward_epoch_supported(1), 3);
+        assert!(ledger::reward_epoch_supported(2), 4);
+        assert!(ledger::reward_epoch_supported(600061), 5);
+        assert!(!ledger::reward_epoch_supported(600062), 6);
+    }
+
+    #[test(framework = @topo_framework)]
+    #[expected_failure(abort_code = 0x10006, location = topo_framework::poc_accounting)]
+    fun poc_default_reward_horizon_rejects_first_epoch_overflow(framework: &signer) {
+        // F = u64::MAX - H + 1 时 F+H = u64::MAX+1，准备阶段必须用宽整数精确拒绝。
+        ledger::prepare_limits_for_test(framework, 1, 18446744073708951556,
+            ledger::new_power_params(100000000, 100000000, 200000000000000, 5),
+            ledger::new_deployment_limits(
+                4, 4, 32, 128, 200000000000000, 1, 100, 100000000000, 600060,
+            ));
     }
 
     // 三次最大允许入账恰好累计到 u64::MAX，两名用户等到本版奖励支持期限末尾才领取。

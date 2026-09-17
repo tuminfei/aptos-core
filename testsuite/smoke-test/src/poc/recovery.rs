@@ -26,7 +26,7 @@ const POLL_INTERVAL: Duration = Duration::from_secs(1);
 
 #[derive(Debug, PartialEq)]
 struct RewardState {
-    // Exact resources also cover the installed split, accounting epoch and normalization clock.
+    // 精确资源快照同时覆盖已安装分流、账本 Epoch 和标准化时钟。
     resources: Vec<Vec<u8>>,
     pools: Vec<Vec<Value>>,
     stakes: Vec<Vec<Value>>,
@@ -75,7 +75,7 @@ async fn rewards_at(
         let mut pool_states = vec![];
         let mut stakes = vec![];
         for pool in pools {
-            // These views use logical units at the chosen epoch; they need not materialize tables.
+            // 这些查询使用指定 Epoch 的逻辑 units，无需将表项主动落盘。
             pool_states
                 .push(view_at(client, "0x1::poc_accounting::get_pool", *pool, version).await?);
             stakes.push(view_at(client, "0x1::stake::get_stake", *pool, version).await?);
@@ -188,7 +188,7 @@ fn number(value: &Value) -> Result<u64> {
         .context("Invalid Move u64")
 }
 
-/// Scan the entire bounded ledger interval, including validator transactions that commit DKG.
+/// 扫描完整的有界账本区间，包括提交 DKG 的验证者交易。
 async fn verify_recovery_rewards(
     client: &Client,
     pools: &[AccountAddress],
@@ -330,7 +330,7 @@ async fn verify_recovery_rewards(
     Ok(())
 }
 
-/// SYS-02 / T2-F: retain native defaults, lose quorum for a full stable 30 seconds, then recover.
+/// SYS-02 / T2-F：保留原生默认值，稳定失去 quorum 满 30 秒后再恢复。
 #[tokio::test]
 async fn poc_testnet_two_nodes_quorum_loss_and_recovery() -> Result<()> {
     let startup = Instant::now();
@@ -414,7 +414,7 @@ async fn poc_testnet_two_nodes_quorum_loss_and_recovery() -> Result<()> {
     swarm.validator_mut(identities[1]).unwrap().stop();
     let observation = observe_quorum_loss(&client, &pools).await;
 
-    // Always attempt to restore the stopped process, including observation/RPC failures.
+    // 即使观察或 RPC 失败，也始终尝试恢复已停止的进程。
     let recovery_started = Instant::now();
     let restart = swarm.validator_mut(identities[1]).unwrap().start();
     println!(

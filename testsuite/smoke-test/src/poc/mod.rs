@@ -1,11 +1,29 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
+mod allocation_lifecycle;
+mod bond_cutoff;
+mod bond_rewards;
+mod concentration;
+mod contract_freeze;
 mod defaults;
+mod delegation_rewards;
+mod fee_rewards;
+mod freeze;
 mod governance;
+mod governance_weight;
+mod member_freeze;
+mod member_lifecycle;
+mod power_governance;
+mod power_lifecycle;
 mod recovery;
+mod reward_checkpoints;
+mod reward_split_lifecycle;
+mod stake_freeze;
 mod testnet_compat;
 mod transactions;
+mod upload_capacity;
+mod weight_limits;
 
 use crate::smoke_test_environment::SwarmBuilder;
 use aptos_api_types::{AptosErrorCode, Transaction};
@@ -178,8 +196,8 @@ async fn resource_at_version<T: OnChainConfig>(client: &Client, version: u64) ->
         .into_inner()
 }
 
-/// Historical resource enumeration requires an indexer. Read named resources
-/// directly so all smoke fixtures retain their native node configuration.
+/// 枚举历史资源需要 indexer；直接按名称读取资源，
+/// 使所有 smoke fixture 均可保留原生节点配置。
 async fn optional_resource_at_version(
     client: &Client,
     address: AccountAddress,

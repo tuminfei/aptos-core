@@ -3,16 +3,22 @@
 
 use aptos_genesis::{config::Layout, poc};
 use aptos_types::{
+    access_path::AccessPath,
+    account_config::CORE_CODE_ADDRESS,
     on_chain_config::{ConfigurationResource, ValidatorSet},
     state_store::state_key::StateKey,
     transaction::{ChangeSet, Transaction, WriteSetPayload},
     write_set::TransactionWrite,
 };
 use aptos_vm_genesis::{
-    default_gas_schedule, GenesisConfiguration, TestValidator, GENESIS_KEYPAIR,
+    default_gas_schedule, encode_genesis_change_set, GenesisConfiguration, TestValidator,
+    GENESIS_KEYPAIR,
 };
 
-fn genesis_from_current_layout(validator_count: usize, stake_amount: u64) -> ChangeSet {
+fn genesis_pair_from_current_layout(
+    validator_count: usize,
+    stake_amount: u64,
+) -> (ChangeSet, ChangeSet) {
     let layout = Layout::default();
     // 与 MainnetGenesisInfo 一致，主网开启动态换员并使用正式代币初始化；其余 TOPO 参数原样取自 Layout。
     let native = GenesisConfiguration {
@@ -41,20 +47,53 @@ fn genesis_from_current_layout(validator_count: usize, stake_amount: u64) -> Cha
         .into_iter()
         .map(|v| v.data)
         .collect::<Vec<_>>();
-    match poc::encode_genesis_transaction(
+    let framework = aptos_cached_packages::head_release_bundle();
+    let gas = default_gas_schedule();
+    let poc_genesis = match poc::encode_genesis_transaction(
         &GENESIS_KEYPAIR.1,
         &validators,
-        aptos_cached_packages::head_release_bundle(),
+        framework,
         layout.chain_id,
         &native,
         &layout.on_chain_consensus_config,
         &layout.on_chain_execution_config,
-        &default_gas_schedule(),
+        &gas,
         &poc::PocGenesisConfiguration::mainnet(),
     ) {
         Transaction::GenesisTransaction(WriteSetPayload::Direct(genesis)) => genesis,
         _ => panic!("PoC builder must produce a direct genesis transaction"),
-    }
+    };
+    let native_genesis = encode_genesis_change_set(
+        &GENESIS_KEYPAIR.1,
+        &validators,
+        framework,
+        layout.chain_id,
+        &native,
+        &layout.on_chain_consensus_config,
+        &layout.on_chain_execution_config,
+        &gas,
+    );
+    (poc_genesis, native_genesis)
+}
+
+fn genesis_from_current_layout(validator_count: usize, stake_amount: u64) -> ChangeSet {
+    genesis_pair_from_current_layout(validator_count, stake_amount).0
+}
+
+fn resource_bytes(genesis: &ChangeSet, name: &str) -> Vec<u8> {
+    genesis
+        .write_set()
+        .as_v0()
+        .iter()
+        .find_map(|(key, write)| {
+            let encoded = key.encoded();
+            let access_path = bcs::from_bytes::<AccessPath>(encoded.get(1..)?).ok()?;
+            let tag = access_path.get_struct_tag()?;
+            (access_path.address == CORE_CODE_ADDRESS && tag.to_canonical_string() == name)
+                .then(|| write.extract_raw_bytes().map(|bytes| bytes.to_vec()))
+                .flatten()
+        })
+        .unwrap_or_else(|| panic!("创世写集缺少资源 {name}"))
 }
 
 #[test]
@@ -62,7 +101,7 @@ fn poc_mainnet_defaults_support_current_layout_and_validator_capacity() {
     let layout = Layout::default();
     // 验证最低人数/最低保证金与部署容量/最高保证金，均不调整 Layout 中的 TOPO 配置。
     for (count, stake_amount) in [(5, layout.min_stake), (128, layout.max_stake)] {
-        let genesis = genesis_from_current_layout(count, stake_amount);
+        let (genesis, native_genesis) = genesis_pair_from_current_layout(count, stake_amount);
         let writes = genesis.write_set().as_v0();
         let validators: ValidatorSet = bcs::from_bytes(
             &writes
@@ -90,13 +129,43 @@ fn poc_mainnet_defaults_support_current_layout_and_validator_capacity() {
         )
         .unwrap();
         assert_eq!(configuration.epoch(), 1);
+
+        // 逐字节比较同一 Layout 的四类原生配置，证明 PoC 创世没有改写经济参数。
+        for resource in [
+            "0x1::staking_config::StakingConfig",
+            "0x1::staking_config::StakingRewardsConfig",
+            "0x1::topo_governance::GovernanceConfig",
+            "0x1::block::BlockResource",
+        ] {
+            assert_eq!(
+                resource_bytes(&genesis, resource),
+                resource_bytes(&native_genesis, resource),
+                "PoC 创世改写了原生配置 {resource}",
+            );
+        }
+
+        // Move Option 在 BCS 中按 vector 编码；创世安装 Epoch 1/3000，且没有待生效项。
+        let split_bytes = resource_bytes(&genesis, "0x1::poc_reward_split::RewardSplitConfig");
+        let split: (u64, u64, u64, Vec<(u64, u64)>) = bcs::from_bytes(&split_bytes).unwrap();
+        assert_eq!(split, (1, 3_000, 3_000, vec![]));
     }
 }
 
 #[test]
-#[should_panic(expected = "0x30006")]
 fn poc_mainnet_defaults_reject_too_few_validators() {
-    genesis_from_current_layout(4, Layout::default().min_stake);
+    let error =
+        std::panic::catch_unwind(|| genesis_from_current_layout(4, Layout::default().min_stake))
+            .expect_err("四人主网 PoC 创世必须拒绝");
+    let message = error
+        .downcast_ref::<String>()
+        .map(String::as_str)
+        .or_else(|| error.downcast_ref::<&str>().copied())
+        .expect("创世失败应提供稳定的文本状态");
+    assert!(
+        message.contains("name: Identifier(\"reconfiguration\")"),
+        "创世失败模块不匹配：{message}"
+    );
+    assert!(message.contains("(0x30006)"), "创世失败码不匹配：{message}");
 }
 
 #[test]

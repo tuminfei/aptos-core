@@ -1,8 +1,8 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-//! Public-entry regression tests for PWR-02/05/06 and ALC-01.
-//! These use an explicit four-node A fixture, not the default T2 deployment.
+//! PWR-02/05/06 与 ALC-01 的公开入口回归测试。
+//! 使用明确配置的四节点 A 变体，不计为默认 T2 部署验收。
 
 use super::{
     assert_installed_on_all_nodes, optional_resource_at_version, poc_swarm_builder,
@@ -35,9 +35,8 @@ const INVALID_ARGUMENT: u64 = 1 << 16;
 const OUT_OF_RANGE: u64 = 2 << 16;
 const PERMISSION_DENIED: u64 = 5 << 16;
 
-/// Compile only a transaction script against the production framework sources.
-/// The script obtains its framework signer through the existing, authenticated
-/// testnet governance entry; it cannot call friend or test-only Move functions.
+/// 基于生产框架源码仅编译交易脚本；脚本通过现有且校验权限的测试网
+/// 治理入口取得框架 signer，不能调用 friend 或仅供测试使用的 Move 函数。
 pub(super) fn compile_script(name: &str, source: &str) -> Vec<u8> {
     let directory = tempfile::tempdir().unwrap();
     let framework = Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -97,9 +96,9 @@ fn governance_payload(
     ]))
 }
 
-/// Keep the clock stable while testing individual inputs. DKG is disabled,
-/// epochs are one hour, four genesis pools each have 10 power / 100 Octa, and
-/// max_upload_users is explicitly 32. Other A parameters match the F4 fixture.
+/// 测试各输入时保持时钟稳定：关闭 DKG，Epoch 为一小时，
+/// 四个创世池各有 10 power / 100 Octa，max_upload_users 明确设为 32。
+/// 其余 A 参数与 F4 配置一致。
 async fn transaction_swarm() -> LocalSwarm {
     println!("PoC transaction fixture A: 4 nodes; Open; epoch=3600s; ordinary/Chunky DKG=off; retention_bps=10000; native_reward_bps=0; max_upload_users=32; allocation/claim limit=4; validator_limit=5; initial_power=10; bond=100 Octa; fee_limit=0; fee_max=10");
     poc_swarm_builder(Transition::Synchronous)
@@ -140,9 +139,9 @@ async fn transaction_swarm() -> LocalSwarm {
         .await
 }
 
-/// submit_and_wait intentionally turns committed Move aborts into REST errors.
-/// Poll the submitted hash instead so both successful and aborted transactions
-/// retain their actual version, output, events, gas, and sequence number.
+/// submit_and_wait 会按接口设计将已提交的 Move abort 转为 REST 错误。
+/// 此处轮询已提交的交易哈希，使成功和中止交易均保留实际版本、输出、
+/// 事件、gas 及序列号。
 pub(super) async fn execute(
     client: &Client,
     account: &LocalAccount,
@@ -240,9 +239,8 @@ struct BusinessState {
     handles: BTreeSet<AccountAddress>,
 }
 
-/// Besides logical views, read the actual pool ledgers to retain pending changes
-/// and checkpoint refs. Their table handles also identify forbidden writes in an
-/// aborted transaction's production VM output.
+/// 除逻辑视图外，还读取实际池账本，保存待生效变更及检查点引用。
+/// 这些表句柄还用于识别中止交易的生产 VM 输出中不应出现的写入。
 async fn business_state(
     client: &Client,
     users: &[AccountAddress],
@@ -412,15 +410,24 @@ pub(super) async fn assert_abort(
     assert_unchanged(client, transaction, users, pools).await;
     assert!(transaction.info.gas_used.0 > 0);
     let sender = transaction.request.sender.into();
-    let before: AccountResource = client
-        .get_account_resource_at_version_bcs(
-            sender,
-            "0x1::account::Account",
-            transaction.info.version.0 - 1,
-        )
-        .await
-        .unwrap()
-        .into_inner();
+    // 已获资金的地址发送首笔交易时，Account 资源可能尚不存在。
+    // 即使 payload 中止，交易前置处理仍会创建该资源。
+    let before_sequence = optional_resource_at_version(
+        client,
+        sender,
+        "0x1::account::Account",
+        transaction.info.version.0 - 1,
+    )
+    .await
+    .map(|resource| {
+        resource.data["sequence_number"]
+            .as_str()
+            .unwrap()
+            .parse::<u64>()
+            .unwrap()
+    })
+    .unwrap_or(0);
+    assert_eq!(transaction.request.sequence_number.0, before_sequence);
     let after: AccountResource = client
         .get_account_resource_at_version_bcs(
             sender,
@@ -430,7 +437,7 @@ pub(super) async fn assert_abort(
         .await
         .unwrap()
         .into_inner();
-    assert_eq!(after.sequence_number(), before.sequence_number() + 1);
+    assert_eq!(after.sequence_number(), before_sequence + 1);
 }
 
 fn factory(swarm: &LocalSwarm) -> TransactionFactory {
@@ -472,13 +479,13 @@ fn assert_operator_changed(
     assert_eq!(address(&events[0].data["new_operator"]), new);
 }
 
-/// PWR-02, PWR-05 and the public input matrix of PWR-06. Failed transactions
-/// compare exact v-1/v business state, table writes, events and Move aborts.
-/// A batch capacity error after an earlier successful item is covered by the VM
-/// suite and is not claimed here; this fixture never injects oversized units.
+/// 覆盖 PWR-02、PWR-05 及 PWR-06 的公开输入矩阵；失败交易精确比较
+/// v-1/v 业务状态、表写入、事件与 Move abort。
+/// 批次前项成功后触发的容量错误由 VM 测试覆盖，不计入此处范围；
+/// 本配置不注入超大 units。
 #[tokio::test]
 async fn poc_public_upload_authority_first_write_and_batch_inputs() {
-    // Compile before starting the network so compilation cannot consume its epoch.
+    // 在启动网络前编译，避免编译耗时占用链上的 Epoch。
     Lazy::force(&POWER_GOVERNANCE_SCRIPT);
     let swarm = transaction_swarm().await;
     let client = swarm.validators().next().unwrap().rest_client();
@@ -490,7 +497,7 @@ async fn poc_public_upload_authority_first_write_and_batch_inputs() {
         .await
         .unwrap();
     let replacement = public
-        // The fresh 32-user batch reserves 2,000,000 gas at 100 Octa/gas.
+        // 32 个新用户的批次按 100 Octa/gas 预留 2,000,000 gas。
         .create_and_fund_user_account(1_000_000_000)
         .await
         .unwrap();
@@ -510,8 +517,8 @@ async fn poc_public_upload_authority_first_write_and_batch_inputs() {
     );
     let installed = resource_at_version::<ValidatorSet>(&client, initial.version).await;
 
-    // A zero-power user can allocate first; uploading later must create only the
-    // boundary change, and duplicate uploads must preserve its checkpoint refs.
+    // 零算力用户可以先配置分配；后续上传只应创建周期边界的变更，
+    // 重复上传须保留其检查点引用。
     require_success(
         execute(
             &client,
@@ -647,8 +654,8 @@ async fn poc_public_upload_authority_first_write_and_batch_inputs() {
     );
     assert_uploaded(&framework_upload, &[(operator.address(), 23)]);
 
-    // Unchanged operator emits no duplicate event; an ordinary signer cannot
-    // use the public setter to grant itself upload authority.
+    // 运营者地址未变时不重复发出事件；普通 signer 不能通过公开
+    // 设置入口为自己授予上传权限。
     let same_operator = require_success(
         execute(
             &client,
@@ -712,8 +719,8 @@ async fn poc_public_upload_authority_first_write_and_batch_inputs() {
         vec![json!(false)]
     );
 
-    // PWR-03's storage branch: zero is an explicit next version for an existing
-    // genesis owner; the following 999 must not overwrite it in the same batch.
+    // PWR-03 的存储分支：对已有创世 owner，零值是明确的下一版本；
+    // 同批后续的 999 不得覆盖该零版本。
     let owner_zero = require_success(
         execute(
             &client,
@@ -753,11 +760,11 @@ async fn poc_public_upload_authority_first_write_and_batch_inputs() {
     let batch_users = (0..33)
         .map(|index| AccountAddress::from_hex_literal(&format!("0x{:x}", 0x1000 + index)).unwrap())
         .collect::<Vec<_>>();
-    // Storage fees are denominated in Octa and converted to gas by dividing by
-    // the transaction's gas price (aptos-gas-meter::algebra::charge_storage_fee).
-    // Keep the 2,000,000-gas budget and native gas schedule, but use 100 Octa/gas
-    // for this one batch of 32 new versions. All negative cases below
-    // retain the original 1 Octa/gas factory and their exact Move-abort checks.
+    // 存储费以 Octa 计价，除以交易 gas 单价后折算为 gas
+    // （aptos-gas-meter::algebra::charge_storage_fee）。保留 2,000,000 gas
+    // 预算及原生 gas 配置，仅对此批 32 个新版本使用 100 Octa/gas。
+    // 下方所有失败用例仍使用原来的 1 Octa/gas 交易工厂，
+    // 并保留精确的 Move abort 检查。
     let batch_factory = factory.clone().with_gas_unit_price(100);
     println!(
         "PWR-06 fresh_users=32 gas_unit_price={} max_gas_amount={} maximum_fee_octa={} uploader_initial_funding_octa=1000000000",
@@ -868,8 +875,8 @@ async fn poc_public_upload_authority_first_write_and_batch_inputs() {
     assert_installed_on_all_nodes(&swarm, final_ledger.version, initial.epoch, &installed).await;
 }
 
-/// ALC-01: valid full/partial/empty allocation, configure before first upload,
-/// future units and invalid vector/ratio/pool combinations on real transactions.
+/// ALC-01：通过真实交易验证合法的全额、部分及空分配，首次上传前
+/// 配置分配，未来 units，以及非法向量、比例和池组合。
 #[tokio::test]
 async fn poc_public_allocation_inputs_and_upload_synchronization() {
     Lazy::force(&POWER_GOVERNANCE_SCRIPT);
@@ -1037,8 +1044,8 @@ async fn poc_public_allocation_inputs_and_upload_synchronization() {
         assert_abort(&client, &denied, "poc_accounting", code, &users, &pools).await;
     }
 
-    // The signature owns the allocation: another account can configure itself,
-    // while the first user's position and version remain independent.
+    // 分配归签名者所有：其他账户可配置自己的分配，
+    // 首个用户的持仓和版本则保持独立。
     let other = require_success(
         execute(
             &client,

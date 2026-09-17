@@ -241,6 +241,62 @@ mod tests {
     };
     use move_vm_runtime::module_traversal::TraversalStorage;
     use move_vm_types::gas::UnmeteredGasMeter;
+    use serde::de::{
+        value::{Error as ManifestError, MapDeserializer},
+        Deserializer, IntoDeserializer, Visitor,
+    };
+
+    /// 只为测试构造与 JSON/YAML 等价的树状清单，避免绕过 `Deserialize`
+    /// 直接修改 Rust 结构体，从而同时验证缺省字段和显式零值。
+    enum ManifestValue {
+        U64(u64),
+        Text(&'static str),
+        Map(Vec<(&'static str, ManifestValue)>),
+    }
+
+    impl<'de> IntoDeserializer<'de, ManifestError> for ManifestValue {
+        type Deserializer = Self;
+
+        fn into_deserializer(self) -> Self::Deserializer {
+            self
+        }
+    }
+
+    impl<'de> Deserializer<'de> for ManifestValue {
+        type Error = ManifestError;
+
+        serde::forward_to_deserialize_any! {
+            bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
+            bytes byte_buf option unit unit_struct newtype_struct seq tuple tuple_struct map
+            struct identifier ignored_any
+        }
+
+        fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            match self {
+                Self::U64(value) => visitor.visit_u64(value),
+                Self::Text(value) => visitor.visit_borrowed_str(value),
+                Self::Map(fields) => visitor.visit_map(MapDeserializer::new(fields.into_iter())),
+            }
+        }
+
+        fn deserialize_enum<V>(
+            self,
+            _name: &'static str,
+            _variants: &'static [&'static str],
+            visitor: V,
+        ) -> Result<V::Value, Self::Error>
+        where
+            V: Visitor<'de>,
+        {
+            match self {
+                Self::Text(value) => visitor.visit_enum(value.into_deserializer()),
+                other => other.deserialize_any(visitor),
+            }
+        }
+    }
 
     fn liquid_balance_at_genesis(genesis: &ChangeSet, address: AccountAddress) -> u64 {
         let view = InstalledGenesis(genesis.write_set());
@@ -286,10 +342,59 @@ mod tests {
         }
     }
 
+    /// 经由 `PocGenesisConfiguration::deserialize` 读取完整清单；`None` 表示
+    /// 清单确实省略 `native_reward_bps`，由字段默认值补成 3000。
+    fn deserialize_manifest(native_reward_bps: Option<u64>) -> PocGenesisConfiguration {
+        let mut fields = vec![
+            (
+                "params",
+                ManifestValue::Map(vec![
+                    ("bond_octa_per_ohmp", ManifestValue::U64(100_000_000)),
+                    ("min_power", ManifestValue::U64(10)),
+                    ("max_power", ManifestValue::U64(1000)),
+                    ("min_validators", ManifestValue::U64(4)),
+                ]),
+            ),
+            (
+                "limits",
+                ManifestValue::Map(vec![
+                    ("max_allocations", ManifestValue::U64(4)),
+                    ("max_claim_pools", ManifestValue::U64(4)),
+                    ("max_upload_users", ManifestValue::U64(4)),
+                    ("validator_limit", ManifestValue::U64(5)),
+                    ("max_reward_base_octa", ManifestValue::U64(1000)),
+                    ("rate_max_num", ManifestValue::U64(1)),
+                    ("rate_max_den", ManifestValue::U64(1)),
+                    ("fee_max", ManifestValue::U64(10)),
+                    ("reward_epoch_limit", ManifestValue::U64(1000)),
+                ]),
+            ),
+            ("deployment_mode", ManifestValue::Text("Open")),
+            ("retention_bps", ManifestValue::U64(10_000)),
+            ("max_relative_period", ManifestValue::U64(100)),
+            ("initial_raw_power", ManifestValue::U64(17)),
+        ];
+        if let Some(value) = native_reward_bps {
+            fields.push(("native_reward_bps", ManifestValue::U64(value)));
+        }
+        PocGenesisConfiguration::deserialize(ManifestValue::Map(fields))
+            .expect("PoC 验收清单必须能反序列化")
+    }
+
     /// 使用指定的原生参数执行真实 PoC 创世入口，返回可重新加载的测试写集。
     fn encode_test_genesis(
         config: &PocGenesisConfiguration,
         validators: &[Validator],
+    ) -> ChangeSet {
+        encode_test_genesis_with_native_config(config, validators, 25)
+    }
+
+    /// 保留生产创世的完整执行路径，仅覆盖原生动态增长上限，
+    /// 用于联合验证 PoC 模式、最低人数和候选容量。
+    fn encode_test_genesis_with_native_config(
+        config: &PocGenesisConfiguration,
+        validators: &[Validator],
+        voting_power_increase_limit: u64,
     ) -> ChangeSet {
         let mut native_config = mainnet_genesis_config();
         native_config.is_test = true;
@@ -300,7 +405,7 @@ mod tests {
         native_config.epoch_duration_secs = 3600;
         native_config.recurring_lockup_duration_secs = 7200;
         native_config.voting_duration_secs = 3600;
-        native_config.voting_power_increase_limit = 25;
+        native_config.voting_power_increase_limit = voting_power_increase_limit;
         match encode_genesis_transaction(
             &GENESIS_KEYPAIR.1,
             validators,
@@ -315,6 +420,35 @@ mod tests {
             Transaction::GenesisTransaction(WriteSetPayload::Direct(change_set)) => change_set,
             _ => panic!("PoC builder must produce a direct genesis transaction"),
         }
+    }
+
+    /// 创世构建器将 Move 错误转成 panic；这里同时固定错误模块和完整编码，
+    /// 防止只凭“发生错误”误收其他创世阶段的失败。
+    fn assert_genesis_abort(
+        config: &PocGenesisConfiguration,
+        validators: &[Validator],
+        voting_power_increase_limit: u64,
+        module: &str,
+        code: u64,
+    ) {
+        let error = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            encode_test_genesis_with_native_config(config, validators, voting_power_increase_limit)
+        }))
+        .expect_err("非法 PoC 创世参数必须被生产 Move 入口拒绝");
+        let message = error
+            .downcast_ref::<String>()
+            .map(String::as_str)
+            .or_else(|| error.downcast_ref::<&str>().copied())
+            .expect("创世失败应提供稳定的文本状态");
+        let module_location = format!("name: Identifier(\"{module}\")");
+        assert!(
+            message.contains(&module_location),
+            "创世失败模块不匹配：期望 {module}，实际 {message}"
+        );
+        assert!(
+            message.contains(&format!("({code:#x})")),
+            "创世失败码不匹配：期望 {code:#x}，实际 {message}"
+        );
     }
 
     /// 将创世写集作为只读状态视图，验证保存的数据可被新 VM 正确读取。
@@ -404,10 +538,21 @@ mod tests {
                 .count(),
             1
         );
-        assert!(!genesis.events().iter().any(|e| e
-            .type_tag()
-            .to_canonical_string()
-            .ends_with("::stake::PoCRewardCredited")));
+        for suffix in [
+            "::stake::PoCRewardCredited",
+            "::stake::PoCRewardSplit",
+            "::stake::DistributeRewards",
+            "::stake::DistributeTransactionFee",
+            "::poc_accounting::PoCRewardClaimed",
+        ] {
+            assert!(
+                !genesis
+                    .events()
+                    .iter()
+                    .any(|event| event.type_tag().to_canonical_string().ends_with(suffix)),
+                "创世不得结算 Epoch 0 奖励：{suffix}"
+            );
+        }
 
         // 用新 VM 重新加载保存的数据，查询 Table 账本和算力周期时钟，并确认查询未写入状态。
         let view = InstalledGenesis(genesis.write_set());
@@ -462,8 +607,29 @@ mod tests {
             bcs::from_bytes::<u64>(&encoded_native_reward_bps[0]).unwrap(),
             config.native_reward_bps
         );
+        let reward_split = query("stake", "get_reward_split_configuration", vec![]);
+        assert_eq!(reward_split.len(), 5);
+        assert_eq!(bcs::from_bytes::<u64>(&reward_split[0]).unwrap(), 1);
+        assert_eq!(
+            bcs::from_bytes::<u64>(&reward_split[1]).unwrap(),
+            config.native_reward_bps
+        );
+        assert_eq!(
+            bcs::from_bytes::<u64>(&reward_split[2]).unwrap(),
+            config.native_reward_bps
+        );
+        assert_eq!(
+            bcs::from_bytes::<Option<u64>>(&reward_split[3]).unwrap(),
+            None
+        );
+        assert_eq!(
+            bcs::from_bytes::<Option<u64>>(&reward_split[4]).unwrap(),
+            None
+        );
         let period_length = query("poc_power_store", "get_power_period_in_epochs", vec![]);
         assert_eq!(bcs::from_bytes::<u64>(&period_length[0]).unwrap(), 60);
+        let period = query("poc_power_store", "get_current_period", vec![]);
+        assert_eq!(bcs::from_bytes::<u64>(&period[0]).unwrap(), 0);
         let operator = query("poc_power_store", "get_operator", vec![]);
         assert_eq!(
             bcs::from_bytes::<AccountAddress>(&operator[0]).unwrap(),
@@ -473,6 +639,23 @@ mod tests {
         assert_eq!(bcs::from_bytes::<u64>(&boundary[0]).unwrap(), 61);
         for (validator, reward_base_octa) in validators.iter().zip(expected_reward_bases_octa) {
             let pool = &validator.owner_address;
+            let stake_operator = query("stake", "get_operator", vec![encode(pool)]);
+            assert_eq!(
+                bcs::from_bytes::<AccountAddress>(&stake_operator[0]).unwrap(),
+                validator.operator_address
+            );
+            let delegated_voter = query("stake", "get_delegated_voter", vec![encode(pool)]);
+            assert_eq!(
+                bcs::from_bytes::<AccountAddress>(&delegated_voter[0]).unwrap(),
+                validator.voter_address
+            );
+            // PoC 创世建立 owner 直持池，不创建带运营佣金的 staking contract；
+            // 因而即使多个 owner 共用运营者，也不存在非零 PoC 运营佣金路径。
+            let contract_exists = query("staking_contract", "staking_contract_exists", vec![
+                encode(pool),
+                encode(&validator.operator_address),
+            ]);
+            assert!(!bcs::from_bytes::<bool>(&contract_exists[0]).unwrap());
             let stake = query("stake", "get_stake", vec![encode(pool)]);
             assert_eq!(
                 bcs::from_bytes::<u64>(&stake[0]).unwrap(),
@@ -684,10 +867,26 @@ mod tests {
                 ..v.data
             })
             .collect::<Vec<_>>();
-        let mut config = manifest();
-        config.initial_raw_power = 17;
-        config.native_reward_bps = 6_750;
-        assert_installed_genesis(&config, &validators, &[17, 17, 17, 17], &[17, 17, 17, 17]);
+        assert!(validators
+            .windows(2)
+            .all(|pair| pair[0].owner_address != pair[1].owner_address));
+        assert!(validators.iter().all(|validator| {
+            validator.operator_address == AccountAddress::from_hex_literal("0xb0b").unwrap()
+                && validator.voter_address == AccountAddress::from_hex_literal("0xcafe").unwrap()
+        }));
+
+        // 四组均从清单值反序列化后进入生产创世；省略字段和显式 3000
+        // 最终值相同，但必须分别经过 serde 默认路径和显式字段路径。
+        for (encoded, expected) in [
+            (None, 3_000),
+            (Some(0), 0),
+            (Some(3_000), 3_000),
+            (Some(6_750), 6_750),
+        ] {
+            let config = deserialize_manifest(encoded);
+            assert_eq!(config.native_reward_bps, expected);
+            assert_installed_genesis(&config, &validators, &[17, 17, 17, 17], &[17, 17, 17, 17]);
+        }
     }
 
     #[test]
@@ -725,7 +924,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "0x10003")]
     fn poc_genesis_builder_rejects_zero_initial_raw_power() {
         let validators = TestValidator::new_test_set(Some(4), Some(100))
             .into_iter()
@@ -733,11 +931,10 @@ mod tests {
             .collect::<Vec<_>>();
         let mut config = manifest();
         config.initial_raw_power = 0;
-        encode_test_genesis(&config, &validators);
+        assert_genesis_abort(&config, &validators, 25, "genesis", 0x10003);
     }
 
     #[test]
-    #[should_panic(expected = "0x30006")]
     fn poc_genesis_builder_rejects_concentrated_open_committee() {
         let validators = TestValidator::new_test_set(Some(4), Some(100))
             .into_iter()
@@ -749,6 +946,68 @@ mod tests {
             .collect::<Vec<_>>();
         let mut config = manifest();
         config.initial_raw_power = 100;
-        encode_test_genesis(&config, &validators);
+        // 目标集中度校验使首次重配置延期；创世不能把 Deferred 当作可用的部分写集。
+        assert_genesis_abort(&config, &validators, 25, "reconfiguration", 0x30006);
+    }
+
+    #[test]
+    fn poc_genesis_builder_validates_mode_growth_capacity_and_reward_split_matrix() {
+        let two_validators = TestValidator::new_test_set(Some(2), Some(100))
+            .into_iter()
+            .map(|validator| validator.data)
+            .collect::<Vec<_>>();
+        let four_validators = TestValidator::new_test_set(Some(4), Some(100))
+            .into_iter()
+            .map(|validator| validator.data)
+            .collect::<Vec<_>>();
+
+        // Open 模式即使只有两个等权池，也必须满足至少四人的协议约束。
+        let mut open_two = manifest();
+        open_two.params.min_validators = 2;
+        assert_genesis_abort(&open_two, &two_validators, 50, "poc_accounting", 0x10007);
+
+        // Controlled 两人动态委员会在 20% 增长上限下无法补足一个最低权重成员。
+        let mut controlled_two = manifest();
+        controlled_two.deployment_mode = DeploymentMode::Controlled;
+        controlled_two.params.min_validators = 2;
+        assert_genesis_abort(
+            &controlled_two,
+            &two_validators,
+            20,
+            "poc_accounting",
+            0x10007,
+        );
+
+        // 动态换员还必须在最低人数之外至少保留一个候选名额。
+        let mut no_replacement_slot = manifest();
+        no_replacement_slot.deployment_mode = DeploymentMode::Controlled;
+        no_replacement_slot.limits.validator_limit = no_replacement_slot.params.min_validators;
+        assert_genesis_abort(
+            &no_replacement_slot,
+            &four_validators,
+            25,
+            "poc_accounting",
+            0x10007,
+        );
+
+        // 奖励分流边界由独立模块校验，不能被前面的合法 PoC 参数掩盖。
+        let mut invalid_split = manifest();
+        invalid_split.native_reward_bps = 10_001;
+        assert_genesis_abort(
+            &invalid_split,
+            &four_validators,
+            25,
+            "poc_reward_split",
+            0x10001,
+        );
+
+        // 50% 增长预算恰好允许两人 Controlled 委员会替换一名最低权重成员；
+        // 原生占比的两个闭区间端点都必须写入并从新 VM 正确读回。
+        for native_reward_bps in [0, 10_000] {
+            let mut valid = controlled_two.clone();
+            valid.native_reward_bps = native_reward_bps;
+            let genesis = encode_test_genesis_with_native_config(&valid, &two_validators, 50);
+            assert_installed_genesis_state(&genesis, &valid, &two_validators, &[10, 10], &[10, 10]);
+        }
     }
 }

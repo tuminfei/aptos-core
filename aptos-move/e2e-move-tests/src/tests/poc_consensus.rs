@@ -18,7 +18,11 @@ use aptos_types::{
     account_address::AccountAddress,
     block_metadata_ext::BlockMetadataExt,
     contract_event::FEE_STATEMENT_EVENT_TYPE,
-    on_chain_config::{ConfigurationResource, ValidatorSet},
+    dkg::{chunky_dkg::ChunkyDKGState, DKGState, DKGTranscript},
+    on_chain_config::{
+        ChunkyDKGConfigMoveStruct, ConfigurationResource, OnChainChunkyDKGConfig, ValidatorSet,
+    },
+    stake_pool::StakePool,
     state_store::{
         state_key::{inner::StateKeyInner, StateKey},
         state_slot::StateSlot,
@@ -30,9 +34,15 @@ use aptos_types::{
         ExecutionStatus, SignedTransaction, Transaction, TransactionArgument, TransactionOutput,
         TransactionStatus,
     },
+    validator_txn::ValidatorTransaction,
 };
-use move_core_types::{int256::U256, parser::parse_struct_tag, vm_status::AbortLocation};
+use move_core_types::{
+    int256::U256,
+    parser::parse_struct_tag,
+    vm_status::{AbortLocation, StatusCode, VMStatus},
+};
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Mutex,
@@ -41,6 +51,27 @@ use std::{
 use topo_framework::{BuildOptions, BuiltPackage};
 
 const RAW_POWER: u64 = 10_000;
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct PoolChangeMirror {
+    epoch: u64,
+    remove_units: u128,
+    add_units: u128,
+    refs: u64,
+}
+
+/// 仅用于隔离损坏状态；字段顺序严格对应生产 `poc_accounting::PoolLedger` 的 BCS 布局。
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct PoolLedgerMirror {
+    epoch: u64,
+    units: u128,
+    changes: Vec<PoolChangeMirror>,
+    reward_base_octa: u64,
+    reward_epoch: u64,
+    index: U256,
+    checkpoints: AccountAddress,
+    vault: u64,
+}
 
 static GOVERNANCE_SCRIPT: Lazy<Vec<u8>> =
     Lazy::new(|| compile_script("PoCTransactions", GOVERNANCE_SOURCE));
@@ -98,13 +129,14 @@ script {
             // 容量边界场景通过真实换届到达较小的受支持指数，
             // 不直接向 VM 存储注入标准化单位。
             let boundary_capacity = value == 3;
+            let mixed_parallel = value == 4;
             poc_allocation::prepare_poc(framework,
                 poc_accounting::new_power_params(100000000, 1, 1000000, 4),
                 poc_accounting::new_deployment_limits(4, 4, 32, 8, 1000000, 1, 1, 1000, 100),
-                1, reconfiguration::current_epoch() + (if (boundary_capacity) { 6 } else { 2 }),
-                if (boundary_capacity) { 3 } else { 10000 },
+                1, reconfiguration::current_epoch() + (if (boundary_capacity || mixed_parallel) { 6 } else { 2 }),
+                if (boundary_capacity) { 3 } else if (mixed_parallel) { 9995 } else { 10000 },
                 if (boundary_capacity) { 2 } else { 200 },
-                if (boundary_capacity) { 4 } else { 1 }, @topo_framework);
+                if (boundary_capacity || mixed_parallel) { 4 } else { 1 }, @topo_framework);
             // 原有账本和迁移边界用例将原生奖励占比设为零；五种换届路径的差分测试另设非零占比。
             stake::schedule_reward_split(framework, 0, reconfiguration::current_epoch() + 1);
         } else if (operation == 1 || operation == 2) {
@@ -264,6 +296,7 @@ impl PoCFixture {
             "stake::EpochPlan",
             "stake::PrecomputedValidatorSet",
             "stake::InstalledRewardContext",
+            "dkg::DKGState",
             "reconfiguration::Configuration",
             "reconfiguration_state::State",
             "features::PendingFeatureFreeze",
@@ -492,6 +525,27 @@ impl PoCFixture {
             parse_struct_tag(&format!("0x1::{name}")).unwrap(),
         )
     }
+
+    /// 定位生产账本中的池表项；直接改写仅用于构造公开入口无法产生的损坏状态。
+    fn pool_ledger(&self, pool: AccountAddress) -> (StateKey, PoolLedgerMirror) {
+        let matches = self
+            .keys
+            .iter()
+            .filter_map(|key| match key.inner() {
+                StateKeyInner::TableItem { key: item, .. }
+                    if bcs::from_bytes::<AccountAddress>(item).ok() == Some(pool) =>
+                {
+                    self.harness
+                        .read_state_value_bytes(key)
+                        .and_then(|bytes| bcs::from_bytes::<PoolLedgerMirror>(&bytes).ok())
+                        .map(|ledger| (key.clone(), ledger))
+                },
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(matches.len(), 1, "池账本表项必须唯一");
+        matches.into_iter().next().unwrap()
+    }
 }
 
 /// 业务中止后，框架仍正常扣费并更新序号，但不应保留业务写入或业务事件。
@@ -531,6 +585,187 @@ fn assert_move_abort_at(output: &TransactionOutput, module: &str, code: u64) {
 }
 
 #[test]
+/// 生产 `stake::add_stake` 须在取币后以精确错误拒绝容量上限加一，并回滚全部业务状态。
+fn poc_add_stake_native_capacity_abort_is_atomic_in_production_vm() {
+    let mut fixture = PoCFixture::installed();
+    fixture.governance_success(14, 3000);
+    fixture.force_epoch();
+
+    let pool_address = fixture.pools[0];
+    // 测试账户使用创世密钥接管同地址签名；只重建账户和钱包，不改池的 OwnerCapability。
+    let owner = fixture.harness.new_account_at(pool_address);
+    let stake_tag = parse_struct_tag("0x1::stake::StakePool").unwrap();
+    let stake_key = StateKey::resource(&pool_address, &stake_tag).unwrap();
+    let owner_cap_key = StateKey::resource(
+        &pool_address,
+        &parse_struct_tag("0x1::stake::OwnerCapability").unwrap(),
+    )
+    .unwrap();
+    let wallet_key = StateKey::resource(
+        &pool_address,
+        &parse_struct_tag("0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>").unwrap(),
+    )
+    .unwrap();
+    fixture
+        .keys
+        .extend([stake_key.clone(), owner_cap_key.clone(), wallet_key.clone()]);
+
+    let upper_bound: u64 = bcs::from_bytes(
+        &fixture
+            .harness
+            .execute_view_function(
+                "0x1::stake::get_native_reward_upper_bound".parse().unwrap(),
+                vec![],
+                vec![bcs::to_bytes(&pool_address).unwrap()],
+            )
+            .values
+            .unwrap()[0],
+    )
+    .unwrap();
+    assert!(upper_bound > 0);
+
+    // 四类余额均非零；本金加当期原生奖励上界恰好为 u64 上限，追加 1 后只超出一位。
+    let stake_bytes = fixture.harness.read_state_value_bytes(&stake_key).unwrap();
+    let mut stake_pool: StakePool = bcs::from_bytes(&stake_bytes).unwrap();
+    stake_pool.active = 101;
+    stake_pool.pending_active = 11;
+    stake_pool.pending_inactive = 13;
+    stake_pool.inactive = u64::MAX - upper_bound - 125;
+    assert_eq!(
+        u128::from(stake_pool.active)
+            + u128::from(stake_pool.inactive)
+            + u128::from(stake_pool.pending_active)
+            + u128::from(stake_pool.pending_inactive)
+            + u128::from(upper_bound),
+        u128::from(u64::MAX)
+    );
+    fixture
+        .harness
+        .executor
+        .write_state_value(stake_key, bcs::to_bytes(&stake_pool).unwrap());
+
+    let before = fixture.snapshot();
+    assert!(fixture.resource("stake::EpochPlan").is_none());
+    assert!(fixture.resource("stake::PrecomputedValidatorSet").is_none());
+    let txn = fixture
+        .harness
+        .create_transaction_payload(&owner, aptos_stdlib::stake_add_stake(1));
+    let output = fixture.run_measured("add_stake_native_capacity_rejected", txn);
+    assert_move_abort_at(&output, "stake", 0x10025);
+
+    // 序列号和费用事件属于 VM 收尾；池、四类余额、所有权、钱包、计划及 PVS 必须逐字节不变。
+    assert_eq!(fixture.snapshot(), before);
+    assert!(fixture.resource("stake::EpochPlan").is_none());
+    assert!(fixture.resource("stake::PrecomputedValidatorSet").is_none());
+    assert!(output.events().iter().all(|event| {
+        event.type_tag() == &*FEE_STATEMENT_EVENT_TYPE
+            && !event
+                .type_tag()
+                .to_canonical_string()
+                .ends_with("::stake::AddStakeEvent")
+    }));
+}
+
+fn poc_pool_state(fixture: &mut PoCFixture, pool: AccountAddress) -> (u128, u64, U256) {
+    let values = fixture
+        .harness
+        .execute_view_function(
+            "0x1::poc_accounting::get_pool".parse().unwrap(),
+            vec![],
+            vec![bcs::to_bytes(&pool).unwrap()],
+        )
+        .values
+        .unwrap();
+    (
+        bcs::from_bytes(&values[0]).unwrap(),
+        bcs::from_bytes(&values[3]).unwrap(),
+        bcs::from_bytes(&values[4]).unwrap(),
+    )
+}
+
+/// 用独立宽整数模型核对一个 Epoch 的通胀、费用分流、奖励指数和金库守恒。
+fn assert_poc_epoch_reward_model(
+    fixture: &mut PoCFixture,
+    output: &TransactionOutput,
+    native_reward_bps: u64,
+    before: &BTreeMap<AccountAddress, (u128, u64, U256)>,
+) {
+    let credited: Vec<(AccountAddress, u64, u64, u64, u64, U256)> = output
+        .events()
+        .iter()
+        .filter(|event| {
+            event
+                .type_tag()
+                .to_canonical_string()
+                .contains("PoCRewardCredited")
+        })
+        .map(|event| bcs::from_bytes(event.event_data()).unwrap())
+        .collect();
+    let split: Vec<(AccountAddress, u64, u64, u64, u64, u64, u64)> = output
+        .events()
+        .iter()
+        .filter(|event| {
+            event
+                .type_tag()
+                .to_canonical_string()
+                .ends_with("::stake::PoCRewardSplit")
+        })
+        .map(|event| bcs::from_bytes(event.event_data()).unwrap())
+        .collect();
+    let native_fees: BTreeMap<AccountAddress, u64> = output
+        .events()
+        .iter()
+        .filter(|event| {
+            event
+                .type_tag()
+                .to_canonical_string()
+                .ends_with("::stake::DistributeTransactionFee")
+        })
+        .map(|event| bcs::from_bytes(event.event_data()).unwrap())
+        .collect();
+    assert_eq!(credited.len(), fixture.pools.len());
+    assert_eq!(split.len(), fixture.pools.len());
+
+    let q: U256 = "340282366920938463463374607431768211456".parse().unwrap();
+    for reward in credited {
+        let (pool, closing_epoch, _, poc_inflation, poc_fee, delta_index) = reward;
+        let split = split
+            .iter()
+            .find(|event| event.0 == pool)
+            .expect("每个池必须有一条通胀分流事件");
+        assert_eq!(split.1, closing_epoch);
+        assert_eq!(split.2, native_reward_bps);
+        let expected_native_inflation = split.3 * native_reward_bps / 10_000;
+        assert_eq!(split.4 + split.5, expected_native_inflation);
+        assert_eq!(split.6, split.3 - expected_native_inflation);
+        assert_eq!(poc_inflation, split.6);
+
+        // 原生费用事件只在金额非零时发出，PoC 入账事件始终携带本期 PoC 费用。
+        let native_fee = native_fees.get(&pool).copied().unwrap_or(0);
+        let total_fee = native_fee + poc_fee;
+        assert_eq!(native_fee, total_fee * native_reward_bps / 10_000);
+        let (units, old_vault, old_index) = before[&pool];
+        let poc_reward = poc_inflation + poc_fee;
+        let expected_delta = if poc_reward == 0 {
+            U256::from(0u8)
+        } else {
+            U256::checked_div(
+                U256::checked_mul(U256::from(poc_reward), q).unwrap(),
+                U256::from(units),
+            )
+            .unwrap()
+        };
+        assert_eq!(delta_index, expected_delta);
+        let (_, new_vault, new_index) = poc_pool_state(fixture, pool);
+        assert_eq!(new_vault, old_vault + poc_reward);
+        assert_eq!(
+            new_index,
+            U256::checked_add(old_index, expected_delta).unwrap()
+        );
+    }
+}
+
+#[test]
 /// 验证原生准备、首次切换及目标不合格后的修复，延期期间不推进 PoC 状态。
 fn poc_preparation_first_install_and_deferred_repair() {
     let mut fixture = PoCFixture::installed();
@@ -551,6 +786,200 @@ fn poc_preparation_first_install_and_deferred_repair() {
         get_validator_set(&fixture.harness).total_voting_power,
         u128::from(4 * RAW_POWER)
     );
+}
+
+#[test]
+/// 通过公开分配入口将目标总权重降为零，普通和 Chunky 入口均延期，修复后只提交一次。
+fn poc_zero_total_power_defers_sixteen_blocks_without_partial_state() {
+    assert_zero_total_power_defers_without_partial_state(false);
+    assert_zero_total_power_defers_without_partial_state(true);
+}
+
+fn assert_zero_total_power_defers_without_partial_state(chunky_enabled: bool) {
+    let mut fixture = PoCFixture::installed();
+    let chunky_config_key = StateKey::resource(
+        &AccountAddress::ONE,
+        &parse_struct_tag("0x1::chunky_dkg_config::ChunkyDKGConfig").unwrap(),
+    )
+    .unwrap();
+    if !chunky_enabled {
+        // 只替换链上配置资源，使真实 V1 区块分别进入普通与 Chunky try_start 分支。
+        let config = ChunkyDKGConfigMoveStruct::from(OnChainChunkyDKGConfig::default_disabled());
+        fixture
+            .harness
+            .executor
+            .write_state_value(chunky_config_key, bcs::to_bytes(&config).unwrap());
+    }
+    let installed_chunky_config: ChunkyDKGConfigMoveStruct = bcs::from_bytes(
+        &fixture
+            .resource("chunky_dkg_config::ChunkyDKGConfig")
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        OnChainChunkyDKGConfig::try_from(installed_chunky_config)
+            .unwrap()
+            .chunky_dkg_enabled(),
+        chunky_enabled
+    );
+    let epoch = fixture.epoch();
+    // 当前委员会仍保留已安装 units；空分配只将 E+1 的目标 units 排定为零。
+    // 这是真实用户签名交易，不修改账本字节或绕过可见性。
+    for user in fixture.users.clone() {
+        let txn = fixture.harness.create_transaction_payload(
+            &user,
+            aptos_stdlib::poc_allocation_set_allocations(vec![], vec![]),
+        );
+        let output = fixture.run_measured("schedule_zero_target", txn);
+        fixture.record_success(output);
+    }
+    for pool in fixture.pools.clone() {
+        let ledger = fixture.pool_ledger(pool).1;
+        assert!(ledger.units > 0);
+        assert_eq!(ledger.changes.len(), 1);
+        assert_eq!(ledger.changes[0].epoch, epoch + 1);
+        assert_eq!(ledger.changes[0].remove_units, ledger.units);
+        assert_eq!(ledger.changes[0].add_units, 0);
+    }
+
+    let validator_set = fixture.resource("stake::ValidatorSet").unwrap();
+    let period_clock = fixture.resource("poc_power_store::PeriodClock").unwrap();
+    let reward_context = fixture.resource("stake::InstalledRewardContext").unwrap();
+    let stakes = fixture
+        .pools
+        .iter()
+        .map(|pool| {
+            fixture
+                .harness
+                .read_resource_raw(pool, parse_struct_tag("0x1::stake::StakePool").unwrap())
+                .unwrap()
+        })
+        .collect::<Vec<_>>();
+    let ledgers = fixture
+        .pools
+        .iter()
+        .map(|pool| bcs::to_bytes(&fixture.pool_ledger(*pool).1).unwrap())
+        .collect::<Vec<_>>();
+    let dkg = fixture.resource("dkg::DKGState").unwrap();
+    let chunky_dkg = fixture.resource("chunky_dkg::ChunkyDKGState").unwrap();
+    assert!(bcs::from_bytes::<DKGState>(&dkg)
+        .unwrap()
+        .in_progress
+        .is_none());
+    assert!(bcs::from_bytes::<ChunkyDKGState>(&chunky_dkg)
+        .unwrap()
+        .in_progress
+        .is_none());
+    let interval: u64 = bcs::from_bytes(
+        &fixture
+            .harness
+            .execute_view_function(
+                "0x1::block::get_epoch_interval_secs".parse().unwrap(),
+                vec![],
+                vec![],
+            )
+            .values
+            .unwrap()[0],
+    )
+    .unwrap();
+    let time_before = fixture.harness.executor.get_block_time();
+
+    // 首块跨过实际 Epoch 间隔，后续块在未换届的旧 Epoch 中继续触发同一生产入口。
+    fixture.harness.set_default_gas_unit_price(1);
+    for attempt in 0..16 {
+        let block_output = fixture.randomness_block(if attempt == 0 { interval + 1 } else { 1 });
+        assert!(block_output.events().iter().all(|event| {
+            let name = event.type_tag().to_canonical_string();
+            !name.contains("PoCRewardCredited") && !name.contains("PoCEpochInstalled")
+        }));
+        let txn = fixture.harness.create_entry_function(
+            &fixture.framework,
+            "0x1::topo_governance::reconfigure".parse().unwrap(),
+            vec![],
+            vec![],
+        );
+        let output = fixture.run_measured("zero_power_deferred", txn);
+        assert_move_abort_at(&output, "reconfiguration_with_dkg", 0x30001);
+        assert_eq!(fixture.epoch(), epoch);
+        assert_eq!(
+            fixture.resource("stake::ValidatorSet").unwrap(),
+            validator_set
+        );
+        assert_eq!(
+            fixture.resource("poc_power_store::PeriodClock").unwrap(),
+            period_clock
+        );
+        assert_eq!(
+            fixture.resource("stake::InstalledRewardContext").unwrap(),
+            reward_context
+        );
+        assert!(fixture.resource("stake::EpochPlan").is_none());
+        assert!(fixture.resource("stake::PrecomputedValidatorSet").is_none());
+        assert_eq!(fixture.resource("dkg::DKGState").unwrap(), dkg);
+        assert_eq!(
+            fixture.resource("chunky_dkg::ChunkyDKGState").unwrap(),
+            chunky_dkg
+        );
+        for (index, pool) in fixture.pools.iter().enumerate() {
+            assert_eq!(
+                fixture
+                    .harness
+                    .read_resource_raw(pool, parse_struct_tag("0x1::stake::StakePool").unwrap())
+                    .unwrap(),
+                stakes[index]
+            );
+            assert_eq!(
+                bcs::to_bytes(&fixture.pool_ledger(*pool).1).unwrap(),
+                ledgers[index]
+            );
+        }
+    }
+    assert!(fixture.harness.executor.get_block_time() > time_before);
+
+    // 在同一 E+1 生效点覆盖回原分配；旧委员会的当前 units 始终非零，
+    // 因此旧期奖励可正常结算，目标预检也会立即恢复。
+    for i in 0..fixture.users.len() {
+        let txn = fixture.harness.create_transaction_payload(
+            &fixture.users[i],
+            aptos_stdlib::poc_allocation_set_allocations(vec![fixture.pools[i]], vec![10_000]),
+        );
+        let output = fixture.run_measured("repair_zero_target", txn);
+        fixture.record_success(output);
+    }
+    for pool in fixture.pools.clone() {
+        let ledger = fixture.pool_ledger(pool).1;
+        assert!(ledger.units > 0);
+        assert!(ledger.changes.is_empty());
+    }
+
+    let txn = fixture.harness.create_entry_function(
+        &fixture.framework,
+        "0x1::topo_governance::force_end_epoch".parse().unwrap(),
+        vec![],
+        vec![],
+    );
+    let output = fixture.run_measured("commit_repaired_zero_target", txn);
+    assert_success!(*output.status());
+    assert_eq!(
+        output
+            .events()
+            .iter()
+            .filter(|event| {
+                event
+                    .type_tag()
+                    .to_canonical_string()
+                    .contains("PoCEpochInstalled")
+            })
+            .count(),
+        1
+    );
+    fixture.record_success(output);
+    assert_eq!(fixture.epoch(), epoch + 1);
+    let installed = get_validator_set(&fixture.harness);
+    assert_eq!(installed.active_validators(), fixture.pools);
+    assert_eq!(installed.total_voting_power, u128::from(4 * RAW_POWER));
+    assert!(fixture.resource("stake::EpochPlan").is_none());
+    assert!(fixture.resource("stake::PrecomputedValidatorSet").is_none());
 }
 
 #[test]
@@ -660,6 +1089,167 @@ fn poc_frozen_direct_setters_and_claim_rollback() {
     assert_eq!(fixture.epoch(), epoch + 1);
     assert!(fixture.resource("stake::EpochPlan").is_none());
     assert!(fixture.resource("stake::PrecomputedValidatorSet").is_none());
+}
+
+#[test]
+/// 五池领取须在访问池表项前拒绝；金库不足时权益、检查点、金库和业务事件须原子回滚。
+fn poc_claim_limit_and_underfunded_vault_are_atomic() {
+    let mut fixture = PoCFixture::installed();
+    fixture
+        .harness
+        .new_block_with_metadata(fixture.pools[0], vec![]);
+    fixture.force_epoch();
+
+    let position = fixture
+        .harness
+        .execute_view_function(
+            "0x1::poc_accounting::get_position".parse().unwrap(),
+            vec![],
+            vec![
+                bcs::to_bytes(fixture.users[0].address()).unwrap(),
+                bcs::to_bytes(&fixture.pools[0]).unwrap(),
+            ],
+        )
+        .values
+        .unwrap();
+    let claimable = bcs::from_bytes::<u64>(&position[2]).unwrap();
+    assert!(claimable > 0, "隔离损坏前必须存在非零可领权益");
+
+    // 长度检查必须先于逐池访问；第五项可使用不存在的池地址。
+    let five_pools = fixture
+        .pools
+        .iter()
+        .copied()
+        .chain(std::iter::once(
+            AccountAddress::from_hex_literal("0xcafe").unwrap(),
+        ))
+        .collect();
+    let before_limit = fixture.snapshot();
+    let txn = fixture.harness.create_transaction_payload(
+        &fixture.users[0],
+        aptos_stdlib::poc_allocation_claim_rewards(five_pools),
+    );
+    let output = fixture.run_measured("claim_5_pools_rejected", txn);
+    assert_move_abort_at(&output, "poc_accounting", 0x20004);
+    assert_eq!(fixture.snapshot(), before_limit);
+
+    let pool = fixture.pools[0];
+    let (ledger_key, mut ledger) = fixture.pool_ledger(pool);
+    assert!(ledger.vault >= claimable);
+    let healthy_ledger = bcs::to_bytes(&ledger).unwrap();
+    ledger.vault = 0;
+    fixture
+        .harness
+        .executor
+        .write_state_value(ledger_key.clone(), bcs::to_bytes(&ledger).unwrap());
+    let underfunded = fixture.snapshot();
+    let txn = fixture.harness.create_transaction_payload(
+        &fixture.users[0],
+        aptos_stdlib::poc_allocation_claim_rewards(vec![pool]),
+    );
+    let output = fixture.run_measured("claim_underfunded_vault_rejected", txn);
+    assert_move_abort_at(&output, "poc_accounting", 0x3000E);
+    assert_eq!(fixture.snapshot(), underfunded);
+    assert!(output.events().iter().all(|event| !event
+        .type_tag()
+        .to_canonical_string()
+        .contains("PoCRewardClaimed")));
+
+    // 恢复隔离注入前的生产账本后，同一权益应能完整领取。
+    fixture
+        .harness
+        .executor
+        .write_state_value(ledger_key, healthy_ledger);
+    let txn = fixture.harness.create_transaction_payload(
+        &fixture.users[0],
+        aptos_stdlib::poc_allocation_claim_rewards(vec![pool]),
+    );
+    let output = fixture.run_measured("claim_after_vault_repair", txn);
+    let claimed = output
+        .events()
+        .iter()
+        .find(|event| {
+            event
+                .type_tag()
+                .to_canonical_string()
+                .contains("PoCRewardClaimed")
+        })
+        .map(|event| {
+            bcs::from_bytes::<(AccountAddress, AccountAddress, u64)>(event.event_data()).unwrap()
+        })
+        .unwrap();
+    assert_eq!(claimed, (*fixture.users[0].address(), pool, claimable));
+    fixture.record_success(output);
+}
+
+#[test]
+/// 隔离注入计划/PVS 不成对或计划 Epoch 错配，失败事务不得改写任何已跟踪业务状态。
+fn poc_corrupt_epoch_plan_states_abort_and_roll_back() {
+    let plan_key = StateKey::resource(
+        &AccountAddress::ONE,
+        &parse_struct_tag("0x1::stake::EpochPlan").unwrap(),
+    )
+    .unwrap();
+    let pvs_key = StateKey::resource(
+        &AccountAddress::ONE,
+        &parse_struct_tag("0x1::stake::PrecomputedValidatorSet").unwrap(),
+    )
+    .unwrap();
+
+    for corruption in ["only_plan", "only_pvs", "wrong_epoch"] {
+        let mut fixture = PoCFixture::installed();
+        fixture
+            .harness
+            .new_block_with_metadata(fixture.pools[0], vec![]);
+        fixture.governance_success(3, 0);
+        fixture
+            .harness
+            .new_block_with_metadata(fixture.pools[0], vec![]);
+        let txn = fixture.harness.create_entry_function(
+            &fixture.framework,
+            "0x1::topo_governance::reconfigure".parse().unwrap(),
+            vec![],
+            vec![],
+        );
+        let output = fixture.run_measured("begin_corrupt_plan_test", txn);
+        fixture.record_success(output);
+        assert!(fixture.resource("stake::EpochPlan").is_some());
+        assert!(fixture.resource("stake::PrecomputedValidatorSet").is_some());
+
+        if corruption == "only_plan" {
+            fixture.harness.executor.remove_state_value(&pvs_key);
+        } else if corruption == "only_pvs" {
+            fixture.harness.executor.remove_state_value(&plan_key);
+        } else {
+            let mut plan = fixture.resource("stake::EpochPlan").unwrap();
+            let wrong_epoch = fixture.epoch() + 2;
+            // EpochPlanData 的首字段是目标 Epoch；仅修改该字段，保留计划其余字节及 PVS。
+            plan[..8].copy_from_slice(&wrong_epoch.to_le_bytes());
+            fixture
+                .harness
+                .executor
+                .write_state_value(plan_key.clone(), plan);
+        }
+
+        let before = fixture.snapshot();
+        let txn = fixture.harness.create_entry_function(
+            &fixture.framework,
+            "0x1::topo_governance::reconfigure".parse().unwrap(),
+            vec![],
+            vec![],
+        );
+        let output = fixture.run_measured(&format!("reject_{corruption}"), txn);
+        assert_move_abort_at(&output, "stake", 0x30020);
+        assert_eq!(fixture.snapshot(), before);
+        assert_eq!(
+            fixture.resource("stake::EpochPlan").is_some(),
+            corruption != "only_pvs"
+        );
+        assert_eq!(
+            fixture.resource("stake::PrecomputedValidatorSet").is_some(),
+            corruption != "only_plan"
+        );
+    }
 }
 
 #[test]
@@ -806,6 +1396,38 @@ fn poc_block_metadata_watchdog_commits_cached_plan_once() {
             || name.contains("PoCEpochInstalled")
             || name.contains("ForceEndEpochEvent")
     }));
+
+    // 通过生产验证者交易入口送入旧会话结果。超时提交已经清理 DKG 会话，
+    // 因此必须在解析 transcript 前以“无进行中会话”精确拒绝，且不能改写新 Epoch。
+    let stale_result = ValidatorTransaction::DKGResult(DKGTranscript::new(
+        closing_epoch,
+        fixture.pools[0],
+        vec![],
+    ));
+    let before_stale = fixture.snapshot();
+    let (status, output) = fixture
+        .harness
+        .executor
+        .execute_validator_transaction_with_vm_status(stale_result)
+        .unwrap();
+    assert!(matches!(status, VMStatus::MoveAbort {
+        location: AbortLocation::Script,
+        code: 0x30002,
+        ..
+    }));
+    assert_eq!(
+        output.status(),
+        &TransactionStatus::Discard(StatusCode::ABORTED)
+    );
+    assert!(output.write_set().is_empty());
+    assert!(output.events().is_empty());
+    assert_eq!(fixture.snapshot(), before_stale);
+    assert_eq!(fixture.epoch(), closing_epoch + 1);
+    assert!(fixture.resource("stake::EpochPlan").is_none());
+    assert!(fixture.resource("stake::PrecomputedValidatorSet").is_none());
+    let dkg: aptos_types::dkg::DKGState =
+        bcs::from_bytes(&fixture.resource("dkg::DKGState").unwrap()).unwrap();
+    assert!(dkg.in_progress.is_none());
 }
 
 #[test]
@@ -871,6 +1493,189 @@ fn poc_parallel_hot_pool() {
         get_validator_set(&fixture.harness).total_voting_power,
         u128::from(4 * RAW_POWER),
     );
+}
+
+#[test]
+/// 多个固定种子在生产 VM 中混合上传、分配、领奖和失败交易，并跨衰减边界核对两种奖励分流。
+fn poc_parallel_mixed_history_across_decay_and_reward_splits() {
+    for seed in [1u64, 7, 31337] {
+        // BothComparison 会从同一状态分别执行顺序模式和 Block-STM，并逐交易比较完整输出。
+        let executor = FakeExecutor::from_head_genesis_with_count(4).set_parallel();
+        let mut harness = MoveHarness::new_with_executor(executor);
+        let framework = harness.topo_framework_account();
+        let mut fixture = PoCFixture::prepare_existing_with_manifest(harness, framework, 4);
+        for _ in 0..6 {
+            fixture.force_epoch();
+        }
+        assert!(fixture.poc_enabled());
+        fixture.harness.set_default_gas_unit_price(1);
+
+        let initial_clock = fixture
+            .harness
+            .execute_view_function(
+                "0x1::poc_power_store::get_normalization_clock"
+                    .parse()
+                    .unwrap(),
+                vec![],
+                vec![],
+            )
+            .values
+            .unwrap();
+        let initial_period: u64 = bcs::from_bytes(&initial_clock[1]).unwrap();
+        let initial_index: u128 = bcs::from_bytes(&initial_clock[3]).unwrap();
+        let target_period = initial_period + 1;
+
+        for phase in 0..3 {
+            let mut transactions: Vec<(&str, SignedTransaction)> = Vec::new();
+            if phase == 0 {
+                let powers = (0..fixture.users.len())
+                    .map(|i| RAW_POWER * (2 + ((seed + i as u64) % 3)))
+                    .collect::<Vec<_>>();
+                transactions.push((
+                    "upload",
+                    fixture.harness.create_transaction_payload(
+                        &fixture.framework,
+                        aptos_stdlib::poc_power_store_stage_batch_update(
+                            target_period,
+                            fixture.users.iter().map(|user| *user.address()).collect(),
+                            powers,
+                        ),
+                    ),
+                ));
+            }
+            let first_pool = if phase == 0 {
+                fixture.pools[1]
+            } else {
+                fixture.pools[0]
+            };
+            let second_pool = if phase == 0 {
+                fixture.pools[0]
+            } else {
+                fixture.pools[1]
+            };
+            transactions.push((
+                "allocation_0",
+                fixture.harness.create_transaction_payload(
+                    &fixture.users[0],
+                    aptos_stdlib::poc_allocation_set_allocations(vec![first_pool], vec![10_000]),
+                ),
+            ));
+            transactions.push((
+                "allocation_1",
+                fixture.harness.create_transaction_payload(
+                    &fixture.users[1],
+                    aptos_stdlib::poc_allocation_set_allocations(vec![second_pool], vec![10_000]),
+                ),
+            ));
+            transactions.push((
+                "claim",
+                fixture.harness.create_transaction_payload(
+                    &fixture.users[2],
+                    aptos_stdlib::poc_allocation_claim_rewards(vec![fixture.pools[2]]),
+                ),
+            ));
+            transactions.push((
+                "invalid_allocation",
+                fixture.harness.create_transaction_payload(
+                    &fixture.users[3],
+                    aptos_stdlib::poc_allocation_set_allocations(
+                        vec![fixture.pools[3], fixture.pools[0]],
+                        vec![10_000, 1],
+                    ),
+                ),
+            ));
+
+            // 仅重排不同签名者的交易；同一账户的序列号顺序不因种子改变。
+            transactions.sort_by_key(|(name, _)| {
+                name.bytes().fold(seed ^ phase, |value, byte| {
+                    value
+                        .wrapping_mul(6364136223846793005)
+                        .wrapping_add(byte as u64)
+                })
+            });
+            let outputs = fixture
+                .harness
+                .run_block_get_output(transactions.iter().map(|(_, txn)| txn.clone()).collect());
+            assert_eq!(outputs.len(), transactions.len());
+            for ((name, _), output) in transactions.into_iter().zip(outputs) {
+                if name == "invalid_allocation" {
+                    assert_move_abort_at(&output, "poc_accounting", 0x10002);
+                } else {
+                    if name == "upload" {
+                        assert_eq!(
+                            output
+                                .events()
+                                .iter()
+                                .filter(|event| event
+                                    .type_tag()
+                                    .to_canonical_string()
+                                    .contains("PowerNormalized"))
+                                .count(),
+                            fixture.users.len(),
+                        );
+                    }
+                    if phase == 1 && name == "claim" {
+                        assert!(output.events().iter().any(|event| event
+                            .type_tag()
+                            .to_canonical_string()
+                            .contains("PoCRewardClaimed")));
+                    }
+                    fixture.record_success(output);
+                }
+            }
+
+            // 第一期排定 3000，使当前旧期仍按 0 结算，下一期才按新快照结算。
+            if phase == 0 {
+                fixture.governance_success(14, 3000);
+            }
+            fixture.harness.new_block_with_metadata(
+                fixture.pools[if phase == 0 {
+                    2
+                } else {
+                    (seed as usize + phase as usize) % 4
+                }],
+                vec![],
+            );
+            let before = fixture
+                .pools
+                .clone()
+                .into_iter()
+                .map(|pool| (pool, poc_pool_state(&mut fixture, pool)))
+                .collect::<BTreeMap<_, _>>();
+            let epoch_before = fixture.epoch();
+            let txn = fixture.harness.create_entry_function(
+                &fixture.framework,
+                "0x1::topo_governance::force_end_epoch".parse().unwrap(),
+                vec![],
+                vec![],
+            );
+            let output = fixture.run_measured("parallel_mixed_force_epoch", txn);
+            assert_poc_epoch_reward_model(
+                &mut fixture,
+                &output,
+                if phase == 0 { 0 } else { 3000 },
+                &before,
+            );
+            fixture.record_success(output);
+            assert_eq!(fixture.epoch(), epoch_before + 1);
+        }
+
+        let final_clock = fixture
+            .harness
+            .execute_view_function(
+                "0x1::poc_power_store::get_normalization_clock"
+                    .parse()
+                    .unwrap(),
+                vec![],
+                vec![],
+            )
+            .values
+            .unwrap();
+        let final_period: u64 = bcs::from_bytes(&final_clock[1]).unwrap();
+        let final_index: u128 = bcs::from_bytes(&final_clock[3]).unwrap();
+        assert_eq!(final_period, initial_period + 1);
+        assert_eq!(final_index, initial_index * 9995 / 10_000);
+    }
 }
 
 #[test]
@@ -1127,7 +1932,26 @@ fn poc_boundary_only_capacity_failure_rolls_back_batch() {
         2,
     );
     fixture.record_success(output);
-    assert!(pool_units(&mut fixture, pool, boundary) <= maximum);
+
+    // 制造热门池时用户 1 曾离开自己的池；容量修复后恢复原分配，确保目标委员会
+    // 同时满足最低成员数，再验证失败事务没有阻断后续合法计划。
+    let txn = fixture.harness.create_transaction_payload(
+        &fixture.users[1],
+        aptos_stdlib::poc_allocation_set_allocations(vec![fixture.pools[1]], vec![10000]),
+    );
+    let output = fixture.run_measured("restore_pool_after_capacity_repair", txn);
+    fixture.record_success(output);
+    let repaired_boundary = pool_units(&mut fixture, pool, boundary);
+    assert!(repaired_boundary <= maximum);
+
+    // 超限事务已完整回滚，修复输入后应能按生产换届入口重新生成并提交合法计划。
+    // 提交完成须只推进一个 Epoch，且不能遗留计划或预计算验证者集合。
+    let repaired_epoch = fixture.epoch();
+    fixture.force_epoch();
+    assert_eq!(fixture.epoch(), repaired_epoch + 1);
+    assert!(fixture.resource("stake::EpochPlan").is_none());
+    assert!(fixture.resource("stake::PrecomputedValidatorSet").is_none());
+    assert_eq!(pool_units(&mut fixture, pool, boundary), repaired_boundary);
 }
 
 #[test]
@@ -1217,6 +2041,14 @@ fn poc_disjoint_four_pool_replacement_visits_eight() {
         ),
         all_pools,
     );
+    let read_key_bytes = reads
+        .keys()
+        .map(|key| bcs::to_bytes(key).unwrap().len())
+        .sum::<usize>();
+    let read_value_bytes = reads.values().sum::<usize>();
+    let write_count = output.write_set().write_op_iter().count();
+    let write_bytes = bcs::to_bytes(output.write_set()).unwrap().len();
+    let event_bytes = bcs::to_bytes(output.events()).unwrap().len();
     println!(
         "POC_COST operation=replace_disjoint_4_to_4 validators=8 visited_pools=8 \
          transaction_bytes={transaction_bytes} gas_used={} read_count={} read_key_bytes={} \
@@ -1224,15 +2056,12 @@ fn poc_disjoint_four_pool_replacement_visits_eight() {
          execution_us={execution_us}",
         output.gas_used(),
         reads.len(),
-        reads
-            .keys()
-            .map(|key| bcs::to_bytes(key).unwrap().len())
-            .sum::<usize>(),
-        reads.values().sum::<usize>(),
-        output.write_set().write_op_iter().count(),
-        bcs::to_bytes(output.write_set()).unwrap().len(),
+        read_key_bytes,
+        read_value_bytes,
+        write_count,
+        write_bytes,
         output.events().len(),
-        bcs::to_bytes(output.events()).unwrap().len(),
+        event_bytes,
     );
     fixture.harness.executor.apply_write_set(output.write_set());
     fixture

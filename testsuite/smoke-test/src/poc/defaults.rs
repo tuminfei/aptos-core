@@ -40,9 +40,9 @@ pub(super) struct InstalledSnapshot {
     pub(super) reward_split: Value,
 }
 
-/// T2 / T2-F: match vm-genesis::test_genesis_config, with only the epoch duration
-/// shortened for T2-F. GenesisBuilder's local defaults differ in membership,
-/// maximum stake and lockup; SwarmBuilder also disables Chunky DKG by default.
+/// T2 / T2-F：与 vm-genesis::test_genesis_config 一致，T2-F 仅缩短 Epoch 时长。
+/// GenesisBuilder 的本地默认成员配置、最高质押和锁仓参数与其不同；
+/// SwarmBuilder 默认还会关闭 Chunky DKG。
 pub(super) async fn strict_testnet_swarm(epoch_duration_secs: u64) -> LocalSwarm {
     let started = Instant::now();
     let swarm = SwarmBuilder::new_local(2)
@@ -157,9 +157,9 @@ pub(super) async fn installed_at(client: &Client, version: u64) -> InstalledSnap
     }
 }
 
-/// Keep native DKG startup separate from transaction and recovery deadlines.
-/// Epoch advancement alone also permits watchdog completion, so require both
-/// completed transcripts to belong to the currently installed epoch.
+/// 将原生 DKG 启动耗时与交易、恢复超时分别处理。
+/// 仅观察 Epoch 推进无法区分 watchdog 完成路径，
+/// 因此要求两个已完成的 transcript 均属于当前已安装的 Epoch。
 pub(super) async fn wait_for_initial_dkg(client: &Client) -> Result<()> {
     timeout(Duration::from_secs(240), async {
         loop {
@@ -236,8 +236,8 @@ async fn assert_default_genesis(client: &Client, epoch_duration_secs: u64) {
         ChunkyDKGConfigMoveStruct::from(OnChainChunkyDKGConfig::default_for_genesis()),
     );
 
-    // Independent integer model of the native 10% APY genesis conversion and
-    // its fixed-point reward rate. No PoC preview supplies the expected values.
+    // 用独立整数模型计算原生 10% APY 的创世换算及其定点奖励率，
+    // 不使用 PoC 预览生成预期值。
     let rate_num = 100_000_000 / (365 * 24 * 60 * 60 / epoch_duration_secs);
     let fixed_rate = rate_num as u128 * INDEX_SCALE / 1_000_000_000;
     let installed_den = (1_000_000 * INDEX_SCALE / fixed_rate).min(u64::MAX as u128);
@@ -496,8 +496,8 @@ async fn balance_at(client: &Client, address: AccountAddress, version: u64) -> u
         .into_inner()
 }
 
-/// SYS-01: strict T2 defaults, ten paid transfers, a framework-authorized upload
-/// and an owner's allocation change. Future power never changes installed votes.
+/// SYS-01：严格 T2 默认配置、十笔收费转账、一次框架授权上传，
+/// 以及一次 owner 分配变更。未来算力不会提前改变已安装的投票权重。
 #[tokio::test]
 async fn poc_testnet_defaults_transfer_upload_and_allocate() {
     let upload_script = compile_script(
@@ -557,8 +557,8 @@ async fn poc_testnet_defaults_transfer_upload_and_allocate() {
         );
     }
 
-    // The first block advances from genesis time and starts the initial real
-    // DKG sessions. Account for that startup separately from transaction time.
+    // 首个区块从创世时间推进，并启动首批真实 DKG 会话。
+    // 将该启动耗时与交易耗时分别记录。
     let bootstrap_started = Instant::now();
     wait_for_initial_dkg(&client)
         .await

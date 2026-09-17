@@ -997,6 +997,14 @@ module topo_framework::poc_accounting {
         advance_epoch(epoch, poc);
     }
 
+    // 隔离验证零 units 结奖分支：按生产安装顺序把池推进到目标 Epoch，
+    // 同时保持聚合 units 和计奖基数均为零。
+    #[test_only]
+    public fun advance_zero_pool_for_test(epoch: u64, pool: address) {
+        install_pool_target(pool, epoch, 0, 0);
+        advance_epoch(epoch, true);
+    }
+
     #[test_only]
     public fun credit_for_test(pool: address, reward: Coin<TopoCoin>): u256 {
         credit_epoch_reward(pool, current_epoch(), reward)

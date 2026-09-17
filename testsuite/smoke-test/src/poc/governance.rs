@@ -1,7 +1,7 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-//! GOV-05: production transactions must validate current and pending PoC parameters together.
+//! GOV-05：生产交易必须同时校验当前和待生效的 PoC 参数。
 
 use super::{
     optional_resource_at_version, resource_at_version,
@@ -60,8 +60,8 @@ script {
     fun main(root: &signer, operation: u8, value: u64, target_epoch: u64, rollback_marker: bool) {
         let framework = topo_governance::get_signer_testnet_only(root, @0x1);
         if (rollback_marker) {
-            // This valid write emits RewardSplitScheduled before the incompatible update.
-            // A Move abort must discard both the pending split and its event.
+            // 这次合法写入会在不兼容更新前发出 RewardSplitScheduled。
+            // Move abort 必须同时丢弃待生效分流及其事件。
             stake::schedule_reward_split(&framework, 3000, target_epoch);
         };
         if (operation == 0) {
@@ -100,8 +100,8 @@ fn payload(change: Change, epoch: u64, rollback_marker: bool) -> TransactionPayl
     ]))
 }
 
-/// Explicit A variant: five equal validators, six candidate slots, a one-hour
-/// epoch, and both DKG modes disabled. This is not a default-network fixture.
+/// 显式 A 变体：五个等权验证者、六个候选槽、1 小时 Epoch，并关闭两种 DKG 模式。
+/// 本 fixture 不是默认网络配置。
 async fn governance_swarm() -> LocalSwarm {
     println!("GOV-05 fixture A: nodes=5, Open, dynamic=true, min_validators=5, validator_limit=6, min_power=10, max_power=1000, initial_power=10, bond=100 Octa, growth=25%, epoch=3600s, ordinary/Chunky DKG=off, retention_bps=10000, native_reward_bps=0, fee_limit=0");
     SwarmBuilder::new_local(5)
@@ -241,8 +241,7 @@ async fn submit_change(
     .await
 }
 
-/// Successful setters change exactly their requested field; the installed
-/// committee, epoch, reward context, split and index baseline remain unchanged.
+/// 成功的 setter 只修改请求字段；已安装委员会、Epoch、奖励上下文、分流和指数基线均保持不变。
 async fn successful_change(
     swarm: &mut LocalSwarm,
     client: &Client,
@@ -273,7 +272,7 @@ async fn successful_change(
         expected,
         "Unexpected state change for {change:?}"
     );
-    // These setters have no business event; the deliberately emitting rollback marker is off.
+    // 这些 setter 不产生业务事件；用于回滚检测的主动发事件标记处于关闭状态。
     assert_no_governance_events(&transaction);
     transaction
 }
@@ -325,7 +324,7 @@ async fn rejected_change(
 
 #[tokio::test]
 async fn poc_governance_growth_validates_current_and_pending_params() {
-    // Compile before nodes start, keeping the governance sequence inside one installed epoch.
+    // 在节点启动前完成编译，使治理序列保持在同一个已安装 Epoch 内。
     Lazy::force(&GOVERNANCE_SCRIPT);
     for pending_first in [true, false] {
         println!(
@@ -351,8 +350,8 @@ async fn poc_governance_growth_validates_current_and_pending_params() {
             genesis[ACCOUNTING]["config"]["pending_params"],
             json!({"vec": []})
         );
-        // The first block can move beyond genesis epoch 1 even with a long epoch.
-        // Commit a normal transaction first, then use that actual installed epoch throughout.
+        // 即使 Epoch 很长，首个区块也可能已经越过创世 Epoch 1。
+        // 先提交普通交易，之后全程使用实际已安装 Epoch。
         let receiver = swarm.validators().next().unwrap().peer_id();
         let chain = swarm.chain_info();
         let factory = chain
@@ -398,14 +397,14 @@ async fn poc_governance_growth_validates_current_and_pending_params() {
 
         let final_transaction = if pending_first {
             successful_change(&mut swarm, &client, Change::Minimum(4), epoch).await;
-            // Current 5*10*20/100 = 10 is valid; pending 4*10*20/100 = 8 is not.
+            // 当前配置 5*10*20/100=10 合法；待生效配置 4*10*20/100=8 不合法。
             rejected_change(&mut swarm, &client, Change::Growth(20), epoch, &pools).await;
             successful_change(&mut swarm, &client, Change::CancelPending, epoch).await;
             successful_change(&mut swarm, &client, Change::Growth(20), epoch).await
         } else {
             successful_change(&mut swarm, &client, Change::Growth(20), epoch).await;
             rejected_change(&mut swarm, &client, Change::Minimum(4), epoch, &pools).await;
-            // Restore a sufficient budget and prove the formerly rejected scheduling works.
+            // 恢复充足预算，验证先前被拒绝的排期现在可以成功。
             successful_change(&mut swarm, &client, Change::Growth(25), epoch).await;
             successful_change(&mut swarm, &client, Change::Minimum(4), epoch).await
         };
