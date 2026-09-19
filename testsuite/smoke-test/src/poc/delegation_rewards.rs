@@ -104,21 +104,25 @@ fn governance_with_fee_limit(
     ]))
 }
 
-struct Fixture {
-    swarm: LocalSwarm,
-    client: Client,
-    root: Arc<LocalAccount>,
-    owner: LocalAccount,
-    operator: LocalAccount,
+pub(super) struct Fixture {
+    pub(super) swarm: LocalSwarm,
+    pub(super) client: Client,
+    pub(super) root: Arc<LocalAccount>,
+    pub(super) owner: LocalAccount,
+    pub(super) operator: LocalAccount,
     delegator: LocalAccount,
-    power_user: LocalAccount,
-    pool: AccountAddress,
+    pub(super) power_user: LocalAccount,
+    pub(super) pool: AccountAddress,
     original_pools: Vec<AccountAddress>,
     // Forge 缓存原 peer id，同一进程随后使用 pool 作为实际验证者身份；
     // 查询当前成员时均显式映射到对应节点。
-    node_key: AccountAddress,
-    factory: TransactionFactory,
+    pub(super) node_key: AccountAddress,
+    pub(super) factory: TransactionFactory,
     commission_bps: u64,
+    /// Epoch-closing transactions used while replacing the retired genesis pool.
+    /// Long-running tests replay their formulas instead of seeding expected vaults
+    /// from the resulting on-chain balances.
+    pub(super) setup_closings: Vec<UserTransaction>,
 }
 
 impl Fixture {
@@ -132,7 +136,7 @@ impl Fixture {
         ]
     }
 
-    fn client_for_member(&self, member: AccountAddress) -> Client {
+    pub(super) fn client_for_member(&self, member: AccountAddress) -> Client {
         let node_key = if member == self.pool {
             self.node_key
         } else {
@@ -413,7 +417,7 @@ async fn assert_committee(f: &Fixture, version: u64) {
     }
 }
 
-async fn wait_for_real_proposals(f: &Fixture, epoch: u64, minimum: u64) -> u64 {
+pub(super) async fn wait_for_real_proposals(f: &Fixture, epoch: u64, minimum: u64) -> u64 {
     tokio::time::timeout(Duration::from_secs(90), async {
         loop {
             let version = latest_version(&f.client).await;
@@ -590,10 +594,71 @@ async fn fixture_with_options(
     initial_lockup_secs: Option<u64>,
     controlled: bool,
 ) -> (Fixture, u64) {
+    let deployment_fee_max = fee_limit.unwrap_or(0);
+    fixture_with_genesis_options(
+        native_bps,
+        commission_bps,
+        fee_limit,
+        deployment_fee_max,
+        delegator_funding,
+        initial_lockup_secs,
+        controlled,
+        10000,
+        1000,
+        POWER,
+        POWER,
+        REWARD_BASE,
+        100,
+    )
+    .await
+}
+
+/// Long-running reward tests need a horizon larger than the default smoke fixture and
+/// retain real power decay without forcing the background validators below the minimum.
+pub(super) async fn churn_fixture(
+    native_bps: u64,
+    commission_bps: u64,
+    reward_epoch_limit: u64,
+    retention_bps: u64,
+    max_relative_period: u64,
+) -> (Fixture, u64) {
+    fixture_with_genesis_options(
+        native_bps,
+        commission_bps,
+        Some(0),
+        17,
+        1000 * OCTA,
+        Some(3),
+        false,
+        retention_bps,
+        reward_epoch_limit,
+        10,
+        1000,
+        1000 * OCTA,
+        max_relative_period,
+    )
+    .await
+}
+
+async fn fixture_with_genesis_options(
+    native_bps: u64,
+    commission_bps: u64,
+    fee_limit: Option<u64>,
+    deployment_fee_max: u64,
+    delegator_funding: u64,
+    initial_lockup_secs: Option<u64>,
+    controlled: bool,
+    retention_bps: u64,
+    reward_epoch_limit: u64,
+    min_power: u64,
+    max_power: u64,
+    max_reward_base_octa: u64,
+    max_relative_period: u64,
+) -> (Fixture, u64) {
     assert!(native_bps <= 10000 && commission_bps <= 10000);
-    let fee_max = fee_limit.unwrap_or(0);
+    let fee_max = deployment_fee_max;
     Lazy::force(&GOVERNANCE);
-    println!("REW-10/GOV-03 fixture: 5 nodes, mode={}, min=4, initial/maximum/minimum power=400, each bond=1000 TOPO, ratio=100000000 TOPO/OHMP, base=400 TOPO, growth=25%, epoch=3600s, retention=10000, native_bps={native_bps}, commission={commission_bps}, fee_max={fee_max}, fee_only_limit={fee_limit:?} (None=1% inflation/fee0), delegator_funding={delegator_funding}, transaction_gas_price=100, ordinary/Chunky DKG=off; real 5-to-5 resource-pool replacement with separate on-disk safety storage", if controlled { "Controlled" } else { "Open" });
+    println!("REW-10/GOV-03 fixture: 5 nodes, mode={}, min_validators=4, initial_power=400, min/max power={min_power}/{max_power}, each bond=1000 TOPO, ratio=100000000 TOPO/OHMP, growth=25%, epoch=3600s, retention={retention_bps}, max_relative_period={max_relative_period}, reward_horizon={reward_epoch_limit}, native_bps={native_bps}, commission={commission_bps}, fee_max={fee_max}, fee_only_limit={fee_limit:?} (None=1% inflation/fee0), delegator_funding={delegator_funding}, transaction_gas_price=100, ordinary/Chunky DKG=off; real 5-to-5 resource-pool replacement with separate on-disk safety storage", if controlled { "Controlled" } else { "Open" });
     let swarm = SwarmBuilder::new_local(5)
         .with_aptos()
         .with_init_config(Arc::new(move |_, config, _| {
@@ -616,8 +681,8 @@ async fn fixture_with_options(
             config.poc_genesis_config = Some(Arc::new(move |_| PocGenesisConfiguration {
                 params: PowerParams {
                     bond_octa_per_ohmp: OCTA * 100_000_000,
-                    min_power: POWER,
-                    max_power: POWER,
+                    min_power,
+                    max_power,
                     min_validators: 4,
                 },
                 limits: DeploymentLimits {
@@ -625,19 +690,19 @@ async fn fixture_with_options(
                     max_claim_pools: 4,
                     max_upload_users: 32,
                     validator_limit: 6,
-                    max_reward_base_octa: REWARD_BASE,
+                    max_reward_base_octa,
                     rate_max_num: 1,
                     rate_max_den: 100,
                     fee_max,
-                    reward_epoch_limit: 1000,
+                    reward_epoch_limit,
                 },
                 deployment_mode: if controlled {
                     DeploymentMode::Controlled
                 } else {
                     DeploymentMode::Open
                 },
-                retention_bps: 10000,
-                max_relative_period: 100,
+                retention_bps,
+                max_relative_period,
                 initial_raw_power: POWER,
                 native_reward_bps: native_bps,
             }));
@@ -850,7 +915,9 @@ async fn fixture_with_options(
         node_key,
         factory,
         commission_bps,
+        setup_closings: vec![],
     };
+    f.setup_closings.push(joined.clone());
     assert_eq!(
         f.holders().iter().copied().collect::<BTreeSet<_>>().len(),
         5
@@ -866,6 +933,7 @@ async fn fixture_with_options(
         (governance(2, pool), f.factory.clone())
     };
     let enabled = success(execute(&f.client, &f.root, &install_factory, payload).await);
+    f.setup_closings.push(enabled.clone());
     let version = enabled.info.version.0;
     let state = installed_at(&f.client, version).await;
     assert_eq!(state.epoch, joined_state.epoch + 1);
@@ -884,7 +952,7 @@ async fn fixture_with_options(
             numerator as u64,
             denominator as u64,
             true,
-            fee_max
+            fee_limit.unwrap_or(0)
         )
     );
     assert_eq!(

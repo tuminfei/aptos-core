@@ -11,7 +11,26 @@ RUST_MIN_STACK=167772160 SMOKE_TEST_BIN_DIR="$PWD/target/ci" \
 
 本地可将构建和测试都改为默认 dev profile，并将二进制目录改为 `$PWD/target/debug`；执行记录必须注明实际 profile 和节点摘要。用 `-- --list` 核对过滤器，仅列出测试不能计为运行通过。
 
-当前目录共包含 72 项 `poc_` smoke 测试，所有新增场景最多启动 7 个节点；每项是否通过仍以对应源码、节点二进制和 bundle 的当次执行记录为准。
+当前目录共包含 75 项 `poc_` smoke 测试，所有新增场景最多启动 7 个节点；每项是否通过仍以对应源码、节点二进制和 bundle 的当次执行记录为准。
+
+长期奖励 churn 用例按规模单独运行，避免把 ignored soak 与其他长测混在同一进程：
+
+```bash
+export RUST_MIN_STACK=167772160
+export SMOKE_TEST_BIN_DIR="$PWD/target/ci"
+
+# 普通回归；10 Epoch 档也包含在上面的 poc_ 全量命令中
+cargo test --profile ci -p smoke-test --lib --features aptos-config/failpoints \
+  poc::reward_churn::poc_reward_churn_10_epochs_exact -- --exact --test-threads=1 --nocapture
+
+# nightly：100 Epoch 档
+cargo test --profile ci -p smoke-test --lib --features aptos-config/failpoints \
+  poc::reward_churn::poc_reward_churn_100_epochs_seeded -- --ignored --exact --test-threads=1 --nocapture
+
+# 候选版本或奖励逻辑改动后的专用作业：1000 Epoch soak
+cargo test --profile ci -p smoke-test --lib --features aptos-config/failpoints \
+  poc::reward_churn::poc_reward_churn_1000_epochs_soak -- --ignored --exact --test-threads=1 --nocapture
+```
 
 | 文件 | 文档用例及配置 | 主要证据 |
 | --- | --- | --- |
@@ -29,6 +48,7 @@ RUST_MIN_STACK=167772160 SMOKE_TEST_BIN_DIR="$PWD/target/ci" \
 | [member_lifecycle.rs](member_lifecycle.rs) | WGT-04/06，六/五节点 A 同步变体 | 双候选预算 10 分为 5/5 后拒绝退出，pending 权重和 joining 总量保持 0；取消额外候选后单替补获 10 并完成替换；运营者轮换、治理移除不可撤销；满容量取消精确拒绝、释放名额后同请求恢复，旧权重/索引/奖励保持 |
 | [governance.rs](governance.rs) | GOV-05，五节点 A 变体 | 当前/待生效参数的两种修改顺序、精确拒绝、前置分流排期及事件回滚、取消或恢复增长率后重试 |
 | [reward_checkpoints.rs](reward_checkpoints.rs) | REW-04/05，六节点 A 同步变体 | 真实费用每期 1 Octa；两期小数权益、零额领取及配置覆盖，三期等量换仓排除池级余数跨期转移，检查点引用释放 |
+| [reward_churn.rs](reward_churn.rs) | 长期 REW 稳定性，五节点 A 同步变体；10/100/1000 Epoch，固定 seed | 四个创世背景池加一个真实出块委托池；三档均由治理设置 3 Epoch 算力周期和 3 秒锁仓，1000 档扩展归一化周期上限；逐期整数奖励、事件累计、委托 shares/NULL 入池费/双路佣金、截顶与锁仓模型；同版本跨节点采样；100/1000 档为 ignored |
 | [reward_split_lifecycle.rs](reward_split_lifecycle.rs) | GOV-04、REW-02/08，四节点同步及普通 DKG 变体 | E+1/E+2 排期、覆盖/取消与错误矩阵；默认测试网 PoC 创世中联合变更基数、奖励率、费用限额和分流，DKG 等待后按旧快照结算；隔离验证零金额至 u64 上限的分流整数矩阵 |
 | [fee_rewards.rs](fee_rewards.rs) | REW-01/03/07/08 的费用变体，六个创世池 | 0/3000 占比、真实 gas 和费用限额；长 Epoch 的无提案、失败及成功/失败混合表现，费用开关关闭、限额 0、正限额及超限封顶；分流及指数取整、重复/五池领取回滚、引用释放 |
 | [bond_cutoff.rs](bond_cutoff.rs) | WGT-02、EPO-06，四节点 A 时序变体 | 四类余额及 L−1/L/L+1 的 95/80/80；E60 冻结跨真实锁仓到期和四个名义 Epoch，缓存目标与旧奖励保持，仅安装 E61/周期 1 |

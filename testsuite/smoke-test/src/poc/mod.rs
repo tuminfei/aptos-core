@@ -18,6 +18,7 @@ mod power_governance;
 mod power_lifecycle;
 mod recovery;
 mod reward_checkpoints;
+mod reward_churn;
 mod reward_split_lifecycle;
 mod stake_freeze;
 mod testnet_compat;
