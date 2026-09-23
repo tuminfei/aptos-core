@@ -462,8 +462,8 @@ fn assert_uploaded(transaction: &UserTransaction, expected: &[(AccountAddress, u
             json!((*power as u128 * UNIT_SCALE).to_string()),
         );
         assert_eq!(address(&staged.data["user"]), *user);
-        assert_eq!(staged.data["target_period"], json!("1"));
         assert_eq!(staged.data["effective_period"], json!("1"));
+        assert!(staged.data.get("target_period").is_none());
         assert_eq!(staged.data["power"], json!(power.to_string()));
     }
 }

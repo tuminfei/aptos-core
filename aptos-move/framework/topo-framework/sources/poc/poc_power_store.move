@@ -46,8 +46,8 @@ module topo_framework::poc_power_store {
     const EINVALID_RETENTION_BPS: u64 = 4;
     /// 算力周期长度必须为正，边界 Epoch 不能超过 u64 上限。
     const EINVALID_POWER_PERIOD: u64 = 5;
-    /// 目标算力周期只能是 current_period + 1，不能提前写入更远周期。
-    const EINVALID_TARGET_PERIOD: u64 = 6;
+    /// 生效算力周期只能是 current_period + 1，不能提前写入更远周期。
+    const EINVALID_EFFECTIVE_PERIOD: u64 = 6;
     /// 算力周期 0 的直接写入仅限真实创世阶段，且时钟尚未推进。
     const EGENESIS_COMMIT_ONLY: u64 = 7;
     /// 周期、指数或标准化单位超出本版支持范围。
@@ -86,7 +86,7 @@ module topo_framework::poc_power_store {
         epochs_until_next_power_period: u64,
     }
 
-    /// 用户算力版本，effective_period 表示开始生效的源周期。
+    /// 用户算力版本，effective_period 表示开始生效的算力周期。
     struct PowerVersion has copy, drop, store {
         effective_period: u64,
         power: u64,
@@ -131,9 +131,7 @@ module topo_framework::poc_power_store {
     #[event]
     /// 批量上传实际新增版本时发出，重复上报不产生该事件。
     struct PowerUpdateStagedEvent has drop, store {
-        /// 请求写入的目标源周期，必须为 current_period + 1。
-        target_period: u64,
-        /// 版本实际生效的源周期，等于 target_period。
+        /// 版本开始生效的算力周期，上传时必须为 current_period + 1。
         effective_period: u64,
         user: address,
         power: u64,
@@ -240,7 +238,7 @@ module topo_framework::poc_power_store {
     /// 冻结期间也拒绝重复上报，所有请求均须先通过冻结检查。
     public entry fun stage_batch_update(
         operator: &signer,
-        target_period: u64,
+        effective_period: u64,
         users: vector<address>,
         powers: vector<u64>,
     ) {
@@ -255,15 +253,14 @@ module topo_framework::poc_power_store {
         let current_period = borrow_global<PeriodClock>(@topo_framework).current_period;
         assert_power_update_authority(borrow_global<PowerStore>(@topo_framework), signer::address_of(operator));
         assert!(
-            (target_period as u256) == (current_period as u256) + 1,
-            error::invalid_argument(EINVALID_TARGET_PERIOD),
+            (effective_period as u256) == (current_period as u256) + 1,
+            error::invalid_argument(EINVALID_EFFECTIVE_PERIOD),
         );
         assert_clock_alignment();
         assert!(users.length() <= poc_accounting::max_upload_users(), error::invalid_argument(EUPLOAD_LIMIT));
         assert!(borrow_global<PowerStore>(@topo_framework).normalization.next_index.is_some(),
             error::invalid_state(EPOWER_HORIZON));
 
-        let effective_period = target_period;
         let length = users.length();
         let i = 0;
         while (i < length) {
@@ -281,7 +278,6 @@ module topo_framework::poc_power_store {
                 event::emit(PowerNormalized { user, effective_period, units: version.units });
                 save_power_versions(borrow_global_mut<PowerStore>(@topo_framework), user, replacement);
                 event::emit(PowerUpdateStagedEvent {
-                    target_period,
                     effective_period,
                     user,
                     power,
@@ -339,19 +335,19 @@ module topo_framework::poc_power_store {
         clock.last_epoch += 1;
         if (clock.epochs_until_next_power_period == 0) {
             let previous_period = clock.current_period;
-            let target_period = previous_period + 1;
-            clock.current_period = target_period;
+            let next_period = previous_period + 1;
+            clock.current_period = next_period;
             clock.epochs_until_next_power_period = clock.power_period_in_epochs;
             let store = borrow_global_mut<PowerStore>(@topo_framework);
             let retention_bps = store.retention_bps_per_period;
             let normalized = &mut store.normalization;
             normalized.current_index = *normalized.next_index.borrow();
             normalized.next_index = supported_next_index(
-                normalized.current_index, target_period, normalized.max_relative_period, retention_bps,
+                normalized.current_index, next_period, normalized.max_relative_period, retention_bps,
             );
             event::emit(PowerPeriodCommittedEvent {
                 previous_period,
-                current_period: target_period,
+                current_period: next_period,
             });
         };
 
@@ -533,24 +529,24 @@ module topo_framework::poc_power_store {
 
         let store = borrow_global<PowerStore>(@topo_framework);
         let clock = borrow_global<PeriodClock>(@topo_framework);
-        let target_period = if (clock.epochs_until_next_power_period == 0) {
+        let query_period = if (clock.epochs_until_next_power_period == 0) {
                 clock.current_period + 1
             } else {
                 clock.current_period
             };
-        get_user_power_for_period_internal(store, user, target_period)
+        get_user_power_for_period_internal(store, user, query_period)
     }
 
     #[view]
     public fun get_user_power_for_period(
         user: address,
-        target_period: u64,
+        query_period: u64,
     ): u64 {
         if (!exists<PowerStore>(@topo_framework)) {
             return 0
         };
         let store = borrow_global<PowerStore>(@topo_framework);
-        get_user_power_for_period_internal(store, user, target_period)
+        get_user_power_for_period_internal(store, user, query_period)
     }
 
     #[view]
@@ -579,7 +575,7 @@ module topo_framework::poc_power_store {
     #[view]
     public fun get_user_powers_for_period(
         users: vector<address>,
-        target_period: u64,
+        query_period: u64,
     ): vector<u64> {
         let powers = vector[];
         if (!exists<PowerStore>(@topo_framework)) {
@@ -592,7 +588,7 @@ module topo_framework::poc_power_store {
             powers.push_back(get_user_power_for_period_internal(
                 store,
                 *users.borrow(i),
-                target_period,
+                query_period,
             ));
             i += 1;
         };
@@ -781,30 +777,25 @@ module topo_framework::poc_power_store {
         save_power_versions(borrow_global_mut<PowerStore>(@topo_framework), user, replacement);
     }
 
-    /// Core read path: find the best power value for a given target_period and apply decay.
-    ///
-    /// Steps:
-    /// 1. Select the effective version: the slot with the highest effective_period that is <= target_period
-    /// 2. Compute periods_elapsed = target_period - base_period
-    /// 3. Apply retention decay: power * (retention_bps ^ periods_elapsed) / (BPS_DENOMINATOR ^ periods_elapsed)
-    ///
-    /// Returns 0 if the user has no record or no version is effective for target_period.
+    /// 选择在 query_period 已生效的最新版本，再按经过的算力周期逐期整数衰减。
+    /// query_period 是查询时点，effective_period 是版本生效时点，经过周期数为二者之差。
+    /// 用户无记录或查询时点尚无生效版本时返回 0。
     fun get_user_power_for_period_internal(
         store: &PowerStore,
         user: address,
-        target_period: u64,
+        query_period: u64,
     ): u64 {
         if (!store.users.contains(user)) {
             return 0
         };
 
         let info = store.users.borrow(user);
-        let version = select_effective_version(info, target_period);
+        let version = select_effective_version(info, query_period);
         if (version.is_none()) return 0;
         let version = version.borrow();
         apply_retention(
             version.power,
-            target_period - version.effective_period,
+            query_period - version.effective_period,
             store.retention_bps_per_period,
         )
     }
@@ -836,12 +827,12 @@ module topo_framework::poc_power_store {
     /// 原始算力和 units 共用有效版本选择；有效零版本也覆盖较早的非零版本。
     fun select_effective_version(
         info: &UserPowerInfo,
-        target_period: u64,
+        query_period: u64,
     ): Option<PowerVersion> {
-        if (info.newer.is_some() && info.newer.borrow().effective_period <= target_period) {
+        if (info.newer.is_some() && info.newer.borrow().effective_period <= query_period) {
             return info.newer
         };
-        if (info.older.is_some() && info.older.borrow().effective_period <= target_period) {
+        if (info.older.is_some() && info.older.borrow().effective_period <= query_period) {
             return info.older
         };
         option::none()

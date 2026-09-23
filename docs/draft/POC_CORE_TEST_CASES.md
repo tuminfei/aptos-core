@@ -126,7 +126,7 @@ claimable_octa = floor(accrued / Q)
 
 | ID / 级别 | 前置条件与步骤 | 预期结果 | 现有自动化 / 补充点 |
 | --- | --- | --- | --- |
-| PWR-01 / P0 | 周期 P 中上传 `target_period=P+1` 的新绝对原始算力；分别查询当前、E+1、边界 B | 上传按 `I[P+1]` 生成 units 并同步相关分配；B 前不改变当前权重，B 才应用下一原始版本；不得将上传值当作增量 | 已有：[PV] `poc_upload_allocation_order_independence`、`poc_units_keep_their_effective_period_index` |
+| PWR-01 / P0 | 周期 P 中上传 `effective_period=P+1` 的新绝对原始算力；分别查询当前、E+1、边界 B | 上传按 `I[P+1]` 生成 units 并同步相关分配；B 前不改变当前权重，B 才应用下一原始版本；不得将上传值当作增量 | 已有：[PV] `poc_upload_allocation_order_independence`、`poc_units_keep_their_effective_period_index` |
 | PWR-02 / P0 | 同用户、同目标周期依次上报 100、100、200；覆盖同批重复及跨交易重复 | **首次写入 100 生效**，后续不同值也不覆盖；不重复增加 units/refs；只对实际新增版本发出标准化及上传事件 | 已有：[PV] `poc_batch_first_write_and_explicit_zero_version`；[SN] `poc_public_upload_authority_first_write_and_batch_inputs` 核对同批/跨交易 100、100、200 的首次写入、units/refs 快照及两类事件数量 |
 | PWR-03 / P0 | 已有用户下一周期上传 0；新用户首次上传 0；已有用户同批 `[0,999]` | 已有用户保存明确零版本并在 B 清除未来算力，历史奖励仍可领；新用户零值不建记录；同周期 999 不覆盖先写的 0 | 已有：[PV] `poc_batch_first_write_and_explicit_zero_version`；[SN] 真实上传矩阵覆盖已有用户 `[0,999]`、新用户零值及事件；[NP] `poc_power_period_zero_rollover_and_historical_claim` 验证零版本生效后实际领取历史权益 |
 | PWR-04 / P0 | 连续上传三个周期的版本；跨数个周期不访问，再查询并领取奖励 | 最多保存两个原始版本槽；新写入淘汰旧槽后，当前有效 units 仍使用原生效周期指数；旧奖励可凭检查点结算；重复查询无写入 | 已有：[PV] 版本滚动和长期查询；[PS] `poc_snapshot_is_read_only`；[NP] 同一节点状态链覆盖连续版本、四个周期不操作、两个原始槽及历史领取，按每期生效持仓独立累积整数和小数权益 |

@@ -407,7 +407,7 @@ async fn upload(
     );
     assert_eq!(integer(&normalized.data["units"]), units);
     let staged = event(&transaction, "::poc_power_store::PowerUpdateStagedEvent");
-    assert_eq!(integer(&staged.data["target_period"]), period as u128);
+    assert_eq!(integer(&staged.data["effective_period"]), period as u128);
     assert_eq!(integer(&staged.data["power"]), raw as u128);
     transaction.info.version.0
 }
@@ -1729,8 +1729,8 @@ async fn stage_history_power(
     );
     assert_eq!(
         event(&tx, "::poc_power_store::PowerUpdateStagedEvent").data,
-        json!({"user": user.to_hex_literal(), "target_period": period.to_string(),
-            "effective_period": period.to_string(), "power": raw.to_string()})
+        json!({"user": user.to_hex_literal(), "effective_period": period.to_string(),
+            "power": raw.to_string()})
     );
     tx.info.version.0
 }

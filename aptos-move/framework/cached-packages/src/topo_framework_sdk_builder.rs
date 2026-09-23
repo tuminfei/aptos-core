@@ -868,7 +868,7 @@ pub enum EntryFunctionCall {
     /// 仅对实际新增版本执行标准化和分配同步，任何失败均回滚整批写入。
     /// 冻结期间也拒绝重复上报，所有请求均须先通过冻结检查。
     PocPowerStoreStageBatchUpdate {
-        target_period: u64,
+        effective_period: u64,
         users: Vec<AccountAddress>,
         powers: Vec<u64>,
     },
@@ -1960,10 +1960,10 @@ impl EntryFunctionCall {
                 power_period_in_epochs,
             } => poc_power_store_set_power_period_in_epochs(power_period_in_epochs),
             PocPowerStoreStageBatchUpdate {
-                target_period,
+                effective_period,
                 users,
                 powers,
-            } => poc_power_store_stage_batch_update(target_period, users, powers),
+            } => poc_power_store_stage_batch_update(effective_period, users, powers),
             PocRegistryApproveAppIdentity {
                 app_admin,
                 app_address,
@@ -4562,7 +4562,7 @@ pub fn poc_power_store_set_power_period_in_epochs(
 /// 仅对实际新增版本执行标准化和分配同步，任何失败均回滚整批写入。
 /// 冻结期间也拒绝重复上报，所有请求均须先通过冻结检查。
 pub fn poc_power_store_stage_batch_update(
-    target_period: u64,
+    effective_period: u64,
     users: Vec<AccountAddress>,
     powers: Vec<u64>,
 ) -> TransactionPayload {
@@ -4577,7 +4577,7 @@ pub fn poc_power_store_stage_batch_update(
         ident_str!("stage_batch_update").to_owned(),
         vec![],
         vec![
-            bcs::to_bytes(&target_period).unwrap(),
+            bcs::to_bytes(&effective_period).unwrap(),
             bcs::to_bytes(&users).unwrap(),
             bcs::to_bytes(&powers).unwrap(),
         ],
@@ -7795,7 +7795,7 @@ mod decoder {
     ) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::PocPowerStoreStageBatchUpdate {
-                target_period: bcs::from_bytes(script.args().get(0)?).ok()?,
+                effective_period: bcs::from_bytes(script.args().get(0)?).ok()?,
                 users: bcs::from_bytes(script.args().get(1)?).ok()?,
                 powers: bcs::from_bytes(script.args().get(2)?).ok()?,
             })

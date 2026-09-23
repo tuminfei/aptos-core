@@ -689,7 +689,7 @@ async fn poc_assert_successful_batch(f: &Fixture, tx: &UserTransaction) {
         );
         assert_eq!(
             staged[i].data,
-            json!({"target_period": "24", "effective_period": "24", "user": user.to_hex_literal(), "power": raw.to_string()})
+            json!({"effective_period": "24", "user": user.to_hex_literal(), "power": raw.to_string()})
         );
         assert_eq!(
             poc_raw_power(&f.client, user, version).await.unwrap(),
@@ -1162,7 +1162,7 @@ async fn poc_rebuild_upload(
         );
         assert_eq!(
             staged[i].data,
-            json!({"target_period": period.to_string(), "effective_period": period.to_string(),
+            json!({"effective_period": period.to_string(),
                 "user": user.to_hex_literal(), "power": raw.to_string()})
         );
     }

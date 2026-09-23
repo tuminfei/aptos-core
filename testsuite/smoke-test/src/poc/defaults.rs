@@ -651,7 +651,6 @@ async fn poc_testnet_defaults_transfer_upload_and_allocate() {
     }
     assert_eq!(integer(&normalized.data["units"]), next_units);
     assert_eq!(integer(&staged.data["power"]), raw_power as u128);
-    assert_eq!(integer(&staged.data["target_period"]), 1);
     assert_eq!(
         installed_at(&client, upload.info.version.0).await,
         installed_before
