@@ -15,8 +15,25 @@ use move_coverage::coverage_map::CoverageMap;
 use std::path::PathBuf;
 use topo_framework::BuildOptions;
 
+const ISOLATED_TEST_ENV: &str = "APTOS_MOVE_COVERAGE_TEST_ISOLATED";
+const TEST_NAME: &str = "tests::move_executor_coverage::test_coverage";
+
 #[test]
 fn test_coverage() {
+    // Code coverage is collected across the process. Keep other parallel
+    // tests from changing this test's coverage map between its two checks.
+    if std::env::var_os(ISOLATED_TEST_ENV).is_none() {
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .arg(TEST_NAME)
+            .arg("--exact")
+            .arg("--nocapture")
+            .env(ISOLATED_TEST_ENV, "1")
+            .status()
+            .expect("failed to run coverage test in an isolated process");
+        assert!(status.success(), "isolated coverage test failed");
+        return;
+    }
+
     let mut h = MoveHarness::new();
     let acc = h.new_account_at(AccountAddress::from_hex_literal("0x815").unwrap());
     let mut builder = PackageBuilder::new("Package");

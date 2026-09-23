@@ -233,11 +233,11 @@ fn gen_nested_module(
 // RUN: cargo test -p e2e-move-tests test_poc_nested_struct_drop_overflow_thread_diff --release -- --nocapture
 #[test]
 fn test_poc_nested_struct_drop_overflow_thread_diff() {
-    // Run everything on an 8MB thread so compilation succeeds,
+    // Run everything on a 16MB thread so compilation succeeds on macOS,
     // then spawn a 2MB thread for execution only.
     let handle = std::thread::Builder::new()
         .name("compile-thread".into())
-        .stack_size(8 * 1024 * 1024) // 8MB for compilation
+        .stack_size(16 * 1024 * 1024) // 16MB for compilation
         .spawn(|| {
             // === Step 1: Setup default harness ===
             let mut h = MoveHarnessSend::new();
@@ -428,7 +428,7 @@ fn test_poc_display_recursion_overflow_thread_diff() {
     //   is the absence of a crash.
     let handle = std::thread::Builder::new()
         .name("compile-thread".into())
-        .stack_size(8 * 1024 * 1024)
+        .stack_size(16 * 1024 * 1024)
         .spawn(|| {
             let mut h = MoveHarnessSend::new();
             let addr = "0xbeef";

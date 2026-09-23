@@ -11,8 +11,27 @@ use aptos_types::transaction::TransactionStatus;
 use move_core_types::account_address::AccountAddress;
 use topo_framework::BuildOptions;
 
+const ISOLATED_TEST_ENV: &str = "APTOS_FUNCTION_CACHE_TEST_ISOLATED";
+const TEST_NAME: &str =
+    "tests::function_caches::test_function_caches_for_recursive_functions_do_not_leak_memory";
+
 #[test]
 fn test_function_caches_for_recursive_functions_do_not_leak_memory() {
+    // This test observes process-wide virtual memory. Run the measurement in an
+    // isolated test process so allocations from parallel tests cannot make the
+    // second sample look like cache growth.
+    if std::env::var_os(ISOLATED_TEST_ENV).is_none() {
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .arg(TEST_NAME)
+            .arg("--exact")
+            .arg("--nocapture")
+            .env(ISOLATED_TEST_ENV, "1")
+            .status()
+            .expect("failed to run function-cache test in an isolated process");
+        assert!(status.success(), "isolated function-cache test failed");
+        return;
+    }
+
     let mut h = MoveHarness::new();
     let acc = h.new_account_at(AccountAddress::from_hex_literal("0x99").unwrap());
 

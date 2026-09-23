@@ -15,8 +15,8 @@ use aptos_types::{
             get_sample_openid_sig_and_pk, get_upgraded_vk,
         },
         AnyKeylessPublicKey, Configuration, EphemeralCertificate, FederatedKeylessPublicKey,
-        Groth16VerificationKey, KeylessPublicKey, KeylessSignature, TransactionAndProof,
-        VERIFICATION_KEY_FOR_TESTING,
+        Groth16VerificationKey, KeylessGroupResource, KeylessPublicKey, KeylessSignature,
+        TransactionAndProof, VERIFICATION_KEY_FOR_TESTING,
     },
     on_chain_config::FeatureFlag,
     transaction::{
@@ -28,6 +28,7 @@ use move_core_types::{
     account_address::AccountAddress,
     ident_str,
     language_storage::ModuleId,
+    move_resource::MoveStructType,
     transaction_argument::TransactionArgument,
     value::{serialize_values, MoveValue},
     vm_status::{
@@ -54,6 +55,21 @@ fn init_feature_gating(
         core_resources.clone(),
         Groth16VerificationKey::from(VERIFICATION_KEY_FOR_TESTING.clone()),
     );
+
+    let group = h
+        .read_resource_group(&CORE_CODE_ADDRESS, KeylessGroupResource::struct_tag())
+        .expect("keyless resource group should exist");
+    let config: Configuration = bcs::from_bytes(
+        group
+            .get(&Configuration::struct_tag())
+            .expect("keyless configuration should exist"),
+    )
+    .unwrap();
+    assert_eq!(
+        config.max_exp_horizon_secs,
+        Configuration::new_for_testing().max_exp_horizon_secs
+    );
+    assert!(group.contains_key(&Groth16VerificationKey::struct_tag()));
 
     (h, recipient, core_resources)
 }
@@ -501,6 +517,7 @@ fn run_jwk_and_config_script(h: &mut MoveHarness) -> Account {
     // because it does not (yet) work with resource groups.
 
     assert_success!(h.run(txn));
+    apply_pending_keyless_config(h);
 
     core_resources
 }
@@ -548,6 +565,7 @@ fn federated_keyless_init_config(h: &mut MoveHarness, core_resources: Account) {
     // because it does not (yet) work with resource groups.
 
     assert_success!(h.run(txn));
+    apply_pending_keyless_config(h);
 }
 
 fn federated_keyless_install_jwk(
@@ -612,4 +630,17 @@ fn run_upgrade_vk_script(h: &mut MoveHarness, core_resources: Account, vk: Groth
     // because it does not (yet) work with resource groups.
 
     assert_success!(h.run(txn));
+    apply_pending_keyless_config(h);
+}
+
+fn apply_pending_keyless_config(h: &mut MoveHarness) {
+    // The test scripts buffer keyless changes for the next epoch. Apply that
+    // specific configuration step directly: the PoC validator-set gate can
+    // defer a full epoch transition in this test fixture.
+    h.executor
+        .exec("keyless_account", "on_new_epoch", vec![], vec![
+            MoveValue::Signer(CORE_CODE_ADDRESS)
+                .simple_serialize()
+                .unwrap(),
+        ]);
 }

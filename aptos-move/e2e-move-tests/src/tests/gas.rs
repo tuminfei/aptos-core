@@ -51,6 +51,10 @@ fn test_modify_gas_schedule_check_hash() {
         ],
     );
 
+    // Advance time before entering a new epoch. A direct call to `finish` at
+    // the genesis timestamp is now a no-op because reconfiguration is not yet
+    // allowed.
+    harness.executor.new_block_with_timestamp(1);
     harness
         .executor
         .exec("reconfiguration_with_dkg", "finish", vec![], vec![

@@ -19,6 +19,18 @@ use move_core_types::{
 use std::str::FromStr;
 use topo_framework::BuildOptions;
 
+const DEEP_VALUE_TEST_STACK_SIZE: usize = 16 * 1024 * 1024;
+
+fn run_with_deep_value_stack(test: impl FnOnce() + Send + 'static) {
+    std::thread::Builder::new()
+        .name("deep-value-test".to_string())
+        .stack_size(DEEP_VALUE_TEST_STACK_SIZE)
+        .spawn(test)
+        .expect("failed to spawn deep-value test thread")
+        .join()
+        .expect("deep-value test thread panicked");
+}
+
 fn initialize(h: &mut MoveHarness) {
     let build_options = BuildOptions::move_2().set_latest_language();
     let path = common::test_dir_path("bcs.data/function-values");
@@ -183,39 +195,43 @@ fn run_id() -> MemberId {
 
 #[test]
 fn test_bcs_to_bytes_value_size_metering() {
-    let mut h = MoveHarness::new();
-    let acc = h.new_account_at(AccountAddress::from_hex_literal("0xcafe").unwrap());
-    publish_deep_wrapper(&mut h, &acc, 120, 100, 30);
+    run_with_deep_value_stack(|| {
+        let mut h = MoveHarness::new();
+        let acc = h.new_account_at(AccountAddress::from_hex_literal("0xcafe").unwrap());
+        publish_deep_wrapper(&mut h, &acc, 120, 100, 30);
 
-    let gas_off = h.evaluate_entry_function_gas(&acc, run_id(), vec![], vec![]);
-    h.set_timed_feature(TimedFeatureFlag::MeterBcsByValueSize, true);
-    let gas_on = h.evaluate_entry_function_gas(&acc, run_id(), vec![], vec![]);
+        let gas_off = h.evaluate_entry_function_gas(&acc, run_id(), vec![], vec![]);
+        h.set_timed_feature(TimedFeatureFlag::MeterBcsByValueSize, true);
+        let gas_on = h.evaluate_entry_function_gas(&acc, run_id(), vec![], vec![]);
 
-    println!("bcs::to_bytes gas  off={gas_off}  on={gas_on}");
-    assert!(
-        gas_on > gas_off * 20,
-        "value-size metering should dominate: on={gas_on} off={gas_off}"
-    );
+        println!("bcs::to_bytes gas  off={gas_off}  on={gas_on}");
+        assert!(
+            gas_on > gas_off * 20,
+            "value-size metering should dominate: on={gas_on} off={gas_off}"
+        );
+    });
 }
 
 #[test]
 fn test_bcs_to_bytes_execution_limit() {
-    let mut h = MoveHarness::new();
-    let acc = h.new_account_at(AccountAddress::from_hex_literal("0xcafe").unwrap());
-    publish_deep_wrapper(&mut h, &acc, 120, 200, 100);
+    run_with_deep_value_stack(|| {
+        let mut h = MoveHarness::new();
+        let acc = h.new_account_at(AccountAddress::from_hex_literal("0xcafe").unwrap());
+        publish_deep_wrapper(&mut h, &acc, 120, 200, 100);
 
-    assert_success!(h.run_entry_function(&acc, run_id(), vec![], vec![]));
+        assert_success!(h.run_entry_function(&acc, run_id(), vec![], vec![]));
 
-    // Enable timed feature flag.
-    h.set_timed_feature(TimedFeatureFlag::MeterBcsByValueSize, true);
+        // Enable timed feature flag.
+        h.set_timed_feature(TimedFeatureFlag::MeterBcsByValueSize, true);
 
-    let status = h.run_entry_function(&acc, run_id(), vec![], vec![]);
-    assert!(matches!(
-        status,
-        TransactionStatus::Keep(ExecutionStatus::MiscellaneousError(Some(
-            StatusCode::EXECUTION_LIMIT_REACHED
-        )))
-    ));
+        let status = h.run_entry_function(&acc, run_id(), vec![], vec![]);
+        assert!(matches!(
+            status,
+            TransactionStatus::Keep(ExecutionStatus::MiscellaneousError(Some(
+                StatusCode::EXECUTION_LIMIT_REACHED
+            )))
+        ));
+    });
 }
 
 // A `vector<D1>` of `n` depth-120 single-field values holds `1 + 121 * n` value
@@ -232,7 +248,7 @@ const LARGE_ELEMS: u64 = 100;
 /// deserialization is never capped, so it is charged, not rejected.
 fn deep_deser_source(depth: usize) -> String {
     let mut src = String::from(
-        "module 0xcafe::test {\n    use std::vector;\n    use aptos_std::copyable_any;\n    use aptos_std::table::{Self, Table};\n\n",
+        "module 0xcafe::test {\n    use std::vector;\n    use topo_std::copyable_any;\n    use topo_std::table::{Self, Table};\n\n",
     );
     for k in 1..depth {
         src.push_str(&format!(

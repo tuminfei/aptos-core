@@ -35,7 +35,7 @@ fn build_publish_a(h: &mut MoveHarness, acc: &Account) -> SignedTransaction {
             struct Func has copy, drop, store, key { bar: || }
 
             fun take_string(s: std::string::String) {
-                aptos_std::string_utils::to_string(&s);
+                topo_std::string_utils::to_string(&s);
             }
 
             public fun foo(_s: &signer) {}

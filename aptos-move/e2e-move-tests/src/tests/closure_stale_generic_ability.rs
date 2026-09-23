@@ -25,7 +25,7 @@ const FEE_PAYER_BALANCE: u64 = 100 * OCTAS_PER_APT;
 
 const V1: &str = r#"
 module 0xca14::provider {
-    use aptos_std::copyable_any::Any;
+    use topo_std::copyable_any::Any;
 
     package fun pack<X: store>(value: X): Any {
         let _ = value;
@@ -35,7 +35,7 @@ module 0xca14::provider {
 
 module 0xca14::caller {
     use std::signer;
-    use aptos_std::copyable_any;
+    use topo_std::copyable_any;
     use topo_framework::topo_coin::TopoCoin;
     use topo_framework::coin::{Self, Coin};
     use 0xca14::provider;
@@ -140,7 +140,7 @@ module 0xca14::upgrade_driver {
 
 const V2: &str = r#"
 module 0xca14::provider {
-    use aptos_std::copyable_any::{Self, Any};
+    use topo_std::copyable_any::{Self, Any};
 
     public fun pack<X: copy + drop + store>(value: X): Any {
         copyable_any::pack<X>(value)

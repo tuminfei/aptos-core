@@ -20,8 +20,8 @@ module 0x66::m {
     use std::bcs;
     use std::option;
     use std::signer;
-    use aptos_std::aptos_hash;
-    use aptos_std::table;
+    use topo_std::aptos_hash;
+    use topo_std::table;
 
     #[persistent]
     fun incr(x: u64, y: u64): u64 { x + y }

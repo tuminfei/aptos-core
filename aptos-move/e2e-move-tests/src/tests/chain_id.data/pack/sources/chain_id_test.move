@@ -1,5 +1,5 @@
 module 0x1::chain_id_test {
-    use aptos_std::type_info;
+    use topo_std::type_info;
     use topo_framework::topo_governance;
     use topo_framework::chain_id;
     use std::features;

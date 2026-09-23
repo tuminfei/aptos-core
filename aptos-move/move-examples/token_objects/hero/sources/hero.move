@@ -6,9 +6,9 @@ module hero::hero {
 
     use topo_framework::object::{Self, ConstructorRef, Object};
 
-    use aptos_token_objects::collection;
-    use aptos_token_objects::token;
-    use aptos_std::string_utils;
+    use topo_token_objects::collection;
+    use topo_token_objects::token;
+    use topo_std::string_utils;
 
     const ENOT_A_HERO: u64 = 1;
     const ENOT_A_WEAPON: u64 = 2;
