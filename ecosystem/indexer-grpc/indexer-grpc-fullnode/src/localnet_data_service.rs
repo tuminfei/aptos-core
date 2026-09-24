@@ -186,12 +186,7 @@ impl DataService for LocalnetDataService {
             .get_synced_version()
             .map_err(|e| Status::internal(format!("{e}")))?
             .ok_or_else(|| Status::unavailable("No synced version available yet"))?;
-        if known_latest_version == 0 {
-            return Err(Status::unavailable(
-                "No non-genesis transaction version available yet",
-            ));
-        }
-
+        // Version 0 is already servable on a genesis-only localnet.
         let min_servable_version = context
             .db
             .get_first_txn_version()
@@ -215,5 +210,69 @@ impl DataService for LocalnetDataService {
         });
 
         Ok(Response::new(PingDataServiceResponse { info: Some(info) }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use aptos_api_test_context::new_test_context;
+    use aptos_config::config::NodeConfig;
+    use aptos_storage_interface::{DbReader, Result as StorageResult};
+    use aptos_types::transaction::Version;
+    use std::sync::Arc;
+
+    struct GenesisOnlyDbReader(Arc<dyn DbReader>);
+
+    impl DbReader for GenesisOnlyDbReader {
+        fn get_read_delegatee(&self) -> &dyn DbReader {
+            self.0.as_ref()
+        }
+
+        fn get_synced_version(&self) -> StorageResult<Option<Version>> {
+            Ok(Some(0))
+        }
+
+        fn get_first_txn_version(&self) -> StorageResult<Option<Version>> {
+            Ok(Some(0))
+        }
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn ping_reports_genesis_only_node_as_live() {
+        let test_context = new_test_context(
+            "localnet_ping_genesis_only".to_string(),
+            NodeConfig::default(),
+            false,
+        );
+        let mut context = test_context.context.clone();
+        context.db = Arc::new(GenesisOnlyDbReader(test_context.db.clone()));
+        let service = LocalnetDataService {
+            service_context: ServiceContext {
+                context: Arc::new(context),
+                processor_task_count: 1,
+                processor_batch_size: 1,
+                output_batch_size: 1,
+                transaction_channel_size: 1,
+                max_transaction_filter_size_bytes: 1,
+            },
+        };
+
+        let response = service
+            .ping(Request::new(PingDataServiceRequest {
+                known_latest_version: None,
+                ping_live_data_service: true,
+            }))
+            .await
+            .expect("genesis-only node should respond to live data ping")
+            .into_inner();
+
+        match response.info {
+            Some(Info::LiveDataServiceInfo(info)) => {
+                assert_eq!(info.known_latest_version, Some(0));
+                assert_eq!(info.min_servable_version, Some(0));
+            },
+            other => panic!("expected live data service info, got {other:?}"),
+        }
     }
 }

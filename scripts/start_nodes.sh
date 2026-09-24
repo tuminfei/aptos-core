@@ -25,6 +25,12 @@ if [ ! -d "$CHAIN_DIR" ]; then
     exit 1
 fi
 
+# PID ownership checks use Linux procfs. Refuse to manage processes without it.
+if [ ! -r /proc/self/cmdline ] || [ ! -L /proc/self/exe ]; then
+    echo "Error: Linux /proc is required to verify node processes" >&2
+    exit 1
+fi
+
 ########################################
 # 工具函数
 ########################################
@@ -78,6 +84,34 @@ get_node_role() {
     return 1
 }
 
+pid_matches_node() {
+    local pid=$1
+    local config_file=$2
+    local expected_exe
+    local actual_exe
+    local arg
+    local previous_arg=""
+    local config_count=0
+
+    [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    [ "$pid" -gt 1 ] || return 1
+    [ -r "/proc/$pid/cmdline" ] || return 1
+
+    expected_exe=$(readlink -f -- "$APTOS_NODE_BIN") || return 1
+    actual_exe=$(readlink -f -- "/proc/$pid/exe") || return 1
+    [ "$actual_exe" = "$expected_exe" ] || return 1
+
+    while IFS= read -r -d '' arg; do
+        if [ "$previous_arg" = "--config" ]; then
+            [ "$arg" = "$config_file" ] || return 1
+            config_count=$((config_count + 1))
+        fi
+        previous_arg=$arg
+    done < "/proc/$pid/cmdline"
+
+    [ "$config_count" -eq 1 ]
+}
+
 ########################################
 # 启动节点
 ########################################
@@ -99,10 +133,11 @@ start_node() {
 
     if [ -f "$pid_file" ]; then
         pid=$(cat "$pid_file")
-        if ps -p "$pid" > /dev/null 2>&1; then
+        if pid_matches_node "$pid" "$config_file"; then
             echo "$role $node_id already running (PID $pid)"
             return 0
         else
+            echo "Ignoring stale or unowned PID $pid for $role $node_id" >&2
             rm -f "$pid_file"
         fi
     fi
@@ -115,11 +150,13 @@ start_node() {
     echo "$pid" > "$pid_file"
     sleep 1
 
-    if ps -p "$pid" > /dev/null 2>&1; then
+    if pid_matches_node "$pid" "$config_file"; then
         echo "$role $node_id started (PID $pid)"
     else
-        echo "Error: $role $node_id exited during startup; check $log_file"
-        rm -f "$pid_file"
+        echo "Error: $role $node_id did not start as the expected process; check $log_file" >&2
+        if ! ps -p "$pid" > /dev/null 2>&1; then
+            rm -f "$pid_file"
+        fi
         return 1
     fi
 }
@@ -132,6 +169,7 @@ stop_node() {
     local node_id=$1
     local role=$2
     local node_dir="$CHAIN_DIR/$node_id"
+    local config_file="$node_dir/node.yaml"
     local pid_file="$node_dir/${role}.pid"
     local pid
     local waited=0
@@ -143,24 +181,32 @@ stop_node() {
 
     pid=$(cat "$pid_file")
 
-    if ps -p "$pid" > /dev/null 2>&1; then
+    if pid_matches_node "$pid" "$config_file"; then
         echo "Stopping $role $node_id (PID $pid)..."
 
-        kill -15 "$pid"
+        if ! kill -15 "$pid"; then
+            echo "Error: could not signal $role $node_id (PID $pid)" >&2
+            return 1
+        fi
 
-        while ps -p "$pid" > /dev/null 2>&1 && [ "$waited" -lt 30 ]; do
+        while pid_matches_node "$pid" "$config_file" && [ "$waited" -lt 30 ]; do
             sleep 1
             waited=$((waited + 1))
         done
 
-        if ps -p "$pid" > /dev/null 2>&1; then
+        if pid_matches_node "$pid" "$config_file"; then
             echo "Warning: $role $node_id did not stop after 30 seconds; sending SIGKILL"
-            kill -9 "$pid" 2>/dev/null
+            if ! kill -9 "$pid"; then
+                echo "Error: could not force-stop $role $node_id (PID $pid)" >&2
+                return 1
+            fi
+        elif ps -p "$pid" > /dev/null 2>&1; then
+            echo "Warning: PID $pid no longer matches $role $node_id; no further signal sent" >&2
         fi
 
         echo "$role $node_id stopped"
     else
-        echo "$role $node_id not running (stale PID $pid)"
+        echo "$role $node_id not running (stale or unowned PID $pid)"
     fi
 
     rm -f "$pid_file"
@@ -184,6 +230,7 @@ status_node() {
     local node_id=$1
     local role
     local node_dir="$CHAIN_DIR/$node_id"
+    local config_file="$node_dir/node.yaml"
     local pid_file
     local pid
     local port
@@ -197,7 +244,7 @@ status_node() {
     if [ -f "$pid_file" ]; then
         pid=$(cat "$pid_file")
 
-        if ps -p "$pid" > /dev/null 2>&1; then
+        if pid_matches_node "$pid" "$config_file"; then
             port=$(get_port "$node_id")
 
             echo "  $role: RUNNING (PID $pid, PORT $port)"
@@ -209,7 +256,7 @@ status_node() {
                 echo "  Health: FAIL ($http_code)"
             fi
         else
-            echo "  $role: STOPPED (stale PID)"
+            echo "  $role: STOPPED (stale or unowned PID)"
             rm -f "$pid_file"
         fi
     else
@@ -224,30 +271,42 @@ status_node() {
 ########################################
 
 start_all_nodes() {
+    local failed=0
+
     echo "Starting validators..."
     for i in "${VALIDATORS[@]}"; do
-        start_node "$i" "validator"
+        start_node "$i" "validator" || failed=1
     done
 
     echo "Starting fullnodes..."
     for i in "${FULLNODES[@]}"; do
-        start_node "$i" "fullnode"
+        start_node "$i" "fullnode" || failed=1
     done
 
+    if [ "$failed" -ne 0 ]; then
+        echo "Error: one or more nodes failed to start" >&2
+        return 1
+    fi
     echo "All nodes started."
 }
 
 stop_all_nodes() {
+    local failed=0
+
     echo "Stopping all nodes..."
 
     for i in "${VALIDATORS[@]}"; do
-        stop_node "$i" "validator"
+        stop_node "$i" "validator" || failed=1
     done
 
     for i in "${FULLNODES[@]}"; do
-        stop_node "$i" "fullnode"
+        stop_node "$i" "fullnode" || failed=1
     done
 
+    if [ "$failed" -ne 0 ]; then
+        echo "Error: one or more nodes failed to stop" >&2
+        return 1
+    fi
     echo "All nodes stopped."
 }
 
@@ -277,7 +336,7 @@ case "$1" in
         stop_all_nodes
         ;;
     restart)
-        stop_all_nodes
+        stop_all_nodes || exit 1
         sleep 2
         start_all_nodes
         ;;
