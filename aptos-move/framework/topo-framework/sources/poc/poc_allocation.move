@@ -39,7 +39,6 @@ module topo_framework::poc_allocation {
         deployment_mode: u8,
         activation_epoch: u64,
         retention_bps: u64,
-        max_relative_period: u64,
         power_period_in_epochs: u64,
         power_operator: address,
     ) {
@@ -59,7 +58,7 @@ module topo_framework::poc_allocation {
         // 同时拒绝遗留的原生 PVS 或孤立 PoC 计划，并保存当前 Epoch 的奖励率与费用配置。
         stake::prepare_poc_context(framework, epoch);
         poc_power_store::initialize(framework, epoch, retention_bps,
-            max_relative_period, power_period_in_epochs, power_operator);
+            power_period_in_epochs, power_operator);
         event::emit(PoCPrepared {
             baseline_epoch: epoch,
             baseline_source_period: poc_power_store::get_current_period(),
@@ -105,6 +104,15 @@ module topo_framework::poc_allocation {
     /// 治理可撤销未安装参数，用于修复换届预检失败；冻结时拒绝变更。
     public entry fun cancel_pending_power_params(framework: &signer) {
         poc_accounting::cancel_pending_power_params(framework);
+    }
+
+    /// 治理更新部署上限；验证失败会回滚，已安装的奖励上下文保持不变。
+    public fun update_deployment_limits(framework: &signer, limits: DeploymentLimits) {
+        let config = staking_config::get();
+        poc_accounting::update_deployment_limits(framework, limits,
+            staking_config::get_voting_power_increase_limit(&config),
+            staking_config::get_allow_validator_set_change(&config));
+        stake::validate_poc_deployment_limits();
     }
 
     /// 首次启用前可调整激活 Epoch，保留原有基线和已准备的用户分配。

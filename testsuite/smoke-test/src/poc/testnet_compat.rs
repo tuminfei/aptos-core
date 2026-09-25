@@ -85,7 +85,7 @@ async fn installed_at(client: &Client, version: u64) -> (ValidatorSet, RewardCon
         .await
         .unwrap()
         .into_inner();
-    assert_eq!(split, (configuration.epoch(), 3000, 3000, vec![]));
+    assert_eq!(split, (configuration.epoch(), 5000, 5000, vec![]));
     (validators, context)
 }
 

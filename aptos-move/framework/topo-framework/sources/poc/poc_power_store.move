@@ -4,11 +4,15 @@
 ///
 /// 原始算力查询沿用逐周期整数衰减。标准化单位 units 保持不变，换算算力时使用逐周期衰减的共同指数。
 /// 用户分配使用标准化单位，BFT 权重读取已安装的 ValidatorSet，治理仍按原生代币计权。
-/// 算力存储、标准化状态和周期时钟一次性初始化；创世写入和后续上传直接建立标准化版本。
+/// 算力存储和周期时钟一次性初始化；创世写入和后续上传直接建立标准化版本。
 ///
 /// 时钟只在成功安装 Epoch 时推进。算力周期和指数下标均从初始化时的周期 0 起算。
 /// 默认一个算力周期包含 60 个 Epoch：安装 Epoch 1 后倒计时为 59，安装 Epoch 61 才进入源周期 1。
-/// 部署显式提供保留比例、周期长度和支持期限；保留比例自初始化起固定。
+/// 部署显式提供保留比例和周期长度；保留比例自初始化起固定。
+///
+/// 协议经济规格：TOPO 最大发行总量 100 亿，年通胀率严格低于 10%。
+/// 1 TOPO = 10^8 Octa，总量上限为 10^18 Octa；算力和 units 不使用代币金额作为上限。
+/// PoC 不设协议失效期限；当前指数下界是定精度计算的数值边界，奖励容量证明见 poc_accounting。
 module topo_framework::poc_power_store {
     use std::error;
     use std::option::{Self, Option};
@@ -29,10 +33,12 @@ module topo_framework::poc_power_store {
     // 比例分母：10000 bps = 100%。
     const BPS_DENOMINATOR: u64 = 10000;
     const INDEX_SCALE: u128 = 18446744073709551616;
-    const UNIT_SCALE: u128 = 4294967296;
-    const MIN_PERIOD_INDEX: u128 = 1099511627776;
+    // 2^16 的 units 精度；周期 0 时 1 unit = 1/65536 power，小份额按万分比分配后向下取整。
+    // 与 poc_accounting 保持一致。配合 2^24 指数下界，u64 最大算力仍满足 units < 2^120。
+    const UNIT_SCALE: u128 = 65536;
+    const MIN_PERIOD_INDEX: u128 = 16777216;
     const MAX_VERSION_UNITS: u256 = 1329227995784915872903807060280344576;
-    const MAX_U64: u256 = 18446744073709551615;
+    const MAX_U64: u128 = 18446744073709551615;
 
     // ========== 错误码 ==========
 
@@ -69,16 +75,16 @@ module topo_framework::poc_power_store {
         users: Table<address, UserPowerInfo>,
         /// 未更新版本每周期的保留比例，初始化后固定。
         retention_bps_per_period: u64,
-        /// 创建存储时即建立标准化状态，所有算力版本均包含有效 units。
-        normalization: NormalizationState,
+        /// 逐算力周期取整后的共同指数；下一周期指数由此按需计算。
+        current_index: u128,
     }
 
     /// 框架地址下的算力周期时钟；每次成功安装 Epoch 只提交一次，源周期最多增加一。
-    /// last_epoch 从 0 记录实际提交次数，须等于链 Epoch 自初始化以来的增量。
+    /// last_epoch 记录最近成功安装的绝对链 Epoch，须与算力账本对齐。
     struct PeriodClock has key {
         /// 下次切换算力周期时加载的长度，不修改当前剩余倒计时。
         power_period_in_epochs: u64,
-        /// 时钟收到的 Epoch 提交次数，单调递增。
+        /// 最近成功安装的绝对链 Epoch，单调递增。
         last_epoch: u64,
         /// 当前算力周期编号，同时作为共同指数的下标。
         current_period: u64,
@@ -98,17 +104,6 @@ module topo_framework::poc_power_store {
     struct UserPowerInfo has copy, drop, store {
         older: Option<PowerVersion>,
         newer: Option<PowerVersion>,
-    }
-
-    /// 嵌入 PowerStore 的标准化状态；保留比例统一读取初始化后不可修改的存储配置。
-    struct NormalizationState has drop, store {
-        /// 初始化时的绝对链 Epoch；PoC 创世为 0。
-        baseline_epoch: u64,
-        /// 以基线为 0 的最大相对算力周期 P_MAX，不因调参或延后启用而重置。
-        max_relative_period: u64,
-        current_index: u128,
-        /// none 表示下一周期超出支持期限，不能再接受该周期版本。
-        next_index: Option<u128>,
     }
 
     #[event]
@@ -146,13 +141,12 @@ module topo_framework::poc_power_store {
 
     // ========== 初始化 ==========
 
-    /// 同时创建算力表、标准化状态和周期时钟，仅供 PoC 初始化流程调用。
-    /// 周期与时钟提交次数从 0 起算；保留比例、基准指数 I[0] 和支持期限自此固定。
+    /// 同时创建算力表和周期时钟，仅供 PoC 初始化流程调用。
+    /// 算力周期从 0 起算，时钟从当前绝对 Epoch 起算；保留比例和基准指数 I[0] 自此固定。
     public(friend) fun initialize(
         framework: &signer,
         epoch: u64,
         retention_bps: u64,
-        max_relative_period: u64,
         power_period_in_epochs: u64,
         power_operator: address,
     ) {
@@ -162,24 +156,19 @@ module topo_framework::poc_power_store {
             error::already_exists(ESTORE_ALREADY_INITIALIZED));
         assert!(epoch == poc_accounting::current_epoch(), error::invalid_state(ECLOCK_MISMATCH));
         assert_valid_power_period(power_period_in_epochs);
-        validate_index_horizon(retention_bps, max_relative_period);
-        // 初始 r 为周期长度，检查首个边界及再下一边界，避免创建无法推进的时钟。
-        assert!((epoch as u256) + 2 * (power_period_in_epochs as u256) + 1 <= MAX_U64,
+        assert_valid_retention_bps(retention_bps);
+        // 初始 r 为周期长度，检查首个边界及再下一边界；三个 u64 量之和由 u128 安全覆盖。
+        assert!((epoch as u128) + 2 * (power_period_in_epochs as u128) + 1 <= MAX_U64,
             error::invalid_argument(EINVALID_POWER_PERIOD));
         move_to(framework, PowerStore {
             operator: power_operator,
             users: table::new(),
             retention_bps_per_period: retention_bps,
-            normalization: NormalizationState {
-                baseline_epoch: epoch,
-                max_relative_period,
-                current_index: INDEX_SCALE,
-                next_index: supported_next_index(INDEX_SCALE, 0, max_relative_period, retention_bps),
-            },
+            current_index: INDEX_SCALE,
         });
         move_to(framework, PeriodClock {
             power_period_in_epochs,
-            last_epoch: 0,
+            last_epoch: epoch,
             current_period: 0,
             epochs_until_next_power_period: power_period_in_epochs,
         });
@@ -188,7 +177,7 @@ module topo_framework::poc_power_store {
     // ========== 配置更新 ==========
 
     /// 设置下一个算力周期的长度，保持当前倒计时和已确定的边界 B 不变。
-    /// 按链 Epoch 计算 B = E + r + 1，并以 u256 检查 B + 新长度是否超过 u64 上限。
+    /// 按链 Epoch 计算 B = E + r + 1，并以 u128 检查 B + 新长度是否超过 u64 上限。
     public entry fun set_power_period_in_epochs(
         topo_framework: &signer,
         power_period_in_epochs: u64,
@@ -201,8 +190,8 @@ module topo_framework::poc_power_store {
         assert_clock_alignment();
         let epoch = poc_accounting::current_epoch();
         let clock = borrow_global<PeriodClock>(@topo_framework);
-        let boundary = (epoch as u256) + (clock.epochs_until_next_power_period as u256) + 1;
-        assert!(boundary + (power_period_in_epochs as u256) <= MAX_U64,
+        let boundary = (epoch as u128) + (clock.epochs_until_next_power_period as u128) + 1;
+        assert!(boundary + (power_period_in_epochs as u128) <= MAX_U64,
             error::invalid_argument(EINVALID_POWER_PERIOD));
         borrow_global_mut<PeriodClock>(@topo_framework).power_period_in_epochs =
             power_period_in_epochs;
@@ -253,13 +242,14 @@ module topo_framework::poc_power_store {
         let current_period = borrow_global<PeriodClock>(@topo_framework).current_period;
         assert_power_update_authority(borrow_global<PowerStore>(@topo_framework), signer::address_of(operator));
         assert!(
-            (effective_period as u256) == (current_period as u256) + 1,
+            (effective_period as u128) == (current_period as u128) + 1,
             error::invalid_argument(EINVALID_EFFECTIVE_PERIOD),
         );
         assert_clock_alignment();
         assert!(users.length() <= poc_accounting::max_upload_users(), error::invalid_argument(EUPLOAD_LIMIT));
-        assert!(borrow_global<PowerStore>(@topo_framework).normalization.next_index.is_some(),
-            error::invalid_state(EPOWER_HORIZON));
+        let next_index = next_index_at(borrow_global<PowerStore>(@topo_framework), current_period);
+        assert!(next_index.is_some(), error::invalid_state(EPOWER_HORIZON));
+        let index = *next_index.borrow();
 
         let length = users.length();
         let i = 0;
@@ -268,7 +258,7 @@ module topo_framework::poc_power_store {
             let power = *powers.borrow(i);
             if (will_insert_version(borrow_global<PowerStore>(@topo_framework), user, effective_period, power)) {
                 let store = borrow_global<PowerStore>(@topo_framework);
-                let version = normalized_version(effective_period, power, *store.normalization.next_index.borrow());
+                let version = normalized_version(effective_period, power, index);
                 let older = if (store.users.contains(user)) {
                     store.users.borrow(user).newer
                 } else { option::none() };
@@ -289,7 +279,7 @@ module topo_framework::poc_power_store {
 
 
     /// 写入源周期 0 的初始原始算力，仅框架可在真实创世阶段调用。
-    /// 时钟提交次数与源周期必须均为零；同步写入标准化版本与分配。
+    /// 创世 Epoch 与源周期必须均为零；同步写入标准化版本与分配。
     public entry fun set_genesis_committed_power(
         topo_framework: &signer,
         user: address,
@@ -310,7 +300,7 @@ module topo_framework::poc_power_store {
     }
 
     #[test_only]
-    /// 仅供旧框架测试在创世结束后构造验证者数据，不进入生产字节码。
+    /// 仅供测试在创世结束后构造初始算力数据，不进入生产字节码。
     public fun set_committed_power_for_test(
         topo_framework: &signer,
         user: address,
@@ -331,7 +321,7 @@ module topo_framework::poc_power_store {
         let (valid, _, _) = preview_next_period();
         assert!(valid, error::invalid_state(EPOWER_HORIZON));
         let clock = borrow_global_mut<PeriodClock>(@topo_framework);
-        assert!((clock.last_epoch as u256) + 1 <= MAX_U64, error::invalid_state(EPOWER_HORIZON));
+        assert!((clock.last_epoch as u128) < MAX_U64, error::invalid_state(EPOWER_HORIZON));
         clock.last_epoch += 1;
         if (clock.epochs_until_next_power_period == 0) {
             let previous_period = clock.current_period;
@@ -339,12 +329,8 @@ module topo_framework::poc_power_store {
             clock.current_period = next_period;
             clock.epochs_until_next_power_period = clock.power_period_in_epochs;
             let store = borrow_global_mut<PowerStore>(@topo_framework);
-            let retention_bps = store.retention_bps_per_period;
-            let normalized = &mut store.normalization;
-            normalized.current_index = *normalized.next_index.borrow();
-            normalized.next_index = supported_next_index(
-                normalized.current_index, next_period, normalized.max_relative_period, retention_bps,
-            );
+            let next_index = next_index_at(store, previous_period);
+            store.current_index = *next_index.borrow();
             event::emit(PowerPeriodCommittedEvent {
                 previous_period,
                 current_period: next_period,
@@ -355,7 +341,7 @@ module topo_framework::poc_power_store {
     }
 
     #[view]
-    /// 算力存储存在即表示标准化状态和时钟已初始化，查询不创建资源。
+    /// 算力存储存在即表示标准化字段和时钟已初始化，查询不创建资源。
     public fun is_initialized(): bool { exists<PowerStore>(@topo_framework) }
 
     #[view]
@@ -365,8 +351,9 @@ module topo_framework::poc_power_store {
             && borrow_global<PowerStore>(@topo_framework).users.contains(user)
     }
 
-    /// 逐算力周期计算并检查 P_MAX 范围内的指数，供准备入口、清单工具和数值测试共用。
-    public fun validate_index_horizon(retention_bps: u64, max_relative_period: u64) {
+    #[test_only]
+    /// 逐算力周期计算并检查给定范围内的指数，供数值边界测试使用。
+    public fun validate_index_horizon(retention_bps: u64, periods_to_check: u64) {
         assert_valid_retention_bps(retention_bps);
         // 保留比例为 100% 时无需逐期重算，周期上界由 u64 类型约束。
         if (retention_bps == BPS_DENOMINATOR) return;
@@ -375,9 +362,9 @@ module topo_framework::poc_power_store {
         while ({
             spec {
                 invariant MIN_PERIOD_INDEX <= index && index <= INDEX_SCALE;
-                invariant period <= max_relative_period;
+                invariant period <= periods_to_check;
             };
-            period < max_relative_period
+            period < periods_to_check
         }) {
             index = decayed_index(index, retention_bps);
             assert!(index >= MIN_PERIOD_INDEX, error::invalid_argument(EPOWER_HORIZON));
@@ -386,12 +373,12 @@ module topo_framework::poc_power_store {
     }
 
     #[view]
-    /// 返回下一算力周期开始时的链 Epoch：B = E + r + 1；先检查计数对齐，再以 u256 检查上界。
+    /// 返回下一算力周期开始时的链 Epoch：B = E + r + 1；先检查计数对齐，再以 u128 检查上界。
     public fun next_boundary_epoch(): u64 {
         assert_clock_alignment();
         let clock = borrow_global<PeriodClock>(@topo_framework);
-        let boundary = (poc_accounting::current_epoch() as u256)
-            + (clock.epochs_until_next_power_period as u256) + 1;
+        let boundary = (poc_accounting::current_epoch() as u128)
+            + (clock.epochs_until_next_power_period as u128) + 1;
         assert!(boundary <= MAX_U64, error::invalid_state(EPOWER_HORIZON));
         boundary as u64
     }
@@ -402,40 +389,38 @@ module topo_framework::poc_power_store {
     public fun preview_next_period(): (bool, u64, u128) {
         assert_clock_alignment();
         let clock = borrow_global<PeriodClock>(@topo_framework);
-        let normalized = &borrow_global<PowerStore>(@topo_framework).normalization;
-        let target_epoch = (poc_accounting::current_epoch() as u256) + 1;
+        let store = borrow_global<PowerStore>(@topo_framework);
+        let target_epoch = (poc_accounting::current_epoch() as u128) + 1;
         let period = clock.current_period;
-        let index = normalized.current_index;
+        let index = store.current_index;
         let countdown = clock.epochs_until_next_power_period;
         if (countdown == 0) {
-            if (normalized.next_index.is_none() || (period as u256) + 1 > MAX_U64) {
+            let next_index = next_index_at(store, period);
+            if (next_index.is_none()) {
                 return (false, period, index)
             };
             period += 1;
-            index = *normalized.next_index.borrow();
+            index = *next_index.borrow();
             countdown = clock.power_period_in_epochs;
         };
         assert!(countdown > 0, error::invalid_state(ECLOCK_MISMATCH));
         countdown -= 1;
-        let boundary = target_epoch + (countdown as u256) + 1;
+        let boundary = target_epoch + (countdown as u128) + 1;
         let valid = target_epoch <= MAX_U64
-            && (clock.last_epoch as u256) + 1 <= MAX_U64
+            && (clock.last_epoch as u128) < MAX_U64
             && boundary <= MAX_U64
-            && period <= normalized.max_relative_period
             && index >= MIN_PERIOD_INDEX;
         (valid, period, index)
     }
 
     #[view]
-    /// 依次返回初始化时的链 Epoch 和当前算力周期；
-    /// 随后为绝对边界 B、当前指数、可选下一指数及 P_MAX。
-    public fun get_normalization_clock(): (u64, u64, u64, u128, Option<u128>, u64) {
+    /// 返回当前算力周期、绝对边界 B、当前指数及可选下一指数。
+    public fun get_normalization_clock(): (u64, u64, u128, Option<u128>) {
         assert_clock_alignment();
         let current_period = get_current_period();
         let boundary = next_boundary_epoch();
-        let normalized = &borrow_global<PowerStore>(@topo_framework).normalization;
-        (normalized.baseline_epoch, current_period, boundary,
-            normalized.current_index, normalized.next_index, normalized.max_relative_period)
+        let store = borrow_global<PowerStore>(@topo_framework);
+        (current_period, boundary, store.current_index, next_index_at(store, current_period))
     }
 
     #[view]
@@ -450,27 +435,32 @@ module topo_framework::poc_power_store {
         (current_units, next_units, period, next_boundary_epoch())
     }
 
-    /// 检查时钟提交次数与链 Epoch 自初始化以来的增量是否相同。
+    /// 检查时钟最近安装的绝对 Epoch 与算力账本是否相同。
     fun assert_clock_alignment() {
         assert_store_exists();
-        let normalized = &borrow_global<PowerStore>(@topo_framework).normalization;
         let clock = borrow_global<PeriodClock>(@topo_framework);
-        let epoch = poc_accounting::current_epoch();
-        assert!(epoch >= normalized.baseline_epoch,
-            error::invalid_state(ECLOCK_MISMATCH));
-        assert!(clock.last_epoch == epoch - normalized.baseline_epoch,
+        assert!(clock.last_epoch == poc_accounting::current_epoch(),
             error::invalid_state(ECLOCK_MISMATCH));
     }
 
-    /// 用 u256 计算下一个算力周期的指数，除法向下取整。
+    /// index <= 2^64、retention_bps <= 10000，乘积小于 2^78；使用 u128 保持逐期向下取整。
     fun decayed_index(index: u128, retention_bps: u64): u128 {
-        (((index as u256) * (retention_bps as u256)) / (BPS_DENOMINATOR as u256)) as u128
+        index * (retention_bps as u128) / (BPS_DENOMINATOR as u128)
     }
 
-    /// 同时约束相对周期期限和指数下界；不支持下一周期时返回 none。
-    fun supported_next_index(index: u128, period: u64, max_period: u64, retention_bps: u64): Option<u128> {
+    /// 下一周期编号必须可表示，且指数不低于数值下界；否则返回 none。
+    fun supported_next_index(index: u128, period: u64, retention_bps: u64): Option<u128> {
         let next = decayed_index(index, retention_bps);
-        if (period < max_period && next >= MIN_PERIOD_INDEX) option::some(next) else option::none()
+        if ((period as u128) < MAX_U64 && next >= MIN_PERIOD_INDEX) {
+            option::some(next)
+        } else {
+            option::none()
+        }
+    }
+
+    /// 下一周期是否受支持由当前指数、周期和保留比例唯一确定。
+    fun next_index_at(store: &PowerStore, period: u64): Option<u128> {
+        supported_next_index(store.current_index, period, store.retention_bps_per_period)
     }
 
     /// 按版本生效周期的指数计算标准化单位 units；确认严格小于 2^120 后，再转为 u128 保存。
@@ -487,7 +477,7 @@ module topo_framework::poc_power_store {
         let current = if (version.is_some()) version.borrow().units else 0;
         let next = current;
         if (info.newer.is_some() && info.newer.borrow().effective_period > period) {
-            assert!((info.newer.borrow().effective_period as u256) == (period as u256) + 1,
+            assert!((info.newer.borrow().effective_period as u128) == (period as u128) + 1,
                 error::invalid_state(ECLOCK_MISMATCH));
             next = info.newer.borrow().units;
         };
@@ -503,11 +493,6 @@ module topo_framework::poc_power_store {
     }
 
     // ========== 原始算力查询 ==========
-
-    #[view]
-    public fun get_user_power(user: address): u64 {
-        get_user_committed_power(user)
-    }
 
     #[view]
     public fun get_user_committed_power(user: address): u64 {
@@ -553,23 +538,11 @@ module topo_framework::poc_power_store {
     public fun get_user_committed_powers(
         users: vector<address>,
     ): vector<u64> {
-        let powers = vector[];
         if (!exists<PowerStore>(@topo_framework) || !exists<PeriodClock>(@topo_framework)) {
-            return powers
+            return vector[]
         };
-        let clock = borrow_global<PeriodClock>(@topo_framework);
-        let store = borrow_global<PowerStore>(@topo_framework);
-        let len = users.length();
-        let i = 0;
-        while (i < len) {
-            powers.push_back(get_user_power_for_period_internal(
-                store,
-                *users.borrow(i),
-                clock.current_period,
-            ));
-            i += 1;
-        };
-        powers
+        let period = borrow_global<PeriodClock>(@topo_framework).current_period;
+        get_user_powers_for_period(users, period)
     }
 
     #[view]
@@ -663,11 +636,6 @@ module topo_framework::poc_power_store {
             newer_powers,
             committed_powers,
         )
-    }
-
-    #[view]
-    public fun get_user_decayed_power(user: address): u64 {
-        get_user_committed_power(user)
     }
 
     #[view]
@@ -875,9 +843,9 @@ module topo_framework::poc_power_store {
     /// 测试共用生产初始化校验，参数均由调用者显式传入。
     public fun initialize_for_test(
         framework: &signer, epoch: u64, retention_bps: u64,
-        max_relative_period: u64, period_length: u64, operator: address,
+        period_length: u64, operator: address,
     ) {
-        initialize(framework, epoch, retention_bps, max_relative_period, period_length, operator)
+        initialize(framework, epoch, retention_bps, period_length, operator)
     }
 
     #[test_only]

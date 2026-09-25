@@ -5,12 +5,26 @@ module topo_framework::poc_power_version_tests {
     use topo_framework::poc_power_store;
     use topo_framework::poc_power_store_tests;
 
-    const UNIT_SCALE: u128 = 4294967296;
+    const UNIT_SCALE: u128 = 65536;
     const INDEX_SCALE: u128 = 18446744073709551616;
+
+    #[test(framework = @topo_framework, user = @0x123)]
+    fun poc_minimum_power_one_basis_point_rounds_down(framework: signer, user: signer) {
+        poc_power_store_tests::initialize(&framework, 0, 10000, 60);
+        poc_power_store::set_genesis_committed_power(&framework, @0x123, 1);
+        poc_accounting::enable_pool_for_test(&framework, @0xa);
+        poc_power_store_tests::next_epoch();
+        poc_allocation::set_allocations(&user, vector[@0xa], vector[1]);
+        // 2^16 精度下，最小整数 power 的 1 bps 份额从 6.5536 units 向下取整为 6。
+        assert!(poc_accounting::preview_pool_units(@0xa, 2) == 6, 0);
+        poc_power_store_tests::next_epoch();
+        let (units, _, amount, remainder) = poc_accounting::get_position(@0x123, @0xa);
+        assert!(units == 6 && amount == 0 && remainder == 0, 1);
+    }
 
     /// 初始化完整存储，再直接写入周期 0 的算力 100 和周期 1 的 200。
     fun seed(framework: &signer, retention: u64) {
-        poc_power_store_tests::initialize(framework, 0, retention, 1, 20);
+        poc_power_store_tests::initialize(framework, 0, retention, 1);
         poc_power_store::set_genesis_committed_power(framework, @0x123, 100);
         poc_power_store::stage_batch_update(framework, 1, vector[@0x123], vector[200]);
         poc_power_store_tests::next_epoch();
@@ -74,7 +88,7 @@ module topo_framework::poc_power_version_tests {
 
     #[test(framework = @topo_framework, alice = @0x123, bob = @0x456)]
     fun poc_upload_allocation_order_independence(framework: signer, alice: signer, bob: signer) {
-        poc_power_store_tests::initialize(&framework, 0, 10000, 60, 20);
+        poc_power_store_tests::initialize(&framework, 0, 10000, 60);
         poc_power_store::set_genesis_committed_power(&framework, @0x123, 100);
         poc_power_store::set_genesis_committed_power(&framework, @0x456, 100);
         poc_power_store_tests::next_epoch();
@@ -107,7 +121,7 @@ module topo_framework::poc_power_version_tests {
 
     #[test(framework = @topo_framework, user = @0x123)]
     fun poc_same_boundary_cancels_zero_change(framework: signer, user: signer) {
-        poc_power_store_tests::initialize(&framework, 0, 10000, 2, 20);
+        poc_power_store_tests::initialize(&framework, 0, 10000, 2);
         poc_power_store::set_genesis_committed_power(&framework, @0x123, 100);
         poc_power_store_tests::next_epoch();
         poc_accounting::enable_pool_for_test(&framework, @0xa);
@@ -124,7 +138,7 @@ module topo_framework::poc_power_version_tests {
 
     #[test(framework = @topo_framework, user = @0x123)]
     fun poc_allocation_before_first_upload(framework: signer, user: signer) {
-        poc_power_store_tests::initialize(&framework, 0, 10000, 1, 20);
+        poc_power_store_tests::initialize(&framework, 0, 10000, 1);
         poc_accounting::enable_pool_for_test(&framework, @0xa);
         poc_allocation::set_allocations(&user, vector[@0xa], vector[10000]);
         assert!(!poc_power_store::is_user_normalized(@0x123), 1);
@@ -141,7 +155,7 @@ module topo_framework::poc_power_version_tests {
 
     #[test(framework = @topo_framework, user = @0x123)]
     fun poc_genesis_write_syncs_allocations_and_preserves_future(framework: signer, user: signer) {
-        poc_power_store_tests::initialize(&framework, 0, 10000, 1, 20);
+        poc_power_store_tests::initialize(&framework, 0, 10000, 1);
         poc_power_store::set_genesis_committed_power(&framework, @0x123, 0);
         assert!(!poc_power_store::is_user_normalized(@0x123), 1);
         poc_accounting::enable_pool_for_test(&framework, @0xa);
@@ -153,7 +167,7 @@ module topo_framework::poc_power_version_tests {
         poc_power_store::set_genesis_committed_power(&framework, @0x123, 50);
         let (current, next, _, _) = poc_power_store::get_accounting_snapshot(@0x123);
         assert!(current == 50 * UNIT_SCALE && next == 200 * UNIT_SCALE, 3);
-        assert!(poc_power_store::get_user_power(@0x123) == 50, 4);
+        assert!(poc_power_store::get_user_committed_power(@0x123) == 50, 4);
         poc_power_store_tests::next_epoch();
         let (units, _, _, _) = poc_accounting::get_position(@0x123, @0xa);
         assert!(units == 50 * UNIT_SCALE, 5);
@@ -180,30 +194,30 @@ module topo_framework::poc_power_version_tests {
         assert!(poc_power_store::get_user_power_for_period(@0x123, 0) == 0, 4);
         poc_power_store_tests::next_epoch();
         let (current, next, _, _) = poc_power_store::get_accounting_snapshot(@0x123);
-        assert!(current == 0 && next == 0 && poc_power_store::get_user_power(@0x123) == 0, 5);
+        assert!(current == 0 && next == 0 && poc_power_store::get_user_committed_power(@0x123) == 0, 5);
         poc_power_store::stage_batch_update(&framework, 3, vector[@0x123], vector[300]);
         let (current, next, _, _) = poc_power_store::get_accounting_snapshot(@0x123);
         assert!(current == 0 && next > 0, 6);
-        assert!(poc_power_store::get_user_power(@0x123) == 0
+        assert!(poc_power_store::get_user_committed_power(@0x123) == 0
             && poc_power_store::get_user_power_for_period(@0x123, 3) == 300, 7);
     }
 
     #[test(framework = @topo_framework)]
     fun poc_shared_version_preserves_raw_integer_decay(framework: signer) {
-        poc_power_store_tests::initialize(&framework, 0, 9000, 1, 20);
+        poc_power_store_tests::initialize(&framework, 0, 9000, 1);
         poc_power_store::set_genesis_committed_power(&framework, @0x123, 100);
         poc_power_store_tests::next_epoch();
         poc_power_store_tests::next_epoch();
         let (units, next_units, period, _) = poc_power_store::get_accounting_snapshot(@0x123);
-        let (_, _, _, index, _, _) = poc_power_store::get_normalization_clock();
+        let (_, _, index, _) = poc_power_store::get_normalization_clock();
         assert!(period == 1 && units == 100 * UNIT_SCALE && next_units == units, 1);
         // 同一版本的原始查询逐周期整数衰减；池算力仍使用共同指数，保留各自的取整规则。
-        assert!(poc_power_store::get_user_power(@0x123) == 90, 2);
+        assert!(poc_power_store::get_user_committed_power(@0x123) == 90, 2);
         assert!(poc_accounting::pool_power(units, index) == 89, 3);
         poc_power_store_tests::next_epoch();
-        assert!(poc_power_store::get_user_power(@0x123) == 81, 4);
+        assert!(poc_power_store::get_user_committed_power(@0x123) == 81, 4);
         poc_power_store_tests::next_epoch();
-        assert!(poc_power_store::get_user_power(@0x123) == 72, 5);
+        assert!(poc_power_store::get_user_committed_power(@0x123) == 72, 5);
         let (current, next, _, _) = poc_power_store::get_accounting_snapshot(@0x123);
         assert!(current == units && next == units, 6);
     }

@@ -16,7 +16,7 @@ use crate::smoke_test_environment::SwarmBuilder;
 use aptos_api_types::UserTransaction;
 use aptos_cached_packages::aptos_stdlib;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::Client;
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -35,7 +35,7 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use tokio::time::{sleep, timeout, Instant};
 
 const RAW_POWER: u64 = 100;
-const UNITS: u128 = (RAW_POWER as u128) << 32;
+const UNITS: u128 = (RAW_POWER as u128) << 16;
 const INDEX_SCALE: u128 = 1 << 64;
 const LOCKUP_SECS: u64 = 30;
 const NOMINAL_EPOCH_SECS: u64 = 5;
@@ -179,26 +179,15 @@ async fn poc_fixture() -> Fixture {
                     max_power: 1000,
                     min_validators: 4,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 4,
-                    validator_limit: 5,
-                    max_reward_base_octa: 1000,
-                    rate_max_num: 1,
-                    rate_max_den: 1,
-                    fee_max: 10,
-                    reward_epoch_limit: 1000,
-                },
+
                 deployment_mode: DeploymentMode::Open,
                 retention_bps: 9995,
-                max_relative_period: 100,
                 initial_raw_power: RAW_POWER,
-                native_reward_bps: 0,
             }));
         }))
         .build()
         .await;
+    super::configure_fixture(&swarm, [4, 4, 4, 5, 10], 0).await;
     let mut pools = swarm
         .validators()
         .map(|node| node.peer_id())
@@ -334,12 +323,10 @@ async fn poc_assert_clock(f: &Fixture, version: u64, epoch: u64) {
         )
         .await,
         vec![
-            json!("0"),
             json!(period.to_string()),
             json!(boundary.to_string()),
             json!(index.to_string()),
-            json!({"vec": [(index * 9995 / 10000).to_string()]}),
-            json!("100")
+            json!({"vec": [(index * 9995 / 10000).to_string()]})
         ]
     );
     let clock = poc_resource(
@@ -480,7 +467,7 @@ async fn poc_assert_preview(f: &Fixture, version: u64, cutoff: u64, target_bond:
     let current = installed_at(&f.client, version).await;
     let next_epoch = current.epoch + 1;
     let (period, index, _) = poc_period_index(next_epoch);
-    let raw_power = (UNITS * index / ((1u128 << 32) * INDEX_SCALE)) as u64;
+    let raw_power = (UNITS * index / ((1u128 << 16) * INDEX_SCALE)) as u64;
     let preview = poc_preview(f, version, cutoff).await;
     assert_eq!(integer(&preview["epoch"]), next_epoch as u128);
     assert_eq!(integer(&preview["cutoff_secs"]), cutoff as u128);

@@ -2475,7 +2475,7 @@ async fn assert_batch_settlement(
         let poc = total - native;
         let old_pool = pool_at(&f.client, pool, at - 1).await;
         let new_pool = pool_at(&f.client, pool, at).await;
-        let units = 10u128 << 32;
+        let units = 10u128 << 16;
         assert_eq!(integer(&old_pool[0]) as u128, units);
         assert_eq!(integer(&new_pool[0]) as u128, units);
         assert_eq!(integer(&old_pool[2]), 100);

@@ -137,12 +137,8 @@ module topo_framework::poc_registry {
         custody_address_to_admin: Table<address, address>,
         /// Reverse lookup: equity token address → admin address
         equity_token_to_admin: Table<address, address>,
-    }
-
-    /// Separate resource so existing Registry values remain compatible after an upgrade.
-    /// Created lazily by governance; an approval does not reserve any identity.
-    struct IdentityApprovals has key {
-        by_admin: Table<address, AppIdentity>,
+        /// One-use governance approvals by admin; an approval does not reserve any identity.
+        identity_approvals: Table<address, AppIdentity>,
     }
 
     struct AppIdentity has drop, store {
@@ -256,20 +252,19 @@ module topo_framework::poc_registry {
     /// Called by the genesis module to initialize the registry at chain genesis.
     /// Only callable by friend modules (genesis).
     friend fun initialize(topo_framework: &signer) {
-        initialize_registry(topo_framework);
+        system_addresses::assert_topo_framework(topo_framework);
+        move_to(topo_framework, Registry {
+            apps: table::new(),
+            app_address_to_admin: table::new(),
+            custody_address_to_admin: table::new(),
+            equity_token_to_admin: table::new(),
+            identity_approvals: table::new(),
+        });
     }
 
-    /// 仅 @topo_framework 可初始化应用注册表；资源已存在时直接返回。
-    public entry fun initialize_registry(topo_framework: &signer) {
-        system_addresses::assert_topo_framework(topo_framework);
-        if (!exists<Registry>(@topo_framework)) {
-            move_to(topo_framework, Registry {
-                apps: table::new(),
-                app_address_to_admin: table::new(),
-                custody_address_to_admin: table::new(),
-                equity_token_to_admin: table::new(),
-            });
-        };
+    #[test_only]
+    public fun initialize_for_test(topo_framework: &signer) {
+        initialize(topo_framework);
     }
 
     // ========== Identity Authorization ==========
@@ -285,10 +280,7 @@ module topo_framework::poc_registry {
         custody_address: address,
     ) {
         system_addresses::assert_topo_framework(topo_framework);
-        if (!exists<IdentityApprovals>(@topo_framework)) {
-            move_to(topo_framework, IdentityApprovals { by_admin: table::new() });
-        };
-        borrow_global_mut<IdentityApprovals>(@topo_framework).by_admin.upsert(app_admin, AppIdentity {
+        borrow_global_mut<Registry>(@topo_framework).identity_approvals.upsert(app_admin, AppIdentity {
             app_address,
             equity_token_address,
             custody_address,
@@ -873,8 +865,7 @@ module topo_framework::poc_registry {
     // ========== Internal Helpers ==========
 
     fun clear_identity_approval(app_admin: address) {
-        if (!exists<IdentityApprovals>(@topo_framework)) return;
-        let approvals = &mut borrow_global_mut<IdentityApprovals>(@topo_framework).by_admin;
+        let approvals = &mut borrow_global_mut<Registry>(@topo_framework).identity_approvals;
         if (approvals.contains(app_admin)) {
             approvals.remove(app_admin);
             event::emit(AppIdentityApprovalRevokedEvent { app_admin });
@@ -903,8 +894,7 @@ module topo_framework::poc_registry {
         equity_token_address: address,
         custody_address: address,
     ) {
-        assert!(exists<IdentityApprovals>(@topo_framework), error::permission_denied(EIDENTITY_NOT_APPROVED));
-        let approvals = &mut borrow_global_mut<IdentityApprovals>(@topo_framework).by_admin;
+        let approvals = &mut borrow_global_mut<Registry>(@topo_framework).identity_approvals;
         assert!(approvals.contains(app_admin), error::permission_denied(EIDENTITY_NOT_APPROVED));
         let approved = approvals.remove(app_admin);
         assert!(approved.app_address == app_address

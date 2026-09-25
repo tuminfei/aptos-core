@@ -39,7 +39,7 @@ const DRAIN_CLOSINGS: u64 = 2;
 const OCTA: u64 = 100_000_000;
 const INITIAL_BOND: u64 = 1000 * OCTA;
 const INITIAL_RAW_POWER: u64 = 400;
-const UNIT_SCALE: u128 = 1 << 32;
+const UNIT_SCALE: u128 = 1 << 16;
 const INDEX_SCALE: u128 = 1 << 64;
 const NATIVE_REWARD_BPS: u64 = 3000;
 const COMMISSION_BPS: u64 = 3735;
@@ -150,16 +150,6 @@ struct RunConfig {
     fill_fee_limit: bool,
     inject_failures: bool,
     enable_rate: bool,
-}
-
-impl RunConfig {
-    fn reward_epoch_limit(self) -> u64 {
-        PREPARATION_CLOSINGS + self.rounds + DRAIN_CLOSINGS + 1
-    }
-
-    fn max_relative_period(self) -> u64 {
-        100.max(self.rounds / self.period_epochs + 4)
-    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -386,11 +376,9 @@ struct NetworkModel {
     current_period: u64,
     period_index: u128,
     first_poc_epoch: u64,
-    reward_epoch_limit: u64,
     first_closing_epoch: u64,
     last_closing_epoch: u64,
     max_checkpoints: u64,
-    max_relative_period: u64,
     split_totals: BTreeMap<u64, (u64, u64)>,
 }
 
@@ -633,7 +621,7 @@ async fn native_stake(client: &Client, pool: AccountAddress, version: u64) -> [u
     std::array::from_fn(|index| integer(&values[index]) as u64)
 }
 
-async fn clock_at(client: &Client, version: u64) -> (u64, u64, u64, u128, Option<u128>, u64) {
+async fn clock_at(client: &Client, version: u64) -> (u64, u64, u128, Option<u128>) {
     let values = view(
         client,
         "0x1::poc_power_store::get_normalization_clock",
@@ -641,25 +629,17 @@ async fn clock_at(client: &Client, version: u64) -> (u64, u64, u64, u128, Option
         version,
     )
     .await;
-    let next = values[4]["vec"].as_array().unwrap().first().map(integer);
+    let next = values[3]["vec"].as_array().unwrap().first().map(integer);
     (
         integer(&values[0]) as u64,
         integer(&values[1]) as u64,
-        integer(&values[2]) as u64,
-        integer(&values[3]),
+        integer(&values[2]),
         next,
-        integer(&values[5]) as u64,
     )
 }
 
 impl NetworkModel {
-    async fn new(
-        f: &Fixture,
-        version: u64,
-        first_poc_epoch: u64,
-        reward_epoch_limit: u64,
-        max_relative_period: u64,
-    ) -> Self {
+    async fn new(f: &Fixture, version: u64, first_poc_epoch: u64) -> Self {
         let installed = installed_at(&f.client, version).await;
         let mut backgrounds = BTreeMap::new();
         let units = INITIAL_RAW_POWER as u128 * UNIT_SCALE;
@@ -713,11 +693,9 @@ impl NetworkModel {
             current_period: 0,
             period_index: INDEX_SCALE,
             first_poc_epoch,
-            reward_epoch_limit,
             first_closing_epoch: u64::MAX,
             last_closing_epoch: 0,
             max_checkpoints: 0,
-            max_relative_period,
             split_totals: BTreeMap::new(),
         };
         assert_eq!(f.setup_closings.len(), 2);
@@ -1163,12 +1141,10 @@ async fn close_epoch(
     let target_period = expected_period(after.epoch, period_epochs);
     let target_index = period_index(target_period);
     let clock = clock_at(&f.client, version).await;
-    assert_eq!(clock.0, 0);
-    assert_eq!(clock.1, target_period);
-    assert_eq!(clock.2, expected_next_boundary(after.epoch, period_epochs));
-    assert_eq!(clock.3, target_index);
-    assert_eq!(clock.4, Some(period_index(target_period + 1)));
-    assert_eq!(clock.5, model.max_relative_period);
+    assert_eq!(clock.0, target_period);
+    assert_eq!(clock.1, expected_next_boundary(after.epoch, period_epochs));
+    assert_eq!(clock.2, target_index);
+    assert_eq!(clock.3, Some(period_index(target_period + 1)));
     assert_eq!(
         view(
             &f.client,
@@ -1629,13 +1605,11 @@ async fn prepare_run(config: RunConfig) -> PreparedRun {
     Lazy::force(&CHURN_GOVERNANCE);
     let started = Instant::now();
     println!(
-        "PoC reward churn seed={:#x}: rounds={}, users={}, period_epochs={}, max_relative_period={}, H={}, retention={}, native_bps={}, commission_bps={}, fee_limit={}, lockup_secs={}, rate={}, preparation closes through E60, drain={}",
+        "PoC reward churn seed={:#x}: rounds={}, users={}, period_epochs={}, retention={}, native_bps={}, commission_bps={}, fee_limit={}, lockup_secs={}, rate={}, preparation closes through E60, drain={}",
         config.seed,
         config.rounds,
         config.users,
         config.period_epochs,
-        config.max_relative_period(),
-        config.reward_epoch_limit(),
         RETENTION_BPS,
         NATIVE_REWARD_BPS,
         COMMISSION_BPS,
@@ -1644,14 +1618,8 @@ async fn prepare_run(config: RunConfig) -> PreparedRun {
         if config.enable_rate { "1%" } else { "0" },
         DRAIN_CLOSINGS,
     );
-    let (fixture, initial_version) = churn_fixture(
-        NATIVE_REWARD_BPS,
-        COMMISSION_BPS,
-        config.reward_epoch_limit(),
-        RETENTION_BPS,
-        config.max_relative_period(),
-    )
-    .await;
+    let (fixture, initial_version) =
+        churn_fixture(NATIVE_REWARD_BPS, COMMISSION_BPS, RETENTION_BPS).await;
     let accounting = resource(
         &fixture.client,
         CORE_CODE_ADDRESS,
@@ -1666,18 +1634,7 @@ async fn prepare_run(config: RunConfig) -> PreparedRun {
             .first()
             .expect("PoC first epoch must be installed"),
     ) as u64;
-    assert_eq!(
-        integer(&accounting["config"]["limits"]["reward_epoch_limit"]),
-        config.reward_epoch_limit() as u128
-    );
-    let mut model = NetworkModel::new(
-        &fixture,
-        initial_version,
-        first_poc_epoch,
-        config.reward_epoch_limit(),
-        config.max_relative_period(),
-    )
-    .await;
+    let mut model = NetworkModel::new(&fixture, initial_version, first_poc_epoch).await;
     let mut power = PowerBook {
         users: BTreeMap::from([(fixture.power_user.address(), PowerUserModel {
             address: fixture.power_user.address(),
@@ -1719,7 +1676,7 @@ async fn prepare_run(config: RunConfig) -> PreparedRun {
     assert!(events(&configured, "::stake::PoCEpochInstalled").is_empty());
     let configured_version = configured.info.version.0;
     assert_eq!(
-        clock_at(&fixture.client, configured_version).await.2,
+        clock_at(&fixture.client, configured_version).await.1,
         61,
         "changing the next period length must preserve the already fixed E61 boundary"
     );
@@ -1834,7 +1791,7 @@ async fn prepare_run(config: RunConfig) -> PreparedRun {
         false,
     )
     .await;
-    assert_eq!(model.current_epoch, 61);
+    assert_eq!(model.current_epoch, PREPARATION_CLOSINGS + 1);
     assert_eq!(model.current_period, 1);
     assert_eq!(model.period_index, period_index(1));
     assert_eq!(
@@ -1847,17 +1804,9 @@ async fn prepare_run(config: RunConfig) -> PreparedRun {
     assert_eq!(model.tested.active.shares(NULL_SHAREHOLDER), 0);
     assert_eq!(model.tested.active.coins, model.tested.pool.native[0]);
     assert!(first_poc_epoch <= model.first_closing_epoch);
-    assert!(
-        model.current_epoch + config.rounds + DRAIN_CLOSINGS
-            < first_poc_epoch + config.reward_epoch_limit(),
-        "F={first_poc_epoch}, H={}, planned final closing={} is outside the reward horizon",
-        config.reward_epoch_limit(),
-        model.current_epoch + config.rounds + DRAIN_CLOSINGS - 1
-    );
     println!(
-        "PoC churn prepared: F={}, H={}, preparation_closing_range={}..=60, installed_epoch=61, period=1, next_boundary={}, users={}, test_units={}, version={}, elapsed={:?}",
+        "PoC churn prepared: F={}, preparation_closing_range={}..=60, installed_epoch=61, period=1, next_boundary={}, users={}, test_units={}, version={}, elapsed={:?}",
         first_poc_epoch,
-        config.reward_epoch_limit(),
         model.first_closing_epoch,
         expected_next_boundary(61, config.period_epochs),
         users.len(),
@@ -2522,15 +2471,12 @@ async fn claim_user(f: &Fixture, model: &mut NetworkModel, actor: &LocalAccount)
 
 async fn checkpoint_count(f: &Fixture, model: &NetworkModel, ledger: &Value, version: u64) -> u64 {
     // Native Move tables expose only a handle through REST, not a readable
-    // length. Probe every key the configured reward window can create. Using
+    // length. Probe every epoch installed so far: future changes do not create
+    // checkpoints until the pool advances to their epoch. Using
     // the already-read handle avoids fetching PoolLedger once per epoch.
     let handle = address(&ledger["checkpoints"]["handle"]);
-    let end = model
-        .first_poc_epoch
-        .checked_add(model.reward_epoch_limit)
-        .unwrap();
     let mut count = 0;
-    for epoch in model.first_poc_epoch..end {
+    for epoch in model.first_poc_epoch..=model.current_epoch {
         if let Some(checkpoint) = table_entry(
             &f.client,
             handle,
@@ -2590,12 +2536,11 @@ async fn assert_positions(
         changes.len() <= 2,
         "pool future-change protocol bound exceeded"
     );
-    let checkpoint_end = model.first_poc_epoch + model.reward_epoch_limit;
     for change in changes {
         let epoch = integer(&change["epoch"]) as u64;
         assert!(
-            (model.first_poc_epoch..checkpoint_end).contains(&epoch),
-            "future pool change epoch {epoch} is outside the configured checkpoint window"
+            epoch > integer(&ledger["epoch"]) as u64,
+            "future pool change epoch {epoch} must follow the pool's installed epoch"
         );
     }
     let checkpoints = checkpoint_count(f, model, &ledger, version).await;
@@ -2710,7 +2655,6 @@ async fn run_reward_churn(config: RunConfig) {
     assert!(config.users > 0);
     assert!(config.period_epochs > 0);
     assert!(config.sample_every > 0);
-    assert!(config.reward_epoch_limit() > config.rounds);
     let PreparedRun {
         mut fixture,
         mut model,
@@ -2941,10 +2885,9 @@ async fn run_reward_churn(config: RunConfig) {
         );
     }
     println!(
-        "PoC reward churn complete: seed={:#x}, elapsed={elapsed:?}, final_version={final_version}, F={}, H={}, closing_range={}..={}, positive_pool_epochs={}, zero_pool_epochs={}, mixed_pool_epochs={}, split_totals(native,poc)={:?}, event_credited={}, event_claimed={}, final_network_vault={}, final_test_vault={}, active_dust={}, pending_dust={}, max_checkpoints={}, cross_node_comparisons={}",
+        "PoC reward churn complete: seed={:#x}, elapsed={elapsed:?}, final_version={final_version}, F={}, closing_range={}..={}, positive_pool_epochs={}, zero_pool_epochs={}, mixed_pool_epochs={}, split_totals(native,poc)={:?}, event_credited={}, event_claimed={}, final_network_vault={}, final_test_vault={}, active_dust={}, pending_dust={}, max_checkpoints={}, cross_node_comparisons={}",
         config.seed,
         model.first_poc_epoch,
-        config.reward_epoch_limit(),
         model.first_closing_epoch,
         model.last_closing_epoch,
         model.positive_epochs,

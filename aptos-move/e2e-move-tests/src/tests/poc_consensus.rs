@@ -22,7 +22,6 @@ use aptos_types::{
     on_chain_config::{
         ChunkyDKGConfigMoveStruct, ConfigurationResource, OnChainChunkyDKGConfig, ValidatorSet,
     },
-    stake_pool::StakePool,
     state_store::{
         state_key::{inner::StateKeyInner, StateKey},
         state_slot::StateSlot,
@@ -132,10 +131,9 @@ script {
             let mixed_parallel = value == 4;
             poc_allocation::prepare_poc(framework,
                 poc_accounting::new_power_params(100000000, 1, 1000000, 4),
-                poc_accounting::new_deployment_limits(4, 4, 32, 8, 1000000, 1, 1, 1000, 100),
+                poc_accounting::new_deployment_limits(4, 4, 32, 8, 1000),
                 1, reconfiguration::current_epoch() + (if (boundary_capacity || mixed_parallel) { 6 } else { 2 }),
-                if (boundary_capacity) { 3 } else if (mixed_parallel) { 9995 } else { 10000 },
-                if (boundary_capacity) { 2 } else { 200 },
+                if (boundary_capacity) { 1 } else if (mixed_parallel) { 9995 } else { 10000 },
                 if (boundary_capacity || mixed_parallel) { 4 } else { 1 }, @topo_framework);
             // 原有账本和迁移边界用例将原生奖励占比设为零；五种换届路径的差分测试另设非零占比。
             stake::schedule_reward_split(framework, 0, reconfiguration::current_epoch() + 1);
@@ -329,10 +327,16 @@ impl PoCFixture {
             fixture.record_success(output);
         }
         let addresses: Vec<_> = fixture.users.iter().map(|user| *user.address()).collect();
+        // 容量用例推进到周期 2 后仍须保留正权重；周期 3 的最大版本才足以触及 2^120 上限。
+        let raw_power = if manifest == 3 {
+            2 * RAW_POWER
+        } else {
+            RAW_POWER
+        };
         let txn = fixture.harness.create_transaction_payload(
             &fixture.framework,
             aptos_stdlib::poc_power_store_stage_batch_update(1, addresses, vec![
-                RAW_POWER;
+                raw_power;
                 fixture.users.len()
             ]),
         );
@@ -582,88 +586,6 @@ fn assert_move_abort_at(output: &TransactionOutput, module: &str, code: u64) {
         "unexpected abort: {:?}",
         output.status()
     );
-}
-
-#[test]
-/// 生产 `stake::add_stake` 须在取币后以精确错误拒绝容量上限加一，并回滚全部业务状态。
-fn poc_add_stake_native_capacity_abort_is_atomic_in_production_vm() {
-    let mut fixture = PoCFixture::installed();
-    fixture.governance_success(14, 3000);
-    fixture.force_epoch();
-
-    let pool_address = fixture.pools[0];
-    // 测试账户使用创世密钥接管同地址签名；只重建账户和钱包，不改池的 OwnerCapability。
-    let owner = fixture.harness.new_account_at(pool_address);
-    let stake_tag = parse_struct_tag("0x1::stake::StakePool").unwrap();
-    let stake_key = StateKey::resource(&pool_address, &stake_tag).unwrap();
-    let owner_cap_key = StateKey::resource(
-        &pool_address,
-        &parse_struct_tag("0x1::stake::OwnerCapability").unwrap(),
-    )
-    .unwrap();
-    let wallet_key = StateKey::resource(
-        &pool_address,
-        &parse_struct_tag("0x1::coin::CoinStore<0x1::topo_coin::TopoCoin>").unwrap(),
-    )
-    .unwrap();
-    fixture
-        .keys
-        .extend([stake_key.clone(), owner_cap_key.clone(), wallet_key.clone()]);
-
-    let upper_bound: u64 = bcs::from_bytes(
-        &fixture
-            .harness
-            .execute_view_function(
-                "0x1::stake::get_native_reward_upper_bound".parse().unwrap(),
-                vec![],
-                vec![bcs::to_bytes(&pool_address).unwrap()],
-            )
-            .values
-            .unwrap()[0],
-    )
-    .unwrap();
-    assert!(upper_bound > 0);
-
-    // 四类余额均非零；本金加当期原生奖励上界恰好为 u64 上限，追加 1 后只超出一位。
-    let stake_bytes = fixture.harness.read_state_value_bytes(&stake_key).unwrap();
-    let mut stake_pool: StakePool = bcs::from_bytes(&stake_bytes).unwrap();
-    stake_pool.active = 101;
-    stake_pool.pending_active = 11;
-    stake_pool.pending_inactive = 13;
-    stake_pool.inactive = u64::MAX - upper_bound - 125;
-    assert_eq!(
-        u128::from(stake_pool.active)
-            + u128::from(stake_pool.inactive)
-            + u128::from(stake_pool.pending_active)
-            + u128::from(stake_pool.pending_inactive)
-            + u128::from(upper_bound),
-        u128::from(u64::MAX)
-    );
-    fixture
-        .harness
-        .executor
-        .write_state_value(stake_key, bcs::to_bytes(&stake_pool).unwrap());
-
-    let before = fixture.snapshot();
-    assert!(fixture.resource("stake::EpochPlan").is_none());
-    assert!(fixture.resource("stake::PrecomputedValidatorSet").is_none());
-    let txn = fixture
-        .harness
-        .create_transaction_payload(&owner, aptos_stdlib::stake_add_stake(1));
-    let output = fixture.run_measured("add_stake_native_capacity_rejected", txn);
-    assert_move_abort_at(&output, "stake", 0x10025);
-
-    // 序列号和费用事件属于 VM 收尾；池、四类余额、所有权、钱包、计划及 PVS 必须逐字节不变。
-    assert_eq!(fixture.snapshot(), before);
-    assert!(fixture.resource("stake::EpochPlan").is_none());
-    assert!(fixture.resource("stake::PrecomputedValidatorSet").is_none());
-    assert!(output.events().iter().all(|event| {
-        event.type_tag() == &*FEE_STATEMENT_EVENT_TYPE
-            && !event
-                .type_tag()
-                .to_canonical_string()
-                .ends_with("::stake::AddStakeEvent")
-    }));
 }
 
 fn poc_pool_state(fixture: &mut PoCFixture, pool: AccountAddress) -> (u128, u64, U256) {
@@ -1521,8 +1443,8 @@ fn poc_parallel_mixed_history_across_decay_and_reward_splits() {
             )
             .values
             .unwrap();
-        let initial_period: u64 = bcs::from_bytes(&initial_clock[1]).unwrap();
-        let initial_index: u128 = bcs::from_bytes(&initial_clock[3]).unwrap();
+        let initial_period: u64 = bcs::from_bytes(&initial_clock[0]).unwrap();
+        let initial_index: u128 = bcs::from_bytes(&initial_clock[2]).unwrap();
         let target_period = initial_period + 1;
 
         for phase in 0..3 {
@@ -1671,8 +1593,8 @@ fn poc_parallel_mixed_history_across_decay_and_reward_splits() {
             )
             .values
             .unwrap();
-        let final_period: u64 = bcs::from_bytes(&final_clock[1]).unwrap();
-        let final_index: u128 = bcs::from_bytes(&final_clock[3]).unwrap();
+        let final_period: u64 = bcs::from_bytes(&final_clock[0]).unwrap();
+        let final_index: u128 = bcs::from_bytes(&final_clock[2]).unwrap();
         assert_eq!(final_period, initial_period + 1);
         assert_eq!(final_index, initial_index * 9995 / 10_000);
     }
@@ -1850,7 +1772,7 @@ fn poc_boundary_only_capacity_failure_rolls_back_batch() {
     let mut harness = MoveHarness::new_with_validators(4);
     let framework = harness.topo_framework_account();
     let mut fixture = PoCFixture::prepare_existing_with_manifest(harness, framework, 3);
-    for _ in 0..6 {
+    for _ in 0..10 {
         fixture.force_epoch();
     }
     assert!(fixture.poc_enabled());
@@ -1866,8 +1788,9 @@ fn poc_boundary_only_capacity_failure_rolls_back_batch() {
         )
         .values
         .unwrap();
-    assert_eq!(bcs::from_bytes::<u64>(&clock[1]).unwrap(), 1);
-    let boundary: u64 = bcs::from_bytes(&clock[2]).unwrap();
+    assert_eq!(bcs::from_bytes::<u64>(&clock[0]).unwrap(), 2);
+    let upload_period = 3;
+    let boundary: u64 = bcs::from_bytes(&clock[1]).unwrap();
     assert!(epoch + 1 < boundary);
     let pool = fixture.pools[0];
     let txn = fixture.harness.create_transaction_payload(
@@ -1879,7 +1802,7 @@ fn poc_boundary_only_capacity_failure_rolls_back_batch() {
     let txn = fixture.harness.create_transaction_payload(
         &fixture.framework,
         aptos_stdlib::poc_power_store_stage_batch_update(
-            2,
+            upload_period,
             vec![*fixture.users[0].address()],
             vec![u64::MAX],
         ),
@@ -1900,7 +1823,7 @@ fn poc_boundary_only_capacity_failure_rolls_back_batch() {
     let users = vec![*fixture.users[2].address(), *fixture.users[1].address()];
     let txn = fixture.harness.create_transaction_payload(
         &fixture.framework,
-        aptos_stdlib::poc_power_store_stage_batch_update(2, users.clone(), vec![
+        aptos_stdlib::poc_power_store_stage_batch_update(upload_period, users.clone(), vec![
             u64::MAX,
             u64::MAX,
         ]),
@@ -1917,7 +1840,7 @@ fn poc_boundary_only_capacity_failure_rolls_back_batch() {
     // 证明失败没有残留版本，也没有消耗首次写入机会。
     let txn = fixture.harness.create_transaction_payload(
         &fixture.framework,
-        aptos_stdlib::poc_power_store_stage_batch_update(2, users, vec![u64::MAX, 1]),
+        aptos_stdlib::poc_power_store_stage_batch_update(upload_period, users, vec![u64::MAX, 1]),
     );
     let output = fixture.run_measured("batch_boundary_capacity_repaired", txn);
     assert_eq!(
@@ -2070,7 +1993,7 @@ fn poc_disjoint_four_pool_replacement_visits_eight() {
         .append_events(output.events().to_vec());
     fixture.record_success(output);
 
-    let base_units = u128::from(RAW_POWER) << 32;
+    let base_units = u128::from(RAW_POWER) << 16;
     for pool in fixture.pools.clone() {
         let values = fixture
             .harness

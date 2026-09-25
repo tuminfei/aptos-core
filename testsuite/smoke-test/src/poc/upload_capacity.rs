@@ -3,7 +3,7 @@
 
 //! PWR-06 / NUM-02：未来容量拒绝、满额池的下一期拒绝及两段大旧链的合法替换。
 //! 所有极限值均通过公开上传入口和真实 Epoch 提交构造。
-//! 五节点 A 配置使用 retention=5000，并推进到支持范围的边界 I24=2^40。
+//! 五节点 A 配置使用 retention=5000，并推进到支持范围的边界 I40=2^24。
 
 use super::{
     defaults::{installed_at, InstalledSnapshot},
@@ -18,7 +18,7 @@ use crate::smoke_test_environment::SwarmBuilder;
 use aptos_api_types::{AptosErrorCode, UserTransaction};
 use aptos_cached_packages::aptos_stdlib;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::{error::RestError, Client};
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -34,13 +34,13 @@ use serde_json::{json, Value};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use tokio::time::{timeout, Instant};
 
-const INITIAL_RAW: u64 = 1 << 32;
+const INITIAL_RAW: u64 = 1 << 48;
 const INITIAL_UNITS: u128 = 1 << 64;
-const SCALE: u128 = 1 << 32;
+const SCALE: u128 = 1 << 16;
 const INDEX_SCALE: u128 = 1 << 64;
 const CAPACITY: u128 = 1 << 120;
-const UPLOAD_PERIOD: u64 = 24;
-const BOUNDARY: u64 = 85;
+const UPLOAD_PERIOD: u64 = 40;
+const BOUNDARY: u64 = 101;
 
 static GOVERNANCE: Lazy<Vec<u8>> = Lazy::new(|| {
     compile_script(
@@ -114,7 +114,7 @@ async fn poc_version(f: &Fixture) -> u64 {
 
 async fn poc_fixture() -> Fixture {
     Lazy::force(&GOVERNANCE);
-    println!("Upload capacity fixture A: 5 real validators + 1 fullnode, Open/minimum4/capacity6/growth25%, initial_raw=4294967296 power, bond100 Octa each, ratio1 Octa/power, min_power10/max_power1000, retention5000/max_relative_period24, native0/fee_limit0, reward_horizon1000, epoch3600s, ordinary/Chunky DKG off; public power length60->1, later length specified by each test, upload/governance gas100, member gas1, max_gas2000000");
+    println!("Upload capacity fixture A: 5 real validators + 1 fullnode, Open/minimum4/capacity6/growth25%, initial_raw=281474976710656 power, bond100 Octa each, ratio1 Octa/power, min_power10/max_power1000, retention5000, native0/fee_limit0, epoch3600s, ordinary/Chunky DKG off; public power length60->1, later length specified by each test, upload/governance gas100, member gas1, max_gas2000000");
     let swarm = SwarmBuilder::new_local(5)
         .with_aptos()
         .with_num_fullnodes(1)
@@ -135,26 +135,15 @@ async fn poc_fixture() -> Fixture {
                     max_power: 1000,
                     min_validators: 4,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 32,
-                    validator_limit: 6,
-                    max_reward_base_octa: 1000,
-                    rate_max_num: 1,
-                    rate_max_den: 1,
-                    fee_max: 10,
-                    reward_epoch_limit: 1000,
-                },
+
                 deployment_mode: DeploymentMode::Open,
                 retention_bps: 5000,
-                max_relative_period: UPLOAD_PERIOD,
                 initial_raw_power: INITIAL_RAW,
-                native_reward_bps: 0,
             }));
         }))
         .build()
         .await;
+    super::configure_fixture(&swarm, [4, 4, 32, 6, 10], 0).await;
     let mut pools = swarm
         .validators()
         .map(|node| node.peer_id())
@@ -268,10 +257,10 @@ fn poc_clock_model(epoch: u64) -> (u64, u64) {
     assert!(epoch <= BOUNDARY);
     if epoch < 61 {
         (0, 61)
-    } else if epoch <= 82 {
+    } else if epoch <= 98 {
         (epoch - 60, epoch + 1)
-    } else if epoch <= 84 {
-        (23, BOUNDARY)
+    } else if epoch <= 100 {
+        (39, BOUNDARY)
     } else {
         (UPLOAD_PERIOD, BOUNDARY + 2)
     }
@@ -304,12 +293,10 @@ async fn poc_assert_clock_with_model(
         )
         .await,
         vec![
-            json!("0"),
             json!(period.to_string()),
             json!(boundary.to_string()),
             json!(index.to_string()),
-            next,
-            json!("24")
+            next
         ]
     );
     let clock = poc_resource(
@@ -499,7 +486,7 @@ async fn poc_snapshot(f: &Fixture, version: u64, retired_epoch: u64) -> Snapshot
             f.users[0].address(),
             f.users[1].address(),
         ],
-        &[retired_epoch, 83, 84, BOUNDARY],
+        &[retired_epoch, 99, 100, BOUNDARY],
     )
     .await
 }
@@ -685,15 +672,15 @@ async fn poc_assert_successful_batch(f: &Fixture, tx: &UserTransaction) {
             .ends_with("::PowerUpdateStagedEvent"));
         assert_eq!(
             normalized[i].data,
-            json!({"user": user.to_hex_literal(), "effective_period": "24", "units": units.to_string()})
+            json!({"user": user.to_hex_literal(), "effective_period": "40", "units": units.to_string()})
         );
         assert_eq!(
             staged[i].data,
-            json!({"effective_period": "24", "user": user.to_hex_literal(), "power": raw.to_string()})
+            json!({"effective_period": "40", "user": user.to_hex_literal(), "power": raw.to_string()})
         );
         assert_eq!(
             poc_raw_power(&f.client, user, version).await.unwrap(),
-            json!({"older": {"vec": []}, "newer": {"vec": [{"effective_period": "24", "power": raw.to_string(), "units": units.to_string()}]}})
+            json!({"older": {"vec": []}, "newer": {"vec": [{"effective_period": "40", "power": raw.to_string(), "units": units.to_string()}]}})
         );
         let position = poc_position(&f.client, user, f.owner.address(), version).await;
         assert_eq!(integer(&position["units"]), 0);
@@ -712,13 +699,13 @@ async fn poc_assert_successful_batch(f: &Fixture, tx: &UserTransaction) {
             vec![
                 json!("0"),
                 json!(units.to_string()),
-                json!("23"),
+                json!("39"),
                 json!(BOUNDARY.to_string())
             ]
         );
     }
     let ledger = ledger_at(&f.client, f.owner.address(), version).await;
-    assert_eq!(integer(&ledger["epoch"]), 83);
+    assert_eq!(integer(&ledger["epoch"]), 99);
     assert_eq!(integer(&ledger["units"]), 0);
     assert_eq!(
         ledger["changes"],
@@ -729,7 +716,7 @@ async fn poc_assert_successful_batch(f: &Fixture, tx: &UserTransaction) {
             .await
             .is_none()
     );
-    for (epoch, expected) in [(83, 0), (84, 0), (BOUNDARY, CAPACITY)] {
+    for (epoch, expected) in [(99, 0), (100, 0), (BOUNDARY, CAPACITY)] {
         assert_eq!(
             poc_pool_units(&f.client, f.owner.address(), epoch, version).await,
             expected
@@ -789,7 +776,7 @@ async fn poc_upload_late_capacity_abort_rolls_back_then_installs_exact_limit() {
     let largest = poc_units(u64::MAX, UPLOAD_PERIOD);
     let one = poc_units(1, UPLOAD_PERIOD);
     let two = poc_units(2, UPLOAD_PERIOD);
-    assert_eq!(INDEX_SCALE >> UPLOAD_PERIOD, 1 << 40);
+    assert_eq!(INDEX_SCALE >> UPLOAD_PERIOD, 1 << 24);
     assert_eq!(largest, CAPACITY - (1 << 56));
     assert_eq!(one, 1 << 56);
     assert_eq!(two, 1 << 57);
@@ -809,34 +796,34 @@ async fn poc_upload_late_capacity_abort_rolls_back_then_installs_exact_limit() {
     timeout(Duration::from_secs(300), async {
         loop {
             let installed = installed_at(&f.client, poc_version(&f).await).await;
-            assert!(installed.epoch <= 82);
-            if installed.epoch == 82 {
+            assert!(installed.epoch <= 98);
+            if installed.epoch == 98 {
                 break;
             }
             poc_commit(&f, 4, 1).await;
         }
     })
     .await
-    .expect("Public epoch preparation to E82 exceeded 300 seconds");
+    .expect("Public epoch preparation to E98 exceeded 300 seconds");
     println!(
-        "Prepared E82/P22 through individual public commits in {:?}",
+        "Prepared E98/P38 through individual public commits in {:?}",
         started.elapsed()
     );
-    // 保持 B83 不变，同时令 P23 持续两个 Epoch，使 E84 与 B85 分离。
+    // 保持 B99 不变，同时令 P39 持续两个 Epoch，使 E100 与 B101 分离。
     let length = poc_govern(&f, 2, 2).await.info.version.0;
     assert_eq!(
         installed_at(&f.client, length - 1).await,
         installed_at(&f.client, length).await
     );
-    poc_assert_clock(&f.client, length, 82, 2).await;
-    let at_83 = poc_commit(&f, 4, 2).await.info.version.0;
-    assert_eq!(installed_at(&f.client, at_83).await.epoch, 83);
+    poc_assert_clock(&f.client, length, 98, 2).await;
+    let at_99 = poc_commit(&f, 4, 2).await.info.version.0;
+    assert_eq!(installed_at(&f.client, at_99).await.epoch, 99);
     let target = f.owner.address();
-    for epoch in [83, 84, BOUNDARY] {
-        assert_eq!(poc_pool_units(&f.client, target, epoch, at_83).await, 0);
+    for epoch in [99, 100, BOUNDARY] {
+        assert_eq!(poc_pool_units(&f.client, target, epoch, at_99).await, 0);
     }
     for user in &f.users {
-        assert!(poc_raw_power(&f.client, user.address(), at_83)
+        assert!(poc_raw_power(&f.client, user.address(), at_99)
             .await
             .is_none());
         assert_eq!(
@@ -844,7 +831,7 @@ async fn poc_upload_late_capacity_abort_rolls_back_then_installs_exact_limit() {
                 &f.client,
                 "0x1::poc_accounting::get_allocations",
                 vec![json!(user.address())],
-                at_83
+                at_99
             )
             .await,
             vec![
@@ -853,7 +840,7 @@ async fn poc_upload_late_capacity_abort_rolls_back_then_installs_exact_limit() {
             ]
         );
     }
-    let original_checkpoint = checkpoint_at(&f.client, target, retired_epoch, at_83)
+    let original_checkpoint = checkpoint_at(&f.client, target, retired_epoch, at_99)
         .await
         .unwrap();
     assert_eq!(integer(&original_checkpoint["refs"]), 1);
@@ -889,13 +876,13 @@ async fn poc_upload_late_capacity_abort_rolls_back_then_installs_exact_limit() {
         checkpoint_at(&f.client, target, retired_epoch, failed_version).await,
         Some(original_checkpoint.clone())
     );
-    for epoch in [83, 84, BOUNDARY] {
+    for epoch in [99, 100, BOUNDARY] {
         assert_eq!(
             poc_pool_units(&f.client, target, epoch, failed_version).await,
             0
         );
     }
-    println!("Later batch item rejected with poc_accounting/0x20008 at E83: current/E84=0; first units={largest} fits; first+second={} exceeds only B85; both raw entries, positions, refs, events and writes rolled back", largest + two);
+    println!("Later batch item rejected with poc_accounting/0x20008 at E99: current/E100=0; first units={largest} fits; first+second={} exceeds only B101; both raw entries, positions, refs, events and writes rolled back", largest + two);
 
     let accepted = success(poc_upload(&f, 1).await);
     let staged = accepted.info.version.0;
@@ -909,17 +896,17 @@ async fn poc_upload_late_capacity_abort_rolls_back_then_installs_exact_limit() {
         Some(original_checkpoint.clone())
     );
     // 提交中间的 Epoch：此前批次仅在未来 B 边界失败，当前及 E+1 均合法；
-    // 修复后的 B85 目标仍保持待生效状态。
-    let at_84 = poc_commit(&f, 4, 2).await;
-    poc_assert_reward_commit(&f, &at_84).await;
-    let v84 = at_84.info.version.0;
-    assert_eq!(installed_at(&f.client, v84).await.epoch, 84);
-    let pool = pool_at(&f.client, target, v84).await;
+    // 修复后的 B101 目标仍保持待生效状态。
+    let at_100 = poc_commit(&f, 4, 2).await;
+    poc_assert_reward_commit(&f, &at_100).await;
+    let v100 = at_100.info.version.0;
+    assert_eq!(installed_at(&f.client, v100).await.epoch, 100);
+    let pool = pool_at(&f.client, target, v100).await;
     assert_eq!(integer(&pool[0]), 0);
     assert_eq!(integer(&pool[1]), CAPACITY);
     assert_eq!(integer(&pool[2]), 0);
     assert_eq!(
-        ledger_at(&f.client, target, v84).await["changes"],
+        ledger_at(&f.client, target, v100).await["changes"],
         json!([{"epoch": BOUNDARY.to_string(), "remove_units": "0", "add_units": CAPACITY.to_string(), "refs": "2"}])
     );
 
@@ -963,7 +950,7 @@ async fn poc_upload_late_capacity_abort_rolls_back_then_installs_exact_limit() {
     assert_eq!(preview.len(), 1);
     assert_eq!(integer(&preview[0]["reason"]), 0);
     assert_eq!(integer(&preview[0]["period"]), UPLOAD_PERIOD as u128);
-    assert_eq!(integer(&preview[0]["period_index"]), 1 << 40);
+    assert_eq!(integer(&preview[0]["period_index"]), 1 << 24);
     assert_eq!(
         integer(&preview[0]["validator_set"]["total_voting_power"]),
         500
@@ -1039,7 +1026,7 @@ async fn poc_upload_late_capacity_abort_rolls_back_then_installs_exact_limit() {
             let successful =
                 integer(&performance["validators"][target_index]["successful_proposals"]);
             if successful > 0 {
-                println!("Rejoined capacity target proposed in E85: version={version}, target={target}, successful={successful}");
+                println!("Rejoined capacity target proposed in E101: version={version}, target={target}, successful={successful}");
                 break;
             }
             success(
@@ -1054,8 +1041,8 @@ async fn poc_upload_late_capacity_abort_rolls_back_then_installs_exact_limit() {
         }
     })
     .await
-    .expect("Rejoined target did not propose in E85 within 90 seconds");
-    // 不进入不受支持的 P25。等待重新加入的节点实际产出提案后，
+    .expect("Rejoined target did not propose in E101 within 90 seconds");
+    // 不进入不受支持的 P41。等待重新加入的节点实际产出提案后，
     // 在固定版本比较全部五个已安装成员。
     let progress = success(
         execute(
@@ -1101,22 +1088,22 @@ async fn poc_upload_late_capacity_abort_rolls_back_then_installs_exact_limit() {
             );
         }
     }
-    println!("Exact pool limit installed: E83 future B85={CAPACITY}, E84 next={CAPACITY}, E85 current={CAPACITY}; aggregate power={aggregate_power} capped in wide arithmetic to100; original target rejoined, five nodes agree at version={same_version}; P24 next_index=None, no unsupported transition attempted");
+    println!("Exact pool limit installed: E99 future B101={CAPACITY}, E100 next={CAPACITY}, E101 current={CAPACITY}; aggregate power={aggregate_power} capped in wide arithmetic to100; original target rejoined, five nodes agree at version={same_version}; P40 next_index=None, no unsupported transition attempted");
 }
 
-const REBUILD_BOUNDARY: u64 = 88;
+const REBUILD_BOUNDARY: u64 = 104;
 const REBUILD_RAW: u64 = u64::MAX - 255;
 
 fn poc_rebuild_clock_model(epoch: u64) -> (u64, u64) {
     assert!(epoch <= REBUILD_BOUNDARY);
     if epoch < 61 {
         (0, 61)
-    } else if epoch <= 82 {
+    } else if epoch <= 98 {
         (epoch - 60, epoch + 1)
     } else if epoch < REBUILD_BOUNDARY {
-        (23, REBUILD_BOUNDARY)
+        (39, REBUILD_BOUNDARY)
     } else {
-        (24, REBUILD_BOUNDARY + 5)
+        (40, REBUILD_BOUNDARY + 5)
     }
 }
 
@@ -1339,20 +1326,20 @@ async fn poc_rebuild_rewards(f: &Fixture, tx: &UserTransaction, target_units: u1
 
 #[tokio::test]
 async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundary_chain() {
-    let half = poc_units(REBUILD_RAW, 23);
-    let next = poc_units(REBUILD_RAW, 24);
-    let filler = poc_units(512, 23);
+    let half = poc_units(REBUILD_RAW, 39);
+    let next = poc_units(REBUILD_RAW, 40);
+    let filler = poc_units(512, 39);
     assert_eq!(half, CAPACITY / 2 - (1 << 63));
     assert_eq!(next, 2 * half);
     assert_eq!(filler, INITIAL_UNITS);
     assert_eq!(2 * half + filler, CAPACITY);
     assert!(next < CAPACITY);
-    assert_eq!(poc_aggregate_power(CAPACITY, 23), 1u128 << 65);
+    assert_eq!(poc_aggregate_power(CAPACITY, 39), 1u128 << 65);
     // 合法写入口只安排 E+1 或 B 的变化，并在写入时检查整条最终链；
     // 因此无法通过公开交易构造 current > C。本例验证 current=C 时
     // E+1=C+G 的拒绝，不把损坏状态注入测试算作真实节点覆盖。
     println!("NUM-02 覆盖说明：C=2^120，G=2^64；通过公开入口构造 current=C，再拒绝 E+1=C+G。本例不覆盖 current>C；合法公开入口无法构造该损坏状态，须在隔离测试中注入。");
-    println!("Capacity rebuild fixture overrides: reuse five-validator A fixture, public power length60->1 then1->5 at E82; P23=E83..87 and B88=P24; uploader O also supplies raw512/full allocation; native0/fee_limit0, no positive native-reward coverage");
+    println!("Capacity rebuild fixture overrides: reuse five-validator A fixture, public power length60->1 then1->5 at E98; P39=E99..103 and B104=P40; uploader O also supplies raw512/full allocation; native0/fee_limit0, no positive native-reward coverage");
     let f = poc_fixture().await;
     let target = f.owner.address();
     let participants = [
@@ -1362,7 +1349,7 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
         f.uploader.address(),
     ];
     let retired_epoch = poc_prepare_empty_pool(&f).await;
-    let checkpoints = [retired_epoch, 83, 84, 85, 86, 87, REBUILD_BOUNDARY];
+    let checkpoints = [retired_epoch, 99, 100, 101, 102, 103, REBUILD_BOUNDARY];
     // O 的上传权限和出资角色在此算术用例中复用；权限隔离另有专门矩阵。
     let allocated = poc_rebuild_allocate(&f, &f.uploader, Some(10_000))
         .await
@@ -1379,17 +1366,17 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
     timeout(Duration::from_secs(300), async {
         loop {
             let installed = installed_at(&f.client, poc_version(&f).await).await;
-            assert!(installed.epoch <= 82);
-            if installed.epoch == 82 {
+            assert!(installed.epoch <= 98);
+            if installed.epoch == 98 {
                 break;
             }
             poc_commit_with_model(&f, 4, 1, poc_rebuild_clock_model).await;
         }
     })
     .await
-    .expect("Public epoch preparation to E82 exceeded 300 seconds");
+    .expect("Public epoch preparation to E98 exceeded 300 seconds");
     println!(
-        "Prepared capacity rebuild E82/P22 in {:?}",
+        "Prepared capacity rebuild E98/P38 in {:?}",
         started.elapsed()
     );
     let length = poc_govern(&f, 2, 5).await.info.version.0;
@@ -1397,8 +1384,8 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
         installed_at(&f.client, length - 1).await,
         installed_at(&f.client, length).await
     );
-    poc_assert_clock_with_model(&f.client, length, 82, 5, poc_rebuild_clock_model).await;
-    let staged = poc_rebuild_upload(&f, 23, &[
+    poc_assert_clock_with_model(&f.client, length, 98, 5, poc_rebuild_clock_model).await;
+    let staged = poc_rebuild_upload(&f, 39, &[
         (f.users[0].address(), REBUILD_RAW),
         (f.users[1].address(), REBUILD_RAW),
         (f.uploader.address(), 512),
@@ -1414,20 +1401,20 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
     ] {
         assert_eq!(
             poc_raw_power(&f.client, user, staged).await.unwrap(),
-            json!({"older": {"vec": []}, "newer": {"vec": [{"effective_period": "23",
+            json!({"older": {"vec": []}, "newer": {"vec": [{"effective_period": "39",
                 "power": raw.to_string(), "units": units.to_string()}]}})
         );
         let position = poc_position(&f.client, user, target, staged).await;
         assert_eq!(integer(&position["units"]), 0);
         assert_eq!(
             position["changes"],
-            json!([{"epoch": "83", "units": units.to_string()}])
+            json!([{"epoch": "99", "units": units.to_string()}])
         );
     }
-    poc_rebuild_horizon(&f, staged, 82, [0, CAPACITY, CAPACITY], 0).await;
+    poc_rebuild_horizon(&f, staged, 98, [0, CAPACITY, CAPACITY], 0).await;
     assert_eq!(
         ledger_at(&f.client, target, staged).await["changes"],
-        json!([{"epoch": "83", "remove_units": "0", "add_units": CAPACITY.to_string(), "refs": "3"}])
+        json!([{"epoch": "99", "remove_units": "0", "add_units": CAPACITY.to_string(), "refs": "3"}])
     );
     let joined = success(
         execute(
@@ -1448,24 +1435,24 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
     );
     assert_eq!(queued.validators.total_joining_power, 0);
     assert_eq!(queued.validators.total_voting_power, 400);
-    let at_83 = poc_commit_with_model(&f, 5, 5, poc_rebuild_clock_model).await;
-    poc_rebuild_rewards(&f, &at_83, 0).await;
-    let v83 = at_83.info.version.0;
-    poc_rebuild_horizon(&f, v83, 83, [CAPACITY; 3], 100).await;
+    let at_99 = poc_commit_with_model(&f, 5, 5, poc_rebuild_clock_model).await;
+    poc_rebuild_rewards(&f, &at_99, 0).await;
+    let v99 = at_99.info.version.0;
+    poc_rebuild_horizon(&f, v99, 99, [CAPACITY; 3], 100).await;
     assert_eq!(
-        ledger_at(&f.client, target, v83).await["changes"],
+        ledger_at(&f.client, target, v99).await["changes"],
         json!([])
     );
-    poc_rebuild_refs(&f, v83, &[
+    poc_rebuild_refs(&f, v99, &[
         (retired_epoch, Some(1)),
-        (83, Some(3)),
-        (84, None),
+        (99, Some(3)),
+        (100, None),
     ])
     .await;
-    let original_checkpoint = checkpoint_at(&f.client, target, retired_epoch, v83)
+    let original_checkpoint = checkpoint_at(&f.client, target, retired_epoch, v99)
         .await
         .unwrap();
-    let original_owner = poc_position(&f.client, target, target, v83).await;
+    let original_owner = poc_position(&f.client, target, target, v99).await;
     assert_eq!(integer(&original_owner["units"]), INITIAL_UNITS);
     assert_eq!(
         original_owner["changes"],
@@ -1496,18 +1483,18 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
         checkpoint_at(&f.client, target, retired_epoch, failed).await,
         Some(original_checkpoint.clone())
     );
-    poc_rebuild_horizon(&f, failed, 83, [CAPACITY; 3], 100).await;
-    println!("Full current pool rejects owner allocation: E83={CAPACITY}, proposed E84={} and B88={}; poc_accounting/0x20008; raw versions, positions, refs, business writes/events unchanged", CAPACITY + INITIAL_UNITS, CAPACITY + INITIAL_UNITS);
+    poc_rebuild_horizon(&f, failed, 99, [CAPACITY; 3], 100).await;
+    println!("Full current pool rejects owner allocation: E99={CAPACITY}, proposed E100={} and B104={}; poc_accounting/0x20008; raw versions, positions, refs, business writes/events unchanged", CAPACITY + INITIAL_UNITS, CAPACITY + INITIAL_UNITS);
 
     // 先原样提交一次，证明失败没有破坏已合法的目标；此时尚未释放 O。
-    let at_84 = poc_commit_with_model(&f, 5, 5, poc_rebuild_clock_model).await;
-    poc_rebuild_rewards(&f, &at_84, CAPACITY).await;
-    let v84 = at_84.info.version.0;
-    poc_rebuild_horizon(&f, v84, 84, [CAPACITY; 3], 100).await;
-    poc_rebuild_refs(&f, v84, &[
+    let at_100 = poc_commit_with_model(&f, 5, 5, poc_rebuild_clock_model).await;
+    poc_rebuild_rewards(&f, &at_100, CAPACITY).await;
+    let v100 = at_100.info.version.0;
+    poc_rebuild_horizon(&f, v100, 100, [CAPACITY; 3], 100).await;
+    poc_rebuild_refs(&f, v100, &[
         (retired_epoch, Some(1)),
-        (83, Some(3)),
-        (84, None),
+        (99, Some(3)),
+        (100, None),
     ])
     .await;
     let released = poc_rebuild_allocate(&f, &f.uploader, None)
@@ -1518,52 +1505,52 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
     poc_rebuild_horizon(
         &f,
         released,
-        84,
+        100,
         [CAPACITY, CAPACITY - filler, CAPACITY - filler],
         100,
     )
     .await;
     assert_eq!(
         ledger_at(&f.client, target, released).await["changes"],
-        json!([{"epoch": "85", "remove_units": filler.to_string(), "add_units": "0", "refs": "1"}])
+        json!([{"epoch": "101", "remove_units": filler.to_string(), "add_units": "0", "refs": "1"}])
     );
     poc_rebuild_refs(&f, released, &[
         (retired_epoch, Some(1)),
-        (83, Some(2)),
-        (85, None),
+        (99, Some(2)),
+        (101, None),
     ])
     .await;
     let retried = poc_rebuild_allocate(&f, &f.owner, Some(10_000)).await;
     assert_eq!(retried.request.payload, rejected.request.payload);
     let restored = retried.info.version.0;
-    poc_rebuild_horizon(&f, restored, 84, [CAPACITY; 3], 100).await;
+    poc_rebuild_horizon(&f, restored, 100, [CAPACITY; 3], 100).await;
     assert_eq!(
         ledger_at(&f.client, target, restored).await["changes"],
-        json!([{"epoch": "85", "remove_units": filler.to_string(), "add_units": INITIAL_UNITS.to_string(), "refs": "2"}])
+        json!([{"epoch": "101", "remove_units": filler.to_string(), "add_units": INITIAL_UNITS.to_string(), "refs": "2"}])
     );
     poc_rebuild_refs(&f, restored, &[
         (retired_epoch, None),
-        (83, Some(2)),
-        (85, None),
+        (99, Some(2)),
+        (101, None),
     ])
     .await;
-    let at_85 = poc_commit_with_model(&f, 5, 5, poc_rebuild_clock_model).await;
-    poc_rebuild_rewards(&f, &at_85, CAPACITY).await;
-    let v85 = at_85.info.version.0;
-    poc_rebuild_horizon(&f, v85, 85, [CAPACITY; 3], 100).await;
-    poc_rebuild_refs(&f, v85, &[
+    let at_101 = poc_commit_with_model(&f, 5, 5, poc_rebuild_clock_model).await;
+    poc_rebuild_rewards(&f, &at_101, CAPACITY).await;
+    let v101 = at_101.info.version.0;
+    poc_rebuild_horizon(&f, v101, 101, [CAPACITY; 3], 100).await;
+    poc_rebuild_refs(&f, v101, &[
         (retired_epoch, None),
-        (83, Some(2)),
-        (85, Some(2)),
+        (99, Some(2)),
+        (101, Some(2)),
     ])
     .await;
-    let checkpoint_85 = checkpoint_at(&f.client, target, 85, v85).await.unwrap();
+    let checkpoint_101 = checkpoint_at(&f.client, target, 101, v101).await.unwrap();
     assert_eq!(
-        checkpoint_85["index"],
-        ledger_at(&f.client, target, v85).await["index"]
+        checkpoint_101["index"],
+        ledger_at(&f.client, target, v101).await["index"]
     );
     assert_eq!(
-        ledger_at(&f.client, target, v85).await["changes"],
+        ledger_at(&f.client, target, v101).await["changes"],
         json!([])
     );
     for (user, units) in [
@@ -1572,12 +1559,12 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
         (f.users[1].address(), half),
         (f.uploader.address(), 0),
     ] {
-        let logical = position_at(&f.client, user, target, v85).await;
+        let logical = position_at(&f.client, user, target, v101).await;
         assert_eq!(integer(&logical[0]), units);
         assert_eq!(logical[1], json!([]));
     }
 
-    // 先将 U1 改为 5000 bps，再公开上传 P24，使其旧链为 H -> H/2 -> H。
+    // 先将 U1 改为 5000 bps，再公开上传 P40，使其旧链为 H -> H/2 -> H。
     // 两段撤销之间的临时预测会达到 C+H/2，但完整新链始终不超过 C。
     let ratio_half = poc_rebuild_allocate(&f, &f.users[0], Some(5000))
         .await
@@ -1587,25 +1574,25 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
     poc_rebuild_horizon(
         &f,
         ratio_half,
-        85,
+        101,
         [CAPACITY, CAPACITY - half / 2, CAPACITY - half / 2],
         100,
     )
     .await;
     poc_rebuild_refs(&f, ratio_half, &[
-        (83, Some(1)),
-        (85, Some(2)),
-        (86, None),
+        (99, Some(1)),
+        (101, Some(2)),
+        (102, None),
         (REBUILD_BOUNDARY, None),
     ])
     .await;
-    let updated = poc_rebuild_upload(&f, 24, &[(f.users[0].address(), REBUILD_RAW)])
+    let updated = poc_rebuild_upload(&f, 40, &[(f.users[0].address(), REBUILD_RAW)])
         .await
         .info
         .version
         .0;
-    let two_versions = json!({"older": {"vec": [{"effective_period": "23", "power": REBUILD_RAW.to_string(), "units": half.to_string()}]},
-        "newer": {"vec": [{"effective_period": "24", "power": REBUILD_RAW.to_string(), "units": next.to_string()}]}});
+    let two_versions = json!({"older": {"vec": [{"effective_period": "39", "power": REBUILD_RAW.to_string(), "units": half.to_string()}]},
+        "newer": {"vec": [{"effective_period": "40", "power": REBUILD_RAW.to_string(), "units": next.to_string()}]}});
     assert_eq!(
         poc_raw_power(&f.client, f.users[0].address(), updated).await,
         Some(two_versions.clone())
@@ -1613,7 +1600,7 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
     poc_rebuild_horizon(
         &f,
         updated,
-        85,
+        101,
         [CAPACITY, CAPACITY - half / 2, CAPACITY],
         100,
     )
@@ -1623,15 +1610,15 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
     assert_eq!(
         old_chain["changes"],
         json!([
-            {"epoch": "86", "units": (half / 2).to_string()},
-            {"epoch": "88", "units": half.to_string()}
+            {"epoch": "102", "units": (half / 2).to_string()},
+            {"epoch": "104", "units": half.to_string()}
         ])
     );
     assert_eq!(
         ledger_at(&f.client, target, updated).await["changes"],
         json!([
-            {"epoch": "86", "remove_units": half.to_string(), "add_units": (half / 2).to_string(), "refs": "1"},
-            {"epoch": "88", "remove_units": (half / 2).to_string(), "add_units": half.to_string(), "refs": "1"}
+            {"epoch": "102", "remove_units": half.to_string(), "add_units": (half / 2).to_string(), "refs": "1"},
+            {"epoch": "104", "remove_units": (half / 2).to_string(), "add_units": half.to_string(), "refs": "1"}
         ])
     );
     assert!(CAPACITY + half / 2 > CAPACITY);
@@ -1645,7 +1632,7 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
     poc_rebuild_horizon(
         &f,
         covered,
-        85,
+        101,
         [CAPACITY, first_total, boundary_total],
         100,
     )
@@ -1661,15 +1648,15 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
     assert_eq!(
         new_chain["changes"],
         json!([
-            {"epoch": "86", "units": (half / 4).to_string()},
-            {"epoch": "88", "units": (half / 2).to_string()}
+            {"epoch": "102", "units": (half / 4).to_string()},
+            {"epoch": "104", "units": (half / 2).to_string()}
         ])
     );
     assert_eq!(
         ledger_at(&f.client, target, covered).await["changes"],
         json!([
-            {"epoch": "86", "remove_units": half.to_string(), "add_units": (half / 4).to_string(), "refs": "1"},
-            {"epoch": "88", "remove_units": (half / 4).to_string(), "add_units": (half / 2).to_string(), "refs": "1"}
+            {"epoch": "102", "remove_units": half.to_string(), "add_units": (half / 4).to_string(), "refs": "1"},
+            {"epoch": "104", "remove_units": (half / 4).to_string(), "add_units": (half / 2).to_string(), "refs": "1"}
         ])
     );
     assert_eq!(
@@ -1682,23 +1669,23 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
         .await,
         vec![
             json!([{"pool": target.to_hex_literal(), "bps": "10000"}]),
-            json!({"vec": [{"epoch": "86", "ratios": [{"pool": target.to_hex_literal(), "bps": "2500"}]}]})
+            json!({"vec": [{"epoch": "102", "ratios": [{"pool": target.to_hex_literal(), "bps": "2500"}]}]})
         ]
     );
     poc_rebuild_refs(&f, covered, &[
         (retired_epoch, None),
-        (83, Some(1)),
-        (85, Some(2)),
-        (86, None),
+        (99, Some(1)),
+        (101, Some(2)),
+        (102, None),
         (REBUILD_BOUNDARY, None),
     ])
     .await;
-    println!("Large chain replacement accepted: U1 H={half}, P24 units={next}, old5000 H->H/2->H, new2500 H->H/4->H/2; partial-cancel intermediate={} exceeds C, final E86={first_total}, B88={boundary_total}; exactly two refs remain", CAPACITY + half / 2);
+    println!("Large chain replacement accepted: U1 H={half}, P40 units={next}, old5000 H->H/2->H, new2500 H->H/4->H/2; partial-cancel intermediate={} exceeds C, final E102={first_total}, B104={boundary_total}; exactly two refs remain", CAPACITY + half / 2);
 
     let mut completed = covered;
-    for epoch in [86, 87, REBUILD_BOUNDARY] {
+    for epoch in [102, 103, REBUILD_BOUNDARY] {
         let tx = poc_commit_with_model(&f, 5, 5, poc_rebuild_clock_model).await;
-        poc_rebuild_rewards(&f, &tx, if epoch == 86 { CAPACITY } else { first_total }).await;
+        poc_rebuild_rewards(&f, &tx, if epoch == 102 { CAPACITY } else { first_total }).await;
         completed = tx.info.version.0;
         let current = if epoch < REBUILD_BOUNDARY {
             first_total
@@ -1720,11 +1707,11 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
         .await;
         poc_rebuild_refs(&f, completed, &[
             (retired_epoch, None),
-            (83, Some(1)),
-            (84, None),
-            (85, Some(2)),
-            (86, Some(1)),
-            (87, None),
+            (99, Some(1)),
+            (100, None),
+            (101, Some(2)),
+            (102, Some(1)),
+            (103, None),
             (
                 REBUILD_BOUNDARY,
                 if epoch == REBUILD_BOUNDARY {
@@ -1735,7 +1722,7 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
             ),
         ])
         .await;
-        if epoch == 86 || epoch == REBUILD_BOUNDARY {
+        if epoch == 102 || epoch == REBUILD_BOUNDARY {
             let checkpoint = checkpoint_at(&f.client, target, epoch, completed)
                 .await
                 .unwrap();
@@ -1772,9 +1759,9 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
     assert_eq!(logical_total, boundary_total);
     // 只读逻辑持仓查询不会主动写回成熟变化，也不会消耗历史 refs。
     poc_rebuild_refs(&f, completed, &[
-        (83, Some(1)),
-        (85, Some(2)),
-        (86, Some(1)),
+        (99, Some(1)),
+        (101, Some(2)),
+        (102, Some(1)),
         (REBUILD_BOUNDARY, Some(1)),
     ])
     .await;
@@ -1814,7 +1801,7 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
         }
     })
     .await
-    .expect("Rejoined target did not propose in E88 within 90 seconds");
+    .expect("Rejoined target did not propose in E104 within 90 seconds");
     let progress = success(
         execute(
             &f.client,
@@ -1861,5 +1848,5 @@ async fn poc_current_capacity_rejects_next_epoch_then_rebuilds_large_two_boundar
             );
         }
     }
-    println!("Capacity rebuild completed: unchanged state committed after rejection; releasing O allowed the identical owner payload; E85 current=C; 5000->2500 rebuilt both large boundaries without transient-capacity rejection; E88 current={boundary_total}, checkpoints refs83=1/85=2/86=1/88=1, target proposed and five current nodes agree at version={same_version}");
+    println!("Capacity rebuild completed: unchanged state committed after rejection; releasing O allowed the identical owner payload; E101 current=C; 5000->2500 rebuilt both large boundaries without transient-capacity rejection; E104 current={boundary_total}, checkpoints refs99=1/101=2/102=1/104=1, target proposed and five current nodes agree at version={same_version}");
 }

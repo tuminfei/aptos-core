@@ -287,11 +287,11 @@ async fn verify_recovery_rewards(
                 + number(&split["pending_inactive_native_reward_octa"])? as u128;
             let poc = number(&credit["inflation"])? as u128;
             ensure!(
-                number(&split["native_reward_bps"])? == 3000,
+                number(&split["native_reward_bps"])? == 5000,
                 "Default native split changed"
             );
             ensure!(
-                native == inflation * 3000 / 10000,
+                native == inflation * 5000 / 10000,
                 "Incorrect native inflation split"
             );
             ensure!(
@@ -364,7 +364,7 @@ async fn poc_testnet_two_nodes_quorum_loss_and_recovery() -> Result<()> {
     ensure!(
         installed.reward_context.1
             && installed.reward_context.5 == 0
-            && number(&installed.reward_split["installed_native_reward_bps"])? == 3000,
+            && number(&installed.reward_split["installed_native_reward_bps"])? == 5000,
         "SYS-02 stopped epoch must retain PoC, zero fee limit and the default reward split",
     );
     let validators = &installed.validators.active_validators;
@@ -495,8 +495,8 @@ async fn poc_testnet_two_nodes_quorum_loss_and_recovery() -> Result<()> {
     ensure!(
         expected.reward_context.1
             && expected.reward_context.5 == 0
-            && number(&expected.reward_split["installed_native_reward_bps"])? == 3000
-            && number(&expected.reward_split["configured_native_reward_bps"])? == 3000
+            && number(&expected.reward_split["installed_native_reward_bps"])? == 5000
+            && number(&expected.reward_split["configured_native_reward_bps"])? == 5000
             && expected.reward_split["pending_change"] == serde_json::json!({ "vec": [] }),
         "Recovery changed the PoC mode, installed fee limit or default reward split",
     );

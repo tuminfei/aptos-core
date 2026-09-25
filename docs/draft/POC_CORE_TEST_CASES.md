@@ -31,10 +31,10 @@
 | T2 | 测试网默认配置：`testnet()`，Controlled，最低 2 人，容量 128，每人初始 1 OHMP，每池质押 1 TOPO，最低权重 1 power，上限 1,000 OHMP | 使用现有测试创世参数：50% 增长率、1 小时 Epoch、10% APY；保留原生默认功能及普通/Chunky DKG 配置 |
 | T2-F | 双节点运行与恢复测试 | 基于 T2，仅将 Epoch 缩短为 10 秒；普通/Chunky DKG 仍取原生默认值。单独记录此覆盖项，不能替代 T2 原参数验收 |
 | T2-S | [现有双节点 smoke][N2] 的独立变体 | 使用测试网 PoC 参数、每池 1 TOPO 和 10 秒 Epoch；继承 [SwarmBuilder][SB] 关闭 Chunky DKG 的覆盖项，普通 DKG 保持开启。其余配置逐项记录；该变体不能计为严格的 T2 或 T2-F |
-| F4/F5 | 四池功能测试、五池成员替换及真实 DKG | 采用 [现有节点 fixture][ND]：Open、最低 4 人、25% 增长率、每池 100 Octa 保证金、10 power 初始权重，保留比例 10000，`native_reward_bps=0`；普通/Chunky DKG 按用例切换 |
+| F4/F5 | 四池功能测试、五池成员替换及真实 DKG | 采用 [现有节点 fixture][ND]：Open、最低 4 人、25% 增长率、每池 100 Octa 保证金、10 power 初始权重，保留比例 10000，合约默认 `native_reward_bps=5000`，特定场景再通过治理设置分流；普通/Chunky DKG 按用例切换 |
 | A | 整数算术、账本与时序隔离用例 | 未另行注明时保留比例 10000、`native_reward_bps=0`；奖励分流用例显式覆盖该值。按用例构造明确的生效持仓；VM 执行前清空目标池未列入算例的创世持仓并等待生效，同时保留足够背景验证者 |
 
-M/T2 的共同默认值为：`max_allocations=4`、`max_claim_pools=4`、`max_upload_users=32`、`retention_bps=9995`、`max_relative_period=10000`、`reward_epoch_limit=600060`、`native_reward_bps=3000`。直接创世的算力周期为 60 Epoch，上传者为 `0x1`，初始费用分发限额为 0。清单省略原生奖励占比时使用 3000；显式 0 必须保留。通胀和可分发交易费各自分流、各自取整；PoC 运营佣金为 0，原生部分沿用份额、佣金和复投规则。
+M/T2 的合约共同默认值为：`max_allocations=4`、`max_claim_pools=4`、`max_upload_users=32`、`retention_bps=9995`、`native_reward_bps=5000`。直接创世的算力周期为 60 Epoch，上传者为 `0x1`，初始费用分发限额为 0。创世清单不配置上限与奖励分流；自定义值通过治理更新。通胀和可分发交易费各自分流、各自取整；PoC 运营佣金为 0，原生部分沿用份额、佣金和复投规则。
 
 至少准备框架治理账户、上传者 O、验证者 owner/运营者/投票者、用户 U1～U32，以及只提供保证金的委托人、只提供算力的用户和同时持有两类权益的用户。权限用例使角色使用不同地址；另保留多个 owner 共用一个运营者和投票者的组合。每个独立用例从干净创世或固定快照开始。
 
@@ -43,7 +43,7 @@ M/T2 的共同默认值为：`max_allocations=4`、`max_claim_pools=4`、`max_up
 ```text
 1 OHMP = 100_000_000 power
 1 TOPO = 100_000_000 Octa
-S = UNIT_SCALE = 2^32
+S = UNIT_SCALE = 2^16
 J = INDEX_SCALE = 2^64
 Q = 2^128
 
@@ -81,7 +81,7 @@ claimable_octa = floor(accrued / Q)
 | 算例 | 精确预期 |
 | --- | --- |
 | 周期 0、原始算力 17、全额分配 | `units = 17 * S`，生效权重 17 power |
-| `retention=9000`，新版本原始算力 100，绑定下一周期指数 | `I=16602069666338596454`，`units=477218588444`，该周期全额分配权重为 **99** |
+| `retention=9000`，新版本原始算力 100，绑定下一周期指数 | `I=16602069666338596454`，`units=7281777`，该周期全额分配权重为 **99** |
 | 创世原始算力 1 OHMP，`retention=9995`，无新上传 | 首次边界 `I=18437520701672696840`，聚合权重 **99,949,999 power**，不是展示值四舍五入后的 100,000,000 |
 | 2.5 TOPO/OHMP，周期 0 原始算力各 17，保证金 `[42,43,100,100]` Octa | 最终权重 `[16,17,17,17]`，计奖基数 `[40,42,42,42]` Octa，原始算力及完整 units 保留 |
 | A：两名用户 units 为 `10*S`、`30*S`，原生占比 0，1 Octa 通胀加 39 Octa 可分发费用 | PoC 入账 40，分别领取 10、30 Octa |
@@ -105,7 +105,7 @@ claimable_octa = floor(accrued / Q)
 
 所有相关用例共同检查：池逻辑 units 等于生效持仓之和；当前及未来聚合不超过 `2^120`；持仓/池的未来变更最多两条；奖励指数单调不减；累计领取不超过累计入账；`vault = 累计入账 - 累计领取`；检查点引用归零后可释放；已安装权重只来自 `ValidatorSet`；冻结计划与 PVS 成对存在、成对清理。
 
-奖励分流同时检查：分流快照 Epoch 与 `RewardContext.epoch` 一致；`native_inflation + poc_inflation = inflation`、`native_fee + poc_fee = fee`；两路余额增量之和等于该期总收益，通胀只计算一次。金库守恒中的“入账”仅指 PoC 部分；原生本金可因原生奖励复投增加，PoC 结奖和领取自身不增加原生份额。原生四类余额的合并及预留容量另按 NUM-05 验证。
+奖励分流同时检查：分流快照 Epoch 与 `RewardContext.epoch` 一致；`native_inflation + poc_inflation = inflation`、`native_fee + poc_fee = fee`；两路余额增量之和等于该期总收益，通胀只计算一次。金库守恒中的“入账”仅指 PoC 部分；原生本金可因原生奖励复投增加，PoC 结奖和领取自身不增加原生份额。实际代币总量以 Octa 计量并长期远低于 `u64::MAX`；NUM-05 验证巨大费用政策上限不会被当成余额，以及实际结算和委托入池费估算的边界。
 
 ## 3. 核心测试用例
 
@@ -115,11 +115,11 @@ claimable_octa = floor(accrued / Q)
 
 | ID / 级别 | 前置条件与步骤 | 预期结果 | 现有自动化 / 补充点 |
 | --- | --- | --- | --- |
-| GEN-01 / P0 | M：分别以主网原生配置的默认 10 人、Layout 的 5 人/最低保证金和 128 人/最高保证金生成创世；再尝试 4 人 | 合法组合安装 Epoch 1；每人获配 100 万 OHMP；4 人拒绝；四类 TOPO 配置资源保持原值；`Default` 使用主网值，分流快照为 Epoch 1/3000 | 已有：[VM] `poc_mainnet_defaults_initialize_without_changing_topo_config` 核对默认 10 人、主网默认值及原生资源；[LY] `poc_mainnet_defaults_support_current_layout_and_validator_capacity` 对 Layout 5 人/最低保证金和 128 人/最高保证金分别生成 PoC 与普通原生创世，逐字节比较四类 TOPO 配置并核对 Epoch 1/3000 分流快照；`poc_mainnet_defaults_reject_too_few_validators` 覆盖 4 人拒绝 |
-| GEN-02 / P0 | T2：分别用 2、5、10 人生成创世；再用 1 人 | 合法组合各安装 1 OHMP 权重、全额分配、PoC 奖励上下文及 Epoch 1/3000 分流快照；1 人拒绝；现有 TOPO 参数不变 | 已有：[VM] `poc_testnet_defaults_initialize_without_changing_topo_config`、`poc_testnet_defaults_reject_single_validator`；这是创世写集证据，节点默认配置另见 SYS-01 |
-| GEN-03 / P0 | 新建 PoC 创世并重载写集；多个 owner 共用运营者与投票者；清单原生占比分别省略、显式 0、3000、6750 | 每个 owner 的原始版本和本池分配独立，分配为 10000 bps；Epoch 均为 1、周期 0、下一边界 61；上传者 `0x1`、费用限额 0；恰好一次安装，无 Epoch 0 奖励。省略占比使用 3000，显式值保留；PoC 运营佣金为 0，原生分流与原生佣金另按 REW-08～10 验证 | 已有：[VM] `poc_genesis_builder_executes_and_reloads_production_bundle` 将省略/显式 0/3000/6750 四份树状清单分别经 `Deserialize`、生产创世写集和新 VM 重载；核对共享运营者/投票者下各 owner 独立的原始版本、10000 bps 分配、Epoch/周期/边界、上传者、费用限额及完整分流快照；仅发一次安装事件且无 Epoch 0 通胀、费用、分流或领取事件，owner 直持池不存在带运营佣金的 staking contract；[GE]/[LY] 保留 Move 创世和独立清单解析证据 |
+| GEN-01 / P0 | M：分别以主网原生配置的默认 10 人、Layout 的 5 人/最低保证金和 128 人/最高保证金生成创世；再尝试 4 人 | 合法组合安装 Epoch 1；每人获配 100 万 OHMP；4 人拒绝；四类 TOPO 配置资源保持原值；`Default` 使用主网值，分流快照为 Epoch 1/5000 | 已有：[VM] `poc_mainnet_defaults_initialize_without_changing_topo_config` 核对默认 10 人、主网默认值及原生资源；[LY] `poc_mainnet_defaults_support_current_layout_and_validator_capacity` 对 Layout 5 人/最低保证金和 128 人/最高保证金分别生成 PoC 与普通原生创世，逐字节比较四类 TOPO 配置并核对 Epoch 1/5000 分流快照；`poc_mainnet_defaults_reject_too_few_validators` 覆盖 4 人拒绝 |
+| GEN-02 / P0 | T2：分别用 2、5、10 人生成创世；再用 1 人 | 合法组合各安装 1 OHMP 权重、全额分配、PoC 奖励上下文及 Epoch 1/5000 分流快照；1 人拒绝；现有 TOPO 参数不变 | 已有：[VM] `poc_testnet_defaults_initialize_without_changing_topo_config`、`poc_testnet_defaults_reject_single_validator`；这是创世写集证据，节点默认配置另见 SYS-01 |
+| GEN-03 / P0 | 新建 PoC 创世并重载写集；多个 owner 共用运营者与投票者；清单仅提供四项启动配置 | 每个 owner 的原始版本和全额本池分配独立；Epoch 1、周期 0、下一边界 61；合约默认部署上限及 5000 bps 分流正确，Epoch 0 不结奖 | 已有：[VM] `poc_genesis_builder_executes_and_reloads_production_bundle` 和 [LY] `poc_genesis_manifest_contains_only_bootstrap_configuration`；治理更新由 Move `poc_genesis_defaults_remain_governable` 和 `poc_config_tests` 覆盖 |
 | GEN-04 / P0 | 原始算力各 100 power，保证金 `[20,30,30,30]` Octa，比例 1 TOPO/OHMP | 最终权重被限为 `[20,30,30,30]`；每个 owner 与池仍保有 `100*S` units，不能只写受担保部分 | 已有：[VM] `poc_genesis_builder_preserves_full_allocation_when_bonds_cap_power` |
-| GEN-05 / P0 | 参数化尝试：初始算力 0；Open+最低 2 人；Controlled+最低 2 人+20% 动态增长；动态换员下最低人数等于容量；原生占比 10001；再恢复合法参数 | 无效组合在创世校验阶段以预期原因拒绝，不生成可用的部分创世；Controlled+2 人+50% 合法，原生占比 0/10000 合法。Open 仍要求至少 4 人及集中度约束 | 已有：[VM] `poc_genesis_builder_validates_mode_growth_capacity_and_reward_split_matrix` 通过真实创世入口覆盖模式、增长率、容量和 0/10000/10001 分流矩阵，非法组合同时匹配模块名与完整 abort code，合法组合重载写集并核对权重、计奖基数及分流快照；零算力与 Open 集中度测试同样精确核对错误来源；[AC]/[RS] 保留隔离边界覆盖 |
+| GEN-05 / P0 | 参数化尝试：初始算力 0；Open+最低 2 人；Controlled+最低 2 人+20% 动态增长；动态换员下最低人数等于合约默认容量；再恢复合法参数 | 无效组合以预期原因拒绝，不生成部分创世；Controlled+2 人+50% 合法；Open 仍要求至少 4 人及集中度约束 | 已有：[VM] `poc_genesis_builder_validates_mode_growth_and_default_capacity` 覆盖模式、增长率与默认容量，非法组合匹配模块名和完整 abort code；零算力、Open 集中度测试同样核对错误来源；分流的 0/10000/10001 边界由 [RS] 治理测试覆盖 |
 | GEN-06 / P0 | 在已运行链重放创世专用写算力/创建 PoC 验证者操作，或尝试重复初始化 PowerStore；另运行普通原生创世入口 | 重放和重复初始化拒绝，原始版本、基线和时钟不重置；普通原生创世仍沿用其显式入口行为 | 已有：[GE] `poc_genesis_entry_rejects_operating_chain`、`poc_native_genesis_remains_unprepared`；[PS] `poc_initialization_cannot_reset_retention_or_versions`；[NP] `poc_operating_chain_rejects_genesis_power_replay_atomically` 从真实治理事务与普通账户调用创世算力入口，覆盖已有双版本/无记录用户、0/1 OHMP/u64 上限，精确拒绝并回滚前置分流排期及事件，原版本/基线/时钟保留，合法上传随后成功 |
 
 ### 3.2 原始算力、双版本与衰减
@@ -131,8 +131,8 @@ claimable_octa = floor(accrued / Q)
 | PWR-03 / P0 | 已有用户下一周期上传 0；新用户首次上传 0；已有用户同批 `[0,999]` | 已有用户保存明确零版本并在 B 清除未来算力，历史奖励仍可领；新用户零值不建记录；同周期 999 不覆盖先写的 0 | 已有：[PV] `poc_batch_first_write_and_explicit_zero_version`；[SN] 真实上传矩阵覆盖已有用户 `[0,999]`、新用户零值及事件；[NP] `poc_power_period_zero_rollover_and_historical_claim` 验证零版本生效后实际领取历史权益 |
 | PWR-04 / P0 | 连续上传三个周期的版本；跨数个周期不访问，再查询并领取奖励 | 最多保存两个原始版本槽；新写入淘汰旧槽后，当前有效 units 仍使用原生效周期指数；旧奖励可凭检查点结算；重复查询无写入 | 已有：[PV] 版本滚动和长期查询；[PS] `poc_snapshot_is_read_only`；[NP] 同一节点状态链覆盖连续版本、四个周期不操作、两个原始槽及历史领取，按每期生效持仓独立累积整数和小数权益 |
 | PWR-05 / P0 | 上传者 O 成功上传；普通用户上传；治理将上传者从 O 改为 O2；分别由 O、O2、框架继续上传；重复设置相同上传者 | 普通用户和被替换的 O 拒绝；O2 与框架可操作；未授权失败不改变任何版本；地址未变不重复发 `OperatorChangedEvent` | 已有：[SN] `poc_public_upload_authority_first_write_and_batch_inputs` 覆盖上传者轮换、框架和非法身份、版本回滚及幂等事件；[NF] 补上传和改上传者的正常/冻结/恢复/越权矩阵；行为依据 [PW] `stage_batch_update`、`set_operator` |
-| PWR-06 / P0 | 未冻结且期限有效，分别上传空批、1 项、32 项、33 项；构造向量长度不等、当前/过去/跨过下一周期的 target；令批次后项触发容量错误 | 空批无业务变化；1/32 合法；33、长度或周期非法拒绝。重复地址按原始输入长度计批次上限；后项失败回滚先前合法项及事件 | 已有：[EE] 上传容量及批次 VM 回滚；[SN] 上传矩阵覆盖空批、1/32/33 项、重复地址计数、长度不等、当前及跨期目标；[NP] 补过去目标拒绝；[NU] 在真实 E83/P23/B85 上传 [u64::MAX,2]，后项仅 B 超限于 poc_accounting/0x20008，前项版本、持仓、refs、事件和业务写集全部回滚，修复为 [u64::MAX,1] 后成功安装 |
-| PWR-07 / P0 | 使用 60 Epoch 周期从创世推进到 Epoch 60、61、121；期间不上传；另使用 9000 保留比例测试新版本取整 | Epoch 60 仍为周期 0；61/121 各只递推一次指数；按 2.2 节核对首次 1 OHMP 衰减值和 100→99 反例；不逐用户重算标准化版本 | 已有：[PS] 时钟及 9000 下 100→99 取整；[NP] `poc_default_sixty_epoch_period_reaches_second_decay_without_uploads` 保持 60 Epoch、9995/3000，未上传推进至 60/61/120/121，精确权重依次 100,000,000/99,949,999/99,949,999/99,900,024；周期事件仅在 61/121 各一次，每笔核对没有原始版本或持仓表项重写，逐期独立核对两路奖励 |
+| PWR-06 / P0 | 未冻结且指数有效，分别上传空批、1 项、32 项、33 项；构造向量长度不等、当前/过去/跨过下一周期的 target；令批次后项触发容量错误 | 空批无业务变化；1/32 合法；33、长度或周期非法拒绝。重复地址按原始输入长度计批次上限；后项失败回滚先前合法项及事件 | 已有：[EE] 上传容量及批次 VM 回滚；[SN] 上传矩阵覆盖空批、1/32/33 项、重复地址计数、长度不等、当前及跨期目标；[NP] 补过去目标拒绝；[NU] 在真实 E99/P39/B101 上传 [u64::MAX,2]，后项仅 B 超限于 poc_accounting/0x20008，前项版本、持仓、refs、事件和业务写集全部回滚，修复为 [u64::MAX,1] 后成功安装 |
+| PWR-07 / P0 | 使用 60 Epoch 周期从创世推进到 Epoch 60、61、121；期间不上传；另使用 9000 保留比例测试新版本取整 | Epoch 60 仍为周期 0；61/121 各只递推一次指数；按 2.2 节核对首次 1 OHMP 衰减值和 100→99 反例；不逐用户重算标准化版本 | 已有：[PS] 时钟及 9000 下 100→99 取整；[NP] `poc_default_sixty_epoch_period_reaches_second_decay_without_uploads` 保持 60 Epoch、9995/5000，未上传推进至 60/61/120/121，精确权重依次 100,000,000/99,949,999/99,949,999/99,900,024；周期事件仅在 61/121 各一次，每笔核对没有原始版本或持仓表项重写，逐期独立核对两路奖励 |
 
 ### 3.3 算力分配与两个生效时点
 
@@ -161,7 +161,7 @@ claimable_octa = floor(accrued / Q)
 | ID / 级别 | 前置条件与步骤 | 预期结果 | 现有自动化 / 补充点 |
 | --- | --- | --- | --- |
 | REW-01 / P0 | 两用户贡献 `10*S:30*S`；10 TOPO/OHMP 比例、100 Octa 保证金，将 40 power 限为 10；1 Octa 通胀加 39 Octa 可分发费用，分别安装原生占比 0/3000；另执行 3000 下的 1+27 算例 | 计奖基数为 100；占比 0 时领取 10/30；占比 3000 时原生获 11、PoC 入账 29、领取 7/21、金库剩 1 并保留小数权益；1+27 时原生获 8、领取 5/15。限幅不改变池内比例；无算力保证金所有人不领取 PoC 金库，但可获原生部分 | 已有：[NB] 三个 `poc_bond_capped_*` 节点测试执行 1+39 的 0/3000 占比及 1+27 的 3000 占比；独立核对真实旧期表现、分流、10/30、7/21、5/15 领取和小数权益，目标保证金 owner 的零持仓领取及原生收益，完整 units、引用释放和金库；[ST] 保留原保证金限幅测试 |
-| REW-02 / P0 | 在 Epoch E 中修改保证金比例、奖励率、费用开关/限额或奖励率来源功能，并排定新的原生奖励占比；准备并完成 E+1，DKG 等待期间继续出块 | E 按已安装计奖基数、closing context 和旧分流快照结算；统计与实际费用继续累计，提交时按旧索引分流；新参数只影响目标期，奖励上下文、分流快照 Epoch 与委员会一致 | 已有：[NR] `poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapshot` 从原样 `PocGenesisConfiguration::testnet()` 创世出发，Epoch 内联合排定新保证金比例、奖励率、费用限额及 6000 分流并暂停真实普通 DKG；等待期间继续提交付费交易，完成时按旧基数、旧 context、旧 3000 和旧索引独立核对通胀/费用、原生余额、PoC 金库、指数与事件，目标期才安装新值并清缓存，四节点同版本一致；[ST]/[DF] 保留奖励率来源 feature、费用开关及五种完成路径覆盖 |
+| REW-02 / P0 | 在 Epoch E 中修改保证金比例、奖励率、费用开关/限额或奖励率来源功能，并排定新的原生奖励占比；准备并完成 E+1，DKG 等待期间继续出块 | E 按已安装计奖基数、closing context 和旧分流快照结算；统计与实际费用继续累计，提交时按旧索引分流；新参数只影响目标期，奖励上下文、分流快照 Epoch 与委员会一致 | 已有：[NR] `poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapshot` 从原样 `PocGenesisConfiguration::testnet()` 创世出发，Epoch 内联合排定新保证金比例、奖励率、费用限额及 6000 分流并暂停真实普通 DKG；等待期间继续提交付费交易，完成时按旧基数、旧 context、旧 5000 和旧索引独立核对通胀/费用、原生余额、PoC 金库、指数与事件，目标期才安装新值并清缓存，四节点同版本一致；[ST]/[DF] 保留奖励率来源 feature、费用开关及五种完成路径覆盖 |
 | REW-03 / P0 | 改变成功/失败提案比例；覆盖无提案、长 Epoch、费用分发关闭、限额 0、正限额及超限费用；隔离测试零 units 和同 Epoch 零奖励重复入账 | 通胀仍使用原生表现公式和宽整数；无有效表现的对应通胀为 0；费用按开关/限额分发；费用限额 0 不关闭 gas 或通胀。零 units 时权重和奖励须为 0，不做除法；零奖励也不能同 Epoch 重复入账 | 已有：[NE] `poc_positive_inflation_fee_switch_limits_and_performance` 在 3600 秒 Epoch 覆盖真实 0/0 无提案、停机产生失败提案及恢复后的成功/失败混合比例；限额 0 下 gas 与正通胀保持、关闭 feature 后费用仍记录但结奖为 0、重开后单笔超限精确封顶 17，独立核对指数、金库、事件及同版本状态。[AC] `poc_zero_reward_still_prevents_double_credit` 与 `poc_zero_unit_pool_rejects_positive_reward_atomically` 将零 units/零基数池推进到有效 PoC Epoch：零奖励 delta/index/vault 均为 0 但阻止重复入账，正奖励精确以 `poc_accounting/0x3000e` 原子拒绝；[ST] 保留宽整数公式覆盖 |
 | REW-04 / P0 | A：两用户各 `S`，连续两期各入账 1 Octa；第一期先查询、领取 0，再覆盖配置并恢复原比例，确保两期生效持仓仍各为 `S`；第二期重新领取 | 第一期各保留 `Q/2` 小数权益；普通更新和零额领取不丢权益；第二期各领取 1；同一奖励再次领取为 0，查询结果与实际领取一致 | 已有：[AC] 保留小数权益和查询/领取分段隔离测试；[NK] `poc_fractional_rewards_survive_zero_claim_and_allocation_replacement` 补真实费用连续两期各 1 Octa、先查询/领 0、50%→25%→50% 覆盖恢复、第二期各领 1/重复领 0；独立模型核对 Q/2、余额、事件及引用释放 |
 | REW-05 / P0 | A：池 units=`3*S`，单期奖励 1 Octa 制造池级除法余量；下一期等量更换全部持仓后继续结奖 | 每 Epoch 独立计算 `floor(R*Q/U)`；池级除法余量不进入下一期指数。新用户只能取得新期收益；旧用户小数权益留在旧持仓，金库余额可大于当前整数可领额之和 | 已有：[AC] 保留独立 Epoch 模型和净零变化检查点测试；[NK] `poc_pool_division_dust_does_not_follow_replacement_positions` 补 3S 等量换仓、每期 1 Octa 共三期，严格区分逐期与合并取整；旧权益 Q-S、新人领取 1 后 Q-2S、金库余 2，核对引用归零及各在任节点表项释放 |
@@ -195,7 +195,7 @@ claimable_octa = floor(accrued / Q)
 
 | ID / 级别 | 前置条件与步骤 | 预期结果 | 现有自动化 / 补充点 |
 | --- | --- | --- | --- |
-| GOV-01 / P0 | 未冻结时排定 E+1 的 PoC 参数，覆盖并取消，再提交；尝试过去/当前 Epoch、超部署上限、无权限修改 | 待生效配置能替换/撤销，当前权重与旧期奖励基数不提前变化；非法修改回滚；不重置首次 PoC Epoch、指数基线或奖励期限 | 已有：[NG] 直接 PoC 创世后的 E+1/E+2、覆盖/取消（含空项）、过去/当前 Epoch、非法参数/部署容量/数值上界及越权矩阵；精确状态差异、旧期奖励基数、首次 Epoch、指数基线和支持期限，成功安装及配置清理；冻结恢复见 [NF]，原隔离覆盖见 [AC]/[GE] |
+| GOV-01 / P0 | 未冻结时排定 E+1 的 PoC 参数，覆盖并取消，再提交；尝试过去/当前 Epoch、超部署上限、无权限修改 | 待生效配置能替换/撤销，当前权重与旧期奖励基数不提前变化；非法修改回滚；不重置首次 PoC Epoch 或指数基线 | 已有：[NG] 直接 PoC 创世后的 E+1/E+2、覆盖/取消（含空项）、过去/当前 Epoch、非法参数/部署容量/数值上界及越权矩阵；精确状态差异、旧期奖励基数、首次 Epoch 和指数基线，成功安装及配置清理；冻结恢复见 [NF]，原隔离覆盖见 [AC]/[GE] |
 | GOV-02 / P0 | 默认边界 B=61，在周期中途将长度 60 改为 2；另设置 0 和使边界加法溢出的长度 | 已确定边界仍为 61，提交到 61 后下一边界为 63；已排定到 B 的变化不顺延；0/溢出拒绝，保留比例和指数基线不重置 | 已有：[PS] 最大长度和边界溢出；[NP] `poc_power_period_zero_rollover_and_historical_claim` 实际推进 60→2、B=61→63，核对已排持仓和指数；0/u64 上限拒绝同时回滚先行的合法奖励占比排期及事件 |
 | GOV-03 / P0 | PoC 生效后，构造代币保证金 100 Octa、共识权重 10 power 的池；分别覆盖 Open/Controlled 和原生占比 0/3000；查询治理投票权；正原生奖励下使用真实委托池查询入池费 | 同一版本下共识投票使用 10 power，治理权重仍按原生代币口径；原生占比 0 时入池费为 0；正占比按已安装收益上限、佣金和整数规则计算，可因零收益等条件为 0，不能固定断言免费；奖励复投后的治理权重按更新的原生口径核对 | 已有：[NW] 两项节点测试覆盖 Open/静态 Controlled、0/3000 占比、100 Octa 本金与 10 power、追加/待退出余额、原生复投后的治理权重及 PoC 领取不改权重；[NQ] 覆盖 Open 委员委托池的 0/3000 占比，以及 Controlled 委员委托池在 3000 占比、3735 佣金下的入池费独立模型、实际追加、治理原生权重和同版本状态；[DG] 保留原治理及安装上下文报价测试 |
 | GOV-04 / P0 | 直接 PoC 创世后通过治理排定原生占比，覆盖、取消、再排期；分别指定 E+1/E+2、当前/过去 Epoch、10001、无权限调用和无待生效变更时取消；冻结和完成路径与 FRZ-01、EPO-01 联合验证 | 合法排期只改变待生效项；已安装占比不提前改变，达到目标 Epoch 提交时安装且清空待生效项；非法请求核对模块/代码，配置和事件原子回滚；计划内旧期结算仍使用旧占比，快照 Epoch 始终与奖励上下文一致 | 已有：[NR] `poc_reward_split_governance_lifecycle_and_old_epoch_rewards` 补直接创世后的完整排期/取消/错误/事件矩阵，按旧期表现独立核对两路金额；[ST]/[RS] 配置边界，[EE]/[DF] 回滚与五种完成路径，冻结矩阵见 [NF] |
@@ -205,17 +205,17 @@ claimable_octa = floor(accrued / Q)
 
 | ID / 级别 | 前置条件与步骤 | 预期结果 | 现有自动化 / 补充点 |
 | --- | --- | --- | --- |
-| NUM-01 / P0 | 原始算力取 0、1、u64 上限；指数取 J、`2^40`、`2^40-1`；保留比例取 0、9995、10000、10001；验证默认 P_MAX=10000 及 9900 下的 1655/1656 | 合法输入按精确宽整数模型计算；单版本 units 可存入 u128；指数低于下界或比例非法拒绝。9995 的 `I[10000]=124137862714582947`；9900 的 1655 有效、1656 无效；超支持周期的新版本不接收 | 已有：[PS] `poc_normalization_rounding_and_maximum` 精确覆盖 raw 0/1/u64 上限与 J/2^40，2^40−1 精确拒绝；`poc_index_horizon_exact_boundaries` 逐周期取整得到 `I[10000]=124137862714582947`，覆盖 9900 的 1655/1656；新增 retention 0/10001 的 `poc_power_store/0x10004`、9995/10000 时钟与 P_MAX=10000 报告，以及超支持周期上传 `0x30008`；[AC] 保留算力换算交叉验证 |
+| NUM-01 / P0 | 原始算力取 0、1、u64 上限；指数取 J、`2^24`、`2^24-1`；保留比例取 0、9995、10000、10001；验证 9900 下的 2758/2759 和 5000 下的 40/41 | 合法输入按精确宽整数模型计算；单版本 units 可存入 u128；指数低于下界或比例非法拒绝。9995 的 `I[10000]=124137862714582947`；9900 的 2758 有效、2759 无效；5000 的 40 有效、41 无效；低于数值下界的新版本不接收 | 已有：[PS] `poc_normalization_rounding_and_maximum` 精确覆盖 raw 0/1/u64 上限与 J/2^24，2^24−1 精确拒绝；`poc_index_horizon_exact_boundaries` 逐周期取整得到 `I[10000]=124137862714582947`，覆盖 9900 的 2758/2759；retention 0/10001 的 `poc_power_store/0x10004`、9995 时钟、5000 下的数值边界预览与上传 `0x30008`；[AC] 保留算力换算交叉验证 |
 | NUM-02 / P0 | 分别使当前、E+1、仅 B 的池 units 达到 `2^120` 和超过上限；测试净结果合法但撤销/重建旧链较大的情形 | 等于上限合法、超过上限原子拒绝；仅 B 超限也在写入阶段拒绝，不能等换届失败；合法替换不能因临时累加而误拒；失败后原计划仍可提交 | 已有：[AC] `poc_pool_capacity_accepts_exact_limit_at_each_horizon` 将 E+1、B 推进为当前并逐层核对恰好上限，`poc_future_pool_capacity_rejected` 和 `poc_boundary_only_pool_capacity_rejected` 分别精确拒绝 E+1 与仅 B 的上限加一，`poc_final_capacity_accepts_replacing_large_chain` 验证按最终净结果判断；[EE] `poc_boundary_only_capacity_failure_rolls_back_batch` 核对仅 B 超限的完整快照回滚，修复后经生产换届入口只推进一个 Epoch并清理计划/PVS；[NU] 真实节点覆盖当前/E+1/B 恰好上限、修复提交、大旧链替换及宽整数限幅安装。生产写入在 E+1/B 已阻止超限值，因此该值不能合法成熟为当前状态 |
-| NUM-03 / P0 | 配置检查 `65536*max_power` 的上下界；隔离构造两个权重各 `2^63` 的损坏目标；验证零总权重防御；覆盖普通及 Chunky 目标生成 | 合法配置下总权重必须在 `1..=u64::MAX`；先限幅再窄化。`2^63+2^63` 及零总权重只作隔离损坏状态验证：前者由配置不变量排除，后者由正的最低权重和最低人数排除 | 已有：[ST] `poc_dkg_conservative_config_boundary_accepted` 和首个溢出拒绝覆盖 `65536*(2^48−1)` 与 `65536*2^48`；`poc_valid_config_makes_target_total_overflow_unreachable` 固化“人数×单池上限不溢出、非空总和为正、空集先报人数不足”的生产不变量；`poc_actual_total_rejects_dkg_overflow` 隔离验证两个 `2^63`、恰好 u64 上限及零总权重的防御校验。[EE] `poc_zero_total_power_defers_sixteen_blocks_without_partial_state` 分别启用/关闭 Chunky，通过超时 V1 BlockMetadata 连续 16 次真实进入共用的 `try_start_internal`，核对计划/PVS、普通/Chunky 会话无残留。两个 `2^63` 无法沿生产预览路径构造：直接注入非法 PVS 会绕过被测总权重校验，不作入口通过证据 |
-| NUM-04 / P1 | 用小 H 快速跨过期限，并对默认 H 做大整数边界校验；构造全 H 无人领取、`H*R_MAX=u64::MAX`/再加 1、`F+H` 溢出；提案计数接近上限 | 支持区间严格为 `F<=epoch<F+H`；超期目标不提交，不能重置 F/指数绕过；每池累计 PoC 入账不超过分流前 `H*R_MAX`，金库不溢出；计数器溢出明确拒绝，合法长期统计用宽整数计算；该上界不代替原生本金容量检查 | 已有：[AC] `poc_native_preparation_and_reward_horizon` 验证小 H 的严格区间，`poc_full_reward_horizon_maximum_pool`、`poc_full_reward_horizon_large_index` 将全期限累计精确推到 `u64::MAX` 并核对金库/权益，`poc_reward_lifetime_rejects_u64_max_plus_one` 精确拒绝再加 1；`poc_default_reward_horizon_wide_integer_report` 以主网默认 H=600060 和 R_MAX 计算 `1260126000000000000`，固定 F 后检查两端点，`poc_default_reward_horizon_rejects_first_epoch_overflow` 精确拒绝 `F+H=u64::MAX+1`；`poc_cancel_params_and_reschedule_keep_baseline` 验证调参不重置期限和指数基线；[ST] `poc_counter_maximum_and_unrelated_indices`、`poc_counter_success_overflow_rejected`、`poc_counter_duplicate_failures_overflow_rejected` 覆盖宽整数统计与两类计数器溢出 |
-| NUM-05 / P0 | 隔离构造各项原生余额/奖励容量检查恰好 u64 上限和再加 1；覆盖追加质押、当前及待退出池、到期余额合并、目标期提高占比、仅费用收入，以及当前关闭但目标期允许费用分发；容量不足 Deferred 后撤销排期或合法提取 inactive 修复 | 当期原生奖励上界为正时，追加按四类余额预留当期容量；下一期上界为正的入选池，预检按四类余额同时预留旧期和目标期原生奖励，目标期包含部署费用上限；本次结算池还分别检查活跃余额合并和到期转入。各适用检查等于上限合法，超限在冻结前拒绝/Deferred；零上界保留对应原生容量规则。修复后可提交，不能降低未来占比以改写旧期义务；使用宽整数计算 | 已有：[ST] 当前/目标期、退出池、到期合并、占比排期和费用容量测试；`poc_native_capacity_accepts_exact_u64_and_defers_one_over` 及 `poc_inactive_withdraw_repairs_native_capacity_deferred` 核对四类非零余额、精确上限/加一、冻结前延期、提取修复和计划/PVS 清理；`poc_native_capacity_accepts_exact_limit_for_each_balance_bucket`、四个 `poc_add_stake_*_capacity_plus_one_rejected` 与 `poc_zero_native_upper_bound_allows_each_balance_bucket_without_aggregate_reserve` 参数化覆盖四类余额各自承载大额本金时的旧期/目标期预留、精确 `u64::MAX`、加一拒绝及零上界规则；仅费用 15、通胀 3 和到期 pending-inactive 均有等值/加一成对断言。[EE] `poc_add_stake_native_capacity_abort_is_atomic_in_production_vm` 使用生产 bundle 调用公开 `stake::add_stake`，精确匹配 `stake/0x10025`，逐字节核对四类余额、OwnerCapability、钱包、计划/PVS及业务事件回滚 |
+| NUM-03 / P0 | 配置允许 `max_power = u64::MAX`；只校验实际入选权重总和，覆盖普通及 Chunky 共用目标检查 | 实际总和必须在 `1..=u64::MAX`，不截断；取消人数与单池上限的预设乘积约束 | [ST] `poc_config_accepts_u64_max_power`、`poc_target_checks_actual_total_independent_of_capacity`、`poc_actual_total_rejects_dkg_overflow`；仅操作权重整数向量，不铸造超发行规模代币。[EE] `poc_zero_total_power_defers_sixteen_blocks_without_partial_state` 覆盖启用/关闭 Chunky 的延期和无部分写入 |
+| NUM-04 / P1 | 不设奖励期限；在接近 u64::MAX 的 Epoch 启用和结算；长期不领至金库边界；反复领取再入账使累计奖励超过 u64::MAX；提案计数接近上限 | 单池每 Epoch 至多入账一次；累计奖励乘 Q 小于 2^256；实际领取受金库余额约束，权益与残差守恒；计数器溢出明确拒绝，合法长期统计用宽整数计算 | 已有：[AC] `poc_native_preparation_and_permanent_activation`、`poc_default_per_epoch_reward_limits`、`poc_reward_accounting_near_u64_max_epoch`；`poc_full_reward_vault_maximum_pool` / `large_index` 覆盖金库恰达 u64::MAX；`poc_recycled_rewards_exceed_u64_lifetime` / `maximum_pool` 只铸造一次 10^18 Octa，循环入账累计 2×10^19 Octa 后仍能精确领取；[ST] `poc_counter_maximum_and_unrelated_indices`、`poc_counter_success_overflow_rejected`、`poc_counter_duplicate_failures_overflow_rejected` 覆盖宽整数统计与计数器溢出 |
+| NUM-05 / P0 | 发行规模内的小额保证金，设置 `fee_max` 和费用限额为 `u64::MAX`、原生占比 10000；执行首次安装、追加质押和下一次结算 | 不因政策费用上限误判余额容量或延期；委托入池费奖励上界先用 `u128` 相加再封顶，查询不溢出；旧期实际通胀与费用精确入账，实际金额、有效本金与 `Coin` 合并断言保留；真实代币总量不接近 `u64` 上限 | 已有：[ST] `poc_large_fee_limit_does_not_reserve_actual_balance` 使用 1000 Octa 保证金，验证首次和后续预览可提交、估算封顶 `u64::MAX`、追加 7 Octa 成功，仅结算 10 Octa 通胀和 9 Octa 实际费用，最终本金 1026、PoC 金库 0，费用记录及计划/PVS 清理；不再构造接近 `u64::MAX` 的真实代币余额 |
 
 ### 3.10 节点运行、恢复、并行与性能
 
 | ID / 级别 | 前置条件与步骤 | 预期结果 | 现有自动化 / 补充点 |
 | --- | --- | --- | --- |
-| SYS-01 / P0 | 从 T2 原参数真实创世启动两个节点，核对默认功能、普通/Chunky DKG 和占比 3000；提交至少 10 笔普通转账、一次算力上传及一次分配操作；读取同版本资源 | 两节点持续出块、交易可查询；PoC 初始配置与 GEN-02 相同；当前权重不因未生效上传/分配立刻改变；gas 收费正常 | 已有：[SN] `poc_testnet_defaults_transfer_upload_and_allocate` 在严格 T2 下核对完整原生配置、默认功能及 DKG、10 笔付费转账、上传/分配及同版本状态；[N2] 另保留 T2-S 的非零领奖和立即重启变体 |
+| SYS-01 / P0 | 从 T2 原参数真实创世启动两个节点，核对默认功能、普通/Chunky DKG 和占比 5000；提交至少 10 笔普通转账、一次算力上传及一次分配操作；读取同版本资源 | 两节点持续出块、交易可查询；PoC 初始配置与 GEN-02 相同；当前权重不因未生效上传/分配立刻改变；gas 收费正常 | 已有：[SN] `poc_testnet_defaults_transfer_upload_and_allocate` 在严格 T2 下核对完整原生配置、默认功能及 DKG、10 笔付费转账、上传/分配及同版本状态；[N2] 另保留 T2-S 的非零领奖和立即重启变体 |
 | SYS-02 / P1 | T2-F 在 Epoch 开始后记录实际已安装的两池等权，停止一节点；等待在途提交稳定后连续观察 30 秒；恢复节点、提交新交易并等待下一次换届 | 停机时剩余 50% 权重不能产生新 quorum，稳定观察窗口内版本不增长、无新结奖；恢复后可提交并安装后续 Epoch，两节点同版本委员会、奖励上下文和分流快照一致 | 已有：[SN] `poc_testnet_two_nodes_quorum_loss_and_recovery` 在严格 T2-F 下核对实际等权、在途提交稳定、连续 30 秒停机观察、恢复交易及换届、同版本两路余额和结奖去重；恢复预算 90 秒、同版本追赶 30 秒，首轮 DKG 初始化单独记录 |
 | SYS-03 / P0 | F4 同步换届并重启一节点；F5 运行退出、回加和替补，再比较当前委员会全部节点 | 换届和重启后使用已安装权重继续共识；重新加入节点完成追赶；当前成员的顺序、公钥、权重和上下文一致；不把已离任节点持续同步作为通过条件 | 已有：[ND] `poc_genesis_restart`、`poc_dkg_replaces_validator_with_growth_budget` |
 | SYS-04 / P0 | F4 分别开启普通 DKG、普通+Chunky DKG；再暂停 DKG、重启节点、恢复原会话并授权强制完成 | 真实 transcript 通过现有验证路径；普通/Chunky 使用同一 PVS 目标，相关密钥安装到同一目标 Epoch；冻结重启继续原计划，最终每池只结奖一次 | 已有：[ND] `poc_dkg_installs_session_targets`、`poc_chunky_dkg_installs_same_session_targets`、`poc_frozen_dkg_force_end_and_restart` |
@@ -228,7 +228,7 @@ claimable_octa = floor(accrued / Q)
 
 | 顺序 | 用例 | 原因与完成标准 |
 | --- | --- | --- |
-| 1 | GEN-03、REW-01、REW-08～10、GOV-03～04、NUM-05 | 已按新模型覆盖两路金额、旧期快照、佣金、容量及事件；占比 0 与默认 3000 分别留证 |
+| 1 | GEN-03、REW-01、REW-08～10、GOV-03～04、NUM-05 | 已按新模型覆盖两路金额、旧期快照、佣金、费用政策上限及事件；占比 0 与默认 5000 分别留证 |
 | 2 | SYS-01、SYS-02 | 严格 T2 原参数建网和上传/分配、严格 T2-F 的失去 quorum、稳定停机观察和恢复换届，以及独立 T2-S 均已有自动化映射，见 [SN] |
 | 3 | PWR-05、PWR-06、GEN-05、GOV-01、GOV-05、WGT-05、EPO-03 | 身份/输入、当前与待生效配置交叉校验及集中度恰好 1/3 已覆盖；WGT-05 的五旧池到四新池完整节点链仍待以不超过 7 节点的方式重构 |
 | 4 | FRZ-01～03 | 已按公开入口、能力转调和包装调用建立正常/冻结/恢复/越权矩阵；新增相关入口时仍须同步更新矩阵 |
@@ -329,7 +329,7 @@ RUST_MIN_STACK=167772160 SMOKE_TEST_BIN_DIR="$PWD/target/ci" \
 3. 双节点验收明确“两个等权节点均在线才能继续提交”的预期，并记录实际已安装权重。T2-S 的立即重启、四节点恢复均不代替 SYS-02 的完整稳定停机观察；默认双节点交付前 SYS-01、SYS-02 都须完成。
 4. 真实 DKG 与 VM 五路径差分分别留证；单次创世支持 128 人不代表运行期容量、吞吐或故障恢复已经签收。
 5. 所有部分覆盖项记录剩余步骤；性能结果附具体运行环境和采用的预算阈值。历史成功记录仅供定位，必须区分本次执行。
-6. 默认占比 3000 与显式占比 0 分别留证；原生佣金、委托份额和复投的变化不可误记为 PoC 金库异常，也不能用零占比 fixture 的结果替代默认分流验收。
+6. 默认占比 5000 与显式占比 0 分别留证；原生佣金、委托份额和复投的变化不可误记为 PoC 金库异常，也不能用零占比 fixture 的结果替代默认分流验收。
 
 ## 7. 源码与已有测试索引
 
@@ -345,7 +345,7 @@ RUST_MIN_STACK=167772160 SMOKE_TEST_BIN_DIR="$PWD/target/ci" \
 | [PA] | PoC 账本生产实现；当前与待生效参数的交叉校验 |
 | [RS] | 奖励分流配置、Epoch 快照、分流取整及边界测试 |
 | [SC] | 原生质押配置更新及其 PoC 兼容性校验 |
-| [ST] | 权重增长、保证金、成员变更、两路奖励、原生容量、奖励上下文与计划测试 |
+| [ST] | 权重增长、保证金、成员变更、两路奖励、费用政策上限、奖励上下文与计划测试 |
 | [FR] | 配置直接入口及缓冲配置冻结测试 |
 | [CF] | staking contract、vesting、delegation 能力转调冻结测试 |
 | [DG] | 治理代币权重、委托入池费、原生份额/佣金及分流测试 |

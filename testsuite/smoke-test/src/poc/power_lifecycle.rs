@@ -39,7 +39,7 @@ use std::{
 use tokio::time::{sleep, timeout};
 
 const OHMP: u64 = 100_000_000;
-const S: u128 = 1 << 32;
+const S: u128 = 1 << 16;
 const J: u128 = 1 << 64;
 const OWNER_UNITS: u128 = OHMP as u128 * S;
 // 生命周期用例会连续跨越大量 Epoch；长时间运行或主机休眠后，
@@ -117,7 +117,7 @@ fn governance_payload(action: Action) -> TransactionPayload {
 }
 
 async fn lifecycle_swarm() -> LocalSwarm {
-    println!("Power lifecycle fixture: 4 nodes, testnet PoC Controlled/minimum=2/capacity=128, each owner=1 OHMP/1 TOPO, growth=50%, APY=10%, epoch=3600s, ordinary/Chunky DKG=off, retention=9995, native_bps=3000, initial power period=60, fee_limit=0");
+    println!("Power lifecycle fixture: 4 nodes, testnet PoC Controlled/minimum=2/capacity=128, each owner=1 OHMP/1 TOPO, growth=50%, APY=10%, epoch=3600s, ordinary/Chunky DKG=off, retention=9995, native_bps=5000, initial power period=60, fee_limit=0");
     SwarmBuilder::new_local(4)
         .with_aptos()
         .with_init_genesis_stake(Arc::new(|_, amount| *amount = OHMP))
@@ -216,12 +216,10 @@ async fn assert_clock(client: &Client, version: u64, epoch: u64) {
         )
         .await,
         vec![
-            json!("0"),
             json!(period.to_string()),
             json!(boundary.to_string()),
             json!(index_at(period).to_string()),
-            json!({"vec": [index_at(period + 1).to_string()]}),
-            json!("10000")
+            json!({"vec": [index_at(period + 1).to_string()]})
         ],
     );
 }
@@ -1035,12 +1033,10 @@ async fn assert_default_clock(client: &Client, version: u64, epoch: u64) {
         )
         .await,
         vec![
-            json!("0"),
             json!(period.to_string()),
             json!((61 + period * 60).to_string()),
             json!(index_at(period).to_string()),
-            json!({"vec": [index_at(period + 1).to_string()]}),
-            json!("10000")
+            json!({"vec": [index_at(period + 1).to_string()]})
         ]
     );
 }
@@ -1126,7 +1122,7 @@ async fn poc_default_sixty_epoch_period_reaches_second_decay_without_uploads() {
             );
             assert_eq!(
                 integer(&state.reward_split["installed_native_reward_bps"]),
-                3000
+                5000
             );
         }
         assert_eq!(after.validators.active_validators.len(), 4);
@@ -1221,7 +1217,7 @@ async fn poc_default_sixty_epoch_period_reaches_second_decay_without_uploads() {
                 base * successful * before.reward_context.2 as u128
                     / ((successful + failed) * before.reward_context.3 as u128)
             };
-            let native = inflation * 3000 / 10000;
+            let native = inflation * 5000 / 10000;
             let poc = inflation - native;
             let delta = (U256::from(poc).repr() << 128u32) / U256::from(OWNER_UNITS).repr();
             let credit = pool_event(&transaction, "::stake::PoCRewardCredited", pool);
@@ -1232,7 +1228,7 @@ async fn poc_default_sixty_epoch_period_reaches_second_decay_without_uploads() {
             let split = pool_event(&transaction, "::stake::PoCRewardSplit", pool);
             assert_eq!(
                 split.data,
-                json!({"pool": pool.to_hex_literal(), "closing_epoch": epoch.to_string(), "native_reward_bps": "3000", "total_inflation_octa": inflation.to_string(), "active_native_reward_octa": native.to_string(), "pending_inactive_native_reward_octa": "0", "poc_inflation_octa": poc.to_string()})
+                json!({"pool": pool.to_hex_literal(), "closing_epoch": epoch.to_string(), "native_reward_bps": "5000", "total_inflation_octa": inflation.to_string(), "active_native_reward_octa": native.to_string(), "pending_inactive_native_reward_octa": "0", "poc_inflation_octa": poc.to_string()})
             );
             let old_pool = pool_at(&client, pool, version - 1).await;
             let new_pool = pool_at(&client, pool, version).await;
@@ -1300,7 +1296,7 @@ async fn poc_default_sixty_epoch_period_reaches_second_decay_without_uploads() {
                     ]
                 );
             }
-            println!("PWR-07 fixed period milestone: epoch={epoch}, period={period}, index={}, power={power}, next_boundary={}, version={version}, native_bps=3000; raw versions and physical positions unchanged", index_at(period), 61 + period * 60);
+            println!("PWR-07 fixed period milestone: epoch={epoch}, period={period}, index={}, power={power}, next_boundary={}, version={version}, native_bps=5000; raw versions and physical positions unchanged", index_at(period), 61 + period * 60);
         }
     }
     assert_eq!(milestones, BTreeSet::from([60, 61, 120, 121]));
@@ -1571,7 +1567,7 @@ impl ExitedHistory {
         );
         assert_eq!(
             integer(&installed.reward_split["installed_native_reward_bps"]),
-            3000
+            5000
         );
         let base = installed
             .validators
@@ -1621,7 +1617,7 @@ impl ExitedHistory {
             assert_eq!(before.reward_context.5, 0);
             assert_eq!(
                 integer(&before.reward_split["installed_native_reward_bps"]),
-                3000
+                5000
             );
             // 退出请求将成员移入 pending_inactive，但结束当期仍按旧索引和已安装权重计奖。
             let member = before
@@ -1648,7 +1644,7 @@ impl ExitedHistory {
                     base as u128 * successful * before.reward_context.2 as u128
                         / ((successful + failed) * before.reward_context.3 as u128)
                 };
-                let native = inflation * 3000 / 10000;
+                let native = inflation * 5000 / 10000;
                 let poc = inflation - native;
                 let user_units = self.units(self.epoch);
                 let total_units = OWNER_UNITS + user_units;
@@ -1666,7 +1662,7 @@ impl ExitedHistory {
                 assert_eq!(
                     pool_event(&tx, "::stake::PoCRewardSplit", self.pool).data,
                     json!({"pool": self.pool.to_hex_literal(), "closing_epoch": self.epoch.to_string(),
-                        "native_reward_bps": "3000", "total_inflation_octa": inflation.to_string(),
+                        "native_reward_bps": "5000", "total_inflation_octa": inflation.to_string(),
                         "active_native_reward_octa": native.to_string(),
                         "pending_inactive_native_reward_octa": "0", "poc_inflation_octa": poc.to_string()})
                 );

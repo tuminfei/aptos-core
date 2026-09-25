@@ -69,11 +69,9 @@ static ARITHMETIC: Lazy<Vec<u8>> = Lazy::new(|| {
         for bps in [0u64, 3000, 3500, 9999, 10000] {
             let native = (u128::from(amount) * u128::from(bps) / 10000) as u64;
             let poc = amount - native;
-            for function in ["split_reward", "split_inflation_reward"] {
-                source.push_str(&format!(
-                    "\n{{ let (native_part, poc_part) = poc_reward_split::{function}({amount}, {bps}); assert!(native_part == {native} && poc_part == {poc}, 0xface); }};",
-                ));
-            }
+            source.push_str(&format!(
+                "\n{{ let (native_part, poc_part) = poc_reward_split::split_reward({amount}, {bps}); assert!(native_part == {native} && poc_part == {poc}, 0xface); }};",
+            ));
         }
     }
     source.push_str("} }");
@@ -142,7 +140,7 @@ fn payload(operation: u8, bps: u64, epoch: u64) -> TransactionPayload {
 }
 
 async fn swarm() -> LocalSwarm {
-    println!("GOV-04 reward fixture: 4 validators, Controlled testnet PoC parameters, 1 TOPO/pool, retention=10000, native_bps=3000, epoch=3600s, ordinary/Chunky DKG=off, fee_limit=0; not strict T2");
+    println!("GOV-04 reward fixture: 4 validators, Controlled testnet PoC parameters, 1 TOPO/pool, retention=10000, native_bps=5000, epoch=3600s, ordinary/Chunky DKG=off, fee_limit=0; not strict T2");
     SwarmBuilder::new_local(4)
         .with_aptos()
         .with_init_genesis_stake(Arc::new(|_, stake| *stake = POWER))
@@ -338,7 +336,7 @@ async fn install(
         );
         let before_pool = view(client, "0x1::poc_accounting::get_pool", pool, version - 1).await;
         let after_pool = view(client, "0x1::poc_accounting::get_pool", pool, version).await;
-        let units = (POWER as u128) << 32;
+        let units = (POWER as u128) << 16;
         let delta = (U256::from(poc).repr() << 128u32) / U256::from(units).repr();
         assert_eq!(
             credit.data,
@@ -434,7 +432,7 @@ async fn poc_reward_split_governance_lifecycle_and_old_epoch_rewards() {
         .with_transaction_expiration_time(120);
     assert_eq!(
         resource(&client, SPLIT, 0).await,
-        json!({"installed_epoch": "1", "configured_native_reward_bps": "3000", "installed_native_reward_bps": "3000", "pending_change": {"vec": []}})
+        json!({"installed_epoch": "1", "configured_native_reward_bps": "5000", "installed_native_reward_bps": "5000", "pending_change": {"vec": []}})
     );
     let mut public = swarm.chain_info().into_aptos_public_info();
     let stranger = public
@@ -514,13 +512,13 @@ async fn poc_reward_split_governance_lifecycle_and_old_epoch_rewards() {
         &root,
         &factory,
         epoch,
-        3000,
-        3000,
+        5000,
+        5000,
         Some((6000, epoch + 2)),
     )
     .await;
     epoch += 1;
-    install(&client, &root, &factory, epoch, 3000, 6000, None).await;
+    install(&client, &root, &factory, epoch, 5000, 6000, None).await;
     epoch += 1;
     let mut old_bps = 6000;
     for next_bps in [3500, 0, 10000, 3000] {
@@ -564,7 +562,7 @@ async fn poc_reward_split_governance_lifecycle_and_old_epoch_rewards() {
 #[tokio::test]
 async fn poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapshot() {
     Lazy::force(&CONTEXT_GOVERNANCE);
-    println!("REW-02 默认创世组合：4个受控验证者、原样testnet PoC参数、每池1 TOPO/1 OHMP、native_bps=3000、费用初始0；准备期安装fee_limit=39，随后目标期排定ratio=0.5 TOPO/OHMP、rate=1/200、fee_limit=17、native_bps=6000；普通DKG开启并暂停、Chunky关闭");
+    println!("REW-02 默认创世组合：4个受控验证者、原样testnet PoC参数、每池1 TOPO/1 OHMP、native_bps=5000、费用初始0；准备期安装fee_limit=39，随后目标期排定ratio=0.5 TOPO/OHMP、rate=1/200、fee_limit=17、native_bps=6000；普通DKG开启并暂停、Chunky关闭");
     let swarm = SwarmBuilder::new_local(4)
         .with_aptos()
         .with_num_fullnodes(1)
@@ -615,7 +613,7 @@ async fn poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapsho
     assert_eq!(genesis.reward_context.5, 0);
     assert_eq!(
         number(&genesis.reward_split["installed_native_reward_bps"]),
-        3000
+        5000
     );
     assert_eq!(
         resource(&client, "0x1::poc_accounting::AccountingState", 0).await["config"]["params"]
@@ -635,7 +633,7 @@ async fn poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapsho
     assert_eq!(installed.reward_context.3, before_prepare.reward_context.3);
     assert_eq!(
         number(&installed.reward_split["installed_native_reward_bps"]),
-        3000
+        5000
     );
     assert_eq!(events(&prepared, "::stake::PoCEpochInstalled").len(), 1);
 
@@ -654,7 +652,7 @@ async fn poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapsho
     assert_eq!(frozen_installed.reward_context, installed.reward_context);
     assert_eq!(
         number(&frozen_installed.reward_split["installed_native_reward_bps"]),
-        3000
+        5000
     );
     assert!(events(&started, "::stake::PoCRewardCredited").is_empty());
     assert!(events(&started, "::stake::PoCEpochInstalled").is_empty());
@@ -699,8 +697,8 @@ async fn poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapsho
         resource(&client, SPLIT, frozen_at).await,
         json!({
             "installed_epoch": installed.epoch.to_string(),
-            "configured_native_reward_bps": "3000",
-            "installed_native_reward_bps": "3000",
+            "configured_native_reward_bps": "5000",
+            "installed_native_reward_bps": "5000",
             "pending_change": {"vec": [{"native_reward_bps": NEW_NATIVE_BPS.to_string(), "activation_epoch": (installed.epoch + 1).to_string()}]},
         })
     );
@@ -761,11 +759,11 @@ async fn poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapsho
     assert_eq!(before.reward_context, installed.reward_context);
     assert_eq!(
         number(&before.reward_split["installed_native_reward_bps"]),
-        3000
+        5000
     );
     assert_eq!(
         number(&before.reward_split["configured_native_reward_bps"]),
-        3000
+        5000
     );
     assert_eq!(after.epoch, installed.epoch + 1);
     assert_eq!(after.validators, installed.validators);
@@ -819,8 +817,8 @@ async fn poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapsho
                 / ((success + failed) * before.reward_context.3 as u128)) as u64
         };
         let fee = old_fees[index].min(OLD_FEE_LIMIT);
-        let native_inflation = (inflation as u128 * 3000 / 10000) as u64;
-        let native_fee = (fee as u128 * 3000 / 10000) as u64;
+        let native_inflation = (inflation as u128 * 5000 / 10000) as u64;
+        let native_fee = (fee as u128 * 5000 / 10000) as u64;
         let poc_inflation = inflation - native_inflation;
         let poc_fee = fee - native_fee;
         let poc = poc_inflation + poc_fee;
@@ -836,7 +834,7 @@ async fn poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapsho
             split.data,
             json!({
                 "pool": pool.to_hex_literal(), "closing_epoch": before.epoch.to_string(),
-                "native_reward_bps": "3000", "total_inflation_octa": inflation.to_string(),
+                "native_reward_bps": "5000", "total_inflation_octa": inflation.to_string(),
                 "active_native_reward_octa": native_inflation.to_string(),
                 "pending_inactive_native_reward_octa": "0",
                 "poc_inflation_octa": poc_inflation.to_string(),
@@ -846,7 +844,7 @@ async fn poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapsho
             .iter()
             .find(|event| address(&event.data["pool"]) == pool)
             .unwrap();
-        let units = (POWER as u128) << 32;
+        let units = (POWER as u128) << 16;
         let delta = (U256::from(poc).repr() << 128u32) / U256::from(units).repr();
         assert_eq!(
             credit.data,
@@ -938,5 +936,5 @@ async fn poc_default_genesis_context_changes_wait_for_dkg_and_settle_old_snapsho
     for node in swarm.validators() {
         assert_eq!(state(&node.rest_client(), &pools, final_at).await, expected);
     }
-    println!("REW-02 完成：旧Epoch={}使用base={}、rate={}/{}、fee_limit={}、native_bps=3000结算；目标Epoch={}安装base={}、rate={}/{}、fee_limit={}、native_bps={}；冻结期间付费交易可提交，income={}、native={}、poc={}、version={final_at}", before.epoch, POWER, before.reward_context.2, before.reward_context.3, OLD_FEE_LIMIT, after.epoch, NEW_BOND_RATIO, after.reward_context.2, after.reward_context.3, NEW_FEE_LIMIT, NEW_NATIVE_BPS, total_income, total_native, total_poc);
+    println!("REW-02 完成：旧Epoch={}使用base={}、rate={}/{}、fee_limit={}、native_bps=5000结算；目标Epoch={}安装base={}、rate={}/{}、fee_limit={}、native_bps={}；冻结期间付费交易可提交，income={}、native={}、poc={}、version={final_at}", before.epoch, POWER, before.reward_context.2, before.reward_context.3, OLD_FEE_LIMIT, after.epoch, NEW_BOND_RATIO, after.reward_context.2, after.reward_context.3, NEW_FEE_LIMIT, NEW_NATIVE_BPS, total_income, total_native, total_poc);
 }

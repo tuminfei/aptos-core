@@ -8,7 +8,9 @@
 >
 > 交付目标：将设计落实为模块边界、存储布局、接口契约、算法、换届接入顺序、初始化步骤与验收任务。文中的新类型、函数、事件、错误名和测试文件名均为拟新增名称；代码块是接口草图或伪代码，不可直接作为可编译 Move 源码。
 
-> 2026-09-13 分流补充：通胀只按既定 PoC 基数计算一次，通胀与可分发交易费分别按同一旧期比例分流；每类原生部分为 `floor(amount * native_reward_bps / 10_000)`，PoC 部分各取补数。新准备及创世默认 `3000 bps`，通过治理指定未来 Epoch 生效；本补充不改写历史源码核对基线或测试记录。
+> 创世配置精简：Rust 清单仅保留首届委员会参数、部署模式、衰减保留比例和初始算力。上限由 `poc_accounting::default_deployment_limits()` 初始化，治理经 `poc_allocation::update_deployment_limits` 调整；原生分流采用合约默认 5000 bps，后续按 Epoch 排期。
+
+> 2026-09-13 分流补充：通胀只按既定 PoC 基数计算一次，通胀与可分发交易费分别按同一旧期比例分流；每类原生部分为 `floor(amount * native_reward_bps / 10_000)`，PoC 部分各取补数。新准备及创世默认 `5000 bps`，通过治理指定未来 Epoch 生效；本补充不改写历史源码核对基线或测试记录。
 
 ## 1. 实现范围与源码差距
 
@@ -19,7 +21,7 @@
 3. 以当期权重固定计奖基数，通胀按当期治理比例分流至原生质押和 PoC 金库。原生部分沿用份额、佣金、锁仓及复投；费用同比分流后，PoC 的通胀和费用份额按用户标准化算力分配。
 4. 同步换届、普通 DKG、Chunky DKG、超时及治理强制结束共享同一个计划构建与提交实现。
 5. 不合格目标返回 `Deferred`，保留旧委员会与修复能力；冻结后只提交原计划。
-6. 支持全新创世及兼容升级，覆盖准备期、最后一期原生奖励和首次 PoC Epoch。
+6. 支持全新创世及原生模式下首次准备 PoC，覆盖准备期、最后一期原生奖励和首次 PoC Epoch；开发阶段不承接旧版 PoC 状态。
 
 MVP 保留池级共享保证金、零 PoC 运营佣金、最多两条待生效变更和池级奖励余数不结转。个人保证金关系、第三条未来变更、自动重基准、全用户扫描、独立奖励金库资源、`state_hash`、治理算力投票与新的 quorum 算法均不属于本次实现。
 
@@ -33,7 +35,6 @@ MVP 保留池级共享保证金、零 PoC 运营佣金、最多两条待生效�
 | `stage_batch_update` / `will_insert_version` / `save_power_versions` | 外层统一判断同周期首写和新用户零值；统一写入口校验顺序并保存完整双槽 | 构造统一算力版本并同步账本，再写入用户双槽；保留重复上报语义，整批原子提交 |
 | `commit_next_period_if_boundary` | 提供局部计数和周期倒计时，但当前框架源码中没有调用点 | 接到每次成功换届，补齐绝对 Epoch 映射与创世调用；不能把注释中的调用关系当成现状 |
 | 保留比例 | 实际常量是 `9995`，部分说明文字仍写 `9950` | 使用实际配置；建立基线后禁止修改，并修正相关说明。不能直接把默认值当成部署批准值 |
-| `set_legacy_stake_pool_power` | 无创世限制地写周期 `0`；当前框架源码未发现调用点 | 不接到质押本金变化；准备后拒绝该入口影响 PoC 版本 |
 | `friend topo_framework::staking_registry` | 当前源码搜索未发现对应模块定义 | 在首次框架编译前核实历史依赖并处理无效声明；不能混同于面向应用的 `poc_registry` |
 | `stake::on_new_epoch` | 结算原生奖励、处理本金、消费 PVS 或实时选举、更新索引 | 拆出旧期结算与计划提交，PoC 分支不再实时重选 |
 | `next_validator_consensus_infos_v2` | 按原生本金及模拟奖励生成 PVS；缓存没有目标 Epoch 字段；含空集合回退 | 增加 PoC 计划构建路径及成对校验；PoC 不调用代币权重回退 |
@@ -43,7 +44,7 @@ MVP 保留池级共享保证金、零 PoC 运营佣金、最多两条待生效�
 | `staking_config`、`config_buffer`、`std::features` | 设置路径没有统一的 PoC 冻结约束 | 增加设置侧防护与组合校验，并区分设置入口和合法提交入口 |
 | `delegation_pool::get_add_stake_fee` | 直接读取实时原生奖励率 | 最后一期原生仍用旧上下文；PoC Epoch 依据固定基数、费用开关与限额、已安装分流比例及有效本金估算原生份额收益 |
 | `topo_governance::get_voting_power` | 允许成员变化时读代币余额；禁止变化时回退到当前共识权重 | PoC 下两个分支都必须保持代币口径，特别覆盖受控静态委员会 |
-| DKG 舍入 | 普通与 Chunky DKG 复用的代码以 `u64` 累加输入权重 | 在 Move 侧验证实际总权重及保守配置上限 |
+| DKG 舍入 | 普通与 Chunky DKG 复用的代码以 `u64` 累加输入权重 | 在 Move 侧验证实际入选总权重，不按候选容量限制单池配置上限 |
 | 缓存包生成 | 当前存在独立 `update-cached-packages` 命令及脚本 | 修改 Move 后实际重新生成 bundle，并执行仓库要求的缓存包构建 |
 
 源码入口见第 18 节。开始实现时记录新的提交号并复核此表，尤其是所有 `public`、`friend`、`*_with_cap` 与治理转调路径。
@@ -54,7 +55,8 @@ MVP 保留池级共享保证金、零 PoC 运营佣金、最多两条待生效�
 
 - 当前处于开发阶段，使用全新布局一次性初始化 PoC 算力存储，不支持旧版算力迁移或旧资源布局升级。标准化版本在创世写入或上传时直接计算。
 - `PowerParams`、部署上限和账本全局 Epoch 放在 `poc_accounting` 的新全局资源中；`stake` 保存计划、计奖上下文和自主退出来源。
-- 奖励分流配置及已安装比例放在独立的 `poc_reward_split` 资源中，不改变已有 `PowerParams`、`RewardContext` 和 `EpochPlan` 布局。新准备和创世默认 `3000`，旧状态尚无该资源时保持 `0`，直到显式排期并成功换届。
+- 奖励分流配置及已安装比例放在 `poc_reward_split` 资源中，准备时一次性创建，默认 `5000`。准备后缺失配置即为状态错误，不回退到 `0`、跳过安装或延迟补建。
+- 应用身份批准表直接存入 `poc_registry::Registry`，创世时一并创建；不保留独立 `IdentityApprovals` 资源和运行期补初始化入口。算力查询统一使用 `get_user_committed_power`，奖励金额统一由 `split_reward` 分流，删除同义旧接口。
 - 采用“只读构建 → 冻结 → 结算 → 安装”四段接口；业务不合格用结果值表示，状态损坏用 abort 表示。
 - 对 `std::features` 使用模块内部的冻结资源与不可复制令牌，解决标准库不能反向依赖框架的问题，详见第 11 节。
 - 对准备期尚未安装 PoC 的原生路径保留原生选举，但准备状态的 Epoch 与周期仍随成功换届推进；首次 PoC 目标才使用初始化权重例外。
@@ -73,7 +75,7 @@ MVP 保留池级共享保证金、零 PoC 运营佣金、最多两条待生效�
 | `Position.units`、`PoolLedger.units`、版本 `units` | 标准化算力单位 | 不直接标为 OHMP；先依据目标周期指数还原算力，生效权重则读取已安装集合 |
 | 保证金、计奖基数、奖励与交易费 | 整数 `Octa` | 按 `100,000,000 Octa / TOPO` 转成 TOPO |
 
-保证金参数统一为 `bond_octa_per_ohmp`（Octa/OHMP），算力换算分母固定为 `POWER_PER_OHMP = 100,000,000`，通过 `poc_accounting::power_per_ohmp()` 读取；部署配置不再包含可变的换算分母。`reward_base_octa`、`max_reward_base_octa` 和 `pool_reward_base_octa()` 明确使用 Octa。开发阶段直接采用新字段与 BCS 结构，不保留旧版兼容层；`units/index` 的类型与精度不变。
+保证金参数统一为 `bond_octa_per_ohmp`（Octa/OHMP），算力换算分母固定为 `POWER_PER_OHMP = 100,000,000`，通过 `poc_accounting::power_per_ohmp()` 读取；部署配置不再包含可变的换算分母。`reward_base_octa` 和 `pool_reward_base_octa()` 明确使用 Octa。开发阶段直接采用新字段与 BCS 结构，不保留旧版兼容层；`units` 的缩放精度为 `2^16`，`index` 基准为 `2^64`；已有旧精度状态须重建创世，不能按新精度直接读取。
 
 查询展示和输入解析使用十进制定点或大整数，不能先转浮点数，也不能将 `power / 100_000_000` 当作丢弃余数的整数除法。若工具提供 OHMP 输入，最多接受 8 位小数，精确换算成 `power` 并检查对应整数范围后再调用原接口；既有 JSON/BCS 配置继续填写整数 `power`，不直接填写 OHMP 小数。例如 `1 power` 显示为 `0.00000001 OHMP`，`250000000 power` 显示为 `2.5 OHMP`。
 
@@ -83,13 +85,15 @@ MVP 保留池级共享保证金、零 PoC 运营佣金、最多两条待生效�
 | --- | --- | --- |
 | `BPS_DENOMINATOR` | `u64 = 10_000` | 只用于分配比例和保留比例；增长预算的分母仍为 `100` |
 | `POWER_PER_OHMP` | `u64 = 100,000,000` | 每 1 OHMP 对应的整数 power 数，用于保证金与奖励金额换算 |
-| `UNIT_SCALE` | `u128 = 2^32` | 版本标准化精度 |
+| `UNIT_SCALE` | `u128 = 2^16` | 版本标准化精度 |
 | `INDEX_SCALE` | `u128 = 2^64` | 相对周期 `0` 的共同指数 |
-| `MIN_PERIOD_INDEX` | `u128 = 2^40` | 接受版本和推进周期的指数下界 |
+| `MIN_PERIOD_INDEX` | `u128 = 2^24` | 接受版本和推进周期的指数下界 |
 | `MAX_RAW_POWER` | `u64::MAX` | 单版本原始算力上限 |
 | `MAX_POOL_UNITS` | `u128 = 2^120` | 当前和未来每个时点的池总量上限 |
 | `Q` | `u256 = 2^128` | 用户权益与累计奖励指数精度；不能先以 `u128` 构造 |
 | `MAX_TOTAL_POWER` | `u64::MAX` | 最终委员会总权重上限 |
+
+采用 `2^16` units 精度以扩大共同指数的可用范围：周期 0 时，`1 power` 的 `1 bps` 分配从 `6.5536 units` 向下取整为 `6 units`，接受该极小份额约 8.45% 的表示误差；正常 OHMP 级算力的相对误差远小于此。TOPO 的 8 位小数与奖励精度 `Q = 2^128` 保持不变。默认 `9995` 保留比例、每周期 60 个 Epoch、每 Epoch 2 小时下，指数数值边界约为 759 年；这仍是有限精度的边界。
 
 乘法、时间相加、增减汇总和限幅在足够宽的整数中完成，再检查范围并转换为存储类型。不能以最终 `max_power` 限幅为理由，提前把池算力或保证金总量转为 `u64`。
 
@@ -98,33 +102,27 @@ MVP 保留池级共享保证金、零 PoC 运营佣金、最多两条待生效�
 | 参数 | 固定 / 可更新 | 部署及更新检查 |
 | --- | --- | --- |
 | `retention_bps` | 从标准化准备开始固定 | `0 < retention_bps <= 10_000`；指数期限从准备时起消耗 |
-| 周期长度 | 可更新下一周期长度 | 正数；以 `u256` 校验 `B + new_length <= u64::MAX`；不能改当前剩余倒计时或已经排定的 `B` |
-| `bond_octa_per_ohmp` | 最早下一 Epoch 生效 | 每 1 OHMP 所需的 Octa 数，必须为正；与 `max_power` 联合计算 `reward_base_octa` 上限 |
+| 周期长度 | 可更新下一周期长度 | 正数；以 `u128` 校验 `B + new_length <= u64::MAX`；不能改当前剩余倒计时或已经排定的 `B` |
+| `bond_octa_per_ohmp` | 最早下一 Epoch 生效 | 每 1 OHMP 所需的 Octa 数，必须为正；按实际最终权重计算 `reward_base_octa` |
 | `min_power` / `max_power` | 最早下一 Epoch 生效 | 整数 `power`，`0 < min_power <= max_power`，不填写 OHMP 小数 |
 | `min_validators` | 最早下一 Epoch 生效 | 不超过协议及实际支持的候选上限；动态换员时严格小于 `V_LIMIT`；开放模式至少为 `4` |
 | `increase_limit` | 沿用原生配置 | `0 < increase_limit <= 50`，动态替换时满足组合约束 |
 | `deployment_mode` | 启用前确定，之后固定 | 受控白名单或开放部署；开放模式不能关闭集中度校验 |
 | `MAX_ALLOCATIONS` / 单次领取池数 / 上传批次上限 | 在部署与成本测试中确定 | 限制实际读写集；示例不提供默认生产值 |
 | 实际支持的候选上限 `V_LIMIT` | 成本验收后确定 | 不超过 `MAX_VALIDATOR_SET_SIZE`，限制加入与取消退出等入口 |
-| `P_MAX` | 本版支持的相对周期上限 | 有限；用整数递推验证所有受支持指数 |
-| `B_MAX` / `rate_max` / `fee_max` | 本版安全上限 | 更新实际配置不能突破；奖励率采用明确的分子与分母 |
-| `H` | 从首次 PoC Epoch 起计算 | 正数；最多结算 `H` 个 PoC Epoch，不因换参数重置 |
-| 指数、奖励期限及金库预警阈值 | 部署清单固定 | 明确负责人及升级窗口，预警先于到期保护 |
+| `fee_max` | 合约默认，治理可调整 | 仅限制交易费分发；通胀奖励沿用原生奖励率，不另设金额上限 |
+| 指数及金库预警阈值 | 部署清单固定 | 明确负责人及升级窗口，预警先于数值边界 |
 
 联合校验使用 `u256`：
 
 ```text
 dynamic_membership => floor(min_validators * min_power * increase_limit / 100) >= min_power
 dynamic_membership => min_validators < V_LIMIT
-MAX_VALIDATOR_SET_SIZE * max_power <= MAX_TOTAL_POWER
-floor(max_power * bond_octa_per_ohmp / POWER_PER_OHMP) <= B_MAX <= u64::MAX
-rate_max_den > 0
-R_MAX = floor(B_MAX * rate_max_num / rate_max_den) + fee_max
-H > 0 && H * R_MAX <= u64::MAX
-first_poc_epoch + H <= u64::MAX
+0 < sum(actual_selected_power) <= MAX_TOTAL_POWER  // 换届预检
+floor(actual_power * bond_octa_per_ohmp / POWER_PER_OHMP) <= u64::MAX  // 实际金额窄化
 ```
 
-当前源码 `MAX_VALIDATOR_SET_SIZE = 65536`，因此本版保守约束要求 `max_power <= 281474976710655`。即使部署把 `V_LIMIT` 设得更小，也不能自行把设计中的保守乘数改为 `V_LIMIT`。
+当前源码 `MAX_VALIDATOR_SET_SIZE = 65536` 只限制人数。`max_power` 默认取 `u64::MAX`，不按协议人数或候选容量分摊；实际总权重超出 DKG 的 `u64` 范围时延期换届，不截断总和。工程前提为实际代币总量远低于 `u64::MAX`，业务测试使用发行规模内的金额，不构造代币总量超过 `u64` 的场景。治理可调整保证金比例，故权重的实际总和仍需独立检查。
 
 当前参数、待生效参数和拟替换的原生参数要按时间组合校验。例如修改增长比例时，同时验证当前及待生效的 `PowerParams`；修改 PoC 参数时，由上层传入真实的原生增长比例。启用动态成员变更时也须验证这些组合约束。最终预检再验证目标 Epoch 的完整组合。只在设置入口分别验证字段范围是不够的。
 
@@ -136,10 +134,10 @@ first_poc_epoch + H <= u64::MAX
 
 | 场景 | 计算结果 |
 | --- | --- |
-| `retention_bps = 9900` | 最大有效相对周期为 `1655`，`I[1655] = 1101962413170`；`I[1656] = 1090942789038 < 2^40` |
-| 当前源码默认 `9995` | 同组常量下最大有效相对周期为 `33262`；实际部署仍须选择有限 `P_MAX` |
+| `retention_bps = 9900` | 最大有效相对周期为 `2758`，`I[2758] = 16896047`；`I[2759] = 16727086 < 2^24` |
+| 当前源码默认 `9995` | 同组常量下最大有效相对周期为 `55437`；这是当前指数表示的数值边界，不是配置期限 |
 | `I = floor(2^64 * 9000 / 10000)` | `I = 16602069666338596454` |
-| 上述指数下 `raw_power = 100`，全额分配 | `version_units = 477218588444`，整数 `pool_power = 99` |
+| 上述指数下 `raw_power = 100`，全额分配 | `version_units = 7281777`，整数 `pool_power = 99` |
 
 原始值、标准化单位、共识整数权重与代币最小单位必须在事件和查询结果中分别命名，不共用一个含义随模式变化的 `power` 展示字段。
 
@@ -171,7 +169,7 @@ first_poc_epoch + H <= u64::MAX
 | `topo-framework/sources/poc/poc_allocation.move`（新增） | 参数化用户入口、管理入口、查询与事件 |
 | `topo-framework/sources/poc/poc_power_store.move` | 标准化版本、指数、直接初始化、版本同步、冻结和越界检查 |
 | `topo-framework/sources/stake.move` | 计划、上下文、选举、结算、退出取消及相关入口分支 |
-| `topo-framework/sources/reconfiguration*.move` | 统一预检与提交驱动，保留现有对外兼容包装 |
+| `topo-framework/sources/reconfiguration*.move` | 统一预检与提交驱动，保留 VM 与治理调用的重配置入口 |
 | `topo-framework/sources/block.move` | 所有 block prologue 变体处理 `Deferred`，保留旧期统计更新 |
 | `topo-framework/sources/configs/staking_config.move` | 原生设置入口冻结及联合参数校验 |
 | `topo-framework/sources/configs/config_buffer.move` 及实际配置模块 | 冻结缓冲替换；保留合法的会话结果写入和提交提取路径 |
@@ -217,11 +215,7 @@ struct DeploymentLimits has copy, drop, store {
     max_claim_pools: u64,
     max_upload_users: u64,
     validator_limit: u64,
-    max_reward_base_octa: u64,
-    rate_max_num: u64,
-    rate_max_den: u64,
     fee_max: u64,
-    reward_epoch_limit: u64,             // H
 }
 ```
 
@@ -229,21 +223,14 @@ struct DeploymentLimits has copy, drop, store {
 
 ### 4.2 统一算力存储
 
-原始查询和分配账本共用 `PowerStore.users`。每个版本同时保存 `power` 与 `units`；算力表、标准化状态和周期时钟一次性创建，保留比例自初始化起固定，不提供后续修改入口。
+原始查询和分配账本共用 `PowerStore.users`。每个版本同时保存 `power` 与 `units`；算力表和周期时钟一次性创建，保留比例自初始化起固定，不提供后续修改入口。
 
 ```move
 struct PowerStore has key {
     operator: address,
     users: Table<address, UserPowerInfo>,
     retention_bps_per_period: u64,
-    normalization: NormalizationState,
-}
-
-struct NormalizationState has drop, store {
-    baseline_epoch: u64,                // 初始化时的链 Epoch，PoC 创世为 0
-    max_relative_period: u64,           // P_MAX
     current_index: u128,
-    next_index: Option<u128>,           // 无可支持下一周期时为 none
 }
 
 struct PowerVersion has copy, drop, store {
@@ -258,20 +245,20 @@ struct UserPowerInfo has copy, drop, store {
 }
 ```
 
-`PowerStore` 存在即表示标准化状态与时钟已初始化，不再保存可选状态或空表标记。初始化前不能写入算力版本；所有已写入版本的 `units` 均通过标准化公式计算。原生链尚未初始化 PoC 时不创建算力资源，也不推进独立的原始算力时钟。
+`PowerStore` 存在即表示标准化字段与时钟已初始化，不再保存可选状态或空表标记。初始化前不能写入算力版本；所有已写入版本的 `units` 均通过标准化公式计算。原生链尚未初始化 PoC 时不创建算力资源，也不推进独立的原始算力时钟。
 
-版本仅在创世写入或上传算力时计算 `units`。无记录用户的只读快照返回零，不创建空记录；新用户上报零值仍不建记录。`Option` 明确区分空槽与有效零版本。当前版本可以长期不更新，不重新绑定指数；下一版本最多指向下一源周期。`next_index = none` 只表示支持期限边界，不允许接受超期版本。
+版本仅在创世写入或上传算力时计算 `units`。无记录用户的只读快照返回零，不创建空记录；新用户上报零值仍不建记录。`Option` 明确区分空槽与有效零版本。当前版本可以长期不更新，不重新绑定指数；下一版本最多指向下一源周期。下一指数按需由当前指数和部署参数计算；计算结果为 `none` 表示支持期限边界，不允许接受超期版本。
 
 新增版本时先在局部构造完整双槽并同步持仓，再一次写入 `PowerStore.users`。统一写入口要求 `newer` 非空，且存在 `older` 时其生效周期严格小于 `newer`；任何一步失败，整笔事务回滚。原始查询与标准化快照共用有效版本选择，分别读取 `power` 和 `units`，保留各自的衰减与取整规则。
 
 ### 4.3 `stake` 的新状态
 
 - `InstalledRewardContext { context: RewardContext } has key`：包装设计中的 `RewardContext`，供全局持久化；内部上下文本身仍为 `copy, drop, store`。
-- `poc_reward_split` 的独立资源：保存与 `InstalledRewardContext` 同 Epoch 的比例快照；奖励上下文与计划的原布局不追加字段。治理排期最早下一 Epoch，未冻结可替换或撤销，结算仅读取旧快照。
+- `poc_reward_split` 的独立资源：保存与 `InstalledRewardContext` 同 Epoch 的比例快照。治理排期最早下一 Epoch，未冻结可替换或撤销，结算仅读取旧快照。
 - `VoluntaryLeaves { requests: Table<address, u64> } has key`：值为自主退出申请的绝对 Epoch；条目只对应本届待退出成员。
 - `EpochPlan { data: EpochPlanData, feature_token: FeatureFreezeToken, stage: u8 } has key`：`data` 保存目标 Epoch、周期与指数、截止时间、模式、参数、旧奖励上下文和池目标；令牌承载第 11.2 节的标准库冻结权限，阶段限制结算、安装和解冻的顺序。
 
-已有 `PrecomputedValidatorSet` 不修改布局，并唯一保存冻结的目标委员会和原生回退标记。`EpochPlan` 不再保存委员会副本；公开 `EpochPreview` 保持原布局，冻结后的查询由计划数据和 PVS 组装。目标 Epoch 由成对存在的 `EpochPlan.data.epoch` 校验；构建、缓存、读取、消费 PVS 的 PoC 路径必须全部经由同一组 `stake` 内部接口。计划与 PVS 在同次构建中生成，禁止外部自行拼装 `PoolTarget` 或验证者配置。
+`PrecomputedValidatorSet` 唯一保存冻结的目标委员会和原生回退标记。`EpochPlan` 不再保存委员会副本；冻结后的 `EpochPreview` 查询由计划数据和 PVS 组装。目标 Epoch 由成对存在的 `EpochPlan.data.epoch` 校验；构建、缓存、读取、消费 PVS 的 PoC 路径必须全部经由同一组 `stake` 内部接口。计划与 PVS 在同次构建中生成，禁止外部自行拼装 `PoolTarget` 或验证者配置。
 
 ### 4.4 创建时的值与生命周期
 
@@ -326,7 +313,7 @@ struct UserPowerInfo has copy, drop, store {
 | `stake::cache_epoch_plan(...)` | 同一次构建的计划与目标集合 | 成对创建资源，并取得冻结令牌 |
 | `stake::settle_closing_epoch(...)` | 已确认有效的计划 | 只结算旧委员会，旧上下文和旧索引 |
 | `stake::install_epoch_plan(...)` | 计划及同批目标集合 | 不重选委员会；验证应用后聚合量及最终总权重 |
-| `stake::get_installed_reward_context()` | 全局已安装上下文 | 准备前可走原生兼容路径；准备后缺失是状态错误 |
+| `stake::get_installed_reward_context()` | 全局已安装上下文 | 准备前使用原生路径；准备后缺失是状态错误 |
 
 底层改变余额、版本、Epoch 或参数的函数采用可信框架调用权限；普通入口不得允许用户指定伪造的 Epoch、标准化单位、`reward_base_octa` 或奖励币。即使采用统一 `friend` 列表，也必须逐个审查这些 friend 的对外转调接口。
 
@@ -354,20 +341,20 @@ target_period(E+1) = current_period + (r == 0 ? 1 : 0)
 
 不能直接写成 `B = E + r`。所有相加先检查 `u64` 上界。示例：周期长度为 `60`，创世安装 Epoch `1` 时完成一次时钟提交，状态为周期 `0`、`r = 59`；Epoch `60` 为 `r = 0`；成功安装 Epoch `61` 才进入周期 `1`。
 
-初始化同时创建时钟并记录 `baseline_epoch`，周期和提交次数都从 0 起算。之后断言：
+初始化同时创建时钟，将 `last_epoch` 设为当前绝对链 Epoch；算力周期从 0 起算。之后断言：
 
 ```text
-clock.last_epoch == accounting.epoch - baseline_epoch
+clock.last_epoch == accounting.epoch
 relative_period = clock.current_period
 ```
 
-PoC 创世的 `baseline_epoch = 0`，时钟提交次数与已安装 Epoch 相同。初始化只执行一次，不能通过重新创建资源重置基线、衰减率或支持期限。
+PoC 创世从绝对 Epoch 0 和算力周期 0 开始；运行期准备则从当时的绝对 Epoch 和算力周期 0 开始。初始化只执行一次，不能通过重新创建资源重置衰减率或指数。
 
-`EpochPlan.data.period`、时钟快照中的 `target_period` 与衰减公式 `I[p]` 使用相同周期编号，无需减去源周期基线。`get_normalization_clock()` 返回初始化 Epoch、当前周期、下一边界 Epoch、当前指数、可选下一指数和支持期限六项。
+`EpochPlan.data.period`、时钟快照中的 `target_period` 与衰减公式 `I[p]` 使用相同周期编号。`get_normalization_clock()` 返回当前周期、下一边界 Epoch、当前指数和可选下一指数四项。
 
 周期长度设置仅修改下次切换时加载的长度。`Deferred`、DKG 启动、重复启动、领奖和墙上时间流逝均不调用时钟提交。成功安装 Epoch 时只调用一次；创世调用和普通换届调用分开测试，避免双推进。
 
-设置未来周期长度时，先由当前状态取得已固定的 `B`，以 `u256` 校验 `new_length > 0` 且 `B + new_length <= u64::MAX`，通过后才写入长度；失败不得改变旧长度或倒计时。初始化 / 准备同样校验当前边界和下一次加载长度后的边界。换届预检须完整预览目标时钟，包括周期切换后重新加载的倒计时及其下一边界，在缓存计划和冻结前确认可表示，不能等提交时才发现溢出。
+设置未来周期长度时，先由当前状态取得已固定的 `B`，以 `u128` 校验 `new_length > 0` 且 `B + new_length <= u64::MAX`，通过后才写入长度；失败不得改变旧长度或倒计时。初始化 / 准备同样校验当前边界和下一次加载长度后的边界；这些 `u64` 周期量的相加及常数倍运算可由 `u128` 容纳。换届预检须完整预览目标时钟，包括周期切换后重新加载的倒计时及其下一边界，在缓存计划和冻结前确认可表示，不能等提交时才发现溢出。算力和奖励的复杂乘积继续使用 `u256`。
 
 ### 6.2 标准化计算
 
@@ -380,7 +367,7 @@ pool_power = floor(pool_units * target_index / (UNIT_SCALE * INDEX_SCALE))
 
 在 `u256` 中计算后检查版本 `< 2^120`、持仓值可存入 `u128`。存量版本未更新时，持仓 units 跨周期不变，只改变换届权重计算所用的共同指数；不为统一衰减创建用户变更。
 
-指数只从当前值递推一次；版本绑定后不查历史指数表。`next_index` 超过 `P_MAX` 或低于下界时，拒绝写入该周期版本。到达本版支持边界后禁止安装超期 PoC Epoch，但历史领奖继续有效；发布流程必须在到期前完成升级。
+指数只从当前值递推一次；版本绑定后不查历史指数表。不设置部署周期上限；下一指数低于数值下界或周期编号溢出时，拒绝写入该周期版本。当前实现到达数值边界后仍无法安装后续 PoC Epoch，长期持续运行需要升级指数表示或重基准机制；历史领奖继续有效。
 
 ### 6.3 上传入口的执行顺序
 
@@ -388,7 +375,7 @@ pool_power = floor(pool_units * target_index / (UNIT_SCALE * INDEX_SCALE))
 
 1. 验证冻结状态、输入长度、上传批次上限和 `target_period == current_period + 1`。
 2. 逐用户判断同周期首写及新用户零值；重复目标周期不修改该用户的版本或持仓记录。
-3. 用 `next_index` 直接计算新增版本的 `units`，保留原当前版本并生成当前 / 下一周期快照。
+3. 由当前指数计算下一指数，再计算新增版本的 `units`，保留原当前版本并生成当前 / 下一周期快照。
 4. 若用户已有 `UserAllocation`，执行第 6.4 节的重建算法；只遍历其配置与未生效持仓涉及的池。
 5. 将完整双槽保存到唯一的用户表，发出实际新增事件。同一用户在批次中重复出现时，后续项看到前一项的写入，不重复同步。
 
@@ -396,7 +383,7 @@ pool_power = floor(pool_units * target_index / (UNIT_SCALE * INDEX_SCALE))
 
 当前代码没有授权修正未来版本的入口，本 MVP 不增加一个绕过首写语义的修正接口。若后续确需修正，须另行落实权限和审核，并复用完整同步算法。
 
-`set_genesis_committed_power` 增加真正的创世阶段约束，不能仅依赖可能尚未接入的 `last_epoch == 0`。准备后 `set_legacy_stake_pool_power` 不得改写 PoC 派生版本；测试专用写入口不能存在于生产字节码。
+`set_genesis_committed_power` 增加真正的创世阶段约束，不能仅依赖可能尚未接入的 `last_epoch == 0`。删除 `set_legacy_stake_pool_power`；测试专用写入口不能存在于生产字节码。
 
 ### 6.4 两个时点的统一重建算法
 
@@ -572,7 +559,9 @@ credit_epoch_reward(pool, E, rewards):
 
 ### 7.5 数值证明与资产守恒
 
-设单池自首次启用累计入账为 `C`，则 `C <= H * R_MAX <= u64::MAX`，金库余额不超过 `C`。池指数的每项增长不超过 `R * Q`，故累计指数小于 `2^192`。
+协议经济规格为 TOPO 最大发行总量 100 亿（`10^18 Octa`）、全网年通胀率严格低于 10%，须由发行机制保障。在该规格内，金库余额不超过总量，能由 `u64` 保存。年通胀率与每 Epoch 奖励率、质押 APY 分别计量。
+
+账本不设置奖励期限 H。设单池历史累计入账为 `C`；领取后的代币可以作为交易费再次入账，故 `C` 可以超过发行总量乃至 `u64::MAX`。每池每个正 Epoch 至多入账一次，Epoch 与每次金额均为 `u64`，因此 `C <= (2^64 - 1)^2`。正池 units 至少为 1，每次指数增长不超过 `R * Q`，所以累计指数 `<= C * Q < 2^256`。
 
 对于持仓 units 不变的某段，其每个计奖 Epoch 均有 `position.units <= pool.units`，因此：
 
@@ -580,7 +569,7 @@ credit_epoch_reward(pool, E, rewards):
 position.units * floor(R * Q / pool.units) <= R * Q
 ```
 
-将本持仓各段相加，其累计权益不会超过该池累计入账乘 `Q`，仍小于 `2^192`；已支付金额扣除后界限更小。这才是 `units * (index - cursor)` 可由 `u256` 安全保存的依据，不能直接将 `2^120` 与一个无关的最大指数相乘。
+将本持仓各段相加，其累计权益不会超过该池累计入账乘 `Q`，仍小于 `2^256`；已支付金额扣除后界限更小。这才是 `units * (index - cursor)` 可由 `u256` 安全保存的依据，不能直接将 `2^120` 与一个无关的最大指数相乘。
 
 每期未分配权益小于 `U / Q <= 1/256` 个最小代币单位；边界 `U = 2^120` 时仍严格小于 `1/256`。`R >= 1` 且 `U > 0` 时 `delta_index >= 256`，正奖励不会全部变成池级残差。残差停留在金库，不进入后续指数；个体 `accrued % Q` 则必须保留给原用户。
 
@@ -665,7 +654,7 @@ do not redistribute any unused or rounded budget
 - 最终人数至少为 `min_validators`，不超过协议和实际支持上限。
 - `0 < sum(power) <= MAX_TOTAL_POWER`。
 - 开放模式对每一入选池满足 `3 * power < sum(power)`；所有乘加使用宽整数。
-- 目标指数、目标 Epoch 和奖励期限仍在部署支持范围内。
+- 目标指数和目标 Epoch 仍在整数表示范围内。
 - 各池 `reward_base_octa = floor(power * bond_octa_per_ohmp / POWER_PER_OHMP)` 不超过部署上限。
 
 不入选池的 `PoolTarget.power = 0`、`reward_base_octa = 0`，但保留其目标 units 以提交到期持仓。PoC 候选必须已有账本；首次切换时只参与旧原生结算、未启用 PoC 的池可以没有账本，上层明确跳过 PoC 安装，不能自动为它建账。
@@ -687,7 +676,7 @@ PreviewResult = Ready(plan_data, target_validator_set)
 | 用户写入超容量、参数组合非法、版本超期 | 在相应写入时拒绝；不等到 block prologue 暴露 | 同样原子拒绝 |
 | 冻结计划缺失 / 不成对、Epoch 不匹配、检查点损坏、账本不变量失效 | 协议状态错误，拒绝提交 | 同样拒绝；不以实时状态修补目标 |
 
-部署期限用 `F = first_poc_epoch` 计算，受支持 PoC Epoch 为 `F <= E < F+H`。本版不继续安装范围外的 PoC Epoch；到达边界前应升级，不能通过单独结奖或重置 `F` 来延长本版寿命。指数期限独立按相对周期计算。
+`first_poc_epoch` 记录首次成功安装的 PoC Epoch，并锁定此后的 PoC 模式；奖励不设置到期时间。算力指数仍须满足独立的数值下界，Epoch 递增不能超过 `u64` 的表示范围。
 
 ## 9. 旧期奖励与原生本金处理
 
@@ -733,7 +722,7 @@ pool_reward = poc_inflation + poc_fee
 
 `RewardContext` 在准备时和每次安装时保存，旧期结算仅读取其分子、分母及费配置。与奖励有关的治理修改即使已经写入原生配置资源，也只影响下一份上下文。原生周期性奖励率下降在旧期结算后计算，再保存下一期上下文；不要求在 DKG 开始时预估完成时刻的新奖励率。
 
-分流快照在同次安装写入，Epoch 必须匹配。`stake::schedule_reward_split(framework, bps, activation_epoch)` 校验 `0 <= bps <= 10_000` 和未来 Epoch；相同入口可替换待生效值，`stake::cancel_pending_reward_split` 清除待生效值，二者均受冻结保护。原生本金增加后会提高未来担保能力，但本次尚未结算的分流不写回已冻结目标。金库入账上界不增加；原生容量逐计划检查当前/待退出/候选池并集，以旧期比例、最优表现及旧期费用限额预留本次总收益，并覆盖 active 合并和到期 pending_inactive 转入 inactive 的 `u64` 容量。`add_stake_with_cap` 在当前原生奖励上界为正时检查四类余额、追加本金和当期奖励之和，超限原子拒绝。对下一期正原生奖励的入选池，预检另保留四类余额加旧期入账上界和下一期奖励上界的容量，后者使用目标比例、目标基数、部署奖励率上限和部署费用上限；首次启用旧期入账包含原生奖励和费用。未来比例导致不足时在冻结前 `Deferred`，可撤销待生效比例或提取 inactive 修复，不能追改旧期收益；这些是每期容量约束，不承诺原生本金的整个 `H` 容量。
+分流快照在同次安装写入，Epoch 必须匹配。`stake::schedule_reward_split(framework, bps, activation_epoch)` 校验 `0 <= bps <= 10_000` 和未来 Epoch；相同入口可替换待生效值，`stake::cancel_pending_reward_split` 清除待生效值，二者均受冻结保护。原生本金增加后会提高未来担保能力，但本次尚未结算的分流不写回已冻结目标。实际代币总量以 Octa 计量，在持续发行和费用结算后长期远低于 `u64::MAX`。因此预检和追加质押不再为旧期、下一期最大奖励额预留余额容量，也不重复扫描委员会计算这些上界；`fee_max` 与每池费用限额只是政策上限，不能当作真实余额导致换届延期。实际结算仍检查奖励转换、通胀加真实费用总额、有效本金及 `Coin` 合并，金库只按真实奖励入账。`get_native_reward_upper_bound` 为委托入池费保留，使用 `u128` 相加后封顶 `u64::MAX`；此前提下封顶值仍覆盖实际奖励，不改变实际分发、旧期快照或份额计算规则。
 
 ### 9.3 费用记录与长期延期
 
@@ -741,7 +730,7 @@ pool_reward = poc_inflation + poc_fee
 
 有限的 `fee_max` 约束的是最终分发额，不能据此声称当前无界 `Aggregator<u64>.add` 的累计过程也不会溢出。PoC 实现必须在费用记账入口处理该边界：可复用现有按索引容器，将可分发累计额保存为 `min(旧上下文限额, 已累计额 + 本次归属额)`，加法先使用宽整数；最终结果与旧期结束时限幅等价。原交易费事件仍记录真实费用，不把此限幅展示成少收费用。
 
-若实现需要读取 Aggregator 才能完成限幅，应测量其对并行执行和费用写热点的影响，选择保持安全与性能预算的实现后再发布，不能用 epoch 末尾的 `min` 掩盖写入溢出。原生准备期使用原生兼容结算；其累计费用与超长原生期也应在首次启用测试中检查。
+若实现需要读取 Aggregator 才能完成限幅，应测量其对并行执行和费用写热点的影响，选择保持安全与性能预算的实现后再发布，不能用 epoch 末尾的 `min` 掩盖写入溢出。原生准备期使用原生结算；其累计费用与超长原生期也应在首次启用测试中检查。
 
 单个提案计数器仍为既有 `u64` 字段，其递增边界需要单独验证；将奖励公式改为 `u256` 不自动扩大计数器存储容量。边界保护不得产生未经设计的表现比例变更。
 
@@ -838,7 +827,7 @@ try_begin_transition(trigger):
 
 | 类别 | 必查直接 / 间接路径 | 合法提交的区别 |
 | --- | --- | --- |
-| 分配与原始版本 | `set_allocations`、批量上传、创世 / legacy 写入口、未来可能的修正入口 | 内部应用成熟变更允许，不能接收新未来变更 |
+| 分配与原始版本 | `set_allocations`、批量上传、创世写入口、未来可能的修正入口 | 内部应用成熟变更允许，不能接收新未来变更 |
 | 本金 | `add_stake_with_cap`、`reactivate_stake_with_cap`、`unlock_with_cap`、`withdraw_with_cap`、`increase_lockup_with_cap` | 原生内部状态转换允许 |
 | 成员资格 | 加入、退出、取消加入、取消自主退出、`remove_validators`、池启用、`configure_allowed_validators` | 从缓存安装目标允许 |
 | 验证者配置 | `rotate_consensus_key`、网络地址更新及其转调 | 保留现有密码验证逻辑，冻结检查不改变验证算法 |
@@ -893,7 +882,7 @@ std::features 新增：
 - 待加入 `ValidatorInfo.voting_power = 0`，不提前增加 `total_voting_power`。
 - 不调用按代币金额计量的 `update_voting_power_increase`。
 - `add_stake_with_cap` 继续处理原生本金与 maximum stake 检查，但不将追加代币计入 PoC `total_joining_power`。
-- `total_joining_power` 字段为布局兼容而保留，PoC 下保持零；真正增长预算统一由计划构建计算。
+- `total_joining_power` 用于原生模式的加入权重预算；PoC 下保持零，PoC 增长预算统一由计划构建计算。
 
 现有 `leave_validator_set` 对 pending_active 的移除分支可继续作为取消待加入入口，不需要另建一个重复队列。PoC 下取消时不按代币余额扣减 `total_joining_power`，也不要求取消后整个目标立即有效，以便逐步修复多候选竞争。
 
@@ -974,9 +963,9 @@ PoC 只替换 BFT 的已安装权重。`topo_governance::get_voting_power` 中�
 
 1. 验证框架权限，确认没有正在进行的重配置、残留 PVS 或待处理目标会话，防止混接不同生命周期。
 2. 读取真实的链 Epoch、当前原生奖励率和费用配置，初始化配置缓冲。
-3. 验证部署清单、`H`、奖励上限与参数组合，创建全局 PoC 账本，`epoch` 对齐链 Epoch，排定 `activation_epoch >= E+1`。
+3. 验证部署清单、单期奖励上限与参数组合，创建全局 PoC 账本，`epoch` 对齐链 Epoch，排定 `activation_epoch >= E+1`。
 4. 保存该 Epoch 的 `RewardContext { poc_enabled: false }`，初始化自主退出记录。
-5. 一次性创建算力表、标准化状态和周期时钟，记录初始化 Epoch、固定保留比例和支持期限，建立 `I[0]`；拒绝重复初始化。
+5. 一次性创建算力表和周期时钟，将时钟设为当前绝对 Epoch，记录固定保留比例和支持期限，建立 `I[0]`；拒绝重复初始化。
 
 准备入口只建立全局状态，不全量扫描用户或自动把 owner 算力分给自己的池。验证者启用、用户配置与原始版本准备通过有界事务完成。部署清单里要列出实际准备的候选池与初始分配。
 
@@ -984,10 +973,10 @@ PoC 只替换 BFT 的已安装权重。`topo_governance::get_voting_power` 中�
 
 ### 13.3 开发阶段的算力初始化
 
-当前不承接旧版算力数据，也不提供 `migrate_power` 或惰性转换入口。准备 PoC 时直接创建完整算力存储，不存在先写原始算力再建立标准化状态的阶段；开发环境通过全新创世使用新布局。
+当前不承接旧版 PoC 数据，也不提供迁移、惰性转换或缺资源补建入口。准备 PoC 时直接创建完整算力存储、周期时钟及奖励分流配置；开发环境通过全新创世使用新布局。尚未准备 PoC 的原生模式仍可查询空配置，这不适用于已准备但缺资源的损坏状态。
 
-1. 全新 PoC 创世一次性创建算力表、标准化状态和时钟，再写入周期 0 的原始算力及标准化版本，`units = power * UNIT_SCALE`。
-2. 运行期在准备后上传下一周期算力，使用 `next_index` 直接计算并保存 `units`，到生效周期才切换使用。
+1. 全新 PoC 创世一次性创建算力表和时钟，再写入周期 0 的原始算力及标准化版本，`units = power * UNIT_SCALE`。
+2. 运行期在准备后上传下一周期算力，由当前指数计算下一指数并保存 `units`，到生效周期才切换使用。
 3. 无算力记录的用户查询返回零，可先设置分配；后续上传会同步已有分配，无需额外初始化用户算力记录。
 4. 版本的 `units` 不因首次访问或周期推进而重新计算。创世直写仅限真实创世阶段且时钟尚未推进；存在预写未来版本时须保留该版本并同步持仓。
 
@@ -1008,13 +997,13 @@ PoC 只替换 BFT 的已安装权重。`topo_governance::get_voting_power` 中�
 
 创世先准备标准化状态，再为每个实际验证者 owner 写入 `PocGenesisConfiguration.initial_raw_power` 指定的统一原始算力，启用其同地址的池，并按 `10000 bps` 全额分配到本池。验证者身份与保证金由验证者记录提供，配置无需重复列出用户、启用池或分配。周期 0 的 `units = initial_raw_power * UNIT_SCALE`，最终权重仍受保证金与权重上限约束。初始化期按创世授权写入算力，分配沿用普通入口在 Epoch 1 生效；不能把创世直写能力暴露到运行期。
 
-`PocGenesisConfiguration.native_reward_bps` 默认 `3000`，JSON/YAML 省略字段采用默认值、显式 `0` 保留全额 PoC 通胀和费用。Rust 通过新增的 `genesis::create_initialize_poc_validators_with_reward_split` 传入该值；原 Move 内部入口保留签名并使用同一 Move 默认值。准备后排定 Epoch 1，在首期安装时生成分流快照，不结算 Epoch 0 奖励。
+`PocGenesisConfiguration` 仅保存首届委员会参数、模式、衰减保留比例和初始算力；上限和分流不再通过清单传入。`genesis::create_initialize_poc_validators` 使用合约默认上限及 `5000 bps` 分流，首期安装时生成快照，不结算 Epoch 0 奖励。
 
 `initial_raw_power` 的配置单位是整数 `power`。例如希望配置 `1 OHMP` 的原始算力时，应填 `100000000`，并独立校验保证金、权重门槛与部署上限；已有测试中的 `initial_raw_power = 17` 仍表示 `0.00000017 OHMP`，不能因展示命名而放大测试输入。
 
 直接 PoC 创世的可治理参数采用方案 A：算力周期复用现有默认 `60` Epoch，初始上传者为 `0x1`，每池费用分发限额为 `0`。这三项由 Move 创世流程确定，不再经 Rust 清单及 BCS 逐层传入；后续使用现有治理入口修改。
 
-Rust 的 `PocGenesisConfiguration::mainnet()` 和 `Default` 提供兼容现有 TOPO 配置的完整主网 PoC 参数：1 TOPO/OHMP、每个验证者初始 100 万 OHMP、开放委员会至少 5 人。`PocGenesisConfiguration::testnet()` 适配现有测试创世每个验证者质押 1 TOPO 的配置，使用受控模式、最低 2 人，每人初始 1 OHMP，最低权重为 1 power、每池上限 1,000 OHMP、计奖基数上限 1,000 TOPO，其余参数沿用主网默认值。最低 2 人在动态换员时要求现有测试配置的 50% 增长上限，两个等权节点须同时在线；两套配置均可覆盖个别 PoC 字段。完整取值见[主网默认值](POC_GENESIS_IMPLEMENTATION_CHECKS.md#主网默认值)与[测试网默认值](POC_GENESIS_IMPLEMENTATION_CHECKS.md#测试网默认值)。已有链的准备入口继续要求完整清单。
+Rust 的 `PocGenesisConfiguration::mainnet()` 和 `Default` 提供兼容现有 TOPO 配置的完整主网 PoC 参数：1 TOPO/OHMP、每个验证者初始 100 万 OHMP、开放委员会至少 5 人。`PocGenesisConfiguration::testnet()` 适配现有测试创世每个验证者质押 1 TOPO 的配置，使用受控模式、最低 2 人，每人初始 1 OHMP，最低权重为 1 power、每池权重上限 1,000 OHMP；部署上限由合约统一初始化，其余创世参数沿用主网默认值。最低 2 人在动态换员时要求现有测试配置的 50% 增长上限，两个等权节点须同时在线；两套配置均可覆盖个别 PoC 字段。完整取值见[主网默认值](POC_GENESIS_IMPLEMENTATION_CHECKS.md#主网默认值)与[测试网默认值](POC_GENESIS_IMPLEMENTATION_CHECKS.md#测试网默认值)。已有链的准备入口继续要求完整清单。
 
 当前创世创建验证者时会调用 `stake::on_new_epoch`，随后框架另发初始 Epoch 事件。应将首次安装与周期计数设计为一次明确的创世操作，验证最终链 Epoch、账本 Epoch、计奖上下文都是 `1`，周期倒计时与第 6.1 节的初始规则一致。创世不结算一个虚构的 PoC Epoch `0`。
 
@@ -1033,7 +1022,6 @@ activation_epoch: "<绝对 Epoch>"
 baseline_epoch: "<绝对 Epoch>"
 retention_bps: "<固定保留比例>"
 power_period_in_epochs: "<周期长度>"
-p_max: "<整数递推证明支持的有限周期数>"
 bond_octa_per_ohmp: "<每 1 OHMP 所需的 Octa 数，正整数>"
 min_power: "<最终权重门槛，整数 power>"
 max_power: "<最终权重上限，整数 power>"
@@ -1044,8 +1032,6 @@ validator_limit: "<通过成本测试的 V_LIMIT>"
 max_allocations: "<配置并集上限>"
 max_claim_pools: "<单次领取上限>"
 max_upload_users: "<单批用户上限>"
-b_max: "<计奖基数上限，代币最小单位>"
-rate_max: { numerator: "<分子>", denominator: "<正分母>" }
 fee_max: "<每池每 Epoch 的分发上限，代币最小单位>"
 h: "<首次 PoC 起最多结算的 Epoch 数>"
 initialization_evidence: "<全新创世或空算力存储准备的验证结果>"
@@ -1070,7 +1056,7 @@ upgrade_warning: "<阈值、负责人、升级窗口>"
 | `PoCEpochInstalled` | epoch、period、selected_count、total_power | 新 Epoch 成功安装 |
 | `VoluntaryLeaveCancelled` | pool、request_epoch | 恢复自主退出成功 |
 
-`PoCRewardSplit` 保留通胀分流明细和布局；原生通胀继续发出 `DistributeRewards`，正原生费用通过已有 `DistributeTransactionFee` 记录。费用总额可由原生费用事件与 `PoCRewardCredited.fee` 相加还原。
+`PoCRewardSplit` 记录通胀分流明细；原生通胀继续发出 `DistributeRewards`，正原生费用通过已有 `DistributeTransactionFee` 记录。费用总额可由原生费用事件与 `PoCRewardCredited.fee` 相加还原。
 
 原始版本重复上报不发新增标准化事件。不要在同一事件里复制整个历史持仓或整份计划；可通过资源与已安装 Epoch 查询详细目标，控制事件体积。
 
@@ -1083,7 +1069,7 @@ upgrade_warning: "<阈值、负责人、升级窗口>"
 | 用户输入 | `EINVALID_ALLOCATION`、`EDUPLICATE_POOL`、`EALLOCATION_LIMIT` | 比例、地址或数量不符合约束 |
 | 准入 / 权限 | `EPOOL_NOT_ENABLED`、`ENOT_OPERATOR`、`ENO_VOLUNTARY_LEAVE` | 池未开放、权限不足或退出来源不符 |
 | 时点 / 参数 | `EINVALID_TARGET_EPOCH`、`EINVALID_PARAM_COMBINATION` | 生效时点或组合约束错误 |
-| 容量 / 期限 | `EPOOL_CAPACITY`、`EPOWER_HORIZON`、`EREWARD_HORIZON` | 写入超过已声明支持范围 |
+| 容量 / 数值边界 | `EPOOL_CAPACITY`、`EPOWER_HORIZON` | 写入超过已声明支持范围 |
 | 冻结 | `ERECONFIGURATION_IN_PROGRESS` | 外部尝试改变冻结目标 |
 | 状态损坏 | `EPLAN_MISMATCH`、`ECHECKPOINT_MISSING`、`EREWARD_ALREADY_CREDITED`、`EVAULT_INVARIANT` | 不可作为普通延期吞掉 |
 | 预检结果值 | `INSUFFICIENT_VALIDATORS`、`ZERO_TARGET_POWER`、`CONCENTRATION_LIMIT`、`TARGET_OUT_OF_RANGE` | 可供修复与观测的业务结果，不直接中止 block prologue |
@@ -1092,7 +1078,7 @@ upgrade_warning: "<阈值、负责人、升级窗口>"
 
 ### 14.3 运行观测项
 
-运行报告至少记录当前模式与 Epoch、冻结起始时间和目标 Epoch、每池已安装权重与占比、延期原因、候选规模、当前 / 下一指数、距离 `P_MAX` 与 `F+H` 的余量、金库容量、算力上传失败数和最大单次执行成本。
+运行报告至少记录当前模式与 Epoch、冻结起始时间和目标 Epoch、每池已安装权重与占比、延期原因、候选规模、当前 / 下一指数、距离指数数值边界的余量、金库容量、算力上传失败数和最大单次执行成本。
 
 不能把待生效分配展示为当前共识权重；DKG 期间展示缓存目标与实时旧期奖励累计两个不同对象。监控不替代写入时的容量检查，也不把期限预警等同于自动升级机制。
 
@@ -1131,13 +1117,13 @@ upgrade_warning: "<阈值、负责人、升级窗口>"
 | 14 | 最后原生 Epoch 改费开关 / 奖励率并追加委托，分别延期与成功 | 旧入池费与旧上下文有效；新上下文只在成功安装后生效 |
 | 15 | `I = floor(INDEX_SCALE * 9000 / 10000)`、原始 100、100% 分配 | 池整数权重 99，按最终值决定是否达到 min_power |
 | 16 | 当前 / E+1 / B 容量越界，临时中间状态超容量的合法替换，两个 `2^63` 目标 | 非法写入原子失败；合法最终替换成功；总权重非法输入在 DKG 前拒绝 |
-| 17 | 部署具体参数、`P_MAX` 边界、零 / 最小正 / 最大允许奖励、H 期不领、调整周期 / 启用时点 | 指数与奖励期限不重置；禁止超期版本；预警在保护之前 |
+| 17 | 部署具体参数、指数数值边界、零 / 最小正 / 最大允许奖励、长期不领、代币反复入账使累计奖励超过 u64、调整周期 / 启用时点 | 指数基线不重置；奖励无期限；禁止低于数值下界的版本；u256 累计与领取守恒 |
 | 奖励分流 | 占比 `0 / 3000 / 10000`、未来生效和撤销、冻结拒绝、同步与各 DKG 完成路径 | 旧期按旧快照结算，两路总额守恒，通胀和费用均分流、零通胀仍分费、费用开关与限额使用旧快照，原生份额与佣金正确 |
-| 原生容量与委托入池费 | 原生复投、追加、解锁、重激活、本次奖励容量和已冻结目标 | 有效本金范围正确，新份额不摊走本期原生收益，旧比例容量不足在冻结前延期，未结算奖励不回算目标 |
+| 原生金额与委托入池费 | 发行规模内的原生复投、追加、解锁、重激活、巨大费用政策上限和已冻结目标 | 有效本金范围正确，新份额不摊走本期原生收益；政策上限不导致容量误拒，实际结算断言保留，未结算奖励不回算目标 |
 | 18 | 五池等权 20 迁移到 `[20,5,5,5,5]`，随后撤回 | 开放模式拒绝并可修复；受控测试标出信任假设 |
 | 19 | 空存储准备、创世直接写入、晚访问、版本轮换、先分配后上传 | 写入时固定 units、当前与下一周期隔离；首次上下文与 Epoch 一致 |
 
-第 16 项的两个 `2^63` 权重已会被保守参数上限排除，但仍应通过独立目标校验器的测试输入覆盖实际总和拒绝，不能因此移除 DKG 前总和检查。
+第 16 项通过独立目标校验器的整数输入覆盖实际总和拒绝，不需要铸造超过 `u64` 的代币。`max_power` 可配置到 `u64::MAX`，实际目标仍须通过 DKG 前总和检查。
 
 ### 15.3 补充的源码接入回归
 
@@ -1145,7 +1131,7 @@ upgrade_warning: "<阈值、负责人、升级窗口>"
 - 固定 `B = 61`，设置 `new_length = u64::MAX - 61` 时下一边界恰为上限；再加一或直接设置 `u64::MAX` 均原子拒绝，旧长度、倒计时与 `B` 不变；初始化和边界预检覆盖相同检查。
 - 动态换员、最低人数 `4` 时拒绝 `V_LIMIT = 4`；改为 `5`、四池权重各 `10`、增长比例 `25%` 且无其他竞争时，经既有加入和退出入口完成单替补换届。
 - 完全没接入准备的原生链、已准备但尚未到启用目标的原生链，均可继续原生换届。
-- `set_legacy_stake_pool_power`、创世入口和测试专用入口不能绕过准备后的写入约束。
+- 创世写入口仅在真实创世阶段可用，测试专用写入口不进入生产字节码。
 - `allow_validator_set_change = false` 的 PoC 链治理仍按代币计权。
 - DKG 期间领取导致历史检查点删除，但目标 units、计划与 PVS 都不变化。
 - 池在 Epoch `10` 已退出且账本停在该期，持仓有 Epoch `11` 生效的撤回；到 Epoch `12` 直接领奖，先以不增长的指数补出检查点再结算，重复领取不重复支付；冻结时结果相同且不推进目标 Epoch。
@@ -1187,14 +1173,14 @@ upgrade_warning: "<阈值、负责人、升级窗口>"
 
 | 阶段 | 工作内容 | 前置条件 | 完成条件 |
 | --- | --- | --- | --- |
-| M0：基线核实 | 记录提交、确认实际发布模块、处理 `staking_registry` 悬空依赖、验证现有框架可构建 | 无 | 得到可重复构建基线及明确的创世 / 升级路径；把历史既有失败单独记录 |
-| M1：数值与存储 | 账本结构、部署参数验证、算术辅助、标准化版本及只读周期快照 | M0 | 固定常量、量化样例、P_MAX / H / DKG 总和及空存储初始化测试通过 |
+| M0：基线核实 | 记录提交、确认实际发布模块、处理 `staking_registry` 悬空依赖、验证现有框架可构建 | 无 | 得到可重复构建基线及明确的创世初始化路径；把历史既有失败单独记录 |
+| M1：数值与存储 | 账本结构、部署参数验证、算术辅助、标准化版本及只读周期快照 | M0 | 固定常量、量化样例、指数数值边界 / 奖励累计容量 / DKG 总和及空存储初始化测试通过 |
 | M2：分配与领奖 | 两时点重建、池聚合、检查点引用、版本同步、用户入口 | M1 | 设计验收 1–4、15–17 的账本部分通过，参考模型一致 |
 | M3：计划构建 | 保证金预览、资格、增长预算、开放集中度及只读结果 | M1–M2 | 所有边界能返回明确结果；无持久化副作用；候选顺序固定 |
-| M4：原生兼容与结算拆分 | RewardContext、奖励去向、旧索引费用、本金处理、入池费与治理查询 | M2–M3 | 最后原生期、新 PoC 期、历史原生份额无重复发放或模式混用 |
+| M4：原生模式与结算拆分 | RewardContext、奖励去向、旧索引费用、本金处理、入池费与治理查询 | M2–M3 | 最后原生期、新 PoC 期、历史原生份额无重复发放或模式混用 |
 | M5：冻结与换届 | 所有重配置入口、标准库冻结令牌、buffer 路径、DKG / Chunky / 强制结束 | M3–M4 | 同一计划覆盖所有提交；坏缓存拒绝；冻结矩阵逐入口通过 |
 | M6：成员恢复与启用 | 自主退出预检、取消来源、准备入口、首次切换、直接算力写入与创世 | M5 | `Deferred` 可通过设计修复入口恢复；直接创世与空算力准备路径测试通过 |
-| M7：系统验收 | 节点恢复、升级兼容、数值证明、容量与并发测试、缓存 bundle | M1–M6 | 19 项验收有执行证据，发布清单无占位，生成资产与源码一致 |
+| M7：系统验收 | 节点恢复、完整初始化、数值证明、容量与并发测试、缓存 bundle | M1–M6 | 19 项验收有执行证据，发布清单无占位，生成资产与源码一致 |
 
 M2 可以使用只在测试编译中存在的奖励注入辅助验证账本，生产模块仍只接受 `stake` 的真实奖励。M3 可先对固定测试输入运行，不能在 M5 尚未完成冻结前接入正式 DKG。M6 的启用交易只有在 M7 的发布要求全部满足后才用于真实部署。
 
@@ -1217,7 +1203,7 @@ cargo build -p aptos-cached-packages
 git status --short aptos-move/framework/cached-packages/
 ```
 
-生成过程中必须解决编译、friend 依赖、循环依赖和升级兼容问题。将变更后的 `head.mrb` 与实际生成的 SDK 文件一同审查，不能只提交 Move 源码。测试专用 bundle 与生产 bundle 分开，生产发布不得包含 `#[test_only]` 入口。
+生成过程中必须解决编译、friend 依赖和循环依赖问题。开发阶段直接采用新结构并重建创世。将变更后的 `head.mrb` 与实际生成的 SDK 文件一同审查，不能只提交 Move 源码。测试专用 bundle 与生产 bundle 分开，生产发布不得包含 `#[test_only]` 入口。
 
 ### 17.2 定向测试和包级回归
 
@@ -1282,8 +1268,8 @@ scripts/cargo_build_aptos_cached_packages.sh --check
 
 发布必须同时满足：
 
-1. 部署清单所有参数有确定值，指数与奖励期限计算、增长组合和开放集中度校验通过。
-2. 创世或兼容升级路径有实际演练记录；旧结构兼容、基线稳定、旧槽覆写前同步和幂等检查通过。
+1. 部署清单所有参数有确定值，指数边界和奖励容量证明、增长组合和开放集中度校验通过。
+2. 创世与原生模式准备路径有实际演练记录；完整资源初始化、基线稳定及版本槽覆写前同步检查通过。
 3. 19 项验收及第 15.3 节的接入回归完成，冻结矩阵覆盖入口及转调路径。
 4. 最大支持规模、长延期、热点池及费用记账的成本报告满足实际区块和交易预算。
 5. 生产 bundle、生成 SDK、测试结果、源码提交和部署脚本能够对应，关键权限及共识接入已经按仓库规则审查。
@@ -1314,7 +1300,6 @@ scripts/cargo_build_aptos_cached_packages.sh --check
 | 创世安装 | [genesis.move](../../aptos-move/framework/topo-framework/sources/genesis.move) | `create_initialize_validators_with_commission` |
 | 普通 DKG 总和边界 | [rounding/mod.rs](../../types/src/dkg/real_dkg/rounding/mod.rs) | `DKGRoundingProfile` 及 `sum::<u64>()` |
 | Chunky 共用舍入 | [chunky_dkg.rs](../../types/src/dkg/chunky_dkg.rs) | target validator stakes 与 rounding 调用 |
-| Move 结构兼容 | [compatibility.rs](../../third_party/move/move-binary-format/src/compatibility.rs) | `check_struct_layout`、`struct_layout_compatible` |
 | Move 单测入口 | [move_unit_test.rs](../../aptos-move/framework/tests/move_unit_test.rs) | `TEST_FILTER`、`move_framework_unit_tests` |
 | 实际缓存生成 | [生成脚本](../../scripts/cargo_build_aptos_cached_packages.sh)、[命令实现](../../aptos-move/framework/src/main.rs)、[缓存说明](../../aptos-move/framework/cached-packages/README.md) | `update-cached-packages` 与生产 / test-only 输出 |
 

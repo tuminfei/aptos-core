@@ -3,6 +3,8 @@
 
 //! 使用主网、测试网默认参数或自定义清单构建 PoC 创世；普通创世构建器继续使用原生质押模式。
 //! 数值上界、保证金资格与委员会约束由生产 Move 代码实际执行校验。
+//! 工程前提：实际 TOPO 总量远低于 u64::MAX；不按假想超发行规模限制奖励或单池权重。
+//! 算力与 Octa 的换算比例可治理调整，换届仍须检查实际总权重与计奖金额。
 
 use crate::{encode_genesis_change_set_internal, exec_function, GenesisConfiguration, Validator};
 use aptos_crypto::ed25519::Ed25519PublicKey;
@@ -26,34 +28,10 @@ pub struct PowerParams {
     pub bond_octa_per_ohmp: u64,
     /// 最终整数共识权重的准入门槛。
     pub min_power: u64,
-    /// 单池最终整数共识权重上限，还须满足协议对总权重的保守上界要求。
+    /// 单池最终整数共识权重上限；换届时按实际入选权重检查总和。
     pub max_power: u64,
     /// 最终委员会最低人数；动态换员时必须小于候选容量。
     pub min_validators: u64,
-}
-
-/// 部署固定上限；字段顺序必须与 `poc_accounting::DeploymentLimits` 的 BCS 布局一致。
-/// 奖励基数和费用均使用 Octa；调用者须提供全部参数，并验证其容量上限。
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DeploymentLimits {
-    /// 单个用户当前及待生效配置涉及的池并集上限。
-    pub max_allocations: u64,
-    /// 单次领取可指定的池数上限。
-    pub max_claim_pools: u64,
-    /// 原始算力单批上传人数上限。
-    pub max_upload_users: u64,
-    /// 经成本验收确定的候选数量上限 V_LIMIT；总权重上界仍按 MAX_VALIDATOR_SET_SIZE 计算。
-    pub validator_limit: u64,
-    /// 单池计奖基数上限 B_MAX，单位为 Octa。
-    pub max_reward_base_octa: u64,
-    /// 允许的最大奖励率分子，与 rate_max_den 配对使用。
-    pub rate_max_num: u64,
-    /// 允许的最大奖励率分母，必须为正。
-    pub rate_max_den: u64,
-    /// 每池每 Epoch 可分发交易费上限。
-    pub fee_max: u64,
-    /// 自首次 PoC Epoch 起支持的奖励期数 H，不因调参重置。
-    pub reward_epoch_limit: u64,
 }
 
 /// 部署信任模式；传入 Move 时分别编码为 0 和 1。
@@ -67,28 +45,19 @@ pub enum DeploymentMode {
 
 /// PoC 创世清单：创建 owner 直接持有的零佣金质押池，并安装 PoC Epoch 1。
 /// 验证者身份与保证金来自单独传入的 `Validator` 记录；每个 owner 获得相同初始算力并全额分配到本池。
-/// 算力周期、上传者和费用限额使用 Move 默认值：60 个 Epoch、0x1、0，上线后可通过治理调整。
+/// 部署上限、奖励分流、算力周期、上传者和费用限额使用 Move 默认值，上线后由治理调整。
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PocGenesisConfiguration {
+    /// 首届委员会所需的权重和准入参数；后续可通过治理排期更新。
     pub params: PowerParams,
-    pub limits: DeploymentLimits,
+    /// 从首个 Epoch 起生效的准入模式，不能在运行中切换。
     pub deployment_mode: DeploymentMode,
     /// 每个算力周期的保留比例，单位 bps；准备标准化基线时固定。
     pub retention_bps: u64,
-    /// 以创世基线为 0 的最大相对算力周期 P_MAX，须逐周期校验整数指数。
-    pub max_relative_period: u64,
     /// 每个创世验证者在周期 0 获得的原始算力，必须为正；自动写入 PowerStore 并 100% 分配到本池。
     /// 独立于代币保证金数量，最终权重仍受保证金及 params.max_power 限制。
     pub initial_raw_power: u64,
-    /// PoC 通胀与可分发交易费共用的原生奖励占比，以基点（bps）表示，范围为 0..=10_000。
-    /// 新创世配置省略此项时，默认 3000 bps：原生质押获得 30%，PoC 奖励金库获得 70%。
-    /// 两类收入分别分流并向下取整原生份额，余额各归 PoC 奖励金库。
-    #[serde(default = "default_native_reward_bps")]
-    pub native_reward_bps: u64,
-}
-
-fn default_native_reward_bps() -> u64 {
-    3_000
 }
 
 impl PocGenesisConfiguration {
@@ -102,29 +71,13 @@ impl PocGenesisConfiguration {
             params: PowerParams {
                 bond_octa_per_ohmp: OCTA_PER_TOPO,
                 min_power: POWER_PER_OHMP,
-                // 65536 * max_power < u64::MAX，不能直接沿用更大的原生 max_stake。
-                max_power: 2_000_000 * POWER_PER_OHMP,
+                // 默认不另设业务上限，实际权重仍受算力、保证金和换届检查约束。
+                max_power: u64::MAX,
                 min_validators: 5,
-            },
-            limits: DeploymentLimits {
-                max_allocations: 4,
-                max_claim_pools: 4,
-                max_upload_users: 32,
-                validator_limit: 128,
-                max_reward_base_octa: 2_000_000 * OCTA_PER_TOPO,
-                // 每 Epoch 1% 的奖励率上限，兼容当前 2 小时 Epoch / 10% APY。
-                rate_max_num: 1,
-                rate_max_den: 100,
-                // 仅为治理可设置的上限；Move 创世的实际费用分发限额仍为零。
-                fee_max: 1_000 * OCTA_PER_TOPO,
-                // 覆盖周期 0..=10000，每周期 60 Epoch；H * R_MAX < u64::MAX。
-                reward_epoch_limit: 600_060,
             },
             deployment_mode: DeploymentMode::Open,
             retention_bps: 9_995,
-            max_relative_period: 10_000,
             initial_raw_power: 1_000_000 * POWER_PER_OHMP,
-            native_reward_bps: default_native_reward_bps(),
         }
     }
 
@@ -138,7 +91,6 @@ impl PocGenesisConfiguration {
         config.params.min_power = 1;
         config.params.max_power = 1_000 * POWER_PER_OHMP;
         config.params.min_validators = 2;
-        config.limits.max_reward_base_octa = 1_000 * crate::APTOS_COINS_BASE_WITH_DECIMALS;
         config.deployment_mode = DeploymentMode::Controlled;
         config.initial_raw_power = POWER_PER_OHMP;
         config
@@ -187,27 +139,21 @@ pub(crate) fn create_and_initialize_validators(
     config: &PocGenesisConfiguration,
 ) {
     let mut arguments = serialize_values(&[MoveValue::Signer(CORE_CODE_ADDRESS)]);
-    arguments.extend([
-        encode(&validators),
-        encode(&config.params),
-        encode(&config.limits),
-    ]);
+    arguments.extend([encode(&validators), encode(&config.params)]);
     arguments.extend(serialize_values(&[
         MoveValue::U8(match config.deployment_mode {
             DeploymentMode::Controlled => 0,
             DeploymentMode::Open => 1,
         }),
         MoveValue::U64(config.retention_bps),
-        MoveValue::U64(config.max_relative_period),
         MoveValue::U64(config.initial_raw_power),
-        MoveValue::U64(config.native_reward_bps),
     ]));
     exec_function(
         session,
         module_storage,
         traversal_context,
         "genesis",
-        "create_initialize_poc_validators_with_reward_split",
+        "create_initialize_poc_validators",
         vec![],
         arguments,
     );
@@ -241,62 +187,6 @@ mod tests {
     };
     use move_vm_runtime::module_traversal::TraversalStorage;
     use move_vm_types::gas::UnmeteredGasMeter;
-    use serde::de::{
-        value::{Error as ManifestError, MapDeserializer},
-        Deserializer, IntoDeserializer, Visitor,
-    };
-
-    /// 只为测试构造与 JSON/YAML 等价的树状清单，避免绕过 `Deserialize`
-    /// 直接修改 Rust 结构体，从而同时验证缺省字段和显式零值。
-    enum ManifestValue {
-        U64(u64),
-        Text(&'static str),
-        Map(Vec<(&'static str, ManifestValue)>),
-    }
-
-    impl<'de> IntoDeserializer<'de, ManifestError> for ManifestValue {
-        type Deserializer = Self;
-
-        fn into_deserializer(self) -> Self::Deserializer {
-            self
-        }
-    }
-
-    impl<'de> Deserializer<'de> for ManifestValue {
-        type Error = ManifestError;
-
-        serde::forward_to_deserialize_any! {
-            bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
-            bytes byte_buf option unit unit_struct newtype_struct seq tuple tuple_struct map
-            struct identifier ignored_any
-        }
-
-        fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where
-            V: Visitor<'de>,
-        {
-            match self {
-                Self::U64(value) => visitor.visit_u64(value),
-                Self::Text(value) => visitor.visit_borrowed_str(value),
-                Self::Map(fields) => visitor.visit_map(MapDeserializer::new(fields.into_iter())),
-            }
-        }
-
-        fn deserialize_enum<V>(
-            self,
-            _name: &'static str,
-            _variants: &'static [&'static str],
-            visitor: V,
-        ) -> Result<V::Value, Self::Error>
-        where
-            V: Visitor<'de>,
-        {
-            match self {
-                Self::Text(value) => visitor.visit_enum(value.into_deserializer()),
-                other => other.deserialize_any(visitor),
-            }
-        }
-    }
 
     fn liquid_balance_at_genesis(genesis: &ChangeSet, address: AccountAddress) -> u64 {
         let view = InstalledGenesis(genesis.write_set());
@@ -323,62 +213,10 @@ mod tests {
                 max_power: 1000,
                 min_validators: 4,
             },
-            limits: DeploymentLimits {
-                max_allocations: 4,
-                max_claim_pools: 4,
-                max_upload_users: 4,
-                validator_limit: 5,
-                max_reward_base_octa: 1000,
-                rate_max_num: 1,
-                rate_max_den: 1,
-                fee_max: 10,
-                reward_epoch_limit: 1000,
-            },
             deployment_mode: DeploymentMode::Open,
             retention_bps: 10000,
-            max_relative_period: 100,
             initial_raw_power: 10,
-            native_reward_bps: default_native_reward_bps(),
         }
-    }
-
-    /// 经由 `PocGenesisConfiguration::deserialize` 读取完整清单；`None` 表示
-    /// 清单确实省略 `native_reward_bps`，由字段默认值补成 3000。
-    fn deserialize_manifest(native_reward_bps: Option<u64>) -> PocGenesisConfiguration {
-        let mut fields = vec![
-            (
-                "params",
-                ManifestValue::Map(vec![
-                    ("bond_octa_per_ohmp", ManifestValue::U64(100_000_000)),
-                    ("min_power", ManifestValue::U64(10)),
-                    ("max_power", ManifestValue::U64(1000)),
-                    ("min_validators", ManifestValue::U64(4)),
-                ]),
-            ),
-            (
-                "limits",
-                ManifestValue::Map(vec![
-                    ("max_allocations", ManifestValue::U64(4)),
-                    ("max_claim_pools", ManifestValue::U64(4)),
-                    ("max_upload_users", ManifestValue::U64(4)),
-                    ("validator_limit", ManifestValue::U64(5)),
-                    ("max_reward_base_octa", ManifestValue::U64(1000)),
-                    ("rate_max_num", ManifestValue::U64(1)),
-                    ("rate_max_den", ManifestValue::U64(1)),
-                    ("fee_max", ManifestValue::U64(10)),
-                    ("reward_epoch_limit", ManifestValue::U64(1000)),
-                ]),
-            ),
-            ("deployment_mode", ManifestValue::Text("Open")),
-            ("retention_bps", ManifestValue::U64(10_000)),
-            ("max_relative_period", ManifestValue::U64(100)),
-            ("initial_raw_power", ManifestValue::U64(17)),
-        ];
-        if let Some(value) = native_reward_bps {
-            fields.push(("native_reward_bps", ManifestValue::U64(value)));
-        }
-        PocGenesisConfiguration::deserialize(ManifestValue::Map(fields))
-            .expect("PoC 验收清单必须能反序列化")
     }
 
     /// 使用指定的原生参数执行真实 PoC 创世入口，返回可重新加载的测试写集。
@@ -596,6 +434,11 @@ mod tests {
             bcs::from_bytes::<u64>(&power_per_ohmp[0]).unwrap(),
             100_000_000
         );
+        let poc_config = query("poc_accounting", "get_config", vec![]);
+        assert_eq!(
+            bcs::from_bytes::<(u64, u64, u64, u64, u64)>(&poc_config[6]).unwrap(),
+            (4, 4, 32, 128, 100_000_000_000),
+        );
         let context = query("stake", "get_installed_reward_context", vec![]);
         let (epoch, poc, _, _, _, fee_limit): (u64, bool, u64, u64, bool, u64) =
             bcs::from_bytes(&context[0]).unwrap();
@@ -605,19 +448,13 @@ mod tests {
         let encoded_native_reward_bps = query("stake", "get_installed_native_reward_bps", vec![]);
         assert_eq!(
             bcs::from_bytes::<u64>(&encoded_native_reward_bps[0]).unwrap(),
-            config.native_reward_bps
+            5_000
         );
         let reward_split = query("stake", "get_reward_split_configuration", vec![]);
         assert_eq!(reward_split.len(), 5);
         assert_eq!(bcs::from_bytes::<u64>(&reward_split[0]).unwrap(), 1);
-        assert_eq!(
-            bcs::from_bytes::<u64>(&reward_split[1]).unwrap(),
-            config.native_reward_bps
-        );
-        assert_eq!(
-            bcs::from_bytes::<u64>(&reward_split[2]).unwrap(),
-            config.native_reward_bps
-        );
+        assert_eq!(bcs::from_bytes::<u64>(&reward_split[1]).unwrap(), 5_000);
+        assert_eq!(bcs::from_bytes::<u64>(&reward_split[2]).unwrap(), 5_000);
         assert_eq!(
             bcs::from_bytes::<Option<u64>>(&reward_split[3]).unwrap(),
             None
@@ -664,7 +501,7 @@ mod tests {
             for balance in &stake[1..] {
                 assert_eq!(bcs::from_bytes::<u64>(balance).unwrap(), 0);
             }
-            let expected_units = u128::from(config.initial_raw_power) << 32;
+            let expected_units = u128::from(config.initial_raw_power) << 16;
             let raw_power = query("poc_power_store", "get_user_committed_power", vec![encode(
                 pool,
             )]);
@@ -731,6 +568,26 @@ mod tests {
             ChainId::mainnet(),
             &validators,
             100_000_000_000_000,
+        );
+    }
+
+    #[test]
+    fn poc_mainnet_large_pool_power_installs_without_reward_base_cap() {
+        let native_config = mainnet_genesis_config();
+        let mut config = PocGenesisConfiguration::mainnet();
+        let power = 10_000_000 * 100_000_000;
+        assert_eq!(config.params.max_power, u64::MAX);
+        config.initial_raw_power = power;
+        let validators = TestValidator::new_test_set(Some(5), Some(power))
+            .into_iter()
+            .map(|v| v.data)
+            .collect::<Vec<_>>();
+        assert_defaults_preserve_topo_config(
+            &config,
+            &native_config,
+            ChainId::mainnet(),
+            &validators,
+            power,
         );
     }
 
@@ -875,18 +732,11 @@ mod tests {
                 && validator.voter_address == AccountAddress::from_hex_literal("0xcafe").unwrap()
         }));
 
-        // 四组均从清单值反序列化后进入生产创世；省略字段和显式 3000
-        // 最终值相同，但必须分别经过 serde 默认路径和显式字段路径。
-        for (encoded, expected) in [
-            (None, 3_000),
-            (Some(0), 0),
-            (Some(3_000), 3_000),
-            (Some(6_750), 6_750),
-        ] {
-            let config = deserialize_manifest(encoded);
-            assert_eq!(config.native_reward_bps, expected);
-            assert_installed_genesis(&config, &validators, &[17, 17, 17, 17], &[17, 17, 17, 17]);
-        }
+        let config = PocGenesisConfiguration {
+            initial_raw_power: 17,
+            ..manifest()
+        };
+        assert_installed_genesis(&config, &validators, &[17, 17, 17, 17], &[17, 17, 17, 17]);
     }
 
     #[test]
@@ -917,7 +767,6 @@ mod tests {
         let mut config = manifest();
         config.initial_raw_power = 17;
         config.params.bond_octa_per_ohmp = 250_000_000;
-        config.limits.max_reward_base_octa = 2500;
         // 2.5 TOPO/OHMP：42 Octa 只支持 16 power，43 Octa 支持 17 power；
         // 17 power 的计奖基数是 42 Octa。保证金限幅不减少已分配的原始算力。
         assert_installed_genesis(&config, &validators, &[16, 17, 17, 17], &[40, 42, 42, 42]);
@@ -951,7 +800,7 @@ mod tests {
     }
 
     #[test]
-    fn poc_genesis_builder_validates_mode_growth_capacity_and_reward_split_matrix() {
+    fn poc_genesis_builder_validates_mode_growth_and_default_capacity() {
         let two_validators = TestValidator::new_test_set(Some(2), Some(100))
             .into_iter()
             .map(|validator| validator.data)
@@ -981,7 +830,7 @@ mod tests {
         // 动态换员还必须在最低人数之外至少保留一个候选名额。
         let mut no_replacement_slot = manifest();
         no_replacement_slot.deployment_mode = DeploymentMode::Controlled;
-        no_replacement_slot.limits.validator_limit = no_replacement_slot.params.min_validators;
+        no_replacement_slot.params.min_validators = 128;
         assert_genesis_abort(
             &no_replacement_slot,
             &four_validators,
@@ -990,24 +839,10 @@ mod tests {
             0x10007,
         );
 
-        // 奖励分流边界由独立模块校验，不能被前面的合法 PoC 参数掩盖。
-        let mut invalid_split = manifest();
-        invalid_split.native_reward_bps = 10_001;
-        assert_genesis_abort(
-            &invalid_split,
-            &four_validators,
-            25,
-            "poc_reward_split",
-            0x10001,
-        );
-
-        // 50% 增长预算恰好允许两人 Controlled 委员会替换一名最低权重成员；
-        // 原生占比的两个闭区间端点都必须写入并从新 VM 正确读回。
-        for native_reward_bps in [0, 10_000] {
-            let mut valid = controlled_two.clone();
-            valid.native_reward_bps = native_reward_bps;
-            let genesis = encode_test_genesis_with_native_config(&valid, &two_validators, 50);
-            assert_installed_genesis_state(&genesis, &valid, &two_validators, &[10, 10], &[10, 10]);
-        }
+        // 50% 增长预算允许两人 Controlled 委员会替换一名最低权重成员。
+        let genesis = encode_test_genesis_with_native_config(&controlled_two, &two_validators, 50);
+        assert_installed_genesis_state(&genesis, &controlled_two, &two_validators, &[10, 10], &[
+            10, 10,
+        ]);
     }
 }

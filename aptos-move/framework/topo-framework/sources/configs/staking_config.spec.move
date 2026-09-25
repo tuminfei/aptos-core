@@ -93,12 +93,13 @@ spec topo_framework::staking_config {
         invariant fixed_point64::spec_ceil(rewards_rate_decrease_rate) <= 1;
     }
 
-    // 准备后两种奖励率都须符合部署清单，避免功能开关切换到未校验的配置。
+    // 准备与预检时保证锁仓续期在 u64 范围内。
     spec validate_poc_configuration {
-        include StakingRewardsConfigRequirement;
-        pragma aborts_if_is_partial;
         aborts_if poc_accounting::is_prepared()
-            && !exists<StakingRewardsConfig>(@topo_framework);
+            && !exists<StakingConfig>(@topo_framework);
+        aborts_if poc_accounting::is_prepared()
+            && global<StakingConfig>(@topo_framework).recurring_lockup_duration_secs
+                + MAX_U64 / 1_000_000 > MAX_U64;
     }
 
     spec validate_poc_lockup_duration {
@@ -127,8 +128,6 @@ spec topo_framework::staking_config {
         requires exists<timestamp::CurrentTimeMicroseconds>(@topo_framework);
         /// [high-level-req-1.1]
         aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
-        aborts_if rewards_rate_denominator > 0 && !poc_accounting::spec_valid_fixed_reward_rate(
-            rewards_rate * 18446744073709551616 / rewards_rate_denominator);
         aborts_if addr != @topo_framework;
         aborts_if minimum_stake > maximum_stake || maximum_stake == 0;
         /// [high-level-req-3.1]
@@ -158,7 +157,6 @@ spec topo_framework::staking_config {
     ) {
         use std::signer;
         aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
-        aborts_if !poc_accounting::spec_valid_fixed_reward_rate(rewards_rate.value);
         requires exists<timestamp::CurrentTimeMicroseconds>(@topo_framework);
         let addr = signer::address_of(topo_framework);
         /// [high-level-req-1.2]
@@ -267,7 +265,6 @@ spec topo_framework::staking_config {
     ) {
         use std::signer;
         aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
-        aborts_if !poc_accounting::spec_valid_reward_rate(new_rewards_rate, new_rewards_rate_denominator);
         pragma opaque;
         modifies global<StakingConfig>(@topo_framework);
         aborts_if features::spec_periodical_reward_rate_decrease_enabled();
@@ -294,7 +291,6 @@ spec topo_framework::staking_config {
     ) {
         use std::signer;
         aborts_if topo_framework::reconfiguration_state::spec_is_in_progress();
-        aborts_if !poc_accounting::spec_valid_fixed_reward_rate(rewards_rate.value);
         include StakingRewardsConfigRequirement;
         let addr = signer::address_of(topo_framework);
         /// [high-level-req-1.6]

@@ -11,7 +11,7 @@ use crate::smoke_test_environment::SwarmBuilder;
 use aptos_api_types::{UserTransaction, WriteSetChange};
 use aptos_cached_packages::aptos_stdlib;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm, SwarmExt};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::Client;
 use aptos_types::{
     account_address::AccountAddress,
@@ -104,7 +104,7 @@ fn payload(change: Change, epoch: u64, rollback_marker: bool) -> TransactionPayl
 /// 本 fixture 不是默认网络配置。
 async fn governance_swarm() -> LocalSwarm {
     println!("GOV-05 fixture A: nodes=5, Open, dynamic=true, min_validators=5, validator_limit=6, min_power=10, max_power=1000, initial_power=10, bond=100 Octa, growth=25%, epoch=3600s, ordinary/Chunky DKG=off, retention_bps=10000, native_reward_bps=0, fee_limit=0");
-    SwarmBuilder::new_local(5)
+    let swarm = SwarmBuilder::new_local(5)
         .with_aptos()
         .with_init_genesis_stake(Arc::new(|_, stake| *stake = 100))
         .with_init_genesis_config(Arc::new(|config| {
@@ -123,26 +123,16 @@ async fn governance_swarm() -> LocalSwarm {
                     max_power: 1000,
                     min_validators: 5,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 32,
-                    validator_limit: 6,
-                    max_reward_base_octa: 1000,
-                    rate_max_num: 1,
-                    rate_max_den: 1,
-                    fee_max: 10,
-                    reward_epoch_limit: 1000,
-                },
+
                 deployment_mode: DeploymentMode::Open,
                 retention_bps: 10000,
-                max_relative_period: 100,
                 initial_raw_power: 10,
-                native_reward_bps: 0,
             }));
         }))
         .build()
-        .await
+        .await;
+    super::configure_fixture(&swarm, [4, 4, 32, 6, 10], 0).await;
+    swarm
 }
 
 async fn state_at(client: &Client, version: u64, epoch: u64) -> GovernanceState {
@@ -179,7 +169,7 @@ async fn state_at(client: &Client, version: u64, epoch: u64) -> GovernanceState 
     );
     assert_eq!(
         state[ACCOUNTING]["config"]["limits"]["validator_limit"],
-        json!("6")
+        json!(if version == 0 { "128" } else { "6" })
     );
     assert_eq!(state[ACCOUNTING]["config"]["deployment_mode"], json!(1));
     assert_eq!(
@@ -197,7 +187,7 @@ async fn state_at(client: &Client, version: u64, epoch: u64) -> GovernanceState 
     assert_eq!(
         state["poc_reward_split::RewardSplitConfig"],
         json!({
-            "installed_epoch": epoch.to_string(), "installed_native_reward_bps": "0", "configured_native_reward_bps": "0", "pending_change": {"vec": []},
+            "installed_epoch": epoch.to_string(), "installed_native_reward_bps": if version == 0 { "5000" } else { "0" }, "configured_native_reward_bps": if version == 0 { "5000" } else { "0" }, "pending_change": {"vec": []},
         })
     );
     assert!(!state.contains_key("stake::EpochPlan"));

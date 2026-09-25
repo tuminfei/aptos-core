@@ -15,7 +15,7 @@ use aptos_api_types::{AptosErrorCode, UserTransaction, ViewRequest};
 use aptos_cached_packages::aptos_stdlib;
 use aptos_crypto::{bls12381, Uniform};
 use aptos_forge::{LocalSwarm, NodeExt, Swarm, SwarmExt};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::{error::RestError, Client};
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -34,7 +34,7 @@ use serde_json::{json, Value};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 const DKG_FAILPOINT: &str = "dkg::process_dkg_start_event";
-const UNIT_SCALE: u128 = 1 << 32;
+const UNIT_SCALE: u128 = 1 << 16;
 
 #[derive(Clone, Copy, Debug)]
 #[repr(u8)]
@@ -424,26 +424,15 @@ async fn fixture_with_split(native_reward_bps: u64) -> Fixture {
                     max_power: 1000,
                     min_validators: 4,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 4,
-                    validator_limit: 5,
-                    max_reward_base_octa: 1000,
-                    rate_max_num: 1,
-                    rate_max_den: 1,
-                    fee_max: 10,
-                    reward_epoch_limit: 1000,
-                },
+
                 deployment_mode: DeploymentMode::Open,
                 retention_bps: 10000,
-                max_relative_period: 100,
                 initial_raw_power: 10,
-                native_reward_bps,
             }));
         }))
         .build()
         .await;
+    super::configure_fixture(&swarm, [4, 4, 4, 5, 10], native_reward_bps).await;
     swarm
         .wait_for_all_nodes_to_catchup_to_epoch(2, Duration::from_secs(90))
         .await
@@ -564,9 +553,9 @@ async fn fixture_with_split(native_reward_bps: u64) -> Fixture {
         ledger.version,
     )
     .await;
-    let period = clock[1].as_str().unwrap().parse().unwrap();
+    let period = clock[0].as_str().unwrap().parse().unwrap();
     assert_eq!(period, 0);
-    assert_eq!(clock[2], json!("61"));
+    assert_eq!(clock[1], json!("61"));
     let configured = execute(
         &client,
         &root,
@@ -909,7 +898,7 @@ async fn succeed(f: &Fixture, call: Call, before_freeze: bool, epoch: u64) {
                         vec![],
                         version
                     )
-                    .await[2],
+                    .await[1],
                     json!("61")
                 );
             },
@@ -1667,7 +1656,7 @@ script {
 
     fun main(root: &signer) {
         let framework = topo_governance::get_signer_testnet_only(root, @0x1);
-        // A 部署允许 rate_max=1/1。安装足够大的固定奖励率，
+        // 原生配置允许每 Epoch 奖励率最高为 100%。安装足够大的固定奖励率，
         // 使 10 Octa 的小计奖基数也能产生可观测的整数领取额。
         if (features::periodical_reward_rate_decrease_enabled()) {
             staking_config::update_rewards_config(&framework,

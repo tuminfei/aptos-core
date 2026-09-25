@@ -30,7 +30,7 @@ use crate::smoke_test_environment::SwarmBuilder;
 use aptos_api_types::{AptosErrorCode, Transaction};
 use aptos_cached_packages::aptos_stdlib;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm, SwarmExt};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::{error::RestError, Client, Resource};
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -125,30 +125,17 @@ fn poc_swarm_builder(transition: Transition) -> SwarmBuilder {
             features.enable(FeatureFlag::ENCRYPTED_TRANSACTIONS);
             config.initial_features_override = Some(features);
         }
-        config.poc_genesis_config = Some(Arc::new(|validators| PocGenesisConfiguration {
+        config.poc_genesis_config = Some(Arc::new(|_| PocGenesisConfiguration {
             params: PowerParams {
                 bond_octa_per_ohmp: 100_000_000,
                 min_power: 10,
                 max_power: 1000,
                 min_validators: 4,
             },
-            limits: DeploymentLimits {
-                max_allocations: 4,
-                max_claim_pools: 4,
-                max_upload_users: validators.len() as u64,
-                validator_limit: 5,
-                max_reward_base_octa: 1000,
-                rate_max_num: 1,
-                rate_max_den: 1,
-                fee_max: 10,
-                reward_epoch_limit: 1000,
-            },
+
             deployment_mode: DeploymentMode::Open,
             retention_bps: 10000,
-            max_relative_period: 100,
             initial_raw_power: 10,
-            // 本组测试将原生奖励占比设为零，保持通胀奖励全部归 PoC；默认比例和两路分配由创世及奖励测试覆盖。
-            native_reward_bps: 0,
         }));
     }))
 }
@@ -156,6 +143,84 @@ fn poc_swarm_builder(transition: Transition) -> SwarmBuilder {
 /// 按指定换届方式启动本地测试网络，所有节点加载同一生产 bundle。
 async fn create_poc_swarm(transition: Transition) -> LocalSwarm {
     poc_swarm_builder(transition).build().await
+}
+
+/// 测试所需的非默认上限和奖励分流通过公开治理入口设置，不扩展生产创世清单。
+async fn configure_fixture(swarm: &LocalSwarm, limits: [u64; 5], native_bps: u64) {
+    use aptos_types::transaction::{Script, TransactionArgument};
+    use once_cell::sync::Lazy;
+
+    static CONFIGURE: Lazy<Vec<u8>> = Lazy::new(|| {
+        transactions::compile_script(
+            "PoCFixtureConfiguration",
+            r#"script {
+            use topo_framework::poc_accounting;
+            use topo_framework::poc_allocation;
+            use topo_framework::reconfiguration;
+            use topo_framework::stake;
+            use topo_framework::topo_governance;
+
+            fun main(root: &signer, allocations: u64, claims: u64, uploads: u64,
+                validators: u64, fee_max: u64, native_bps: u64) {
+                let framework = topo_governance::get_signer_testnet_only(root, @0x1);
+                poc_allocation::update_deployment_limits(&framework,
+                    poc_accounting::new_deployment_limits(allocations, claims, uploads,
+                        validators, fee_max));
+                stake::schedule_reward_split(&framework, native_bps,
+                    reconfiguration::current_epoch() + 1);
+                topo_governance::reconfigure(&framework);
+            }
+        }"#,
+        )
+    });
+
+    // 首个区块可能触发初始 DKG；等待它完成后再提交治理事务。
+    swarm
+        .wait_for_all_nodes_to_catchup_to_epoch(2, Duration::from_secs(90))
+        .await
+        .unwrap();
+    let client = swarm.validators().next().unwrap().rest_client();
+    let chain = swarm.chain_info();
+    let factory = chain
+        .transaction_factory()
+        .with_gas_unit_price(100)
+        .with_max_gas_amount(2_000_000)
+        .with_transaction_expiration_time(120);
+    let arguments = limits
+        .into_iter()
+        .chain([native_bps])
+        .map(TransactionArgument::U64)
+        .collect();
+    let transaction = fee_rewards::success(
+        transactions::execute(
+            &client,
+            &chain.root_account(),
+            &factory,
+            TransactionPayload::Script(Script::new(CONFIGURE.clone(), vec![], arguments)),
+        )
+        .await,
+    );
+    let target_epoch = defaults::installed_at(&client, transaction.info.version.0 - 1)
+        .await
+        .epoch
+        + 1;
+    swarm
+        .wait_for_all_nodes_to_catchup_to_epoch(target_epoch, Duration::from_secs(90))
+        .await
+        .unwrap();
+    let version = client
+        .get_ledger_information()
+        .await
+        .unwrap()
+        .into_inner()
+        .version;
+    assert_eq!(
+        fee_rewards::integer(
+            &defaults::installed_at(&client, version).await.reward_split
+                ["installed_native_reward_bps"]
+        ),
+        native_bps as u128
+    );
 }
 
 /// 同步换届后重启一个验证者，确认恢复后的委员会和奖励上下文与其他节点一致。
@@ -181,7 +246,7 @@ async fn poc_genesis_restart() {
         .unwrap();
     let after = client.get_ledger_information().await.unwrap().into_inner();
     let installed = resource_at_version::<ValidatorSet>(&client, after.version).await;
-    assert_installed_on_all_nodes(&swarm, after.version, after.epoch, &installed).await;
+    assert_installed_on_all_nodes(&swarm, after.version, after.epoch, &installed, 5000).await;
 }
 
 /// 固定 ledger version 读取资源，避免跨越 Epoch 时把不同会话的状态混在一次比较中。
@@ -258,13 +323,21 @@ async fn assert_installed_on_all_nodes(
     version: u64,
     epoch: u64,
     expected: &ValidatorSet,
+    expected_native_bps: u64,
 ) {
     swarm
         .wait_for_all_nodes_to_catchup_to_version(version, Duration::from_secs(30))
         .await
         .unwrap();
     for node in swarm.validators() {
-        assert_installed_on_client(&node.rest_client(), version, epoch, expected).await;
+        assert_installed_on_client(
+            &node.rest_client(),
+            version,
+            epoch,
+            expected,
+            expected_native_bps,
+        )
+        .await;
     }
 }
 
@@ -274,6 +347,7 @@ async fn assert_installed_on_client(
     version: u64,
     epoch: u64,
     expected: &ValidatorSet,
+    expected_native_bps: u64,
 ) {
     let set = resource_at_version::<ValidatorSet>(client, version).await;
     assert_eq!(set.active_validators.len(), 4);
@@ -305,7 +379,10 @@ async fn assert_installed_on_client(
         .await
         .unwrap()
         .into_inner();
-    assert_eq!(split, (epoch, 0, 0, vec![]));
+    assert_eq!(
+        split,
+        (epoch, expected_native_bps, expected_native_bps, vec![])
+    );
 }
 
 /// 等待真实 DKG 完成，在同一 ledger version 核对会话、委员会及目标 Epoch 的密钥。
@@ -358,7 +435,7 @@ async fn check_completed_transition(transition: Transition, timeout: Duration) {
         }
         tokio::time::sleep(Duration::from_secs(1)).await;
     };
-    assert_installed_on_all_nodes(&swarm, version, epoch, &installed).await;
+    assert_installed_on_all_nodes(&swarm, version, epoch, &installed, 5000).await;
 }
 
 /// 验证普通 DKG 在真实节点上安装会话指定的委员会。
@@ -466,7 +543,8 @@ async fn wait_for_poc_membership(
             .await
             .unwrap();
             for (_, voter) in &committee {
-                assert_installed_on_client(voter, ledger.version, target_epoch, &installed).await;
+                assert_installed_on_client(voter, ledger.version, target_epoch, &installed, 5000)
+                    .await;
             }
             return installed;
         }
@@ -759,5 +837,5 @@ async fn poc_frozen_dkg_force_end_and_restart() {
             .await
             .unwrap();
     }
-    assert_installed_on_all_nodes(&swarm, version, session.target_epoch(), &installed).await;
+    assert_installed_on_all_nodes(&swarm, version, session.target_epoch(), &installed, 5000).await;
 }

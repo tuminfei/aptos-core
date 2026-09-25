@@ -1,5 +1,11 @@
 /// 保存标准化算力分配与池级奖励账本；委员会资格和奖励铸造由 stake 负责。
 /// 算力版本与 Epoch 由框架内部传入；本模块不从原生本金推导算力，也不反查重配置模块。
+///
+/// 协议经济规格：TOPO 最大发行总量 100 亿（10^18 Octa），全网年通胀率严格低于 10%。
+/// 总量及年通胀约束须由发行机制保障，奖励率及校验沿用原生质押配置，每 Epoch 奖励率不等同于年通胀率或质押 APY。
+/// 在总量上限内，金库余额可由 u64 保存；代币经领取和交易费再次入账，历史累计奖励可超过总量。
+/// 奖励账本不设期限 H：Epoch 与单次入账均为 u64，每池每 Epoch 最多入账一次，
+/// 故累计入账 C <= (2^64 - 1)^2，C * Q < 2^256，可由 u256 保存奖励指数和分段权益。
 module topo_framework::poc_accounting {
     use std::error;
     use std::option::{Self, Option};
@@ -16,13 +22,14 @@ module topo_framework::poc_accounting {
     friend topo_framework::poc_power_store;
     friend topo_framework::poc_allocation;
 
-    // 分配比例使用万分比；标准化 units 的缩放因子为 2^32，共同衰减指数的缩放因子为 2^64。
+    // 分配比例使用万分比；标准化 units 的缩放因子为 2^16，共同衰减指数的缩放因子为 2^64。
     const BPS_DENOMINATOR: u64 = 10000;
     /// 1 OHMP = 100,000,000 个整数 power；保证金比例按 Octa / OHMP 配置。
     const POWER_PER_OHMP: u64 = 100000000;
-    const UNIT_SCALE: u128 = 4294967296;
+    // 标准化精度与指数下界须与 poc_power_store 保持一致。
+    const UNIT_SCALE: u128 = 65536;
     const INDEX_SCALE: u128 = 18446744073709551616;
-    const MIN_PERIOD_INDEX: u128 = 1099511627776;
+    const MIN_PERIOD_INDEX: u128 = 16777216;
     const MAX_POOL_UNITS: u128 = 1329227995784915872903807060280344576;
     // 用户权益采用 2^128 精度，常量必须直接存为 u256。
     const Q: u256 = 340282366920938463463374607431768211456;
@@ -40,7 +47,6 @@ module topo_framework::poc_accounting {
     const EINVALID_PARAM_COMBINATION: u64 = 7;
     const EPOOL_CAPACITY: u64 = 8;
     const EPOWER_HORIZON: u64 = 9;
-    const EREWARD_HORIZON: u64 = 10;
     const ERECONFIGURATION_IN_PROGRESS: u64 = 11;
     const ECHECKPOINT_MISSING: u64 = 12;
     const EREWARD_ALREADY_CREDITED: u64 = 13;
@@ -58,17 +64,13 @@ module topo_framework::poc_accounting {
         min_validators: u64,
     }
 
-    /// 准备时固定的部署上限，用于限制数值范围、本版奖励支持期限和单次事务的读写规模。
+    /// 合约默认上限，治理可调整；限制候选容量、交易费分发和单次事务的读写规模。
     struct DeploymentLimits has copy, drop, store {
         max_allocations: u64,
         max_claim_pools: u64,
         max_upload_users: u64,
         validator_limit: u64,
-        max_reward_base_octa: u64,
-        rate_max_num: u64,
-        rate_max_den: u64,
         fee_max: u64,
-        reward_epoch_limit: u64,
     }
 
     struct PendingPowerParams has copy, drop, store {
@@ -80,7 +82,7 @@ module topo_framework::poc_accounting {
         params: PowerParams,
         pending_params: Option<PendingPowerParams>,
         activation_epoch: u64,
-        first_poc_epoch: Option<u64>, // 首次成功安装 PoC Epoch 时确定，后续调参不能重置奖励支持期限。
+        first_poc_epoch: Option<u64>, // 首次成功安装 PoC Epoch 时确定，此后保持 PoC 模式。
         deployment_mode: u8,
         limits: DeploymentLimits,
     }
@@ -154,16 +156,19 @@ module topo_framework::poc_accounting {
         PowerParams { bond_octa_per_ohmp, min_power, max_power, min_validators }
     }
 
-    /// 封装显式部署清单，不在构造器中选择默认部署值。
+    /// 创世统一使用合约默认值，后续通过治理调整。
+    public fun default_deployment_limits(): DeploymentLimits {
+        new_deployment_limits(4, 4, 32, 128, 100000000000)
+    }
+
+    /// 封装治理脚本的上限参数，写入时验证与已有状态的兼容性。
     public fun new_deployment_limits(
         max_allocations: u64, max_claim_pools: u64,
-        max_upload_users: u64, validator_limit: u64, max_reward_base_octa: u64,
-        rate_max_num: u64, rate_max_den: u64, fee_max: u64, reward_epoch_limit: u64,
+        max_upload_users: u64, validator_limit: u64, fee_max: u64,
     ): DeploymentLimits {
         DeploymentLimits {
             max_allocations, max_claim_pools, max_upload_users,
-            validator_limit, max_reward_base_octa, rate_max_num, rate_max_den,
-            fee_max, reward_epoch_limit,
+            validator_limit, fee_max,
         }
     }
 
@@ -208,11 +213,9 @@ module topo_framework::poc_accounting {
         is_prepared() && borrow_global<AccountingState>(@topo_framework).pools.contains(pool)
     }
 
-    /// 返回计奖基数上限、奖励率上限的分子/分母、费用上限，以及本版支持的奖励 Epoch 数 H。
-    public fun get_reward_limits(): (u64, u64, u64, u64, u64) {
-        let limits = &borrow_global<AccountingState>(@topo_framework).config.limits;
-        (limits.max_reward_base_octa, limits.rate_max_num, limits.rate_max_den,
-            limits.fee_max, limits.reward_epoch_limit)
+    /// 返回每池每 Epoch 的交易费分发限额上限。
+    public fun fee_max(): u64 {
+        borrow_global<AccountingState>(@topo_framework).config.limits.fee_max
     }
 
     /// 只读选择目标 Epoch 生效的参数，不提前应用或清除待生效参数。
@@ -233,17 +236,7 @@ module topo_framework::poc_accounting {
         config.first_poc_epoch.is_some() || epoch >= config.activation_epoch
     }
 
-    /// 检查 F <= epoch < F+H；首份预览以拟安装 Epoch 作为 F，但不写入状态。
-    public fun reward_epoch_supported(epoch: u64): bool {
-        let config = &borrow_global<AccountingState>(@topo_framework).config;
-        let first = if (config.first_poc_epoch.is_some()) {
-            *config.first_poc_epoch.borrow()
-        } else { epoch };
-        let end = (first as u256) + (config.limits.reward_epoch_limit as u256);
-        end <= MAX_U64 && epoch >= first && (epoch as u256) < end
-    }
-
-    /// 返回已安装 Epoch、激活时点、首次 PoC Epoch、模式、当前/待生效参数及固定上限。
+    /// 返回已安装 Epoch、激活时点、首次 PoC Epoch、模式、当前/待生效参数及治理上限。
     #[view]
     public fun get_config(): (
         u64, u64, Option<u64>, u8, PowerParams, Option<PendingPowerParams>, DeploymentLimits,
@@ -254,18 +247,13 @@ module topo_framework::poc_accounting {
             config.deployment_mode, config.params, config.pending_params, config.limits)
     }
 
-    /// 以 u256 验证 H * R_MAX <= u64::MAX，限制单池在本版奖励支持期限内的累计入账与金库余额。
+    /// 验证部署容量；历史累计入账无需限制在 u64 范围，也不设置奖励到期时间。
     fun validate_limits(limits: &DeploymentLimits) {
         assert!(limits.max_allocations > 0
             && (limits.max_allocations as u256) * 2 <= MAX_U64
             && limits.max_claim_pools > 0 && limits.max_upload_users > 0
-            && limits.validator_limit > 0 && limits.validator_limit <= MAX_VALIDATOR_SET_SIZE
-            && limits.rate_max_den > 0 && limits.reward_epoch_limit > 0,
+            && limits.validator_limit > 0 && limits.validator_limit <= MAX_VALIDATOR_SET_SIZE,
             error::invalid_argument(EINVALID_PARAM_COMBINATION));
-        let reward_max = (limits.max_reward_base_octa as u256) * (limits.rate_max_num as u256)
-            / (limits.rate_max_den as u256) + (limits.fee_max as u256);
-        assert!((limits.reward_epoch_limit as u256) * reward_max <= MAX_U64,
-            error::invalid_argument(EREWARD_HORIZON));
     }
 
     /// 联合验证资格、担保和增长预算；动态换员必须留出一个替补名额及足够增长预算。
@@ -279,16 +267,12 @@ module topo_framework::poc_accounting {
             && params.min_validators <= limits.validator_limit
             && increase_limit > 0 && increase_limit <= 50,
             error::invalid_argument(EINVALID_PARAM_COMBINATION));
-        // DKG 的保守总权重约束使用协议人数上限，不能用较小的部署容量替代。
-        assert!((MAX_VALIDATOR_SET_SIZE as u256) * (params.max_power as u256) <= MAX_U64,
-            error::invalid_argument(EINVALID_PARAM_COMBINATION));
-        assert!((params.max_power as u256) * (params.bond_octa_per_ohmp as u256)
-            / (POWER_PER_OHMP as u256) <= (limits.max_reward_base_octa as u256),
-            error::invalid_argument(EINVALID_PARAM_COMBINATION));
+        // 总权重及计奖金额在换届预检中按实际候选计算，不能用理论最大值限制配置。
         if (dynamic_membership) {
+            // min_power > 0，故增长预算至少覆盖一个 min_power 等价于人数与增长比例之积 >= 100。
+            // 即使单独按 u64 人数上界估计，该乘积也不超过 u64::MAX * 50，可由 u128 保存。
             assert!(params.min_validators < limits.validator_limit
-                && (params.min_validators as u256) * (params.min_power as u256)
-                    * (increase_limit as u256) / 100 >= (params.min_power as u256),
+                && (params.min_validators as u128) * (increase_limit as u128) >= 100,
                 error::invalid_argument(EINVALID_PARAM_COMBINATION));
         };
         assert!(mode != OPEN || params.min_validators >= 4,
@@ -314,15 +298,6 @@ module topo_framework::poc_accounting {
         };
     }
 
-    /// 准备后用交叉相乘检查有理数奖励率上限，避免先除法取整放宽上限。
-    public fun validate_reward_rate(num: u64, den: u64) {
-        if (!is_prepared()) return;
-        let limits = &borrow_global<AccountingState>(@topo_framework).config.limits;
-        assert!(den > 0 && (num as u256) * (limits.rate_max_den as u256)
-            <= (limits.rate_max_num as u256) * (den as u256),
-            error::invalid_argument(EINVALID_REWARD_CONFIG));
-    }
-
     /// 准备后限制每池每 Epoch 的允许分发额，金额使用代币最小单位。
     public fun validate_fee_limit(value: u64) {
         if (!is_prepared()) return;
@@ -330,19 +305,23 @@ module topo_framework::poc_accounting {
             error::invalid_argument(EINVALID_REWARD_CONFIG));
     }
 
-    /// 按 raw / 2^64 解释定点奖励率，并与部署上限精确比较。
-    public fun validate_fixed_reward_rate(raw: u128) {
-        if (!is_prepared()) return;
-        let limits = &borrow_global<AccountingState>(@topo_framework).config.limits;
-        assert!((raw as u256) * (limits.rate_max_den as u256)
-            <= (limits.rate_max_num as u256) * (INDEX_SCALE as u256),
-            error::invalid_argument(EINVALID_REWARD_CONFIG));
-    }
-
-    /// 安装计奖上下文前，同时验证奖励率与费用分发上限。
-    public fun validate_reward_config(num: u64, den: u64, fee_limit: u64) {
-        validate_reward_rate(num, den);
-        validate_fee_limit(fee_limit);
+    /// 分配上限不能降低：已有用户的当前和待生效分配仍需能够同步算力与领取奖励。
+    /// 其余上限同时检查当前和待生效参数；外层再核对委员会及当期费用快照。
+    friend fun update_deployment_limits(
+        framework: &signer, limits: DeploymentLimits, increase_limit: u64, dynamic_membership: bool,
+    ) {
+        system_addresses::assert_topo_framework(framework);
+        assert_not_frozen();
+        validate_limits(&limits);
+        let config = &mut borrow_global_mut<AccountingState>(@topo_framework).config;
+        assert!(limits.max_allocations >= config.limits.max_allocations,
+            error::invalid_argument(EINVALID_PARAM_COMBINATION));
+        validate_params(&config.params, &limits, config.deployment_mode, increase_limit, dynamic_membership);
+        if (config.pending_params.is_some()) {
+            validate_params(&config.pending_params.borrow().params, &limits,
+                config.deployment_mode, increase_limit, dynamic_membership);
+        };
+        config.limits = limits;
     }
 
     /// 由框架内部传入当前链 Epoch，建立全局账本；准备时不扫描用户，也不自动分配算力。
@@ -356,9 +335,7 @@ module topo_framework::poc_accounting {
         assert!(!is_prepared(), error::already_exists(EALREADY_PREPARED));
         validate_limits(&limits);
         validate_params(&params, &limits, deployment_mode, increase_limit, dynamic_membership);
-        assert!(activation_epoch > epoch && (activation_epoch as u256)
-            + (limits.reward_epoch_limit as u256) <= MAX_U64,
-            error::invalid_argument(EINVALID_TARGET_EPOCH));
+        assert!(activation_epoch > epoch, error::invalid_argument(EINVALID_TARGET_EPOCH));
         move_to(framework, AccountingState {
             epoch, pools: table::new(), config: PoCConfig {
                 params, pending_params: option::none(), activation_epoch,
@@ -393,8 +370,7 @@ module topo_framework::poc_accounting {
         system_addresses::assert_topo_framework(framework);
         assert_not_frozen();
         let state = borrow_global_mut<AccountingState>(@topo_framework);
-        assert!(state.config.first_poc_epoch.is_none() && epoch > state.epoch
-            && (epoch as u256) + (state.config.limits.reward_epoch_limit as u256) <= MAX_U64,
+        assert!(state.config.first_poc_epoch.is_none() && epoch > state.epoch,
             error::invalid_argument(EINVALID_TARGET_EPOCH));
         state.config.activation_epoch = epoch;
     }
@@ -486,6 +462,7 @@ module topo_framework::poc_accounting {
 
     /// 结算与只读查询共用同一段权益计算；指数不能回退，乘加溢出仍直接中止。
     /// 不在分段时取整，用户的小数权益一直保留到领取时。
+    /// 各历史分段中用户 units <= 池总 units，故乘加结果 <= 累计入账 * Q < 2^256。
     fun accrued_at(units: u128, cursor: u256, accrued: u256, index: u256): u256 {
         assert!(index >= cursor, error::invalid_state(EACCOUNTING_INVARIANT));
         accrued + (units as u256) * (index - cursor)
@@ -794,15 +771,10 @@ module topo_framework::poc_accounting {
     /// 仅供框架内部结算奖励：stake 核验旧 Epoch 的成员、权重和计奖上下文后，传入奖励币。
     /// 通胀与允许分发的费用进入池金库，本接口返回本次累计奖励指数的增量。
     friend fun credit_epoch_reward(pool: address, epoch: u64, reward: Coin<TopoCoin>): u256 {
-        assert!(reward_epoch_supported(epoch), error::invalid_state(EREWARD_HORIZON));
         let state = borrow_global_mut<AccountingState>(@topo_framework);
         assert!(state.epoch == epoch && state.config.first_poc_epoch.is_some(),
             error::invalid_state(EINVALID_TARGET_EPOCH));
-        let limits = &state.config.limits;
         let amount = coin::value(&reward);
-        let reward_max = (limits.max_reward_base_octa as u256) * (limits.rate_max_num as u256)
-            / (limits.rate_max_den as u256) + (limits.fee_max as u256);
-        assert!((amount as u256) <= reward_max, error::invalid_state(EVAULT_INVARIANT));
         let ledger = state.pools.borrow_mut(pool);
         assert!(ledger.epoch == epoch, error::invalid_state(EACCOUNTING_INVARIANT));
         assert!(ledger.reward_epoch < epoch, error::invalid_state(EREWARD_ALREADY_CREDITED));
@@ -811,8 +783,8 @@ module topo_framework::poc_accounting {
             assert!(amount == 0, error::invalid_state(EVAULT_INVARIANT));
             0
         } else { (amount as u256) * Q / (ledger.units as u256) };
-        // H * R_MAX <= u64::MAX，且每个 Epoch 仅入账一次。
-        // 因此本版奖励支持期限内的累计指数和权益均小于 2^192。
+        // 正 units 至少为 1，每次 delta <= amount * Q；reward_epoch 严格递增且为 u64。
+        // 因此 index <= (u64::MAX)^2 * Q < 2^256，不依赖人为奖励期限或历史累计金额的 u64 上限。
         ledger.index += delta;
         coin::merge(&mut ledger.vault, reward);
         // 奖励为零也要记录已入账的 Epoch，防止重复结算。
@@ -826,21 +798,19 @@ module topo_framework::poc_accounting {
         pool: address, epoch: u64, units: u128, reward_base_octa: u64,
     ) {
         let state = borrow_global_mut<AccountingState>(@topo_framework);
-        assert!((epoch as u256) == (state.epoch as u256) + 1,
+        assert!((epoch as u128) == (state.epoch as u128) + 1,
             error::invalid_state(EINVALID_TARGET_EPOCH));
-        assert!(reward_base_octa <= state.config.limits.max_reward_base_octa, error::invalid_state(EVAULT_INVARIANT));
         let ledger = state.pools.borrow_mut(pool);
         advance_pool(ledger, epoch);
         assert!(ledger.units == units, error::invalid_state(EACCOUNTING_INVARIANT));
         ledger.reward_base_octa = reward_base_octa;
     }
 
-    /// 成功提交时推进一次全局 Epoch、应用到期参数，并在首次 PoC 安装时固定奖励期限起点。
+    /// 成功提交时推进一次全局 Epoch、应用到期参数，并记录首次成功安装的 PoC Epoch。
     friend fun advance_epoch(epoch: u64, poc_enabled: bool) {
         assert!(poc_enabled == target_poc_enabled(epoch), error::invalid_state(EINVALID_TARGET_EPOCH));
-        if (poc_enabled) assert!(reward_epoch_supported(epoch), error::invalid_state(EREWARD_HORIZON));
         let state = borrow_global_mut<AccountingState>(@topo_framework);
-        assert!((epoch as u256) == (state.epoch as u256) + 1, error::invalid_state(EINVALID_TARGET_EPOCH));
+        assert!((epoch as u128) == (state.epoch as u128) + 1, error::invalid_state(EINVALID_TARGET_EPOCH));
         if (state.config.pending_params.is_some()
             && state.config.pending_params.borrow().epoch <= epoch) {
             state.config.params = state.config.pending_params.extract().params;
@@ -897,8 +867,8 @@ module topo_framework::poc_accounting {
     public fun get_pool(pool: address): (u128, u128, u64, u64, u256) {
         let state = borrow_global<AccountingState>(@topo_framework);
         let ledger = state.pools.borrow(pool);
-        let next_epoch = (state.epoch as u256) + 1;
-        assert!(next_epoch <= MAX_U64, error::out_of_range(EINVALID_TARGET_EPOCH));
+        let next_epoch = (state.epoch as u128) + 1;
+        assert!(next_epoch <= (MAX_U64 as u128), error::out_of_range(EINVALID_TARGET_EPOCH));
         (preview_units(ledger, state.epoch), preview_units(ledger, next_epoch as u64),
             ledger.reward_base_octa, coin::value(&ledger.vault), ledger.index)
     }
@@ -956,7 +926,7 @@ module topo_framework::poc_accounting {
     public fun prepare_for_test(framework: &signer, epoch: u64, activation_epoch: u64, limit: u64) {
         reconfiguration_state::initialize(framework);
         prepare(framework, epoch, activation_epoch, new_power_params(100000000, 1, 1000000, 4),
-            new_deployment_limits(limit, 16, 16, 8, 1000000, 1, 1, 1000000, 10000), OPEN, 25, true);
+            new_deployment_limits(limit, 16, 16, 8, 1000000), OPEN, 25, true);
     }
 
     #[test_only]

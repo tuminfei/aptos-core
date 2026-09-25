@@ -88,8 +88,8 @@ module topo_framework::poc_capability_freeze_tests {
             fixed_point64::create_from_rational(0, 1));
         poc_allocation::prepare_poc(&framework,
             poc_accounting::new_power_params(apt * 100000000, 10, 100, 2),
-            poc_accounting::new_deployment_limits(4, 4, 4, 3, 100 * apt, 1, 100, 50, 100),
-            0, reconfiguration::current_epoch() + 10, 10000, 100, 60, @0x1);
+            poc_accounting::new_deployment_limits(4, 4, 4, 3, 50),
+            0, reconfiguration::current_epoch() + 10, 10000, 60, @0x1);
         stake::mint(&owner, 10 * apt);
         // 准备完成后，即使当前 Epoch 仍采用原生奖励，也使用相同的计划/PVS 成对缓存和冻结规则。
         stake::poc_begin_for_test();

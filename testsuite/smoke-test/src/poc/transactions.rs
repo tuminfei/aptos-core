@@ -13,7 +13,7 @@ use aptos_api_types::{
 };
 use aptos_cached_packages::aptos_stdlib;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::{error::RestError, Client};
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -30,7 +30,7 @@ use serde_json::{json, Value};
 use std::{collections::BTreeSet, path::Path, sync::Arc, time::Duration};
 use topo_framework::{BuildOptions, BuiltPackage};
 
-const UNIT_SCALE: u128 = 1 << 32;
+const UNIT_SCALE: u128 = 1 << 16;
 const INVALID_ARGUMENT: u64 = 1 << 16;
 const OUT_OF_RANGE: u64 = 2 << 16;
 const PERMISSION_DENIED: u64 = 5 << 16;
@@ -101,7 +101,7 @@ fn governance_payload(
 /// 其余 A 参数与 F4 配置一致。
 async fn transaction_swarm() -> LocalSwarm {
     println!("PoC transaction fixture A: 4 nodes; Open; epoch=3600s; ordinary/Chunky DKG=off; retention_bps=10000; native_reward_bps=0; max_upload_users=32; allocation/claim limit=4; validator_limit=5; initial_power=10; bond=100 Octa; fee_limit=0; fee_max=10");
-    poc_swarm_builder(Transition::Synchronous)
+    let swarm = poc_swarm_builder(Transition::Synchronous)
         .with_init_genesis_config(Arc::new(|config| {
             config.allow_new_validators = true;
             config.epoch_duration_secs = 3600;
@@ -117,26 +117,16 @@ async fn transaction_swarm() -> LocalSwarm {
                     max_power: 1000,
                     min_validators: 4,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 32,
-                    validator_limit: 5,
-                    max_reward_base_octa: 1000,
-                    rate_max_num: 1,
-                    rate_max_den: 1,
-                    fee_max: 10,
-                    reward_epoch_limit: 1000,
-                },
+
                 deployment_mode: DeploymentMode::Open,
                 retention_bps: 10000,
-                max_relative_period: 100,
                 initial_raw_power: 10,
-                native_reward_bps: 0,
             }));
         }))
         .build()
-        .await
+        .await;
+    super::configure_fixture(&swarm, [4, 4, 32, 5, 10], 0).await;
+    swarm
 }
 
 /// submit_and_wait 会按接口设计将已提交的 Move abort 转为 REST 错误。
@@ -872,7 +862,7 @@ async fn poc_public_upload_authority_first_write_and_batch_inputs() {
         resource_at_version::<ValidatorSet>(&client, final_ledger.version).await,
         installed
     );
-    assert_installed_on_all_nodes(&swarm, final_ledger.version, initial.epoch, &installed).await;
+    assert_installed_on_all_nodes(&swarm, final_ledger.version, initial.epoch, &installed, 0).await;
 }
 
 /// ALC-01：通过真实交易验证合法的全额、部分及空分配，首次上传前
@@ -1085,5 +1075,5 @@ async fn poc_public_allocation_inputs_and_upload_synchronization() {
         resource_at_version::<ValidatorSet>(&client, final_ledger.version).await,
         installed
     );
-    assert_installed_on_all_nodes(&swarm, final_ledger.version, initial.epoch, &installed).await;
+    assert_installed_on_all_nodes(&swarm, final_ledger.version, initial.epoch, &installed, 0).await;
 }

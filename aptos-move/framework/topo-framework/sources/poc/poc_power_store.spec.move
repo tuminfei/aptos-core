@@ -7,10 +7,8 @@ spec topo_framework::poc_power_store {
         ensures exists<PowerStore>(@topo_framework) && exists<PeriodClock>(@topo_framework);
         ensures global<PowerStore>(@topo_framework).operator == power_operator;
         ensures global<PowerStore>(@topo_framework).retention_bps_per_period == retention_bps;
-        ensures global<PowerStore>(@topo_framework).normalization.baseline_epoch == epoch;
-        ensures global<PowerStore>(@topo_framework).normalization.current_index == INDEX_SCALE;
-        ensures global<PowerStore>(@topo_framework).normalization.max_relative_period == max_relative_period;
-        ensures global<PeriodClock>(@topo_framework).last_epoch == 0;
+        ensures global<PowerStore>(@topo_framework).current_index == INDEX_SCALE;
+        ensures global<PeriodClock>(@topo_framework).last_epoch == epoch;
         ensures global<PeriodClock>(@topo_framework).current_period == 0;
         ensures global<PeriodClock>(@topo_framework).epochs_until_next_power_period == power_period_in_epochs;
         ensures global<PeriodClock>(@topo_framework).power_period_in_epochs == power_period_in_epochs;
@@ -36,13 +34,13 @@ spec topo_framework::poc_power_store {
         ensures result <= index;
     }
 
-    // 下一指数可用必须同时满足周期期限和指数下界。
+    // 下一指数可用必须同时满足周期编号容量和指数下界。
     spec supported_next_index {
         requires index <= INDEX_SCALE;
         requires retention_bps <= BPS_DENOMINATOR;
         aborts_if false;
         let next = index * retention_bps / BPS_DENOMINATOR;
-        ensures option::is_some(result) <==> period < max_period && next >= MIN_PERIOD_INDEX;
+        ensures option::is_some(result) <==> (period as u128) < MAX_U64 && next >= MIN_PERIOD_INDEX;
         ensures option::is_some(result) ==> option::borrow(result) == next;
         ensures option::is_some(result) ==> MIN_PERIOD_INDEX <= option::borrow(result)
             && option::borrow(result) <= index;
@@ -57,16 +55,10 @@ spec topo_framework::poc_power_store {
         ensures result.units < MAX_VERSION_UNITS;
     }
 
-    // 保留比例只在 PowerStore 保存，初始化后没有修改入口。
+    // 固定配置与当前指数统一保存在 PowerStore。
     spec PowerStore {
         invariant retention_bps_per_period > 0 && retention_bps_per_period <= BPS_DENOMINATOR;
-    }
-
-    // 嵌入的标准化状态保持有效指数范围。
-    spec NormalizationState {
         invariant current_index >= MIN_PERIOD_INDEX && current_index <= INDEX_SCALE;
-        invariant option::is_some(next_index) ==> MIN_PERIOD_INDEX <= option::borrow(next_index)
-            && option::borrow(next_index) <= current_index;
     }
 
     // 新用户零值不新增；已有用户的有效零版本仍允许写入。

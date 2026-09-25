@@ -846,7 +846,7 @@ pub enum EntryFunctionCall {
     },
 
     /// 写入源周期 0 的初始原始算力，仅框架可在真实创世阶段调用。
-    /// 时钟提交次数与源周期必须均为零；同步写入标准化版本与分配。
+    /// 创世 Epoch 与源周期必须均为零；同步写入标准化版本与分配。
     PocPowerStoreSetGenesisCommittedPower {
         user: AccountAddress,
         power: u64,
@@ -858,7 +858,7 @@ pub enum EntryFunctionCall {
     },
 
     /// 设置下一个算力周期的长度，保持当前倒计时和已确定的边界 B 不变。
-    /// 按链 Epoch 计算 B = E + r + 1，并以 u256 检查 B + 新长度是否超过 u64 上限。
+    /// 按链 Epoch 计算 B = E + r + 1，并以 u128 检查 B + 新长度是否超过 u64 上限。
     PocPowerStoreSetPowerPeriodInEpochs {
         power_period_in_epochs: u64,
     },
@@ -882,9 +882,6 @@ pub enum EntryFunctionCall {
         equity_token_address: AccountAddress,
         custody_address: AccountAddress,
     },
-
-    /// 仅 @topo_framework 可初始化应用注册表；资源已存在时直接返回。
-    PocRegistryInitializeRegistry {},
 
     /// 应用管理员将运行状态设为 PAUSED，暂停通过 poc_contribution 发出可信贡献事件。
     /// 可调用 resume_app 恢复为 ACTIVE；已经暂停时重复调用不发事件。
@@ -1975,7 +1972,6 @@ impl EntryFunctionCall {
                 equity_token_address,
                 custody_address,
             ),
-            PocRegistryInitializeRegistry {} => poc_registry_initialize_registry(),
             PocRegistryPauseApp {} => poc_registry_pause_app(),
             PocRegistryRegisterApp {
                 app_address,
@@ -4500,7 +4496,7 @@ pub fn poc_allocation_set_allocations(
 }
 
 /// 写入源周期 0 的初始原始算力，仅框架可在真实创世阶段调用。
-/// 时钟提交次数与源周期必须均为零；同步写入标准化版本与分配。
+/// 创世 Epoch 与源周期必须均为零；同步写入标准化版本与分配。
 pub fn poc_power_store_set_genesis_committed_power(
     user: AccountAddress,
     power: u64,
@@ -4539,7 +4535,7 @@ pub fn poc_power_store_set_operator(new_operator: AccountAddress) -> Transaction
 }
 
 /// 设置下一个算力周期的长度，保持当前倒计时和已确定的边界 B 不变。
-/// 按链 Epoch 计算 B = E + r + 1，并以 u256 检查 B + 新长度是否超过 u64 上限。
+/// 按链 Epoch 计算 B = E + r + 1，并以 u128 检查 B + 新长度是否超过 u64 上限。
 pub fn poc_power_store_set_power_period_in_epochs(
     power_period_in_epochs: u64,
 ) -> TransactionPayload {
@@ -4609,22 +4605,6 @@ pub fn poc_registry_approve_app_identity(
             bcs::to_bytes(&equity_token_address).unwrap(),
             bcs::to_bytes(&custody_address).unwrap(),
         ],
-    ))
-}
-
-/// 仅 @topo_framework 可初始化应用注册表；资源已存在时直接返回。
-pub fn poc_registry_initialize_registry() -> TransactionPayload {
-    TransactionPayload::EntryFunction(EntryFunction::new(
-        ModuleId::new(
-            AccountAddress::new([
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 1,
-            ]),
-            ident_str!("poc_registry").to_owned(),
-        ),
-        ident_str!("initialize_registry").to_owned(),
-        vec![],
-        vec![],
     ))
 }
 
@@ -7819,16 +7799,6 @@ mod decoder {
         }
     }
 
-    pub fn poc_registry_initialize_registry(
-        payload: &TransactionPayload,
-    ) -> Option<EntryFunctionCall> {
-        if let TransactionPayload::EntryFunction(_script) = payload {
-            Some(EntryFunctionCall::PocRegistryInitializeRegistry {})
-        } else {
-            None
-        }
-    }
-
     pub fn poc_registry_pause_app(payload: &TransactionPayload) -> Option<EntryFunctionCall> {
         if let TransactionPayload::EntryFunction(_script) = payload {
             Some(EntryFunctionCall::PocRegistryPauseApp {})
@@ -9352,10 +9322,6 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "poc_registry_approve_app_identity".to_string(),
             Box::new(decoder::poc_registry_approve_app_identity),
-        );
-        map.insert(
-            "poc_registry_initialize_registry".to_string(),
-            Box::new(decoder::poc_registry_initialize_registry),
         );
         map.insert(
             "poc_registry_pause_app".to_string(),

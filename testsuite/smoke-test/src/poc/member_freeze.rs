@@ -17,7 +17,7 @@ use crate::smoke_test_environment::SwarmBuilder;
 use aptos_api_types::{AptosErrorCode, Event, UserTransaction, ViewRequest, WriteSetChange};
 use aptos_cached_packages::aptos_stdlib;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm, SwarmExt};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::{error::RestError, Client};
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -40,7 +40,7 @@ use std::{
 use tokio::time::Instant;
 
 const POWER: u64 = 10;
-const UNITS: u128 = (POWER as u128) << 32;
+const UNITS: u128 = (POWER as u128) << 16;
 const DKG_FAILPOINT: &str = "dkg::process_dkg_start_event";
 
 static GOVERNANCE: Lazy<Vec<u8>> = Lazy::new(|| {
@@ -133,26 +133,15 @@ async fn poc_fixture(nodes: usize) -> Fixture {
                     max_power: 1000,
                     min_validators: 4,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 32,
-                    validator_limit: 8,
-                    max_reward_base_octa: 1000,
-                    rate_max_num: 1,
-                    rate_max_den: 1,
-                    fee_max: 10,
-                    reward_epoch_limit: 1000,
-                },
+
                 deployment_mode: DeploymentMode::Open,
                 retention_bps: 10000,
-                max_relative_period: 100,
                 initial_raw_power: POWER,
-                native_reward_bps: 0,
             }));
         }))
         .build()
         .await;
+    super::configure_fixture(&swarm, [4, 4, 32, 8, 10], 0).await;
     swarm
         .wait_for_all_nodes_to_catchup_to_epoch(2, Duration::from_secs(90))
         .await

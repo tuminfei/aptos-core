@@ -19,7 +19,7 @@ use crate::smoke_test_environment::SwarmBuilder;
 use aptos_api_types::WriteSetChange;
 use aptos_cached_packages::aptos_stdlib;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::Client;
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -37,7 +37,7 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use tokio::time::{timeout, Instant};
 
 const RAW: u64 = 17;
-const UNITS: u128 = (RAW as u128) << 32;
+const UNITS: u128 = (RAW as u128) << 16;
 const POWER_PER_OHMP: u128 = 100_000_000;
 const BOND_RATIO: u64 = 250_000_000;
 const BONDS: [u64; 5] = [42, 43, 100, 100, 100];
@@ -162,26 +162,15 @@ async fn fixture() -> Fixture {
                     max_power: 100,
                     min_validators: 4,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 32,
-                    validator_limit: 6,
-                    max_reward_base_octa: 1000,
-                    rate_max_num: 1,
-                    rate_max_den: 1,
-                    fee_max: 0,
-                    reward_epoch_limit: 1000,
-                },
+
                 deployment_mode: DeploymentMode::Open,
                 retention_bps: 10000,
-                max_relative_period: 100,
                 initial_raw_power: RAW,
-                native_reward_bps: 0,
             }));
         }))
         .build()
         .await;
+    super::configure_fixture(&swarm, [4, 4, 32, 6, 0], 0).await;
     let reader = swarm.validators().next().unwrap().rest_client();
     let genesis = installed_at(&reader, 0).await.validators;
     let mut observed = Vec::new();

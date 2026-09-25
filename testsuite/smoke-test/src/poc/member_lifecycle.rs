@@ -15,7 +15,7 @@ use aptos_api_types::{AptosErrorCode, Event, UserTransaction, ViewRequest, Write
 use aptos_cached_packages::aptos_stdlib;
 use aptos_crypto::{bls12381, Uniform};
 use aptos_forge::{LocalSwarm, NodeExt, Swarm};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::{error::RestError, Client};
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -32,7 +32,7 @@ use serde_json::{json, Value};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 const POWER: u64 = 10;
-const UNITS: u128 = (POWER as u128) << 32;
+const UNITS: u128 = (POWER as u128) << 16;
 
 static GOVERNANCE: Lazy<Vec<u8>> = Lazy::new(|| {
     compile_script(
@@ -117,26 +117,15 @@ async fn poc_fixture_with_limit(nodes: usize, validator_limit: u64) -> Fixture {
                     max_power: 1000,
                     min_validators: 4,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 32,
-                    validator_limit,
-                    max_reward_base_octa: 1000,
-                    rate_max_num: 1,
-                    rate_max_den: 1,
-                    fee_max: 10,
-                    reward_epoch_limit: 1000,
-                },
+
                 deployment_mode: DeploymentMode::Open,
                 retention_bps: 10000,
-                max_relative_period: 100,
                 initial_raw_power: POWER,
-                native_reward_bps: 0,
             }));
         }))
         .build()
         .await;
+    super::configure_fixture(&swarm, [4, 4, 32, validator_limit, 10], 0).await;
     let mut pools = swarm
         .validators()
         .map(|node| node.peer_id())

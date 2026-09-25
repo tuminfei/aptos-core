@@ -14,6 +14,8 @@ spec topo_framework::poc_accounting {
         invariant forall i in 0..len(changes): changes[i].epoch > epoch;
         invariant forall i in 0..len(changes): changes[i].refs > 0;
         invariant reward_epoch <= epoch;
+        // 每个正 Epoch 至多入账一次，每次金额不超过 u64::MAX；不依赖奖励期限 H。
+        invariant index <= reward_epoch * MAX_U64 * Q;
     }
 
     spec pool_power {
@@ -50,22 +52,31 @@ spec topo_framework::poc_accounting {
         ensures ledger.epoch == old(ledger.epoch);
     }
 
+    spec update_deployment_limits {
+        pragma aborts_if_is_partial;
+        modifies global<AccountingState>(@topo_framework);
+        let before = global<AccountingState>(@topo_framework);
+        let post after = global<AccountingState>(@topo_framework);
+        ensures after.config.limits == limits;
+        ensures after.epoch == before.epoch && after.pools == before.pools;
+        ensures after.config.params == before.config.params;
+        ensures after.config.pending_params == before.config.pending_params;
+        ensures after.config.activation_epoch == before.config.activation_epoch;
+        ensures after.config.first_poc_epoch == before.config.first_poc_epoch;
+        ensures after.config.deployment_mode == before.config.deployment_mode;
+    }
+
     // 推进全局 Epoch 时只安装到期参数并记录首次 PoC Epoch；池记录由逐池提交接口更新。
     spec advance_epoch {
         pragma opaque;
         let before = global<AccountingState>(@topo_framework);
         let config = before.config;
-        let first = if (option::spec_is_some(config.first_poc_epoch)) {
-            option::spec_borrow(config.first_poc_epoch)
-        } else { epoch };
-        let end = first + config.limits.reward_epoch_limit;
         let apply_params = option::spec_is_some(config.pending_params)
             && option::spec_borrow(config.pending_params).epoch <= epoch;
         let post after = global<AccountingState>(@topo_framework);
         modifies global<AccountingState>(@topo_framework);
         aborts_if !exists<AccountingState>(@topo_framework);
         aborts_if poc_enabled != (option::spec_is_some(config.first_poc_epoch) || epoch >= config.activation_epoch);
-        aborts_if poc_enabled && (end > MAX_U64 || epoch < first || epoch >= end);
         aborts_if epoch != before.epoch + 1;
         ensures exists<AccountingState>(@topo_framework);
         ensures after.epoch == epoch;
@@ -94,7 +105,6 @@ spec topo_framework::poc_accounting {
         modifies global<AccountingState>(@topo_framework);
         aborts_if !exists<AccountingState>(@topo_framework);
         aborts_if epoch != before.epoch + 1;
-        aborts_if reward_base_octa > before.config.limits.max_reward_base_octa;
         aborts_if !table::spec_contains(before.pools, pool);
         ensures exists<AccountingState>(@topo_framework);
         ensures after.epoch == before.epoch && after.config == before.config;
@@ -239,10 +249,8 @@ spec topo_framework::poc_accounting {
             && params.min_power <= params.max_power && params.min_validators > 0
             && params.min_validators <= limits.validator_limit
             && increase_limit > 0 && increase_limit <= 50
-            && MAX_VALIDATOR_SET_SIZE * params.max_power <= MAX_U64
-            && params.max_power * params.bond_octa_per_ohmp / POWER_PER_OHMP <= limits.max_reward_base_octa
             && (!dynamic_membership || (params.min_validators < limits.validator_limit
-                && params.min_validators * params.min_power * increase_limit / 100 >= params.min_power))
+                && params.min_validators * increase_limit >= 100))
             && (mode != OPEN || params.min_validators >= 4)
     }
 
@@ -255,18 +263,6 @@ spec topo_framework::poc_accounting {
             && (!option::spec_is_some(config.pending_params)
                 || spec_valid_params(option::spec_borrow(config.pending_params).params,
                     config.limits, config.deployment_mode, increase_limit, dynamic_membership)))
-    }
-
-    spec fun spec_valid_reward_rate(numerator: num, denominator: num): bool {
-        let limits = global<AccountingState>(@topo_framework).config.limits;
-        !exists<AccountingState>(@topo_framework)
-            || (denominator > 0 && numerator * limits.rate_max_den <= limits.rate_max_num * denominator)
-    }
-
-    spec fun spec_valid_fixed_reward_rate(raw: num): bool {
-        let limits = global<AccountingState>(@topo_framework).config.limits;
-        !exists<AccountingState>(@topo_framework)
-            || raw * limits.rate_max_den <= limits.rate_max_num * INDEX_SCALE
     }
 
     spec fun spec_valid_fee_limit(value: num): bool {
@@ -289,20 +285,8 @@ spec topo_framework::poc_accounting {
         aborts_if !spec_valid_native_config(increase_limit, dynamic_membership);
     }
 
-    spec validate_reward_rate {
-        aborts_if !spec_valid_reward_rate(num, den);
-    }
-
-    spec validate_fixed_reward_rate {
-        aborts_if !spec_valid_fixed_reward_rate(raw);
-    }
-
     spec validate_fee_limit {
         aborts_if !spec_valid_fee_limit(value);
-    }
-
-    spec validate_reward_config {
-        aborts_if !spec_valid_reward_rate(num, den) || !spec_valid_fee_limit(fee_limit);
     }
 
     spec is_prepared {

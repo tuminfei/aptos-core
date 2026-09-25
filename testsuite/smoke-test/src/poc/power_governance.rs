@@ -307,7 +307,7 @@ async fn assert_install(
     assert_eq!(resource(client, CLOCK, version).await, expected_clock);
     let perf = resource(client, "0x1::stake::ValidatorPerformance", version - 1).await;
     let before_validators = resource_at_version::<ValidatorSet>(client, version - 1).await;
-    let units = (POWER as u128) << 32;
+    let units = (POWER as u128) << 16;
     let mut total_inflation = 0;
     assert_eq!(events(txn, "::PoCRewardCredited").len(), 4);
     assert_eq!(events(txn, "::PoCRewardSplit").len(), 4);
@@ -424,7 +424,7 @@ async fn assert_install(
 #[tokio::test]
 async fn poc_power_params_lifecycle_and_atomic_reconfiguration() {
     Lazy::force(&GOVERNANCE);
-    println!("GOV-01/EPO-03 fixture: 4 validators, Controlled testnet PoC, each 1 OHMP/1 TOPO, growth50%, APY10%, epoch3600s, DKG/Chunky off, retention9995/native3000, fee0; power ceilings install only at target epochs");
+    println!("GOV-01/EPO-03 fixture: 4 validators, Controlled testnet PoC, each 1 OHMP/1 TOPO, growth50%, APY10%, epoch3600s, DKG/Chunky off, retention9995/native5000, fee0; power ceilings install only at target epochs");
     let swarm: LocalSwarm = SwarmBuilder::new_local(4)
         .with_aptos()
         .with_init_genesis_stake(Arc::new(|_, amount| *amount = POWER))
@@ -496,9 +496,6 @@ async fn poc_power_params_lifecycle_and_atomic_reconfiguration() {
         [POWER, 1, POWER, 0],
         [POWER, 1, POWER, 129],
         [POWER, 1, POWER, 128],
-        [POWER, 1, (u64::MAX / 65536) + 1, 2],
-        [POWER, 1, 1000 * POWER + 1, 2],
-        [u64::MAX, 1, 1, 2],
     ] {
         let txn = execute(
             &client,
@@ -508,6 +505,11 @@ async fn poc_power_params_lifecycle_and_atomic_reconfiguration() {
         )
         .await;
         rejected(&client, &txn, &pools, "poc_accounting", 0x10007).await;
+    }
+    // 上限参数可覆盖完整 u64 范围；实际总权重和计奖金额由换届预检验证。
+    for valid in [[POWER, 1, u64::MAX, 2], [2 * POWER, 1, u64::MAX, 2]] {
+        change(&client, &root, &factory, &pools, Some((epoch + 1, valid))).await;
+        change(&client, &root, &factory, &pools, None).await;
     }
     for operation in [0, 1] {
         let txn = execute(
@@ -539,11 +541,11 @@ async fn poc_power_params_lifecycle_and_atomic_reconfiguration() {
         POWER,
         initial,
         Some((epoch + 2, half)),
-        3000,
+        5000,
     )
     .await;
     let txn = execute(&client, &root, &factory, payload(true, 3, 0, [0; 4])).await;
-    assert_install(&client, &txn, POWER, POWER / 2, half, None, 3000).await;
+    assert_install(&client, &txn, POWER, POWER / 2, half, None, 5000).await;
     // 相同复合操作此时具有合法目标；所有配置一起安装，而结束当期仍使用旧基数和旧分流。
     let txn = execute(
         &client,

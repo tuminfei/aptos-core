@@ -55,8 +55,8 @@ module topo_framework::poc_delegation_tests {
             fixed_point64::create_from_rational(0, 1));
         poc_allocation::prepare_poc(&framework,
             poc_accounting::new_power_params(apt * 100000000, 10, 100, 2),
-            poc_accounting::new_deployment_limits(4, 4, 4, 3, 100 * apt, 1, 100, 50, 100),
-            0, reconfiguration::current_epoch() + 10, 10000, 100, 60, @0x1);
+            poc_accounting::new_deployment_limits(4, 4, 4, 3, 50),
+            0, reconfiguration::current_epoch() + 10, 10000, 60, @0x1);
         staking_config::update_rewards_rate(&framework, 1, 200);
         assert!(delegation_pool::get_add_stake_fee(pool, 250 * apt) == expected, 2);
         // 原生配置确已修改，当前 Epoch 仍应使用已安装上下文中的原奖励率。
@@ -93,8 +93,8 @@ module topo_framework::poc_delegation_tests {
         let activation_epoch = reconfiguration::current_epoch() + 1;
         poc_allocation::prepare_poc(framework,
             poc_accounting::new_power_params(OCTA_PER_TOPO * 100000000, 10, 400, 2),
-            poc_accounting::new_deployment_limits(4, 4, 4, 3, 400 * OCTA_PER_TOPO, 1, 100, 50, 100),
-            0, activation_epoch, 10000, 100, 60, @0x1);
+            poc_accounting::new_deployment_limits(4, 4, 4, 3, 50),
+            0, activation_epoch, 10000, 60, @0x1);
         poc_allocation::enable_pool(framework, pool_address);
         poc_allocation::enable_pool(framework, @0x45);
         poc_power_store::set_committed_power_for_test(framework, signer::address_of(power_user), 400);

@@ -17,7 +17,7 @@ use super::{
 use crate::smoke_test_environment::SwarmBuilder;
 use aptos_cached_packages::aptos_stdlib;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::Client;
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -31,7 +31,7 @@ use once_cell::sync::Lazy;
 use serde_json::{json, Value};
 use std::{collections::BTreeSet, sync::Arc, time::Duration};
 
-const S: u128 = 1 << 32;
+const S: u128 = 1 << 16;
 
 fn q() -> U256 {
     U256::ONE << U256::from(128_u8)
@@ -102,26 +102,15 @@ async fn fixture(raw: u64) -> Fixture {
                     max_power: 10,
                     min_validators: 4,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 32,
-                    validator_limit: 8,
-                    max_reward_base_octa: 100,
-                    rate_max_num: 1,
-                    rate_max_den: 1,
-                    fee_max: 1,
-                    reward_epoch_limit: 1000,
-                },
+
                 deployment_mode: DeploymentMode::Open,
                 retention_bps: 10000,
-                max_relative_period: 100,
                 initial_raw_power: raw,
-                native_reward_bps: 0,
             }));
         }))
         .build()
         .await;
+    super::configure_fixture(&swarm, [4, 4, 32, 8, 1], 0).await;
     let mut pools = swarm
         .validators()
         .map(|node| node.peer_id())

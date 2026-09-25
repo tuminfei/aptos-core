@@ -26,7 +26,7 @@ use std::{sync::Arc, time::Duration};
 use tokio::time::{sleep, timeout, Instant};
 
 const OCTA_PER_TOPO: u64 = 100_000_000;
-const UNIT_SCALE: u128 = 1 << 32;
+const UNIT_SCALE: u128 = 1 << 16;
 const INDEX_SCALE: u128 = 1 << 64;
 const GENESIS_UNITS: u128 = OCTA_PER_TOPO as u128 * UNIT_SCALE;
 const NEXT_PERIOD_INDEX: u128 = INDEX_SCALE * 9_995 / 10_000;
@@ -76,7 +76,7 @@ pub(super) async fn strict_testnet_swarm(epoch_duration_secs: u64) -> LocalSwarm
     println!(
         "Strict PoC testnet node startup: {:?}; epoch_secs={epoch_duration_secs}, \
          growth=50%, APY=10%, stake_per_pool={OCTA_PER_TOPO}, \
-         native_reward_bps=3000, native default features / DKG / Chunky DKG",
+         native_reward_bps=5000, native default features / DKG / Chunky DKG",
         started.elapsed(),
     );
     for node in swarm.validators() {
@@ -215,8 +215,8 @@ async fn assert_default_genesis(client: &Client, epoch_duration_secs: u64) {
         installed.reward_split,
         json!({
             "installed_epoch": "1",
-            "configured_native_reward_bps": "3000",
-            "installed_native_reward_bps": "3000",
+            "configured_native_reward_bps": "5000",
+            "installed_native_reward_bps": "5000",
             "pending_change": {"vec": []},
         }),
     );
@@ -306,11 +306,7 @@ async fn assert_default_genesis(client: &Client, epoch_duration_secs: u64) {
                 "max_claim_pools": "4",
                 "max_upload_users": "32",
                 "validator_limit": "128",
-                "max_reward_base_octa": "100000000000",
-                "rate_max_num": "1",
-                "rate_max_den": "100",
                 "fee_max": "100000000000",
-                "reward_epoch_limit": "600060",
             }),
         ],
     );
@@ -324,11 +320,9 @@ async fn assert_default_genesis(client: &Client, epoch_duration_secs: u64) {
         .await,
         vec![
             json!("0"),
-            json!("0"),
             json!("61"),
             json!(INDEX_SCALE.to_string()),
             json!({"vec": [NEXT_PERIOD_INDEX.to_string()]}),
-            json!("10000"),
         ],
     );
     for (function, expected) in [
@@ -623,8 +617,8 @@ async fn poc_testnet_defaults_transfer_upload_and_allocate() {
         last_version,
     )
     .await;
-    assert_eq!(clock_before[1], json!("0"));
-    assert_eq!(clock_before[2], json!("61"));
+    assert_eq!(clock_before[0], json!("0"));
+    assert_eq!(clock_before[1], json!("61"));
     assert!(installed_before.epoch + 1 < 61);
     let raw_power = 2 * OCTA_PER_TOPO;
     let next_units = raw_power as u128 * UNIT_SCALE * INDEX_SCALE / NEXT_PERIOD_INDEX;

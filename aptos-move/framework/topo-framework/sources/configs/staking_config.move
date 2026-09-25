@@ -167,7 +167,6 @@ module topo_framework::staking_config {
     ) {
         reconfiguration_state::assert_not_in_progress();
         system_addresses::assert_topo_framework(topo_framework);
-        poc_accounting::validate_fixed_reward_rate(fixed_point64::get_raw_value(rewards_rate));
 
         validate_rewards_config(
             rewards_rate,
@@ -193,17 +192,11 @@ module topo_framework::staking_config {
         *borrow_global<StakingConfig>(@topo_framework)
     }
 
-    /// 待生效功能开关可能在提交时切换奖励率来源。
-    /// 冻结前校验两份奖励配置和锁仓时长，避免提交时才发现无法安装目标。
-    public fun validate_poc_configuration() acquires StakingConfig, StakingRewardsConfig {
+    /// 准备与预检时校验锁仓时长，避免冻结提交时续期溢出。
+    public fun validate_poc_configuration() acquires StakingConfig {
         if (!poc_accounting::is_prepared()) return;
         let config = borrow_global<StakingConfig>(@topo_framework);
         validate_poc_lockup_duration(config.recurring_lockup_duration_secs);
-        poc_accounting::validate_reward_rate(config.rewards_rate, config.rewards_rate_denominator);
-        assert!(exists<StakingRewardsConfig>(@topo_framework), error::invalid_state(EDISABLED_FUNCTION));
-        poc_accounting::validate_fixed_reward_rate(fixed_point64::get_raw_value(
-            borrow_global<StakingRewardsConfig>(@topo_framework).rewards_rate,
-        ));
     }
 
     /// 校验以秒计量的续期时长，确保 DKG 延迟完成后时间相加仍不会溢出。
@@ -211,7 +204,7 @@ module topo_framework::staking_config {
         if (poc_accounting::is_prepared()) {
             // 链上时间戳以 u64 微秒存储。按其最大秒数预留续期空间，
             // 确保 DKG 在计划截止时间之后完成时，锁仓时间也不会溢出。
-            assert!((duration as u256) + ((MAX_U64 / 1_000_000) as u256) <= (MAX_U64 as u256),
+            assert!((duration as u128) + MAX_U64 / 1_000_000 <= MAX_U64,
                 error::out_of_range(ELOCKUP_DURATION_OUT_OF_RANGE));
         }
     }
@@ -333,7 +326,6 @@ module topo_framework::staking_config {
         new_rewards_rate_denominator: u64,
     ) acquires StakingConfig {
         reconfiguration_state::assert_not_in_progress();
-        poc_accounting::validate_reward_rate(new_rewards_rate, new_rewards_rate_denominator);
         assert!(!features::periodical_reward_rate_decrease_enabled(), error::invalid_state(EDEPRECATED_FUNCTION));
         system_addresses::assert_topo_framework(topo_framework);
         assert!(
@@ -361,7 +353,6 @@ module topo_framework::staking_config {
         rewards_rate_decrease_rate: FixedPoint64,
     ) acquires StakingRewardsConfig {
         reconfiguration_state::assert_not_in_progress();
-        poc_accounting::validate_fixed_reward_rate(fixed_point64::get_raw_value(rewards_rate));
         system_addresses::assert_topo_framework(topo_framework);
 
         validate_rewards_config(

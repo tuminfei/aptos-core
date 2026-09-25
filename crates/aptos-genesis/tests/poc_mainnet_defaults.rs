@@ -15,6 +15,9 @@ use aptos_vm_genesis::{
     GENESIS_KEYPAIR,
 };
 
+const POC_GENESIS_MANIFEST: &str =
+    include_str!("../../../docs/draft/POC_GENESIS_TEST_MANIFEST.json");
+
 fn genesis_pair_from_current_layout(
     validator_count: usize,
     stake_amount: u64,
@@ -144,10 +147,10 @@ fn poc_mainnet_defaults_support_current_layout_and_validator_capacity() {
             );
         }
 
-        // Move Option 在 BCS 中按 vector 编码；创世安装 Epoch 1/3000，且没有待生效项。
+        // Move Option 在 BCS 中按 vector 编码；创世安装 Epoch 1/5000，且没有待生效项。
         let split_bytes = resource_bytes(&genesis, "0x1::poc_reward_split::RewardSplitConfig");
         let split: (u64, u64, u64, Vec<(u64, u64)>) = bcs::from_bytes(&split_bytes).unwrap();
-        assert_eq!(split, (1, 3_000, 3_000, vec![]));
+        assert_eq!(split, (1, 5_000, 5_000, vec![]));
     }
 }
 
@@ -169,23 +172,39 @@ fn poc_mainnet_defaults_reject_too_few_validators() {
 }
 
 #[test]
-fn poc_reward_split_manifest_defaults_and_explicit_zero() {
-    // 新创世的 JSON/YAML 清单省略此字段时，原生奖励占比默认 3000 bps。
-    // 显式设为 0 时，通胀奖励全部归 PoC。
-    let manifest = include_str!("../../../docs/draft/POC_GENESIS_TEST_MANIFEST.json");
-    let mut manifest_value: serde_yaml::Value = serde_yaml::from_str(manifest).unwrap();
-    let explicit_config: poc::PocGenesisConfiguration =
-        serde_yaml::from_value(manifest_value.clone()).unwrap();
-    assert_eq!(explicit_config.native_reward_bps, 3_000);
-    manifest_value
-        .as_mapping_mut()
-        .unwrap()
-        .remove(&serde_yaml::Value::String("native_reward_bps".into()));
-    let defaulted_config: poc::PocGenesisConfiguration =
-        serde_yaml::from_value(manifest_value.clone()).unwrap();
-    assert_eq!(defaulted_config.native_reward_bps, 3_000);
-    manifest_value["native_reward_bps"] = serde_yaml::Value::Number(0.into());
-    let zero_native_reward_config: poc::PocGenesisConfiguration =
-        serde_yaml::from_value(manifest_value).unwrap();
-    assert_eq!(zero_native_reward_config.native_reward_bps, 0);
+fn poc_genesis_manifest_contains_only_bootstrap_configuration() {
+    let manifest_value: serde_yaml::Value = serde_yaml::from_str(POC_GENESIS_MANIFEST).unwrap();
+    let yaml = serde_yaml::to_string(&manifest_value).unwrap();
+    assert_eq!(manifest_value.as_mapping().unwrap().len(), 4);
+    for manifest in [POC_GENESIS_MANIFEST, yaml.as_str()] {
+        let config: poc::PocGenesisConfiguration = serde_yaml::from_str(manifest).unwrap();
+        assert_eq!(config.initial_raw_power, 17);
+        assert_eq!(serde_yaml::to_value(config).unwrap(), manifest_value);
+    }
+}
+
+#[test]
+fn poc_genesis_manifest_rejects_removed_and_unknown_fields() {
+    let fields = POC_GENESIS_MANIFEST.trim_start().strip_prefix('{').unwrap();
+    for (field, value) in [
+        ("limits", r#"{"max_allocations": 4}"#),
+        ("max_relative_period", "100"),
+        ("native_reward_bps", "0"),
+        ("native_reward_bps", "6750"),
+        ("retention_bp", "10000"),
+    ] {
+        let json = format!("{{\"{field}\": {value}, {fields}");
+        let manifest_value: serde_yaml::Value = serde_yaml::from_str(&json).unwrap();
+        let yaml = serde_yaml::to_string(&manifest_value).unwrap();
+        for (format_name, manifest) in [("JSON", json.as_str()), ("YAML", yaml.as_str())] {
+            let error = serde_yaml::from_str::<poc::PocGenesisConfiguration>(manifest)
+                .expect_err("旧字段和拼写错误必须被明确拒绝，不能静默采用合约默认值");
+            assert!(
+                error
+                    .to_string()
+                    .contains(&format!("unknown field `{field}`")),
+                "{format_name} 清单应拒绝字段 {field}，实际错误：{error}",
+            );
+        }
+    }
 }

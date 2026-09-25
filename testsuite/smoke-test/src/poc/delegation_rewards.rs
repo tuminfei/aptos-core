@@ -26,7 +26,7 @@ use aptos_config::config::{
 };
 use aptos_crypto::bls12381;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::{error::RestError, Client};
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -55,7 +55,7 @@ const DEPOSIT: u64 = 100 * OCTA;
 const PARTIAL_UNLOCK: u64 = 50 * OCTA;
 const POWER: u64 = 400;
 const REWARD_BASE: u64 = POWER * OCTA;
-const POWER_UNITS: u128 = (POWER as u128) << 32;
+const POWER_UNITS: u128 = (POWER as u128) << 16;
 const SHARE_SCALE: u128 = 10_000_000_000_000_000;
 const DEFAULT_COMMISSION_BPS: u64 = 3735;
 const NULL: AccountAddress = AccountAddress::ZERO;
@@ -604,23 +604,18 @@ async fn fixture_with_options(
         initial_lockup_secs,
         controlled,
         10000,
-        1000,
         POWER,
         POWER,
-        REWARD_BASE,
-        100,
     )
     .await
 }
 
-/// Long-running reward tests need a horizon larger than the default smoke fixture and
-/// retain real power decay without forcing the background validators below the minimum.
+/// Long-running reward tests retain real power decay without forcing the
+/// background validators below the minimum.
 pub(super) async fn churn_fixture(
     native_bps: u64,
     commission_bps: u64,
-    reward_epoch_limit: u64,
     retention_bps: u64,
-    max_relative_period: u64,
 ) -> (Fixture, u64) {
     fixture_with_genesis_options(
         native_bps,
@@ -631,11 +626,8 @@ pub(super) async fn churn_fixture(
         Some(3),
         false,
         retention_bps,
-        reward_epoch_limit,
         10,
         1000,
-        1000 * OCTA,
-        max_relative_period,
     )
     .await
 }
@@ -649,16 +641,13 @@ async fn fixture_with_genesis_options(
     initial_lockup_secs: Option<u64>,
     controlled: bool,
     retention_bps: u64,
-    reward_epoch_limit: u64,
     min_power: u64,
     max_power: u64,
-    max_reward_base_octa: u64,
-    max_relative_period: u64,
 ) -> (Fixture, u64) {
     assert!(native_bps <= 10000 && commission_bps <= 10000);
     let fee_max = deployment_fee_max;
     Lazy::force(&GOVERNANCE);
-    println!("REW-10/GOV-03 fixture: 5 nodes, mode={}, min_validators=4, initial_power=400, min/max power={min_power}/{max_power}, each bond=1000 TOPO, ratio=100000000 TOPO/OHMP, growth=25%, epoch=3600s, retention={retention_bps}, max_relative_period={max_relative_period}, reward_horizon={reward_epoch_limit}, native_bps={native_bps}, commission={commission_bps}, fee_max={fee_max}, fee_only_limit={fee_limit:?} (None=1% inflation/fee0), delegator_funding={delegator_funding}, transaction_gas_price=100, ordinary/Chunky DKG=off; real 5-to-5 resource-pool replacement with separate on-disk safety storage", if controlled { "Controlled" } else { "Open" });
+    println!("REW-10/GOV-03 fixture: 5 nodes, mode={}, min_validators=4, initial_power=400, min/max power={min_power}/{max_power}, each bond=1000 TOPO, ratio=100000000 TOPO/OHMP, growth=25%, epoch=3600s, retention={retention_bps}, native_bps={native_bps}, commission={commission_bps}, fee_max={fee_max}, fee_only_limit={fee_limit:?} (None=1% inflation/fee0), delegator_funding={delegator_funding}, transaction_gas_price=100, ordinary/Chunky DKG=off; real 5-to-5 resource-pool replacement with separate on-disk safety storage", if controlled { "Controlled" } else { "Open" });
     let swarm = SwarmBuilder::new_local(5)
         .with_aptos()
         .with_init_config(Arc::new(move |_, config, _| {
@@ -685,30 +674,19 @@ async fn fixture_with_genesis_options(
                     max_power,
                     min_validators: 4,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 32,
-                    validator_limit: 6,
-                    max_reward_base_octa,
-                    rate_max_num: 1,
-                    rate_max_den: 100,
-                    fee_max,
-                    reward_epoch_limit,
-                },
+
                 deployment_mode: if controlled {
                     DeploymentMode::Controlled
                 } else {
                     DeploymentMode::Open
                 },
                 retention_bps,
-                max_relative_period,
                 initial_raw_power: POWER,
-                native_reward_bps: native_bps,
             }));
         }))
         .build()
         .await;
+    super::configure_fixture(&swarm, [4, 4, 32, 6, fee_max], native_bps).await;
     let mut original_pools = swarm
         .validators()
         .map(|node| node.peer_id())
@@ -3498,7 +3476,7 @@ async fn poc_delegation_one_octa_native_inflation_survives_large_mid_epoch_add()
 
     let q = U256::ONE << U256::from(128_u8);
     let accrued = U256::checked_mul(poc_index(poc), U256::from(POWER_UNITS)).unwrap();
-    let fraction = U256::checked_sub(q, U256::from(80u128 << 32)).unwrap();
+    let fraction = U256::checked_sub(q, U256::from(80u128 << 16)).unwrap();
     assert_eq!(U256::checked_div(accrued, q).unwrap(), U256::from(4_u8));
     assert_eq!(U256::checked_rem(accrued, q).unwrap(), fraction);
     claim_power_reward(&f, &model, poc).await;

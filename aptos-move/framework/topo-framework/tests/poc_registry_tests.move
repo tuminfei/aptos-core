@@ -18,7 +18,7 @@ module topo_framework::poc_registry_tests {
     }
 
     fun prepare(framework: &signer, creator: &signer): address {
-        poc_registry::initialize_registry(framework);
+        poc_registry::initialize_for_test(framework);
         create_token(creator)
     }
 
@@ -274,7 +274,7 @@ module topo_framework::poc_registry_tests {
     #[test(framework = @topo_framework, admin = @0x10, other = @0x20)]
     #[expected_failure(abort_code = 0x80004, location = topo_framework::poc_registry)]
     fun mint_ref_does_not_bypass_unique_tokens(framework: signer, admin: signer, other: signer) {
-        poc_registry::initialize_registry(&framework);
+        poc_registry::initialize_for_test(&framework);
         let (mint_ref, _, _, _, metadata) = fungible_asset::create_fungible_asset(&admin);
         let token = object::object_address(&metadata);
         poc_registry::approve_app_identity(&framework, @0x10, APP, token, CUSTODY);

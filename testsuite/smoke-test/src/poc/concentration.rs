@@ -15,7 +15,7 @@ use crate::smoke_test_environment::SwarmBuilder;
 use aptos_api_types::{Event, Transaction, UserTransaction, ViewRequest};
 use aptos_cached_packages::aptos_stdlib;
 use aptos_forge::{LocalSwarm, NodeExt, Swarm, SwarmExt};
-use aptos_genesis::poc::{DeploymentLimits, DeploymentMode, PocGenesisConfiguration, PowerParams};
+use aptos_genesis::poc::{DeploymentMode, PocGenesisConfiguration, PowerParams};
 use aptos_rest_client::Client;
 use aptos_sdk::{transaction_builder::TransactionFactory, types::LocalAccount};
 use aptos_types::{
@@ -30,7 +30,7 @@ use serde_json::{json, Value};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use tokio::time::{sleep, timeout, Instant};
 
-const UNIT_SCALE: u128 = 1 << 32;
+const UNIT_SCALE: u128 = 1 << 16;
 const INITIAL_POWER: u64 = 10;
 const LONG_INTERVAL_US: u64 = 3_600_000_000;
 const RETRY_INTERVAL_US: u64 = 1_000_000;
@@ -112,30 +112,19 @@ async fn configured_fixture(open: bool, nodes: usize, raw_power: u64, capacity: 
                     max_power: 100,
                     min_validators: 4,
                 },
-                limits: DeploymentLimits {
-                    max_allocations: 4,
-                    max_claim_pools: 4,
-                    max_upload_users: 32,
-                    validator_limit: capacity,
-                    max_reward_base_octa: 100,
-                    rate_max_num: 1,
-                    rate_max_den: 1,
-                    fee_max: 10,
-                    reward_epoch_limit: 1000,
-                },
+
                 deployment_mode: if open {
                     DeploymentMode::Open
                 } else {
                     DeploymentMode::Controlled
                 },
                 retention_bps: 10000,
-                max_relative_period: 100,
                 initial_raw_power: raw_power,
-                native_reward_bps: 0,
             }));
         }))
         .build()
         .await;
+    super::configure_fixture(&swarm, [4, 4, 32, capacity, 10], 0).await;
     let mut pools = swarm
         .validators()
         .map(|node| node.peer_id())
