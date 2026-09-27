@@ -3,7 +3,7 @@
 
 use super::{
     create_swarm_with_chunky_dkg, get_encryption_key_resource, verify_chunky_dkg_transcript,
-    wait_for_chunky_dkg_finish,
+    wait_for_chunky_dkg_finish, CHUNKY_DKG_COLD_START_TIMEOUT_SECS,
 };
 use aptos_forge::NodeExt;
 use aptos_logger::info;
@@ -16,8 +16,7 @@ use aptos_logger::info;
 #[tokio::test]
 async fn chunky_dkg_correctness() {
     let epoch_duration_secs = 10;
-    // Building the Chunky DKG discrete-log table is intentionally expensive
-    // and can take well over a minute on slower test hosts.
+    // Subsequent sessions reuse the expensive test parameters.
     let estimated_dkg_latency_secs = 180;
     let time_limit_secs = epoch_duration_secs + estimated_dkg_latency_secs;
 
@@ -26,7 +25,12 @@ async fn chunky_dkg_correctness() {
 
     // ---- Epoch 2: Initial DKG completion ----
     info!("Waiting for chunky DKG to finish for epoch 2...");
-    let session_1 = wait_for_chunky_dkg_finish(&client, Some(2), time_limit_secs).await;
+    let session_1 = wait_for_chunky_dkg_finish(
+        &client,
+        Some(2),
+        epoch_duration_secs + CHUNKY_DKG_COLD_START_TIMEOUT_SECS,
+    )
+    .await;
     info!(
         "Chunky DKG completed for epoch {}",
         session_1.target_epoch()

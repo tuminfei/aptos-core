@@ -69,8 +69,10 @@ pub(super) async fn create_swarm_with_dkg_only(
 
 /// Enable shadow mode (ConfigShadowV1) via governance script.
 async fn enable_shadow_mode(
+    swarm: &aptos_forge::LocalSwarm,
     cli: &aptos::test::CliTestFramework,
     root_idx: usize,
+    client: &aptos_rest_client::Client,
     grace_period_secs: u64,
 ) {
     let script = format!(
@@ -99,9 +101,17 @@ script {{
 "#,
         grace_period_secs
     );
-    cli.run_script(root_idx, &script)
-        .await
-        .expect("Failed to enable shadow mode via governance");
+    // Script compilation may cross an epoch boundary. Use the same bounded
+    // configuration-freeze retry as the shadow-to-V1 upgrade below.
+    run_reconfiguration_script(
+        swarm,
+        cli,
+        root_idx,
+        client,
+        &script,
+        Duration::from_secs(super::CHUNKY_DKG_COLD_START_TIMEOUT_SECS),
+    )
+    .await;
 }
 
 /// 生成从 Shadow 升级到 ConfigV1 的脚本，提交和生效确认由公共重配置辅助函数处理。
@@ -134,8 +144,9 @@ script {
 #[tokio::test]
 async fn chunky_dkg_shadow_mode() {
     let epoch_duration_secs = 20;
-    let estimated_dkg_latency_secs = 180;
-    let grace_period_secs = 60;
+    // Keep the initial session alive while validators initialize test parameters.
+    let grace_period_secs = super::CHUNKY_DKG_COLD_START_TIMEOUT_SECS;
+    let time_limit_secs = epoch_duration_secs + grace_period_secs + 60;
 
     let (swarm, cli, root_idx) = create_swarm_with_dkg_only(4, epoch_duration_secs).await;
     let client_endpoint = swarm.validators().nth(1).unwrap().rest_api_endpoint();
@@ -157,7 +168,7 @@ async fn chunky_dkg_shadow_mode() {
 
     // Enable shadow mode via governance.
     info!("Enabling shadow mode (ConfigShadowV1) via governance...");
-    enable_shadow_mode(&cli, root_idx, grace_period_secs).await;
+    enable_shadow_mode(&swarm, &cli, root_idx, &client, grace_period_secs).await;
 
     // Poll until chunky DKG completes.
     info!("Polling for chunky DKG completion in shadow mode...");
@@ -185,7 +196,7 @@ async fn chunky_dkg_shadow_mode() {
             info!("Shadow chunky DKG completed!");
             break dkg_state.last_complete().clone();
         }
-        if timer.elapsed().as_secs() > estimated_dkg_latency_secs {
+        if timer.elapsed().as_secs() > time_limit_secs {
             panic!(
                 "Timed out waiting for shadow chunky DKG (epoch={}, in_progress={})",
                 ledger.epoch,
@@ -216,7 +227,7 @@ async fn chunky_dkg_shadow_mode() {
 async fn chunky_dkg_shadow_to_v1() {
     let epoch_duration_secs = 20;
     let estimated_dkg_latency_secs = 180;
-    let grace_period_secs = 60;
+    let grace_period_secs = super::CHUNKY_DKG_COLD_START_TIMEOUT_SECS;
 
     let (mut swarm, cli, root_idx) = create_swarm_with_dkg_only(4, epoch_duration_secs).await;
     let client_endpoint = swarm.validators().nth(1).unwrap().rest_api_endpoint();
@@ -230,11 +241,12 @@ async fn chunky_dkg_shadow_to_v1() {
 
     // ---- Phase 1: Enable shadow mode ----
     info!("Phase 1: Enabling shadow mode...");
-    enable_shadow_mode(&cli, root_idx, grace_period_secs).await;
+    enable_shadow_mode(&swarm, &cli, root_idx, &client, grace_period_secs).await;
 
     // Wait for shadow chunky DKG to complete.
     let shadow_session =
-        wait_for_chunky_dkg_finish(&client, None, estimated_dkg_latency_secs).await;
+        wait_for_chunky_dkg_finish(&client, None, epoch_duration_secs + grace_period_secs + 60)
+            .await;
     let shadow_epoch = shadow_session.target_epoch();
     info!("Shadow chunky DKG completed for epoch {}", shadow_epoch);
 
@@ -353,7 +365,7 @@ async fn chunky_dkg_shadow_mode_grace_period_failpoint() {
         "Enabling shadow mode (grace_period={}s)...",
         grace_period_secs
     );
-    enable_shadow_mode(&cli, root_idx, grace_period_secs).await;
+    enable_shadow_mode(&swarm, &cli, root_idx, &client, grace_period_secs).await;
 
     // Wait for the epoch to advance. Regular DKG will complete, but chunky DKG is stuck.
     // The grace period safety net should force the epoch change.

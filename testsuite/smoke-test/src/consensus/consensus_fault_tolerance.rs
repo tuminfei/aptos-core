@@ -283,7 +283,8 @@ async fn test_ordered_only_cert() {
         validator_clients,
         public_info,
         3,
-        5.0,
+        // Allow epoch startup and injected vote delays under concurrent swarms.
+        15.0,
         1,
         Box::new(FailPointFailureInjection::new(Box::new(move |cycle, _| {
             (

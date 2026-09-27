@@ -12,6 +12,7 @@ use crate::{
 };
 use anyhow::{bail, Result};
 use aptos_backup_cli::metadata::view::BackupStorageState;
+use aptos_config::config::{OverrideNodeConfig, PersistableConfig, SafetyRulesService};
 use aptos_forge::{reconfig, AptosPublicInfo, Node, NodeExt, Swarm, SwarmExt};
 use aptos_logger::{error, info};
 use aptos_temppath::TempPath;
@@ -497,6 +498,16 @@ async fn test_db_restart() {
 
     let mut restarting_validator_ids = swarm.validators().map(|v| v.peer_id()).collect_vec();
     let non_restarting_validator_id = restarting_validator_ids.pop().unwrap();
+    // Exercise persistent storage across restarts without the Thread service's
+    // ephemeral TCP port allocation race. Keep the existing on-disk backend.
+    for peer_id in &restarting_validator_ids {
+        let validator = swarm.validator_mut(*peer_id).unwrap();
+        let config_path = validator.config_path();
+        let mut config = OverrideNodeConfig::load_config(config_path.clone()).unwrap();
+        config.override_config_mut().consensus.safety_rules.service = SafetyRulesService::Local;
+        config.save_config(config_path).unwrap();
+        validator.config_mut().consensus.safety_rules.service = SafetyRulesService::Local;
+    }
     let non_restarting_validator = swarm.validator(non_restarting_validator_id).unwrap();
     let chain_info = swarm.chain_info();
     let mut pub_chain_info = AptosPublicInfo::new(

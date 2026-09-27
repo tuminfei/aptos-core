@@ -1,8 +1,13 @@
 // Copyright (c) Aptos Foundation
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
-use super::{get_encryption_key_resource, verify_chunky_dkg_transcript};
-use crate::{smoke_test_environment::SwarmBuilder, utils::get_on_chain_resource};
+use super::{
+    get_encryption_key_resource, verify_chunky_dkg_transcript, CHUNKY_DKG_COLD_START_TIMEOUT_SECS,
+};
+use crate::{
+    randomness::run_reconfiguration_script, smoke_test_environment::SwarmBuilder,
+    utils::get_on_chain_resource,
+};
 use aptos_forge::{Node, Swarm, SwarmExt};
 use aptos_logger::info;
 use aptos_types::{
@@ -21,7 +26,7 @@ use std::{sync::Arc, time::Duration};
 #[tokio::test]
 async fn chunky_dkg_enable_feature() {
     let epoch_duration_secs = 20;
-    let estimated_dkg_latency_secs = 180;
+    let timeout = Duration::from_secs(epoch_duration_secs + CHUNKY_DKG_COLD_START_TIMEOUT_SECS);
 
     // Genesis: randomness + validator txns enabled.
     // Chunky DKG config is OFF (default). ENCRYPTED_TRANSACTIONS is OFF.
@@ -106,9 +111,7 @@ script {
 }
 "#;
 
-    cli.run_script(root_idx, script)
-        .await
-        .expect("Txn execution error.");
+    run_reconfiguration_script(&swarm, &cli, root_idx, &client, script, timeout).await;
 
     // Poll and log state to diagnose the transition.
     info!("Polling DKG state after governance script...");
@@ -136,7 +139,7 @@ script {
             info!("Chunky DKG completed!");
             break dkg_state.last_complete().clone();
         }
-        if timer.elapsed().as_secs() > estimated_dkg_latency_secs {
+        if timer.elapsed() > timeout {
             panic!(
                 "Timed out waiting for chunky DKG (epoch={}, in_progress={}, last_completed={})",
                 ledger.epoch,

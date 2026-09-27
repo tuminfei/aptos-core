@@ -324,6 +324,7 @@ async fn assert_installed(
     at: u64,
     expected: &Expected,
     pending: Option<AccountAddress>,
+    expected_native_bps: u64,
 ) -> InstalledSnapshot {
     let installed = installed_at(client, at).await;
     assert_eq!(installed.validators, expected.validator_set(f, pending));
@@ -333,7 +334,8 @@ async fn assert_installed(
     assert_eq!(
         installed.reward_split,
         json!({"installed_epoch": installed.epoch.to_string(),
-        "installed_native_reward_bps": "0", "configured_native_reward_bps": "0", "pending_change": {"vec": []}})
+        "installed_native_reward_bps": expected_native_bps.to_string(),
+        "configured_native_reward_bps": expected_native_bps.to_string(), "pending_change": {"vec": []}})
     );
     let config = resource(client, CORE_CODE_ADDRESS, ACCOUNTING, at).await;
     assert_eq!(config["config"]["params"], expected.params.json());
@@ -663,7 +665,7 @@ async fn assert_progress(
             .expect("Current committee catchup exceeded 30 seconds")
             .unwrap();
         assert_eq!(
-            assert_installed(f, &client, at, expected, None).await,
+            assert_installed(f, &client, at, expected, None, 0).await,
             *installed
         );
         for candidate in &f.pools {
@@ -687,7 +689,7 @@ async fn commit(
         wait_for_positive_rewards(f, old).await;
     }
     let intended = version(f).await;
-    let intended_install = assert_installed(f, &f.client, intended, old, joining).await;
+    let intended_install = assert_installed(f, &f.client, intended, old, joining, 0).await;
     assert_preview(f, intended, old, next, joining).await;
     let tx = success(
         execute(
@@ -699,12 +701,12 @@ async fn commit(
         .await,
     );
     let at = tx.info.version.0;
-    let before = assert_installed(f, &f.client, at - 1, old, joining).await;
+    let before = assert_installed(f, &f.client, at - 1, old, joining, 0).await;
     assert_eq!(
         before, intended_install,
         "No unsolicited epoch installation during preparation"
     );
-    let after = assert_installed(f, &f.client, at, next, None).await;
+    let after = assert_installed(f, &f.client, at, next, None, 0).await;
     assert_eq!(after.epoch, before.epoch + 1);
     assert!(
         after.epoch < 61,
@@ -876,7 +878,7 @@ async fn reject_empty_target(f: &Fixture, installed: &Expected) {
         protected_state(f, at).await,
         protected_state(f, at - 1).await
     );
-    assert_installed(f, &f.client, at, installed, None).await;
+    assert_installed(f, &f.client, at, installed, None, 0).await;
     assert_eq!(
         resource(&f.client, CORE_CODE_ADDRESS, ACCOUNTING, at).await["config"]["pending_params"],
         json!({"vec": []})
@@ -974,7 +976,7 @@ async fn repair_bond_and_join(f: &mut Fixture, current: &Expected) {
             + refund as i128
     );
     f.bonds.insert(pool, 43);
-    assert_installed(f, &f.client, at, current, None).await;
+    assert_installed(f, &f.client, at, current, None, 0).await;
     let joined = success(
         execute(
             &f.client,
@@ -997,7 +999,7 @@ async fn repair_bond_and_join(f: &mut Fixture, current: &Expected) {
     info["voting_power"] = json!("0");
     expected.get_mut("0x1::stake::ValidatorSet").unwrap()["pending_active"] = json!([info]);
     assert_eq!(protected_state(f, at).await, expected);
-    assert_installed(f, &f.client, at, current, Some(pool)).await;
+    assert_installed(f, &f.client, at, current, Some(pool), 0).await;
     let joined_events = events(&joined, "::stake::JoinValidatorSet");
     assert_eq!(joined_events.len(), 1);
     assert_eq!(
@@ -1047,8 +1049,9 @@ async fn poc_weight_limits_preserve_full_units_and_enforce_integer_admission() {
     assert_eq!(42u128 * POWER_PER_OHMP / BOND_RATIO as u128, 16);
     assert_eq!(43u128 * POWER_PER_OHMP / BOND_RATIO as u128, 17);
     assert_eq!(100u128 * POWER_PER_OHMP / BOND_RATIO as u128, 40);
-    assert_installed(&f, &f.client, 0, &original, None).await;
-    assert_installed(&f, &f.client, version(&f).await, &original, None).await;
+    // Fixture governance changes the split for a later epoch, not genesis history.
+    assert_installed(&f, &f.client, 0, &original, None, 5000).await;
+    assert_installed(&f, &f.client, version(&f).await, &original, None, 0).await;
     commit(&f, &original, &original, true, None).await;
 
     let capped = Expected::new(

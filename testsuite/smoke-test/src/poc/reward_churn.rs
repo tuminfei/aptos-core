@@ -700,10 +700,15 @@ impl NetworkModel {
         };
         assert_eq!(f.setup_closings.len(), 2);
         let before_join_version = f.setup_closings[0].info.version.0 - 1;
-        // Startup closes the first genesis epoch before the replacement pool can
-        // join. Replay every such settlement from its own version-1 context. Four
-        // of the five genesis pools continue as this run's backgrounds; the
-        // replaced fifth pool is deliberately outside the steady-state model.
+        let expected_pre_join_closings = installed_at(&f.client, before_join_version)
+            .await
+            .epoch
+            .checked_sub(first_poc_epoch)
+            .expect("Fixture preparation must follow the first PoC epoch");
+        // Startup and fixture governance close epochs before the replacement pool
+        // joins. Replay every settlement from its own version-1 context. Four of
+        // the five genesis pools continue as this run's backgrounds; the replaced
+        // fifth pool is deliberately outside the steady-state model.
         let background_addresses = result.pools.keys().copied().collect::<Vec<_>>();
         let mut cursor = 0;
         let mut pre_join_closings = 0;
@@ -742,8 +747,12 @@ impl NetworkModel {
             }
         }
         assert_eq!(
-            pre_join_closings, 1,
-            "genesis preparation must settle exactly E1"
+            result.first_closing_epoch, first_poc_epoch,
+            "genesis preparation must replay rewards from the first PoC epoch"
+        );
+        assert_eq!(
+            pre_join_closings, expected_pre_join_closings,
+            "genesis preparation must settle every epoch before the pool joins"
         );
 
         // The join closes the final five-genesis-pool committee. The following
@@ -1603,7 +1612,6 @@ struct PreparedRun {
 
 async fn prepare_run(config: RunConfig) -> PreparedRun {
     Lazy::force(&CHURN_GOVERNANCE);
-    let started = Instant::now();
     println!(
         "PoC reward churn seed={:#x}: rounds={}, users={}, period_epochs={}, retention={}, native_bps={}, commission_bps={}, fee_limit={}, lockup_secs={}, rate={}, preparation closes through E60, drain={}",
         config.seed,
@@ -1620,6 +1628,9 @@ async fn prepare_run(config: RunConfig) -> PreparedRun {
     );
     let (fixture, initial_version) =
         churn_fixture(NATIVE_REWARD_BPS, COMMISSION_BPS, RETENTION_BPS).await;
+    // Budget preparation and churn after the fixture is ready, excluding the
+    // potentially long wait for swarm node slots in the full smoke suite.
+    let started = Instant::now();
     let accounting = resource(
         &fixture.client,
         CORE_CODE_ADDRESS,

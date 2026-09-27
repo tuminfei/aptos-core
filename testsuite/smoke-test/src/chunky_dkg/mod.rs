@@ -25,6 +25,11 @@ mod shadow_mode;
 mod stall_recovery;
 mod with_validator_down;
 
+// The first session initializes a 4M-entry discrete-log table and the test
+// DigestKey in every validator. Concurrent unoptimized swarms can exceed three
+// minutes before all validators finish initialization and commit the result.
+pub(crate) const CHUNKY_DKG_COLD_START_TIMEOUT_SECS: u64 = 600;
+
 /// Poll on-chain `ChunkyDKGState` until we see a completed session.
 /// Returns the `ChunkyDKGSessionState` of the completed session.
 #[allow(dead_code)]

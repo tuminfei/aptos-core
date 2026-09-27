@@ -4,6 +4,7 @@
 mod secret_share_rpc_path;
 
 use crate::{
+    chunky_dkg::CHUNKY_DKG_COLD_START_TIMEOUT_SECS, randomness::run_reconfiguration_script,
     smoke_test_environment::SwarmBuilder, txn_emitter::generate_traffic,
     utils::create_and_fund_account,
 };
@@ -666,13 +667,12 @@ script {
     }
 }
 "#;
-    cli.run_script(root_idx, script)
-        .await
-        .expect("governance script execution failed");
+    let timeout = Duration::from_secs(CHUNKY_DKG_COLD_START_TIMEOUT_SECS);
+    run_reconfiguration_script(&swarm, &cli, root_idx, &client, script, timeout).await;
 
     // Wait for the encryption key to appear (chunky DKG completed -> decryption live).
     info!("Waiting for encryption key after enabling decryption...");
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(180);
+    let deadline = tokio::time::Instant::now() + timeout;
     let version_after_enable = loop {
         let state = client.get_ledger_information().await.unwrap().into_inner();
         if state.encryption_key.is_some() {
