@@ -2,7 +2,7 @@
 // Licensed pursuant to the Innovation-Enabling Source Code License, available at https://github.com/aptos-labs/aptos-core/blob/main/LICENSE
 
 use crate::{
-    config::ValidatorConfiguration,
+    config::{HostAndPort, ValidatorConfiguration},
     keys::{generate_key_objects, PrivateIdentity, PublicIdentity},
     GenesisInfo,
 };
@@ -42,6 +42,7 @@ use std::{
     convert::{TryFrom, TryInto},
     fs::File,
     io::{Read, Write},
+    net::Ipv4Addr,
     num::NonZeroUsize,
     path::{Path, PathBuf},
     sync::Arc,
@@ -65,6 +66,8 @@ pub struct ValidatorNodeConfig {
     pub account_private_key: Option<ConfigKey<Ed25519PrivateKey>>,
     pub genesis_stake_amount: u64,
     pub commission_percentage: u64,
+    advertised_ip: Option<Ipv4Addr>,
+    advertised_fullnode_ip: Option<Ipv4Addr>,
 }
 
 impl ValidatorNodeConfig {
@@ -90,6 +93,8 @@ impl ValidatorNodeConfig {
             account_private_key: None,
             genesis_stake_amount,
             commission_percentage,
+            advertised_ip: None,
+            advertised_fullnode_ip: None,
         })
     }
 
@@ -194,7 +199,7 @@ impl TryFrom<&ValidatorNodeConfig> for ValidatorConfiguration {
 
     fn try_from(config: &ValidatorNodeConfig) -> Result<Self, Self::Error> {
         let (_, _, private_identity, _) = config.get_key_objects(None)?;
-        let validator_host = (&config
+        let mut validator_host: HostAndPort = (&config
             .config
             .override_config()
             .validator_network
@@ -202,17 +207,21 @@ impl TryFrom<&ValidatorNodeConfig> for ValidatorConfiguration {
             .unwrap()
             .listen_address)
             .try_into()?;
-        let full_node_host = Some(
-            (&config
-                .config
-                .override_config()
-                .full_node_networks
-                .iter()
-                .find(|network| network.network_id == NetworkId::Public)
-                .unwrap()
-                .listen_address)
-                .try_into()?,
-        );
+        let mut full_node_host: HostAndPort = (&config
+            .config
+            .override_config()
+            .full_node_networks
+            .iter()
+            .find(|network| network.network_id == NetworkId::Public)
+            .unwrap()
+            .listen_address)
+            .try_into()?;
+        if let Some(ip) = config.advertised_ip {
+            validator_host.host = ip.to_string().try_into()?;
+        }
+        if let Some(ip) = config.advertised_fullnode_ip.or(config.advertised_ip) {
+            full_node_host.host = ip.to_string().try_into()?;
+        }
         Ok(ValidatorConfiguration {
             owner_account_address: private_identity.account_address.into(),
             owner_account_public_key: private_identity.account_private_key.public_key(),
@@ -231,7 +240,7 @@ impl TryFrom<&ValidatorNodeConfig> for ValidatorConfiguration {
             full_node_network_public_key: Some(
                 private_identity.full_node_network_private_key.public_key(),
             ),
-            full_node_host,
+            full_node_host: Some(full_node_host),
             stake_amount: config.genesis_stake_amount,
             commission_percentage: config.commission_percentage,
             // Default to joining the genesis validator set.
@@ -420,6 +429,51 @@ fn write_yaml<T: Serialize>(path: &Path, object: &T) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use aptos_temppath::TempPath;
+    use rand::{rngs::StdRng, SeedableRng};
+
+    #[test]
+    fn validator_addresses_use_advertised_ips() {
+        let path = TempPath::new();
+        path.create_as_dir().unwrap();
+        let ips = vec![Ipv4Addr::new(10, 0, 0, 11), Ipv4Addr::new(10, 0, 0, 12)];
+        let (_, _, _, validators) = Builder::new(
+            path.path(),
+            aptos_cached_packages::head_release_bundle().clone(),
+        )
+        .unwrap()
+        .with_num_validators(NonZeroUsize::new(2).unwrap())
+        .with_advertised_ips(ips.clone())
+        .build(StdRng::from_seed([0; 32]))
+        .unwrap();
+
+        for (validator, ip) in validators.iter().zip(ips) {
+            let genesis_config = ValidatorConfiguration::try_from(validator).unwrap();
+            let listen_address = &validator
+                .config
+                .override_config()
+                .validator_network
+                .as_ref()
+                .unwrap()
+                .listen_address;
+            let validator_host = genesis_config.validator_host.unwrap();
+            assert_eq!(validator_host.host.to_string(), ip.to_string());
+            assert_eq!(validator_host.port, listen_address.find_port().unwrap());
+            assert_eq!(
+                genesis_config.full_node_host.unwrap().host.to_string(),
+                ip.to_string()
+            );
+            assert_eq!(
+                listen_address.find_ip_addr().unwrap().to_string(),
+                "0.0.0.0"
+            );
+        }
+    }
+}
+
 const ONE_DAY: u64 = 86400;
 
 #[derive(Clone)]
@@ -470,6 +524,8 @@ pub struct Builder {
     config_dir: PathBuf,
     framework: ReleaseBundle,
     num_validators: NonZeroUsize,
+    advertised_ips: Option<Vec<Ipv4Addr>>,
+    advertised_fullnode_ips: Option<Vec<Ipv4Addr>>,
     randomize_first_validator_ports: bool,
     init_config: Option<InitConfigFn>,
     init_genesis_stake: Option<InitGenesisStakeFn>,
@@ -485,6 +541,8 @@ impl Builder {
             config_dir,
             framework,
             num_validators: NonZeroUsize::new(1).unwrap(),
+            advertised_ips: None,
+            advertised_fullnode_ips: None,
             randomize_first_validator_ports: true,
             init_config: None,
             init_genesis_stake: None,
@@ -499,6 +557,19 @@ impl Builder {
 
     pub fn with_num_validators(mut self, num_validators: NonZeroUsize) -> Self {
         self.num_validators = num_validators;
+        self
+    }
+
+    /// Advertise these IPs in genesis, in validator index order, while retaining
+    /// the generated listen addresses in each node's configuration.
+    pub fn with_advertised_ips(mut self, advertised_ips: Vec<Ipv4Addr>) -> Self {
+        self.advertised_ips = Some(advertised_ips);
+        self
+    }
+
+    /// Advertise these VFN IPs in genesis for validators in index order.
+    pub fn with_advertised_fullnode_ips(mut self, advertised_fullnode_ips: Vec<Ipv4Addr>) -> Self {
+        self.advertised_fullnode_ips = Some(advertised_fullnode_ips);
         self
     }
 
@@ -536,6 +607,34 @@ impl Builder {
     where
         R: rand::RngCore + rand::CryptoRng,
     {
+        if let Some(ref ips) = self.advertised_ips {
+            ensure!(
+                ips.len() == self.num_validators.get(),
+                "expected {} validator IPs, got {}",
+                self.num_validators.get(),
+                ips.len()
+            );
+            ensure!(
+                ips.iter().all(|ip| !ip.is_unspecified()
+                    && !ip.is_multicast()
+                    && *ip != Ipv4Addr::BROADCAST),
+                "validator IPs must be reachable unicast addresses"
+            );
+        }
+        if let Some(ref ips) = self.advertised_fullnode_ips {
+            ensure!(
+                ips.len() <= self.num_validators.get(),
+                "expected at most {} fullnode IPs, got {}",
+                self.num_validators.get(),
+                ips.len()
+            );
+            ensure!(
+                ips.iter().all(|ip| !ip.is_unspecified()
+                    && !ip.is_multicast()
+                    && *ip != Ipv4Addr::BROADCAST),
+                "fullnode IPs must be reachable unicast addresses"
+            );
+        }
         // We use this print statement to allow debugging of local deployments
         info!(
             "Building genesis with {:?} validators. Directory of output: {:?}",
@@ -638,6 +737,12 @@ impl Builder {
         if index > 0 || self.randomize_first_validator_ports {
             config.randomize_ports();
         }
+
+        validator.advertised_ip = self.advertised_ips.as_ref().map(|ips| ips[index]);
+        validator.advertised_fullnode_ip = self
+            .advertised_fullnode_ips
+            .as_ref()
+            .and_then(|ips| ips.get(index).copied());
 
         Ok(validator)
     }

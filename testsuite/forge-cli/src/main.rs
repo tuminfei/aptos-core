@@ -10,7 +10,7 @@ use clap::{Parser, Subcommand};
 use futures::{future, FutureExt};
 use rand::{rngs::ThreadRng, seq::SliceRandom, Rng};
 use serde_json::{json, Value};
-use std::{self, num::NonZeroUsize, path::PathBuf, process, time::Duration};
+use std::{self, net::Ipv4Addr, num::NonZeroUsize, path::PathBuf, process, time::Duration};
 use sugars::{boxed, hmap};
 use suites::{
     dag::get_dag_test,
@@ -87,6 +87,23 @@ enum OperatorCommand {
 struct LocalSwarm {
     #[clap(long, help = "directory to build local swarm under")]
     swarmdir: Option<String>,
+    #[clap(
+        long,
+        value_delimiter = ',',
+        help = "Comma-separated validator IPv4 addresses in node index order; omitted uses the existing local Forge behavior"
+    )]
+    node_ips: Vec<Ipv4Addr>,
+    #[clap(
+        long,
+        value_delimiter = ',',
+        help = "Comma-separated validator fullnode IPv4 addresses, paired with validators in node index order"
+    )]
+    fullnode_ips: Vec<Ipv4Addr>,
+    #[clap(
+        long,
+        help = "Generate node configs and genesis without launching nodes; requires --swarmdir"
+    )]
+    generate_only: bool,
     #[clap(
         long,
         help = "Per-node CPU affinity (colon-separated). E.g. '0-5,7-8:10-20,23' pins node 0 to CPUs 0-5,7-8 and node 1 to CPUs 10-20,23"
@@ -299,6 +316,49 @@ fn main() -> Result<()> {
             // Run the test suite
             match test_cmd {
                 TestCommand::LocalSwarm(local_cfg) => {
+                    anyhow::ensure!(
+                        test_suite.initial_fullnode_count
+                            <= test_suite.initial_validator_count.get(),
+                        "cannot have more validator fullnodes than validators"
+                    );
+                    if !local_cfg.node_ips.is_empty() {
+                        anyhow::ensure!(
+                            local_cfg.node_ips.len() == test_suite.initial_validator_count.get(),
+                            "expected {} node IPs, got {}",
+                            test_suite.initial_validator_count,
+                            local_cfg.node_ips.len()
+                        );
+                        anyhow::ensure!(
+                            local_cfg.node_ips.iter().all(|ip| {
+                                !ip.is_unspecified()
+                                    && !ip.is_multicast()
+                                    && *ip != Ipv4Addr::BROADCAST
+                            }),
+                            "node IPs must be reachable unicast addresses"
+                        );
+                    }
+                    if !local_cfg.fullnode_ips.is_empty() {
+                        anyhow::ensure!(
+                            local_cfg.fullnode_ips.len() == test_suite.initial_fullnode_count,
+                            "expected {} fullnode IPs, got {}",
+                            test_suite.initial_fullnode_count,
+                            local_cfg.fullnode_ips.len()
+                        );
+                        anyhow::ensure!(
+                            local_cfg.fullnode_ips.iter().all(|ip| {
+                                !ip.is_unspecified()
+                                    && !ip.is_multicast()
+                                    && *ip != Ipv4Addr::BROADCAST
+                            }),
+                            "fullnode IPs must be reachable unicast addresses"
+                        );
+                    }
+                    if local_cfg.generate_only {
+                        anyhow::ensure!(
+                            local_cfg.swarmdir.is_some(),
+                            "--swarmdir is required with --generate-only"
+                        );
+                    }
                     // Loosen all criteria for local runs
                     test_suite.get_success_criteria_mut().min_avg_tps = 400.0;
                     let previous_emit_job = test_suite.get_emit_job().clone();
@@ -319,12 +379,65 @@ fn main() -> Result<()> {
                         .unwrap_or_default();
                     let factory = if let Some(ref binary) = local_cfg.aptos_node_binary {
                         LocalFactory::from_binary(PathBuf::from(binary), swarm_dir)?
+                    } else if local_cfg.generate_only {
+                        LocalFactory::for_config_generation(swarm_dir)?
                     } else {
                         LocalFactory::from_workspace(swarm_dir)?
                     }
                     .with_node_affinities(cpu_affinities, mem_binds)
                     .with_concurrency_level(local_cfg.concurrency_level)
                     .with_auto_restart(local_cfg.auto_restart);
+                    let factory = if local_cfg.node_ips.is_empty() {
+                        factory
+                    } else {
+                        factory.with_validator_ips(local_cfg.node_ips.clone())
+                    };
+                    let factory = if local_cfg.fullnode_ips.is_empty() {
+                        factory
+                    } else {
+                        factory.with_fullnode_ips(local_cfg.fullnode_ips.clone())
+                    };
+                    if local_cfg.generate_only {
+                        let dir = runtime.block_on(factory.generate_configs(
+                            rand::rngs::OsRng,
+                            test_suite.initial_validator_count,
+                            test_suite.initial_fullnode_count,
+                        ))?;
+                        println!(
+                            "Generated validator configs and genesis in {}",
+                            dir.display()
+                        );
+                        for index in 0..test_suite.initial_validator_count.get() {
+                            println!(
+                                "Validator {} (IP {}) config: {}",
+                                index,
+                                local_cfg
+                                    .node_ips
+                                    .get(index)
+                                    .map(ToString::to_string)
+                                    .unwrap_or_else(|| "local default".to_string()),
+                                dir.join(index.to_string()).join("node.yaml").display()
+                            );
+                        }
+                        for index in 0..test_suite.initial_fullnode_count {
+                            let fullnode_index = test_suite.initial_validator_count.get() + index;
+                            println!(
+                                "Validator fullnode {} (validator {}, IP {}) config: {}",
+                                fullnode_index,
+                                index,
+                                local_cfg
+                                    .fullnode_ips
+                                    .get(index)
+                                    .or_else(|| local_cfg.node_ips.get(index))
+                                    .map(ToString::to_string)
+                                    .unwrap_or_else(|| "local default".to_string()),
+                                dir.join(fullnode_index.to_string())
+                                    .join("node.yaml")
+                                    .display()
+                            );
+                        }
+                        return Ok(());
+                    }
                     let forge = Forge::new(&args.options, test_suite, duration, factory);
                     run_forge(forge, &args.options)
                 },

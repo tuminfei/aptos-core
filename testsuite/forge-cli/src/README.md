@@ -41,6 +41,54 @@ kill -9 <Node 0 PID>
 cargo run -p aptos-node -- -f <Location to the node 0 configuration file displayed above>
 ```
 
+## Generate configs for specific IPs
+
+Pass one IPv4 address per validator in node index order. When using validator fullnodes,
+pass one `--fullnode-ips` address per VFN. The first VFN is paired with validator 0,
+the second with validator 1, and so on. Use `--generate-only` for nodes on separate
+hosts, then copy each numbered node directory to its corresponding host.
+The advertised validator and VFN addresses are written into genesis. The node configs
+continue to listen on `0.0.0.0` with their assigned ports.
+
+```bash
+cargo run -p aptos-forge-cli -- --suite run_forever --num-validators 4 \
+  --num-validator-fullnodes 2 \
+  test local-swarm --generate-only --swarmdir /opt/aptos/swarm \
+  --node-ips 10.0.0.11,10.0.0.12,10.0.0.13,10.0.0.14 \
+  --fullnode-ips 10.0.0.21,10.0.0.22
+```
+
+This creates validators `0` through `3` and VFNs `4` and `5`. VFN `4` belongs to
+validator `0`; VFN `5` belongs to validator `1`. Their public network identity files
+are placed in the VFN directories so the directories can be copied independently.
+The validators' VFN network ports must be reachable from their paired VFNs, and the
+advertised validator and VFN ports must be reachable from the other nodes.
+
+The generated YAML files contain absolute paths, so keep the same directory paths
+on the target hosts or update the paths before starting `aptos-node`. For separate
+hosts, supply both `--node-ips` and `--fullnode-ips`. Without `--fullnode-ips`,
+each VFN advertises its validator's IP; without either option, Forge keeps its
+original local addresses. `--generate-only` requires a new `--swarmdir` and
+does not start any node processes. A launched local swarm removes and recreates an
+existing `--swarmdir`, so do not point it at data you need to retain.
+The REST API keeps its local bind address; adjust `api.address` separately if remote API
+access is needed.
+
+On each host, start its numbered validator with the matching config, for example:
+
+```bash
+aptos-node -f /opt/aptos/swarm/0/node.yaml
+```
+Start VFN `4` with `/opt/aptos/swarm/4/node.yaml` and VFN `5` with
+`/opt/aptos/swarm/5/node.yaml` on their respective hosts.
+Config generation does not build `aptos-node`. Start each node with the binary
+version you intend to deploy. For a launched local swarm, pass
+`--aptos-node-binary /path/to/aptos-node` to reuse an existing binary;
+otherwise Forge builds one from the workspace.
+
+For a swarm that runs on this machine, `--node-ips` and `--fullnode-ips` can
+also be used without `--generate-only` if all supplied IPs route to this machine.
+
 ## Faucet and minting
 
 In order to mint coins in this test network you need to run a faucet. You can do that with this command:

@@ -7,7 +7,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Result};
 use aptos_config::{
-    config::{NetworkConfig, NodeConfig, OverrideNodeConfig, PersistableConfig},
+    config::{Identity, NetworkConfig, NodeConfig, OverrideNodeConfig, PersistableConfig},
     keys::ConfigKey,
     network_id::NetworkId,
 };
@@ -27,10 +27,8 @@ use aptos_sdk::{
 use prometheus_http_query::response::{PromqlResult, Sample};
 use std::{
     collections::HashMap,
-    fs,
-    fs::File,
-    io::Write,
-    mem,
+    fs, mem,
+    net::Ipv4Addr,
     num::NonZeroUsize,
     ops,
     path::{Path, PathBuf},
@@ -47,6 +45,12 @@ use topo_framework::ReleaseBundle;
 pub enum SwarmDirectory {
     Persistent(PathBuf),
     Temporary(TempDir),
+}
+
+#[derive(Clone, Copy)]
+pub enum SwarmDirectoryPolicy {
+    ReplaceExisting,
+    CreateNew,
 }
 
 impl SwarmDirectory {
@@ -98,6 +102,7 @@ pub struct LocalSwarm {
     validators: HashMap<PeerId, LocalNode>,
     fullnodes: HashMap<PeerId, LocalNode>,
     public_networks: HashMap<PeerId, NetworkConfig>,
+    validator_ips: Option<Vec<Ipv4Addr>>,
     dir: SwarmDirectory,
     root_account: Arc<LocalAccount>,
     chain_id: ChainId,
@@ -124,62 +129,113 @@ impl LocalSwarm {
         init_genesis_stake: Option<InitGenesisStakeFn>,
         init_genesis_config: Option<InitGenesisConfigFn>,
         dir: Option<PathBuf>,
+        dir_policy: SwarmDirectoryPolicy,
         genesis_framework: Option<ReleaseBundle>,
         guard: ActiveNodesGuard,
         cpu_affinities: Vec<String>,
         mem_binds: Vec<String>,
         concurrency_level: u16,
         auto_restart: bool,
+        split_public_network_count: usize,
+        validator_ips: Option<Vec<Ipv4Addr>>,
+        fullnode_ips: Option<Vec<Ipv4Addr>>,
     ) -> Result<LocalSwarm>
     where
         R: ::rand::RngCore + ::rand::CryptoRng,
     {
+        anyhow::ensure!(
+            split_public_network_count <= number_of_validators.get(),
+            "cannot split more public networks than validators"
+        );
+        if let Some(ref ips) = validator_ips {
+            anyhow::ensure!(
+                ips.len() == number_of_validators.get(),
+                "expected {} node IPs, got {}",
+                number_of_validators.get(),
+                ips.len()
+            );
+            anyhow::ensure!(
+                ips.iter().all(|ip| {
+                    !ip.is_unspecified() && !ip.is_multicast() && *ip != Ipv4Addr::BROADCAST
+                }),
+                "validator IPs must be reachable unicast addresses"
+            );
+        }
+        if let Some(ref ips) = fullnode_ips {
+            anyhow::ensure!(
+                ips.len() <= number_of_validators.get(),
+                "expected at most {} fullnode IPs, got {}",
+                number_of_validators.get(),
+                ips.len()
+            );
+            anyhow::ensure!(
+                ips.iter().all(|ip| {
+                    !ip.is_unspecified() && !ip.is_multicast() && *ip != Ipv4Addr::BROADCAST
+                }),
+                "fullnode IPs must be reachable unicast addresses"
+            );
+        }
         info!("Building a new swarm");
         let dir_actual = if let Some(dir_) = dir {
-            if dir_.exists() {
-                fs::remove_dir_all(&dir_)?;
+            match dir_policy {
+                SwarmDirectoryPolicy::ReplaceExisting => {
+                    if dir_.exists() {
+                        fs::remove_dir_all(&dir_)?;
+                    }
+                    fs::create_dir_all(&dir_)?;
+                },
+                SwarmDirectoryPolicy::CreateNew => {
+                    if let Some(parent) = dir_.parent() {
+                        fs::create_dir_all(parent)?;
+                    }
+                    fs::create_dir(&dir_)?;
+                },
             }
-            fs::create_dir_all(&dir_)?;
             SwarmDirectory::Persistent(dir_)
         } else {
             SwarmDirectory::Temporary(TempDir::new()?)
         };
 
-        let (root_key, genesis, genesis_waypoint, validators) =
-            aptos_genesis::builder::Builder::new(
-                &dir_actual,
-                genesis_framework
-                    .unwrap_or_else(|| aptos_cached_packages::head_release_bundle().clone()),
-            )?
-            .with_num_validators(number_of_validators)
-            .with_init_config(Some(Arc::new(move |index, config, base| {
-                config.execution.concurrency_level = concurrency_level;
+        let mut builder = aptos_genesis::builder::Builder::new(
+            &dir_actual,
+            genesis_framework
+                .unwrap_or_else(|| aptos_cached_packages::head_release_bundle().clone()),
+        )?
+        .with_num_validators(number_of_validators)
+        .with_init_config(Some(Arc::new(move |index, config, base| {
+            config.execution.concurrency_level = concurrency_level;
 
-                // Enable BlockSTM v2 for all forge runs.
-                config.execution.blockstm_v2_enabled = true;
+            // Enable BlockSTM v2 for all forge runs.
+            config.execution.blockstm_v2_enabled = true;
 
-                // Single node orders blocks too fast which would trigger backpressure and stall for 1 sec
-                // which cause flakiness in tests.
-                if number_of_validators.get() == 1 {
-                    // this delays empty block by (30-1) * 30ms
-                    config.consensus.quorum_store_poll_time_ms = 900;
-                    config
-                        .state_sync
-                        .state_sync_driver
-                        .enable_auto_bootstrapping = true;
-                    config
-                        .state_sync
-                        .state_sync_driver
-                        .max_connection_deadline_secs = 1;
-                }
+            // Single node orders blocks too fast which would trigger backpressure and stall for 1 sec
+            // which cause flakiness in tests.
+            if number_of_validators.get() == 1 {
+                // this delays empty block by (30-1) * 30ms
+                config.consensus.quorum_store_poll_time_ms = 900;
+                config
+                    .state_sync
+                    .state_sync_driver
+                    .enable_auto_bootstrapping = true;
+                config
+                    .state_sync
+                    .state_sync_driver
+                    .max_connection_deadline_secs = 1;
+            }
 
-                if let Some(init_config) = &init_config {
-                    (init_config)(index, config, base);
-                }
-            })))
-            .with_init_genesis_stake(init_genesis_stake)
-            .with_init_genesis_config(init_genesis_config)
-            .build(rng)?;
+            if let Some(init_config) = &init_config {
+                (init_config)(index, config, base);
+            }
+        })))
+        .with_init_genesis_stake(init_genesis_stake)
+        .with_init_genesis_config(init_genesis_config);
+        if let Some(ips) = validator_ips.clone() {
+            builder = builder.with_advertised_ips(ips);
+        }
+        if let Some(ips) = fullnode_ips {
+            builder = builder.with_advertised_fullnode_ips(ips);
+        }
+        let (root_key, genesis, genesis_waypoint, validators) = builder.build(rng)?;
 
         // Get the initial version to start the nodes with, either the one provided or fallback to
         // using the latest version
@@ -209,7 +265,7 @@ impl LocalSwarm {
             })
             .collect::<Result<HashMap<_, _>>>()?;
 
-        // After genesis, remove public network from validator and add to public_networks
+        // Move the public network off validators that have a separate VFN config.
         let public_networks = validators
             .values_mut()
             .map(|validator| {
@@ -217,22 +273,21 @@ impl LocalSwarm {
                     OverrideNodeConfig::load_config(validator.config_path())?;
                 let validator_config = validator_override_config.override_config_mut();
 
-                // Grab the public network config from the validator and insert it into the VFN's config
-                // The validator's public network identity is the same as the VFN's public network identity
-                // We remove it from the validator so the VFN can hold it
-                let public_network = {
-                    let (i, _) = validator_config
-                        .full_node_networks
-                        .iter()
-                        .enumerate()
-                        .find(|(_i, config)| config.network_id == NetworkId::Public)
-                        .expect("Validator should have a public network");
-                    validator_config.full_node_networks.remove(i)
+                let i = validator_config
+                    .full_node_networks
+                    .iter()
+                    .position(|config| config.network_id == NetworkId::Public)
+                    .expect("Validator should have a public network");
+                let public_network = if validator.index() < split_public_network_count {
+                    // The VFN uses the same public network identity as its validator.
+                    let public_network = validator_config.full_node_networks.remove(i);
+                    validator_config.set_data_dir(validator.base_dir());
+                    *validator.config_mut() = validator_config.clone();
+                    validator_override_config.save_config(validator.config_path())?;
+                    public_network
+                } else {
+                    validator_config.full_node_networks[i].clone()
                 };
-                validator_config.set_data_dir(validator.base_dir());
-                *validator.config_mut() = validator_config.clone();
-                // Since the validator's config has changed we need to save it
-                validator_override_config.save_config(validator.config_path())?;
 
                 Ok((validator.peer_id(), public_network))
             })
@@ -245,16 +300,12 @@ impl LocalSwarm {
             String::from_utf8_lossy(encoded_root_key.as_slice())
         );
         let root_key_path = dir_actual.as_ref().join("root_key");
-        if let Ok(mut out) = File::create(root_key_path.clone()) {
-            out.write_all(encoded_root_key.as_slice())?;
-            info!("Wrote root (or mint) key to: {}", root_key_path.display());
-        }
+        fs::write(&root_key_path, encoded_root_key.as_slice())?;
+        info!("Wrote root (or mint) key to: {}", root_key_path.display());
         let encoded_root_key = EncodingType::BCS.encode_key("root_key", &root_key)?;
         let root_key_path = dir_actual.as_ref().join("root_key.bin");
-        if let Ok(mut out) = File::create(root_key_path.clone()) {
-            out.write_all(encoded_root_key.as_slice())?;
-            info!("Wrote root (or mint) key to: {}", root_key_path.display());
-        }
+        fs::write(&root_key_path, encoded_root_key.as_slice())?;
+        info!("Wrote root (or mint) key to: {}", root_key_path.display());
 
         let root_key = ConfigKey::new(root_key);
         let root_account = LocalAccount::new(
@@ -272,6 +323,7 @@ impl LocalSwarm {
             validators,
             fullnodes: HashMap::new(),
             public_networks,
+            validator_ips,
             dir: dir_actual,
             root_account,
             chain_id: ChainId::test(),
@@ -382,6 +434,27 @@ impl LocalSwarm {
         config: OverrideNodeConfig,
         validator_peer_id: PeerId,
     ) -> Result<PeerId> {
+        self.add_validator_fullnode_impl(version, config, validator_peer_id, true)
+    }
+
+    /// Generate a VFN config without starting a process.
+    pub fn generate_validator_fullnode(
+        &mut self,
+        version: &Version,
+        validator_peer_id: PeerId,
+    ) -> Result<PeerId> {
+        let config =
+            OverrideNodeConfig::new_with_default_base(NodeConfig::get_default_vfn_config());
+        self.add_validator_fullnode_impl(version, config, validator_peer_id, false)
+    }
+
+    fn add_validator_fullnode_impl(
+        &mut self,
+        version: &Version,
+        config: OverrideNodeConfig,
+        validator_peer_id: PeerId,
+        start: bool,
+    ) -> Result<PeerId> {
         let validator = self
             .validators
             .get(&validator_peer_id)
@@ -396,17 +469,49 @@ impl LocalSwarm {
             bail!("VFN for validator {} already configured", validator_peer_id);
         }
 
+        let mut validator_config = validator.config().clone();
+        if let Some(ip) = self
+            .validator_ips
+            .as_ref()
+            .and_then(|ips| ips.get(validator.index()))
+        {
+            let vfn_network = validator_config
+                .full_node_networks
+                .iter_mut()
+                .find(|network| network.network_id.is_vfn_network())
+                .ok_or_else(|| anyhow!("validator has no VFN network"))?;
+            let port = vfn_network
+                .listen_address
+                .find_port()
+                .ok_or_else(|| anyhow!("validator VFN network has no listen port"))?;
+            vfn_network.listen_address = format!("/ip4/{ip}/tcp/{port}").parse()?;
+        }
+
         let name = self.node_name_counter.to_string();
         let index = self.node_name_counter;
         self.node_name_counter += 1;
+        let mut public_network = public_network.clone();
+        if !start {
+            if let Identity::FromFile(identity_file) = &public_network.identity {
+                let fullnode_dir = self.dir.as_ref().join(&name);
+                fs::create_dir_all(&fullnode_dir)?;
+                let filename = identity_file
+                    .path
+                    .file_name()
+                    .ok_or_else(|| anyhow!("VFN identity path has no filename"))?;
+                let fullnode_identity = fullnode_dir.join(filename);
+                fs::copy(&identity_file.path, &fullnode_identity)?;
+                public_network.identity = Identity::from_file(fullnode_identity);
+            }
+        }
         let fullnode_config = FullnodeNodeConfig::validator_fullnode(
             name,
             self.dir.as_ref(),
             config,
-            validator.config(),
+            &validator_config,
             &self.genesis_waypoint,
             &self.genesis,
-            public_network,
+            &public_network,
         )?;
 
         let version = self.versions.get(version).unwrap();
@@ -422,7 +527,9 @@ impl LocalSwarm {
 
         let peer_id = fullnode.peer_id();
         assert_eq!(peer_id, validator_peer_id);
-        fullnode.start()?;
+        if start {
+            fullnode.start()?;
+        }
 
         self.fullnodes.insert(peer_id, fullnode);
 

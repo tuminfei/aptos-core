@@ -9,6 +9,7 @@ use aptos_infallible::Mutex;
 use rand::rngs::StdRng;
 use std::{
     collections::HashMap,
+    net::Ipv4Addr,
     num::NonZeroUsize,
     path::{Path, PathBuf},
     sync::Arc,
@@ -22,7 +23,7 @@ mod swarm;
 pub use self::swarm::ActiveNodesGuard;
 pub use cargo::cargo_build_common_args;
 pub use node::LocalNode;
-pub use swarm::{LocalSwarm, SwarmDirectory};
+pub use swarm::{LocalSwarm, SwarmDirectory, SwarmDirectoryPolicy};
 
 #[derive(Clone, Debug)]
 pub struct LocalVersion {
@@ -51,6 +52,8 @@ pub struct LocalFactory {
     mem_binds: Vec<String>,
     concurrency_level: u16,
     auto_restart: bool,
+    validator_ips: Option<Vec<Ipv4Addr>>,
+    fullnode_ips: Option<Vec<Ipv4Addr>>,
 }
 
 impl LocalFactory {
@@ -62,6 +65,8 @@ impl LocalFactory {
             mem_binds: Vec::new(),
             concurrency_level: 1,
             auto_restart: false,
+            validator_ips: None,
+            fullnode_ips: None,
         }
     }
 
@@ -85,6 +90,97 @@ impl LocalFactory {
         self
     }
 
+    /// Advertise one IPv4 address per validator in the generated genesis.
+    pub fn with_validator_ips(mut self, validator_ips: Vec<Ipv4Addr>) -> Self {
+        self.validator_ips = Some(validator_ips);
+        self
+    }
+
+    /// Advertise one IPv4 address per initial validator fullnode in genesis.
+    pub fn with_fullnode_ips(mut self, fullnode_ips: Vec<Ipv4Addr>) -> Self {
+        self.fullnode_ips = Some(fullnode_ips);
+        self
+    }
+
+    /// Write validator and VFN configurations and genesis without starting processes.
+    pub async fn generate_configs<R>(
+        &self,
+        rng: R,
+        number_of_validators: NonZeroUsize,
+        number_of_fullnodes: usize,
+    ) -> Result<PathBuf>
+    where
+        R: rand::RngCore + rand::CryptoRng,
+    {
+        let swarm_dir = self
+            .swarm_dir
+            .as_ref()
+            .map(PathBuf::from)
+            .context("--swarmdir is required with --generate-only")?;
+        let swarm_dir = if swarm_dir.is_absolute() {
+            swarm_dir
+        } else {
+            std::env::current_dir()?.join(swarm_dir)
+        };
+        anyhow::ensure!(
+            !swarm_dir.exists(),
+            "swarm directory already exists: {}",
+            swarm_dir.display()
+        );
+        self.validate_fullnode_count(number_of_validators, number_of_fullnodes)?;
+        let guard = ActiveNodesGuard::grab(1, Arc::new(Mutex::new(0))).await;
+        let mut swarm = LocalSwarm::build(
+            rng,
+            number_of_validators,
+            self.versions.clone(),
+            None,
+            None,
+            None,
+            None,
+            Some(swarm_dir.clone()),
+            SwarmDirectoryPolicy::CreateNew,
+            None,
+            guard,
+            Vec::new(),
+            Vec::new(),
+            self.concurrency_level,
+            false,
+            number_of_fullnodes,
+            self.validator_ips.clone(),
+            self.fullnode_ips.clone(),
+        )?;
+        let version = self
+            .versions
+            .keys()
+            .max()
+            .context("no node version available")?;
+        let validator_peer_ids = swarm.validators().map(|v| v.peer_id()).collect::<Vec<_>>();
+        for validator_peer_id in validator_peer_ids.iter().take(number_of_fullnodes) {
+            swarm.generate_validator_fullnode(version, *validator_peer_id)?;
+        }
+        Ok(swarm.dir().canonicalize()?)
+    }
+
+    fn validate_fullnode_count(
+        &self,
+        number_of_validators: NonZeroUsize,
+        number_of_fullnodes: usize,
+    ) -> Result<()> {
+        anyhow::ensure!(
+            number_of_fullnodes <= number_of_validators.get(),
+            "cannot have more validator fullnodes than validators"
+        );
+        if let Some(ref ips) = self.fullnode_ips {
+            anyhow::ensure!(
+                ips.len() == number_of_fullnodes,
+                "expected {} fullnode IPs, got {}",
+                number_of_fullnodes,
+                ips.len()
+            );
+        }
+        Ok(())
+    }
+
     /// Create a LocalFactory with a pre-built aptos-node binary, skipping cargo build.
     pub fn from_binary(binary_path: PathBuf, swarm_dir: Option<String>) -> Result<Self> {
         anyhow::ensure!(
@@ -94,6 +190,16 @@ impl LocalFactory {
         );
         let version = Version::new(usize::MAX, "prebuilt".to_string());
         let local_version = LocalVersion::new(binary_path, version.clone());
+        let mut versions = HashMap::new();
+        versions.insert(version, local_version);
+        Ok(Self::new(versions, swarm_dir))
+    }
+
+    /// Build configs without requiring an aptos-node binary. LocalNode needs a
+    /// version entry, but config generation never launches it.
+    pub fn for_config_generation(swarm_dir: Option<String>) -> Result<Self> {
+        let version = Version::new(usize::MAX, "config-only".to_string());
+        let local_version = LocalVersion::new(std::env::current_exe()?, version.clone());
         let mut versions = HashMap::new();
         versions.insert(version, local_version);
         Ok(Self::new(versions, swarm_dir))
@@ -170,6 +276,7 @@ impl LocalFactory {
     where
         R: ::rand::RngCore + ::rand::CryptoRng,
     {
+        self.validate_fullnode_count(number_of_validators, number_of_fullnodes)?;
         let swarmdir = self.swarm_dir.clone().map(|sd| PathBuf::from(sd.as_str()));
         // Build the swarm
         let mut swarm = LocalSwarm::build(
@@ -181,12 +288,16 @@ impl LocalFactory {
             init_genesis_stake,
             init_genesis_config,
             swarmdir,
+            SwarmDirectoryPolicy::ReplaceExisting,
             genesis_framework,
             guard,
             self.cpu_affinities.clone(),
             self.mem_binds.clone(),
             self.concurrency_level,
             self.auto_restart,
+            number_of_fullnodes,
+            self.validator_ips.clone(),
+            self.fullnode_ips.clone(),
         )?;
 
         // Launch the swarm
